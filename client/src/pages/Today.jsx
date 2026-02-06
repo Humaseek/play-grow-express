@@ -37,7 +37,7 @@ function normalizeRatio(v) {
   if (typeof v === "string") {
     const s = v.trim();
     if (!s) return 0;
-    const hasPct = s.endsWith('%');
+    const hasPct = s.endsWith("%");
     const num = Number.parseFloat(hasPct ? s.slice(0, -1) : s);
     if (!Number.isFinite(num)) return 0;
     const asRatio = hasPct || num > 1.5 ? num / 100 : num;
@@ -180,7 +180,9 @@ export default function Today() {
     // IMPORTANT: today_sessions_view أحيانًا ما ترجع نسبة الدفع الصحيحة.
     // RunDetails يحسبها من بيانات المشاركين الفعّالين (agreed_price / paid_amount) من run_participants_view.
     // عشان نطابق RunDetails 1:1، نحسب النسبة هنا بنفس الطريقة.
-    const runIds = Array.from(new Set(baseRows.map((r) => r.run_id).filter(Boolean)));
+    const runIds = Array.from(
+      new Set(baseRows.map((r) => r.run_id).filter(Boolean)),
+    );
 
     const paidByRun = new Map(); // run_id(string) -> ratio(0..1)
     if (runIds.length) {
@@ -214,7 +216,9 @@ export default function Today() {
 
     const enriched = baseRows.map((r) => {
       const key = String(r.run_id ?? "");
-      const pr = paidByRun.has(key) ? paidByRun.get(key) : normalizeRatio(r.paid_ratio);
+      const pr = paidByRun.has(key)
+        ? paidByRun.get(key)
+        : normalizeRatio(r.paid_ratio);
       return { ...r, paid_ratio: pr };
     });
 
@@ -267,7 +271,8 @@ export default function Today() {
       0,
     );
 
-    const recordedPct = expectedSum === 0 ? 0 : (recordedSum / expectedSum) * 100;
+    const recordedPct =
+      expectedSum === 0 ? 0 : (recordedSum / expectedSum) * 100;
     const presentPct = expectedSum === 0 ? 0 : (presentSum / expectedSum) * 100;
     // NOTE: supabase ممكن يرجّع numeric كـ string (مثال: "0.5")
     // إذا جمعناها بدون تحويل، يصير concatenation وبعدين avg = NaN → يطلع 0%
@@ -311,12 +316,12 @@ export default function Today() {
     await loadActiveRuns();
   }
 
-  const paidPctKpi = (dayStats.avgPaid * 100) || 0;
+  const paidPctKpi = dayStats.avgPaid * 100 || 0;
 
   return (
     <div className="container page page--today">
       <PageHeader
-        title="لوحة التحكم"
+        title="לוח ניהול"
         subtitle={
           view === "active"
             ? "الدورات/الورشات الشغّالة (لسا ظايل حصص) — مرتبة حسب الأقرب"
@@ -350,9 +355,15 @@ export default function Today() {
               <RefreshCcw size={18} />
             </IconButton>
 
-            <button className="btn soft" onClick={() => navigate("/courses")}>الدورات</button>
-            <button className="btn soft" onClick={() => navigate("/payments")}>الدفعات</button>
-            <button className="btn soft" onClick={() => navigate("/expenses")}>المصاريف</button>
+            <button className="btn soft" onClick={() => navigate("/courses")}>
+              الدورات
+            </button>
+            <button className="btn soft" onClick={() => navigate("/payments")}>
+              الدفعات
+            </button>
+            <button className="btn soft" onClick={() => navigate("/expenses")}>
+              المصاريف
+            </button>
           </div>
         }
       />
@@ -396,7 +407,6 @@ export default function Today() {
                 variant={activeStats.participantsSum === 0 ? "neutral" : "ok"}
               />
             </div>
-
           </div>
 
           {loading.active ? (
@@ -423,20 +433,29 @@ export default function Today() {
                     style={{ gridColumn: "span 6" }}
                     key={r.run_id}
                   >
-                    <div className="row space" style={{ alignItems: "flex-start" }}>
+                    <div
+                      className="row space"
+                      style={{ alignItems: "flex-start" }}
+                    >
                       <div>
                         <div className="titleRow">
                           <div className="titleMain">{r.title}</div>
-                          <Badge variant={r.kind === "workshop" ? "info" : "neutral"}>
+                          <Badge
+                            variant={r.kind === "workshop" ? "info" : "neutral"}
+                          >
                             {r.kind === "workshop" ? "ورشة" : "دورة"}
                           </Badge>
                         </div>
                         <div className="muted" style={{ marginTop: 6 }}>
-                          {r.label} • المشاركين: <b>{r.participants_count ?? 0}</b>
+                          {r.label} • المشاركين:{" "}
+                          <b>{r.participants_count ?? 0}</b>
                         </div>
                       </div>
 
-                      <div className="stack" style={{ gap: 8, alignItems: "flex-end" }}>
+                      <div
+                        className="stack"
+                        style={{ gap: 8, alignItems: "flex-end" }}
+                      >
                         <Badge variant="info">أقرب حصة</Badge>
                         <div style={{ fontWeight: 950 }}>{when}</div>
                       </div>
@@ -454,7 +473,9 @@ export default function Today() {
                           <IconButton
                             title="فتح حصة الأقرب (الحضور)"
                             variant="primary"
-                            onClick={() => navigate(`/sessions/${next.id}/attendance`)}
+                            onClick={() =>
+                              navigate(`/sessions/${next.id}/attendance`)
+                            }
                           >
                             <ClipboardList size={18} />
                           </IconButton>
@@ -549,7 +570,8 @@ export default function Today() {
                 const present = r.present_count ?? 0;
                 const recorded = r.attendance_recorded ?? 0;
 
-                const recordedPct = expected === 0 ? 0 : (recorded / expected) * 100;
+                const recordedPct =
+                  expected === 0 ? 0 : (recorded / expected) * 100;
                 const paidPct = Number(r.paid_ratio ?? 0) * 100;
 
                 return (
@@ -562,12 +584,17 @@ export default function Today() {
                     </div>
 
                     <div className="dayCard card hoverLift">
-                      <div className="row space" style={{ alignItems: "flex-start" }}>
+                      <div
+                        className="row space"
+                        style={{ alignItems: "flex-start" }}
+                      >
                         <div>
                           <div className="titleRow">
                             <div className="titleMain">{r.title}</div>
                             <Badge
-                              variant={r.kind === "workshop" ? "info" : "neutral"}
+                              variant={
+                                r.kind === "workshop" ? "info" : "neutral"
+                              }
                             >
                               {r.kind === "workshop" ? "ورشة" : "دورة"}
                             </Badge>
@@ -596,14 +623,21 @@ export default function Today() {
 
                       <hr className="sep" />
 
-                      <div className="row space" style={{ gap: 10, flexWrap: "wrap" }}>
+                      <div
+                        className="row space"
+                        style={{ gap: 10, flexWrap: "wrap" }}
+                      >
                         <div className="pill">
                           <span className="muted">الحضور المسجل</span>
-                          <b>{recorded}/{expected}</b>
+                          <b>
+                            {recorded}/{expected}
+                          </b>
                         </div>
                         <div className="pill">
                           <span className="muted">الحاضر</span>
-                          <b>{present}/{expected}</b>
+                          <b>
+                            {present}/{expected}
+                          </b>
                         </div>
                         <div className="pill">
                           <span className="muted">الدفع</span>
@@ -693,7 +727,9 @@ export default function Today() {
         confirmText="نعم"
         cancelText="إلغاء"
         danger={confirm.action !== "done"}
-        onCancel={() => setConfirm({ open: false, action: null, sessionId: null })}
+        onCancel={() =>
+          setConfirm({ open: false, action: null, sessionId: null })
+        }
         onConfirm={async () => {
           const { sessionId, action } = confirm;
           setConfirm({ open: false, action: null, sessionId: null });
