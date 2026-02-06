@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+client/node_modules/
+
+# build outputs
+client/dist/
+dist/
+
+# env files (secrets)
+.env
+.env.*
+client/.env
+client/.env.*
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
