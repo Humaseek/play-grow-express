@@ -1,7 +1,7 @@
 /*
   Play & Grow – UI System
-  - Clean, high-contrast, RTL-first
-  - Meta-like spacing + clarity
+  - Clean, high-contrast
+  - Consistent spacing + clarity
 */
 
 :root{
@@ -47,13 +47,14 @@
 html,body{height:100%}
 body{
   margin:0;
-  font-family: "Noto Sans Hebrew", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   color:var(--text);
   background:
     radial-gradient(1100px 560px at 15% 0%, rgba(0,172,71,.07), transparent 64%),
     radial-gradient(900px 520px at 85% 0%, rgba(2,54,80,.06), transparent 60%),
     linear-gradient(180deg, var(--bg), #fff 55%);
-  direction: rtl;
+  direction: ltr;
+  text-align: left;
 }
 
 a{color:var(--link); text-decoration:none}

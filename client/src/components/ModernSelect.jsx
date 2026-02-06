@@ -26,7 +26,7 @@ export default function ModernSelect({
  const [open, setOpen] = useState(false);
  const [pos, setPos] = useState({ top: 0, left: 0, right: 0, width: 0 });
 
- const dir = (typeof document !== "undefined" && document?.documentElement?.dir) || "rtl";
+ const dir = (typeof document !== "undefined" && document?.documentElement?.dir) || "ltr";
  const isRTL = dir.toLowerCase() === "rtl";
 
  const selected = useMemo(() => {

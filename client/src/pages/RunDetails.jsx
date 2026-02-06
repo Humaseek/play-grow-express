@@ -1177,7 +1177,7 @@ export default function RunDetails() {
  if (loading) {
  return (
  <div className="page page--runs">
- <div className="container runDetails" dir="rtl">
+ <div className="container runDetails">
  
  <div className="card">Loading...</div>
  </div>
@@ -1188,7 +1188,7 @@ export default function RunDetails() {
  if (!summary) {
  return (
  <div className="page page--runs">
- <div className="container runDetails" dir="rtl">
+ <div className="container runDetails">
  
  <div className="card"> .</div>
  </div>
@@ -1198,7 +1198,7 @@ export default function RunDetails() {
 
  return (
  <div className="page page--runs">
- <div className="container runDetails" dir="rtl">
+ <div className="container runDetails">
  
  <div className="topbar">
  <div>

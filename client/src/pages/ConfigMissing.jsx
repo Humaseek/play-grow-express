@@ -20,7 +20,7 @@ export default function ConfigMissing() {
  borderRadius: 18,
  padding: 24,
  boxShadow: "0 10px 30px rgba(2, 6, 23, 0.06)",
- direction: "rtl",
+ direction: "ltr",
  }}
  >
  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -60,7 +60,7 @@ export default function ConfigMissing() {
  <div>VITE_API_BASE_URL = https://play-grow-express.onrender.com</div>
  </div>
 
- <ol style={{ margin: "16px 0 0", paddingRight: 18, color: "#334155", lineHeight: 1.9 }}>
+ <ol style={{ margin: "16px 0 0", paddingLeft: 18, color: "#334155", lineHeight: 1.9 }}>
  <li>Vercel → Project → Settings → Environment Variables</li>
  <li> No No (Environment: Production)</li>
  <li>Deployments → Redeploy ( cache)</li>
