@@ -2,8 +2,8 @@ import React from "react";
 
 /**
  * Control
- * Wrapper موحّد لعناصر الفלאتر: أيقونة + input/select
- * يقلل الدوشة ويضמ محاذاة ثابتة بكل כיתהحات.
+ * Wrapper موحّد لعناصر الفلاتر: أيقونة + input/select
+ * يقلل الدوشة ويضمن محاذاة ثابتة بكل الصفحات.
  */
 export default function Control({ icon: Icon, children, className = "", ...rest }) {
   return (

@@ -2,7 +2,7 @@ import React from "react";
 
 /**
  * EmptyState
- * - הצגה احتراב عندما לא توجد بيانات (או نتيجة بحث)
+ * - عرض احترافي عندما لا توجد بيانات (أو نتيجة بحث)
  */
 export default function EmptyState({
   icon: Icon,

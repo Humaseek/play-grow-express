@@ -2,7 +2,7 @@ import React from "react";
 
 /**
  * KpiCard
- * - כרטיס KPI سريعة للـ Dashboard
+ * - بطاقة KPI سريعة للـ Dashboard
  * - variant: ok | warn | danger | info | neutral
  */
 export default function KpiCard({

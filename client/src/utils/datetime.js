@@ -37,14 +37,14 @@ export function fmtDateTime24(value) {
   return `${fmtDateDMY(d)} ${fmtTime24(d)}`;
 }
 
-// Arabic weekday name (for labels like: اלאثنين).
+// Arabic weekday name (for labels like: الاثنين).
 export function fmtWeekdayAr(value) {
   const d = toDate(value);
   if (!d) return "";
   return new Intl.DateTimeFormat("ar-IL", { weekday: "long" }).format(d);
 }
 
-// Arabic day label like: اלאثنين 09/02
+// Arabic day label like: الاثنين 09/02
 export function fmtDayLabelAr(value) {
   const d = toDate(value);
   if (!d) return "";

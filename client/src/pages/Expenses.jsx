@@ -178,14 +178,11 @@ export default function Expenses() {
     const total = filtered.reduce((acc, r) => acc + Number(r.amount || 0), 0);
     const count = filtered.length;
     const avg = count === 0 ? 0 : total / count;
-    const max = filtered.reduce(
-      (m, r) => Math.max(m, Number(r.amount || 0)),
-      0,
-    );
+    const max = filtered.reduce((m, r) => Math.max(m, Number(r.amount || 0)), 0);
 
     const byCat = new Map();
     for (const r of filtered) {
-      const c = (r.category || "ללא קטגוריה").trim() || "ללא קטגוריה";
+      const c = (r.category || "غير مصنف").trim() || "غير مصنف";
       byCat.set(c, (byCat.get(c) || 0) + Number(r.amount || 0));
     }
     const top = Array.from(byCat.entries()).sort((a, b) => b[1] - a[1])[0];
@@ -225,11 +222,11 @@ export default function Expenses() {
   async function saveExpense() {
     const amount = Number(expAmount);
     if (!expDate) {
-      toast("בחר תאריך הוצאה.", "warn");
+      toast("اختر تاريخ المصروف.", "warn");
       return;
     }
     if (!amount || amount <= 0) {
-      toast("הזן סכום תקין.", "warn");
+      toast("أدخل مبلغ صحيح.", "warn");
       return;
     }
 
@@ -241,24 +238,21 @@ export default function Expenses() {
     };
 
     if (editId) {
-      const up = await supabase
-        .from("expenses")
-        .update(payload)
-        .eq("id", editId);
+      const up = await supabase.from("expenses").update(payload).eq("id", editId);
       if (up.error) {
         setError(up.error);
-        toast("עדכון ההוצאה נכשל.", "danger");
+        toast("فشل تعديل المصروف.", "danger");
         return;
       }
-      toast("ההוצאה עודכנה.", "ok");
+      toast("تم تعديل المصروف.", "ok");
     } else {
       const ins = await supabase.from("expenses").insert([payload]);
       if (ins.error) {
         setError(ins.error);
-        toast("רישום ההוצאה נכשל.", "danger");
+        toast("فشل تسجيل المصروف.", "danger");
         return;
       }
-      toast("ההוצאה נרשמה.", "ok");
+      toast("تم تسجيل المصروف.", "ok");
     }
 
     setOpenAdd(false);
@@ -269,25 +263,25 @@ export default function Expenses() {
     const d = await supabase.from("expenses").delete().eq("id", id);
     if (d.error) {
       setError(d.error);
-      toast("מחיקת ההוצאה נכשלה.", "danger");
+      toast("فشل حذف المصروف.", "danger");
       return;
     }
-    toast("ההוצאה נמחקה.", "ok");
+    toast("تم حذف المصروف.", "ok");
     await load();
   }
 
   return (
     <div className="container page page--expenses">
       <PageHeader
-        title="הוצאות"
-        subtitle="רישום ומעקב אחר הוצאות תפעול"
+        title="المصاريف"
+        subtitle="تسجيل وتتبع مصاريف التشغيل"
         actions={
           <div className="toolbar">
             <button className="btn" onClick={load}>
-              רענן
+              تحديث
             </button>
             <button className="btn primary" onClick={openCreate}>
-              <Plus size={18} /> רישום הוצאה
+              <Plus size={18} /> تسجيل مصروف
             </button>
           </div>
         }
@@ -299,126 +293,98 @@ export default function Expenses() {
         <div className="card">
           <EmptyState
             icon={AlertTriangle}
-            title="טבלת הוצאות לא מוכנה"
-            description="הפעל את מיגרציית בסיס הנתונים פעם אחת, ואז ההוצאות יופיעו כאן."
+            title="جدول المصاريف غير جاهز"
+            description="شغّل ترحيل قاعدة البيانات مرة واحدة، وبعدها ستظهر المصاريف هنا."
           />
-        </div>
+</div>
       ) : (
         <>
           <div className="kpiGrid4" style={{ marginBottom: 14 }}>
             <KpiCard
               icon={Receipt}
-              label=""
+              label="إجمالي المصاريف"
               value={`${fmtMoney(stats.total)} ₪`}
-              hint={stats.count ? `عدد القيود: ${stats.count}` : "לא توجد قيود"}
+              hint={stats.count ? `عدد القيود: ${stats.count}` : "لا توجد قيود"}
               variant={stats.total === 0 ? "neutral" : "warn"}
               className="kpi--accent"
             />
 
             <KpiCard
               icon={Layers}
-              label="קטגוריה מובילה"
+              label="أعلى تصنيف"
               value={stats.topCat}
-              hint={
-                stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"
-              }
+              hint={stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"}
               variant={stats.topCat !== "—" ? "info" : "neutral"}
               className="kpi--accent"
             />
 
             <KpiCard
               icon={Banknote}
-              label="ממוצע הוצאה"
+              label="متوسط المصروف"
               value={`${fmtMoney(stats.avg)} ₪`}
-              hint={stats.count ? "לכל רשומה" : "—"}
+              hint={stats.count ? "لكل قيد" : "—"}
               variant={stats.avg === 0 ? "neutral" : "info"}
               className="kpi--accent"
             />
 
             <KpiCard
               icon={Banknote}
-              label="ההוצאה הגדולה ביותר"
+              label="أكبر مصروف"
               value={`${fmtMoney(stats.max)} ₪`}
-              hint={stats.max === 0 ? "—" : "ערך מקסימלי במסנן הנוכחי"}
+              hint={stats.max === 0 ? "—" : "أعلى قيمة داخل الفلتر الحالي"}
               variant={stats.max === 0 ? "neutral" : "danger"}
               className="kpi--accent"
             />
           </div>
 
           <div className="card" style={{ marginBottom: 12 }}>
-            <div
-              className="toolbar"
-              style={{ justifyContent: "space-between" }}
-            >
+            <div className="toolbar" style={{ justifyContent: "space-between" }}>
               <div className="filtersBar">
-                <Control
-                  icon={Search}
-                  className=""
-                  style={{ minWidth: 260, width: "auto", flex: "1 1 320px" }}
-                >
+                <Control icon={Search} className="" style={{ minWidth: 260, width: "auto", flex: "1 1 320px" }}>
                   <input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="חיפוש (תיאור / קטגוריה)"
+                    placeholder="بحث (وصف / تصنيف)"
                   />
                 </Control>
 
-                <Control
-                  icon={Filter}
-                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
-                >
+                <Control icon={Filter} style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}>
                   <ModernSelect
                     bare
                     value={cat}
                     onChange={setCat}
-                    placeholder="כל הקטגוריות"
+                    placeholder="كل التصنيفات"
                     options={[
-                      { value: "all", label: "כל הקטגוריות" },
+                      { value: "all", label: "كل التصنيفات" },
                       ...categories.map((c) => ({ value: c, label: c })),
                     ]}
                   />
                 </Control>
 
-                <Control
-                  icon={CalendarDays}
-                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
-                >
+                <Control icon={CalendarDays} style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}>
                   <ModernSelect
                     bare
                     value={rangePreset}
                     onChange={setRangePreset}
-                    placeholder="החודש"
+                    placeholder="هذا الشهر"
                     options={[
-                      { value: "this_month", label: "החודש" },
-                      { value: "30d", label: "30 הימים האחרונים" },
-                      { value: "custom", label: "מוקצה" },
-                      { value: "all", label: "הכול" },
+                      { value: "this_month", label: "هذا الشهر" },
+                      { value: "30d", label: "آخر 30 يوم" },
+                      { value: "custom", label: "مخصص" },
+                      { value: "all", label: "الكل" },
                     ]}
                   />
                 </Control>
 
                 {rangePreset === "custom" ? (
-                  <div
-                    className="filtersBar"
-                    style={{ justifyContent: "flex-start" }}
-                  >
+                  <div className="filtersBar" style={{ justifyContent: "flex-start" }}>
                     <div className="input">
-                      <input
-                        type="date"
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                      />
+                      <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
                     </div>
                     <div className="input">
-                      <input
-                        type="date"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                      />
+                      <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
                     </div>
-                    <button className="btn" onClick={load}>
-                      تطبيق
-                    </button>
+                    <button className="btn" onClick={load}>تطبيق</button>
                   </div>
                 ) : null}
               </div>
@@ -426,19 +392,17 @@ export default function Expenses() {
           </div>
 
           {loading ? (
-            <div className="card">טוען...</div>
+            <div className="card">جاري التحميل...</div>
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={Receipt}
-              title={rows.length === 0 ? "אין הוצאות עדיין" : "אין תוצאות"}
+              title={rows.length === 0 ? "لا توجد مصاريف بعد" : "لا توجد نتائج"}
               description={
                 rows.length === 0
-                  ? "התחל ברישום הוצאות תפעול (שכירות, נסיעות, ציוד, שיווק...)."
-                  : "נסה לשנות את המסננים או את החיפוש."
+                  ? "ابدأ بتسجيل مصاريف التشغيل (إيجار، مواصلات، أدوات، تسويق...)."
+                  : "جرّب تغيير الفلاتر أو البحث."
               }
-              actionLabel={
-                rows.length === 0 ? "רשום הוצאה ראשונה" : "רשום הוצאה"
-              }
+              actionLabel={rows.length === 0 ? "سجل أول مصروف" : "سجل مصروف"}
               onAction={openCreate}
             />
           ) : (
@@ -446,19 +410,17 @@ export default function Expenses() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>תאריך</th>
+                    <th>التاريخ</th>
                     <th>التصنيف</th>
                     <th>الوصف</th>
-                    <th>סכום</th>
+                    <th>المبلغ</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((r) => (
                     <tr key={r.id}>
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        {fmtDate(r.spent_on)}
-                      </td>
+                      <td style={{ whiteSpace: "nowrap" }}>{fmtDate(r.spent_on)}</td>
                       <td>{r.category || <span className="muted">—</span>}</td>
                       <td style={{ minWidth: 260 }}>
                         {r.description || <span className="muted">—</span>}
@@ -467,18 +429,15 @@ export default function Expenses() {
                         {fmtMoney(r.amount)} ₪
                       </td>
                       <td style={{ whiteSpace: "nowrap" }}>
-                        <div
-                          className="row"
-                          style={{ justifyContent: "flex-end" }}
-                        >
+                        <div className="row" style={{ justifyContent: "flex-end" }}>
                           <IconButton
-                            title="עריכה"
+                            title="تعديل"
                             onClick={() => openEdit(r)}
                             icon={Pencil}
                             variant="soft"
                           />
                           <IconButton
-                            title="מחיקה"
+                            title="حذف"
                             onClick={() => setConfirm({ open: true, id: r.id })}
                             icon={Trash2}
                             variant="danger"
@@ -496,13 +455,13 @@ export default function Expenses() {
 
       <Modal
         open={openAdd}
-        title={editId ? "עריכת הוצאה" : "רישום הוצאה"}
+        title={editId ? "تعديل مصروف" : "تسجيل مصروف"}
         onClose={() => setOpenAdd(false)}
       >
         <div className="card" style={{ border: "none", boxShadow: "none" }}>
           <div className="grid" style={{ marginBottom: 12 }}>
             <div style={{ gridColumn: "span 4" }}>
-              <div className="label">תאריך</div>
+              <div className="label">التاريخ</div>
               <div className="input">
                 <input
                   type="date"
@@ -513,7 +472,7 @@ export default function Expenses() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="label">סכום (₪)</div>
+              <div className="label">المبلغ (₪)</div>
               <div className="input">
                 <input
                   type="number"
@@ -521,7 +480,7 @@ export default function Expenses() {
                   step="0.01"
                   value={expAmount}
                   onChange={(e) => setExpAmount(e.target.value)}
-                  placeholder="לדוגמה: 120"
+                  placeholder="مثال: 120"
                 />
               </div>
             </div>
@@ -532,7 +491,7 @@ export default function Expenses() {
                 <input
                   value={expCategory}
                   onChange={(e) => setExpCategory(e.target.value)}
-                  placeholder="לדוגמה: שכירות / נסיעות / ציוד"
+                  placeholder="مثال: إيجار / مواصلات / أدوات"
                 />
               </div>
             </div>
@@ -543,7 +502,7 @@ export default function Expenses() {
                 <input
                   value={expDesc}
                   onChange={(e) => setExpDesc(e.target.value)}
-                  placeholder="פרטי הוצאה"
+                  placeholder="تفاصيل المصروف"
                 />
               </div>
             </div>
@@ -551,10 +510,10 @@ export default function Expenses() {
 
           <div className="row" style={{ gap: 10 }}>
             <button className="btn primary" onClick={saveExpense}>
-              <Plus size={18} /> שמור
+              <Plus size={18} /> حفظ
             </button>
             <button className="btn" onClick={() => setOpenAdd(false)}>
-              ביטול
+              إلغاء
             </button>
           </div>
         </div>
@@ -562,10 +521,10 @@ export default function Expenses() {
 
       <ConfirmDialog
         open={confirm.open}
-        title="מחיקת הוצאה"
-        message="האם אתה בטוח שברצונך למחוק הוצאה זו?"
-        confirmText="מחיקה"
-        cancelText="ביטול"
+        title="حذف مصروف"
+        message="هل أنت متأكد أنك تريد حذف هذا المصروف؟"
+        confirmText="حذف"
+        cancelText="إلغاء"
         danger
         onCancel={() => setConfirm({ open: false, id: null })}
         onConfirm={async () => {

@@ -154,7 +154,7 @@ export default function Courses() {
   }
 
   function kindLabel(k) {
-    return k === "workshop" ? "סדנה" : "קורס";
+    return k === "workshop" ? "ورشة" : "دورة";
   }
 
   function openCreate() {
@@ -191,7 +191,7 @@ export default function Courses() {
       };
 
       if (!payload.title) {
-        toast("כותרת הקורס נדרשת.", "warn");
+        toast("عنوان الدورة مطلوب.", "warn");
         setSaving(false);
         return;
       }
@@ -202,7 +202,7 @@ export default function Courses() {
           .update(payload)
           .eq("id", form.id);
         if (error) throw error;
-        toast("הקורס עודכן.", "ok");
+        toast("تم تعديل الدورة.", "ok");
       } else {
         const { data, error } = await supabase
           .from("courses")
@@ -210,7 +210,7 @@ export default function Courses() {
           .select("id")
           .single();
         if (error) throw error;
-        toast("הקורס נוצר.", "ok");
+        toast("تم إنشاء الدورة.", "ok");
         setOpenForm(false);
         await load();
         navigate(`/courses/${data.id}`);
@@ -222,7 +222,7 @@ export default function Courses() {
       await load();
     } catch (e2) {
       setError(e2);
-      toast("שמירה נכשלה.", "danger");
+      toast("فشل الحفظ.", "danger");
     } finally {
       setSaving(false);
     }
@@ -233,22 +233,22 @@ export default function Courses() {
     const { error } = await supabase.from("courses").delete().eq("id", id);
     if (error) {
       setError(error);
-      toast("מחיקה נכשלה.", "danger");
+      toast("فشل الحذف.", "danger");
       return;
     }
-    toast("הקורס נמחק.", "ok");
+    toast("تم حذف الدورة.", "ok");
     await load();
   }
 
   return (
     <div className="container page page--courses">
       <PageHeader
-        title="קורסים וסדנאות"
-        subtitle="תבניות קורסים/סדנאות — פתח תבנית לניהול תשלומים ושיעורים"
+        title="الدورات والورشات"
+        subtitle="قوالب الدورات/الورشات — افتح القالب لإدارة الدفعات والحصص"
         actions={
           <div className="pageHeader__actions">
-            <button className="btn soft" onClick={load} title="רענן">
-              רענן
+            <button className="btn soft" onClick={load} title="تحديث">
+              تحديث
             </button>
           </div>
         }
@@ -257,13 +257,13 @@ export default function Courses() {
       {/* Filters */}
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="sectionRow">
-          <div className="sectionLabel">فלאتر</div>
+          <div className="sectionLabel">فلاتر</div>
         </div>
 
         <div className="filtersBar">
           <input
             className="input filtersBar__search"
-            placeholder="חיפוש לפי כותרת..."
+            placeholder="بحث بالعنوان..."
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -274,9 +274,9 @@ export default function Courses() {
             onChange={setKindFilter}
             menuWidth="trigger"
             options={[
-              { value: "all", label: "כל הסוגים" },
-              { value: "course", label: "קורס" },
-              { value: "workshop", label: "סדנה" },
+              { value: "all", label: "كل الأنواع" },
+              { value: "course", label: "دورة" },
+              { value: "workshop", label: "ورشة" },
             ]}
 />
 
@@ -286,9 +286,9 @@ export default function Courses() {
             onChange={setActiveFilter}
             menuWidth="trigger"
             options={[
-              { value: "all", label: "כל המצבים" },
-              { value: "active", label: "פעיל" },
-              { value: "inactive", label: "לא פעיל" },
+              { value: "all", label: "كل الحالات" },
+              { value: "active", label: "فعّالة" },
+              { value: "inactive", label: "غير فعّالة" },
             ]}
 />
 
@@ -298,14 +298,14 @@ export default function Courses() {
             onChange={setSortBy}
             menuWidth="trigger"
             options={[
-              { value: "updated_desc", label: "העדכני ביותר" },
-              { value: "title_asc", label: "כותרת (א-ת)" },
-              { value: "participants_desc", label: "הכי הרבה משתתפים" },
+              { value: "updated_desc", label: "الأحدث تحديثًا" },
+              { value: "title_asc", label: "العنوان (أ-ي)" },
+              { value: "participants_desc", label: "الأكثر مشتركين" },
             ]}
 />
 
           <button className="btn primary filtersBar__btn" onClick={openCreate}>
-            <Plus size={18} /> הוספה
+            <Plus size={18} /> إضافة
           </button>
         </div>
       </div>
@@ -313,9 +313,9 @@ export default function Courses() {
       <ErrorBanner error={error} />
 
       {loading ? (
-        <div className="card">טוען...</div>
+        <div className="card">جاري التحميل...</div>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={BookOpen} title="אין קורסים עדיין" description="צור קורס/סדנה ראשון כדי להתחיל להוסיף מחזורים ושיעורים." actionLabel="קורס חדש" onAction={openCreate} />
+        <EmptyState icon={BookOpen} title="لا توجد دورات بعد" description="أنشئ أول دورة/ورشة لتبدأ بإضافة دفعات وحصص." actionLabel="دورة جديدة" onAction={openCreate} />
       ) : (
         <div className="cardsGrid">
           {filtered.map((r) => {
@@ -343,19 +343,19 @@ export default function Courses() {
                       {kindLabel(r.kind)}
                     </span>
                     {r.is_active ? (
-                      <span className="badge ok">פעיל</span>
+                      <span className="badge ok">فعّالة</span>
                     ) : (
-                      <span className="badge danger">לא פעיל</span>
+                      <span className="badge danger">غير فعّالة</span>
                     )}
                   </div>
 
-                  <span className="muted" style={{ fontSize: 12 }}>اضغط لפתח</span>
+                  <span className="muted" style={{ fontSize: 12 }}>اضغط لفتح</span>
                 </div>
 
                 <div style={{ marginTop: 10 }}>
                   <div className="cardTitle">{r.title}</div>
                   <div className="muted" style={{ marginTop: 6 }}>
-                    מחזורים פעיל: <b>{Number(m.activeRuns ?? 0)}</b> · השיעור הקרוב: <b>{fmtDT(m.nextSessionAt)}</b>
+                    دفعات فعّالة: <b>{Number(m.activeRuns ?? 0)}</b> · أقرب حصة: <b>{fmtDT(m.nextSessionAt)}</b>
                   </div>
                 </div>
 
@@ -368,17 +368,17 @@ export default function Courses() {
                   </div>
                   <div className="stat">
                     <div className="muted">
-                      ₪ الמחיר اלאفتراضي
+                      ₪ السعر الافتراضي
                     </div>
                     <b>{Number(r.default_price ?? 0).toFixed(2)}</b>
                   </div>
                   <div className="stat">
-                    <div className="muted">משתתפים (تقريبي)</div>
+                    <div className="muted">المشاركين (تقريبي)</div>
                     <b>{Number(m.participants ?? 0)}</b>
                   </div>
                   <div className="stat">
                     <div className="muted">
-                      <CalendarClock size={14} /> مجموع שיעורים (כל התשלומים)
+                      <CalendarClock size={14} /> مجموع الحصص (كل الدفعات)
                     </div>
                     <b>{Number(m.sessions ?? 0)}</b>
                   </div>
@@ -392,9 +392,9 @@ export default function Courses() {
                       e.stopPropagation();
                       openEdit(r);
                     }}
-                    title="עריכה"
+                    title="تعديل"
                   >
-                    עריכה
+                    تعديل
                   </IconButton>
                   <IconButton
                     variant="danger"
@@ -403,9 +403,9 @@ export default function Courses() {
                       e.stopPropagation();
                       setConfirmDel({ open: true, id: r.id, title: r.title });
                     }}
-                    title="מחיקה"
+                    title="حذف"
                   >
-                    מחיקה
+                    حذف
                   </IconButton>
                 </div>
               </div>
@@ -416,7 +416,7 @@ export default function Courses() {
 
       <Modal
         open={openForm}
-        title={form.id ? "עריכה קורס" : "צור קורס"}
+        title={form.id ? "تعديل دورة" : "إنشاء دورة"}
         onClose={() => {
           setOpenForm(false);
           setForm(emptyForm);
@@ -441,8 +441,8 @@ export default function Courses() {
               onChange={(v) => setForm((p) => ({ ...p, kind: v }))}
               menuWidth="trigger"
               options={[
-                { value: "course", label: "קורס" },
-                { value: "workshop", label: "סדנה" },
+                { value: "course", label: "دورة" },
+                { value: "workshop", label: "ورشة" },
               ]}
 />
           </div>
@@ -461,7 +461,7 @@ export default function Courses() {
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">الמחיר اלאفتراضي</div>
+            <div className="muted">السعر الافتراضي</div>
             <input
               className="input"
               type="number"
@@ -475,20 +475,20 @@ export default function Courses() {
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">פעיל؟</div>
+            <div className="muted">فعّالة؟</div>
             <ModernSelect
               value={form.is_active ? "1" : "0"}
               onChange={(v) => setForm((p) => ({ ...p, is_active: v === "1" }))}
               menuWidth="trigger"
               options={[
-                { value: "1", label: "פעיל" },
-                { value: "0", label: "לא פעיל" },
+                { value: "1", label: "فعّالة" },
+                { value: "0", label: "غير فعّالة" },
               ]}
 />
           </div>
 
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">הערות</div>
+            <div className="muted">ملاحظات</div>
             <textarea
               className="input"
               rows={3}
@@ -501,7 +501,7 @@ export default function Courses() {
 
           <div className="row" style={{ gridColumn: "span 12" }}>
             <button className="btn primary" disabled={saving}>
-              {saving ? "שומר..." : "שמור"}
+              {saving ? "جاري الحفظ..." : "حفظ"}
             </button>
             <button
               type="button"
@@ -511,7 +511,7 @@ export default function Courses() {
                 setForm(emptyForm);
               }}
             >
-              ביטול
+              إلغاء
             </button>
           </div>
         </form>
@@ -519,10 +519,10 @@ export default function Courses() {
 
       <ConfirmDialog
         open={confirmDel.open}
-        title="מחיקה קורס"
-        message={`האם ברצונך מחיקה קורס: ${confirmDel.title} ؟ (سيتم מחיקה שיעורים والتسجيלאت وתשלומים المرتبطة)`}
-        confirmText="מחיקה"
-        cancelText="ביטול"
+        title="حذف دورة"
+        message={`هل تريد حذف الدورة: ${confirmDel.title} ؟ (سيتم حذف الحصص والتسجيلات والدفعات المرتبطة)`}
+        confirmText="حذف"
+        cancelText="إلغاء"
         danger
         onCancel={() => setConfirmDel({ open: false, id: null, title: "" })}
         onConfirm={async () => {

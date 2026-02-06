@@ -62,12 +62,12 @@ export default function ConfigMissing() {
 
         <ol style={{ margin: "16px 0 0", paddingRight: 18, color: "#334155", lineHeight: 1.9 }}>
           <li>Vercel → Project → Settings → Environment Variables</li>
-          <li>أضف القيم الثלאثة أعלאه (Environment: Production)</li>
+          <li>أضف القيم الثلاثة أعلاه (Environment: Production)</li>
           <li>Deployments → Redeploy (بدون cache)</li>
         </ol>
 
         <div style={{ marginTop: 14, color: "#64748b", fontSize: 13 }}>
-          مלאحظة: مفتاح <b>service role</b> مמوع تنحطه على الواجهة.
+          ملاحظة: مفتاح <b>service role</b> ممنوع تنحطه على الواجهة.
         </div>
       </div>
     </div>

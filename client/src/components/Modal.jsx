@@ -32,7 +32,7 @@ export default function Modal({ open, title, children, onClose }) {
         <div className="modalHeader">
           <div className="h1">{title}</div>
           <button className="btn" onClick={onClose}>
-            סגור
+            إغلاق
           </button>
         </div>
         <hr className="sep" />

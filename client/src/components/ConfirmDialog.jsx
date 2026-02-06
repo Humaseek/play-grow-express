@@ -3,10 +3,10 @@ import Modal from "./Modal";
 
 export default function ConfirmDialog({
   open,
-  title = "אישור",
-  message = "האם אתה בטוח?",
-  confirmText = "כן",
-  cancelText = "ביטול",
+  title = "تأكيد",
+  message = "هل أنت متأكد؟",
+  confirmText = "نعم",
+  cancelText = "إلغاء",
   danger = true,
   onConfirm,
   onCancel,

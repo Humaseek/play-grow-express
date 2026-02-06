@@ -55,7 +55,7 @@ export default function App() {
       <div
         style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}
       >
-        <div style={{ color: "#64748b", fontWeight: 800 }}>טוען...</div>
+        <div style={{ color: "#64748b", fontWeight: 800 }}>تحميل...</div>
       </div>
     );
   }

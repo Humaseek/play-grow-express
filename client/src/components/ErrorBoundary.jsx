@@ -19,9 +19,9 @@ export default class ErrorBoundary extends React.Component {
       return (
         <div className="container" style={{ paddingTop: 24 }}>
           <div className="card">
-            <div className="h1">אירעה שגיאה בממשק</div>
+            <div className="h1">صار خطأ بالواجهة</div>
             <div className="muted" style={{ marginTop: 8 }}>
-              פתח את ה‑Console ושלח לי את הודעת השגיאה.
+              افتح Console وابعتلي رسالة الخطأ.
             </div>
             <pre
               style={{

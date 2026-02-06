@@ -100,10 +100,10 @@ function clamp(n, a, b) {
 }
 
 function badgePayment(status) {
-  if (status === "paid") return <Badge variant="ok">שולם</Badge>;
-  if (status === "partial") return <Badge variant="warn">חלקי</Badge>;
-  if (status === "unpaid") return <Badge variant="danger">לא משלם</Badge>;
-  return <Badge variant="info">חינם</Badge>;
+  if (status === "paid") return <Badge variant="ok">مدفوع</Badge>;
+  if (status === "partial") return <Badge variant="warn">جزئي</Badge>;
+  if (status === "unpaid") return <Badge variant="danger">غير دافع</Badge>;
+  return <Badge variant="info">مجاني</Badge>;
 }
 
 function rowClassByPayment(status) {
@@ -361,7 +361,7 @@ export default function RunDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId]);
 
-  // ✅ إذا جدول משתתפים اتحدث (بعد מחזור/עריכה) نحدّث manageP حتى ما يصير stale
+  // ✅ إذا جدول المشاركين اتحدث (بعد دفعة/تعديل) نحدّث manageP حتى ما يصير stale
   useEffect(() => {
     if (!openManage || !manageP) return;
     const updated = participants.find(
@@ -432,7 +432,7 @@ export default function RunDetails() {
     return list;
   }, [participants, q, paymentFilter, sortBy]);
 
-  // ✅ כרטיס הילד: نجيب بيانات التواصل מ children
+  // ✅ بطاقة الطفل: نجيب بيانات التواصل من children
   const manageChild = useMemo(() => {
     if (!manageP) return null;
     return (
@@ -594,7 +594,7 @@ export default function RunDetails() {
   async function purchaseAndEnrollSingle() {
     if (!summary) return;
     if (!selectedChildId) {
-      toast("בחר ילד.", "warn");
+      toast("اختر طفل.", "warn");
       return;
     }
 
@@ -622,19 +622,19 @@ export default function RunDetails() {
             "no existing package with remaining sessions",
           );
 
-          // ✅ لو Auto → כןل fallback אוטומטי لـ buy_new
+          // ✅ لو Auto → نعمل fallback تلقائي لـ buy_new
           if (enrollMode === "auto" && isNoPkg) {
             setEnrollMode("buy_new");
-            toast("אין יתרת שיעורים קודמת — נרכוש שיעורים חדשים.", "warn");
+            toast("ما في رصيد حصص سابق — رح نشتري حصص جديدة.", "warn");
             // نكمّل للـ buy_new تحت
           } else {
             // ✅ لو المستخدم اختار use_existing يدويًا → نوقف ونخليه يغيّر
-            toast("ما ב יתרה שיעורים سابق لזה הילד.", "warn");
+            toast("ما في رصيد حصص سابق لهذا الطفل.", "warn");
             setError(rpc.error);
             return;
           }
         } else {
-          toast("ההרשמה בוצעה מהיתרה.", "ok");
+          toast("تم التسجيل من الرصيد.", "ok");
           setOpenEnroll(false);
           await loadFixed();
           setTab("participants");
@@ -645,7 +645,7 @@ export default function RunDetails() {
       // buy_new
       const sessionsToBuy = Number(buySessions);
       if (!Number.isFinite(sessionsToBuy) || sessionsToBuy <= 0) {
-        toast("מספר השיעורים חייב להיות גדול מ‑0.", "warn");
+        toast("عدد الحصص لازم يكون أكبر من 0.", "warn");
         return;
       }
 
@@ -660,17 +660,17 @@ export default function RunDetails() {
 
       if (rpc2.error) throw rpc2.error;
 
-      toast("הילד נרשם/נרכש.", "ok");
+      toast("تم شراء/تسجيل الطفل.", "ok");
       setOpenEnroll(false);
       await loadFixed();
       setTab("participants");
     } catch (e) {
       const msg = String(e?.message || e || "");
-      // ✅ إذا حاول يسجل طفل موجود بنفس מחזור
+      // ✅ إذا حاول يسجل طفل موجود بنفس الدفعة
       if (msg.includes("uq_run_child") || msg.includes("duplicate key value")) {
-        toast("הילד כבר רשום במחזור הזה.", "warn");
+        toast("الطفل مسجّل بالفعل في هذه الدفعة.", "warn");
 
-        // اפתח כרטיס الניהול مباشرة (إذا موجود ضמ participants)
+        // افتح بطاقة الإدارة مباشرة (إذا موجود ضمن participants)
         const existing = participants.find(
           (x) => Number(x.child_id) === Number(selectedChildId),
         );
@@ -691,13 +691,13 @@ export default function RunDetails() {
   async function bulkPurchaseAndEnroll() {
     if (!summary) return;
     if (bulkSelectedCount === 0) {
-      toast("בחר ילדים קודם.", "warn");
+      toast("اختَر أطفال أولاً.", "warn");
       return;
     }
 
     const sessionsToBuy = Number(bulkSessions);
     if (!Number.isFinite(sessionsToBuy) || sessionsToBuy <= 0) {
-      toast("מספר השיעורים חייב להיות גדול מ‑0.", "warn");
+      toast("عدد الحصص لازم يكون أكبر من 0.", "warn");
       return;
     }
 
@@ -750,7 +750,7 @@ export default function RunDetails() {
         if (rpc2.error) throw rpc2.error;
       }
 
-      toast(`تمت הוספה ${bulkSelectedCount} طفل/ילדים.`, "ok");
+      toast(`تمت إضافة ${bulkSelectedCount} طفل/أطفال.`, "ok");
 
       setOpenBulk(false);
       setBulkQ("");
@@ -764,7 +764,7 @@ export default function RunDetails() {
       setTab("participants");
     } catch (e) {
       setError(e);
-      toast("הוספה קבוצתית נכשלה.", "danger");
+      toast("فشل الإضافة الجماعية.", "danger");
     } finally {
       setBulkSaving(false);
     }
@@ -780,14 +780,14 @@ export default function RunDetails() {
 
       if (u.error) throw u.error;
 
-      toast("מחיר החבילה עודכן.", "ok");
+      toast("تم تعديل سعر الباقة.", "ok");
       setOpenPrice(false);
       setPricePackageId(null);
       setPriceValue("");
       await loadFixed();
     } catch (e) {
       setError(e);
-      toast("עדכון המחיר נכשל.", "danger");
+      toast("فشل تعديل السعر.", "danger");
     }
   }
 
@@ -799,10 +799,10 @@ export default function RunDetails() {
       .eq("id", enrollmentId);
     if (u.error) {
       setError(u.error);
-      toast("עדכון סטטוס ההרשמה נכשל.", "danger");
+      toast("فشل تحديث حالة التسجيل.", "danger");
       return;
     }
-    toast("סטטוס ההרשמה עודכן.", "ok");
+    toast("تم تحديث حالة التسجيل.", "ok");
     await loadFixed();
   }
 
@@ -814,16 +814,16 @@ export default function RunDetails() {
       .eq("id", enrollmentId);
     if (d.error) {
       setError(d.error);
-      toast("מחיקת ההרשמה נכשלה.", "danger");
+      toast("فشل حذف التسجيل.", "danger");
       return;
     }
-    toast("ההרשמה למחזור הזה נמחקה.", "ok");
+    toast("تم حذف التسجيل من هذه الدفعة.", "ok");
     await loadFixed();
   }
 
   async function generateSessions() {
     if (!firstStart) {
-      toast("בחר שיעור ראשון.", "warn");
+      toast("اختر أول حصة.", "warn");
       return;
     }
 
@@ -840,12 +840,12 @@ export default function RunDetails() {
       });
       if (rpc.error) throw rpc.error;
 
-      toast("השיעורים הופקו.", "ok");
+      toast("تم توليد الحصص.", "ok");
       await loadFixed();
       setTab("sessions");
     } catch (e) {
       setError(e);
-      toast("הפקת השיעורים נכשלה.", "danger");
+      toast("فشل توليد الحصص.", "danger");
     } finally {
       setGenLoading(false);
     }
@@ -879,7 +879,7 @@ export default function RunDetails() {
   async function saveSession() {
     if (!summary) return;
     if (!sessionForm.start_at || !sessionForm.end_at) {
-      toast("קבע שעת התחלה וסיום.", "warn");
+      toast("حدد وقت البداية والنهاية.", "warn");
       return;
     }
 
@@ -900,11 +900,11 @@ export default function RunDetails() {
           .update(payload)
           .eq("id", sessionForm.id);
         if (u.error) throw u.error;
-        toast("השיעור עודכן.", "ok");
+        toast("تم تعديل الحصة.", "ok");
       } else {
         const ins = await supabase.from("course_sessions").insert([payload]);
         if (ins.error) throw ins.error;
-        toast("השיעור נוסף.", "ok");
+        toast("تم إضافة حصة.", "ok");
       }
 
       setOpenSession(false);
@@ -912,7 +912,7 @@ export default function RunDetails() {
       setTab("sessions");
     } catch (e) {
       setError(e);
-      toast("שמירת השיעור נכשלה.", "danger");
+      toast("فشل حفظ الحصة.", "danger");
     } finally {
       setSessionSaving(false);
     }
@@ -925,10 +925,10 @@ export default function RunDetails() {
       .eq("id", sessionId);
     if (u.error) {
       setError(u.error);
-      toast("עדכון סטטוס השיעור נכשל.", "danger");
+      toast("فشل تحديث حالة الحصة.", "danger");
       return;
     }
-    toast("סטטוס השיעור עודכן.", "ok");
+    toast("تم تحديث حالة الحصة.", "ok");
     await loadFixed();
   }
 
@@ -939,10 +939,10 @@ export default function RunDetails() {
       .eq("id", sessionId);
     if (d.error) {
       setError(d.error);
-      toast("מחיקת השיעור נכשלה.", "danger");
+      toast("فشل حذف الحصة.", "danger");
       return;
     }
-    toast("השיעור נמחק.", "ok");
+    toast("تم حذف الحصة.", "ok");
     await loadFixed();
   }
 
@@ -974,7 +974,7 @@ export default function RunDetails() {
 
       if (ins.error) throw ins.error;
 
-      toast("המחזור נרשם.", "ok");
+      toast("تم تسجيل الدفعة.", "ok");
       setOpenPay(false);
       setPayEnrollmentId("");
       setPayAmount("");
@@ -984,7 +984,7 @@ export default function RunDetails() {
       setTab("participants");
     } catch (e) {
       setError(e);
-      toast("רישום המחזור נכשל.", "danger");
+      toast("فشل تسجيل الدفعة.", "danger");
     } finally {
       setPaySaving(false);
     }
@@ -994,10 +994,10 @@ export default function RunDetails() {
     const d = await supabase.from("payments").delete().eq("id", paymentId);
     if (d.error) {
       setError(d.error);
-      toast("מחיקת המחזור נכשלה.", "danger");
+      toast("فشل حذف الدفعة.", "danger");
       return;
     }
-    toast("המחזור נמחק.", "ok");
+    toast("تم حذف الدفعة.", "ok");
     await loadFixed();
   }
 
@@ -1048,7 +1048,7 @@ export default function RunDetails() {
     setOpenAdjust(true);
   }
 
-  // ✅ עריכה سريع لיתרת שיעורים (+/-) بدون פתח مودال الشراء
+  // ✅ تعديل سريع لرصيد الحصص (+/-) بدون فتح مودال الشراء
   async function doAdjustPackageTotal(packageId, delta) {
     try {
       setError(null);
@@ -1060,41 +1060,41 @@ export default function RunDetails() {
 
       toast(
         delta > 0
-          ? `تمت הוספה ${Math.abs(delta)} שיעור.`
-          : `تم خصم ${Math.abs(delta)} שיעור.`,
+          ? `تمت إضافة ${Math.abs(delta)} حصة.`
+          : `تم خصم ${Math.abs(delta)} حصة.`,
         "ok",
       );
 
       await loadFixed();
     } catch (e) {
       setError(e);
-      toast("עדכון השיעורים נכשל.", "danger");
+      toast("فشل تعديل الحصص.", "danger");
     }
   }
 
   function quickAdjustFromManage(delta) {
     if (!manageP) return;
 
-    // إذا ما ב باقة: الהוספה تكون عبر "شراء שיעורים" وليس עריכה مباشر
+    // إذا ما في باقة: الإضافة تكون عبر "شراء حصص" وليس تعديل مباشر
     if (!manageP.package_id) {
       if (delta > 0)
-        toast("לא יש יתרה سابق — استخدم شراء שיעורים אולאً.", "warn");
-      else toast("אין יתרה להורדה.", "warn");
+        toast("لا يوجد رصيد سابق — استخدم شراء حصص أولاً.", "warn");
+      else toast("لا يوجد رصيد لخصمه.", "warn");
       return;
     }
 
-    // خصم: نطلب אישור
+    // خصم: نطلب تأكيد
     if (delta < 0) {
       setConfirm({
         open: true,
         type: "pkgDelta",
         id: { packageId: manageP.package_id, delta },
-        text: `خصم ${Math.abs(delta)} שיעור מ יתרה ${manageP.child_name}؟`,
+        text: `خصم ${Math.abs(delta)} حصة من رصيد ${manageP.child_name}؟`,
       });
       return;
     }
 
-    // הוספה سريعة
+    // إضافة سريعة
     doAdjustPackageTotal(manageP.package_id, delta);
   }
 
@@ -1121,13 +1121,13 @@ export default function RunDetails() {
         if (rpc2.error) throw rpc2.error;
       }
 
-      toast("השיעורים עודכנו בהצלחה.", "ok");
+      toast("تم تعديل الحصص بنجاح.", "ok");
       setOpenAdjust(false);
       await loadFixed();
       setTab("participants");
     } catch (e) {
       setError(e);
-      toast("עדכון השיעורים נכשל.", "danger");
+      toast("فشل تعديل الحصص.", "danger");
     } finally {
       setAdjSaving(false);
     }
@@ -1138,7 +1138,7 @@ export default function RunDetails() {
       <div className="page page--runs">
         <div className="container runDetails" dir="rtl">
           
-          <div className="card">טוען...</div>
+          <div className="card">جاري التحميل...</div>
         </div>
       </div>
     );
@@ -1149,7 +1149,7 @@ export default function RunDetails() {
       <div className="page page--runs">
         <div className="container runDetails" dir="rtl">
           
-          <div className="card">لم يتم العثور على מחזור.</div>
+          <div className="card">لم يتم العثور على الدفعة.</div>
         </div>
       </div>
     );
@@ -1169,19 +1169,19 @@ export default function RunDetails() {
           </div>
 
           <div className="statRow" style={{ marginTop: 10 }}>
-            <span className="statChip" title="משתתפים">
+            <span className="statChip" title="المشاركين">
               <Users size={16} className="ico" />
-              <span className="statLabel">משתתפים</span>
+              <span className="statLabel">مشاركين</span>
               <b className="ltrIso">{fmtNum(totals.activeCount)}</b>
             </span>
-            <span className="statChip" title="שיעורים">
+            <span className="statChip" title="الحصص">
               <CalendarDays size={16} className="ico" />
-              <span className="statLabel">שיעורים</span>
+              <span className="statLabel">حصص</span>
               <b className="ltrIso">{fmtNum(summary.sessions_count)}</b>
             </span>
-            <span className="statChip" title="אחוז תשלום">
+            <span className="statChip" title="نسبة الدفع">
               <CreditCard size={16} className="ico" />
-              <span className="statLabel">אחוז תשלום</span>
+              <span className="statLabel">نسبة الدفع</span>
               <b className="ltrIso">{fmtNum((totals.paidRatio * 100).toFixed(0))}%</b>
             </span>
           </div>
@@ -1193,7 +1193,7 @@ export default function RunDetails() {
             className="btn"
             onClick={() => navigate(`/courses/${summary.template_id}`)}
           >
-            חזרה للقالب
+            رجوع للقالب
           </button>
 
           {nextSession && (
@@ -1202,12 +1202,12 @@ export default function RunDetails() {
               className="btn primary"
               onClick={() => navigate(`/sessions/${nextSession.id}/attendance`)}
             >
-              حضور השיעור הקרוב
+              حضور أقرب حصة
             </button>
           )}
 
           <button type="button" className="btn" onClick={loadFixed}>
-            רענן
+            تحديث
           </button>
         </div>
       </div>
@@ -1221,7 +1221,7 @@ export default function RunDetails() {
               <Tag />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div className="runLabel">קורס</div>
+              <div className="runLabel">الدورة</div>
               <div className="runValue">{summary.label || "—"}</div>
             </div>
           </div>
@@ -1231,7 +1231,7 @@ export default function RunDetails() {
               <Clock />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div className="runLabel">היום / الساعة</div>
+              <div className="runLabel">اليوم / الساعة</div>
               <div className="runValue">
                 {scheduleInfo.weekday}{" "}
                 <span className="ltrIso">{scheduleInfo.timeRange}</span>
@@ -1244,7 +1244,7 @@ export default function RunDetails() {
               <CalendarClock />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div className="runLabel">השיעור הקרוב</div>
+              <div className="runLabel">أقرب حصة</div>
               <div className="runValue">
                 <span className="ltrIso">{fmtDT(summary.next_session_at)}</span>
               </div>
@@ -1256,7 +1256,7 @@ export default function RunDetails() {
               <CalendarPlus />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div className="runLabel">שיעורים קרובים</div>
+              <div className="runLabel">حصص قادمة</div>
               <div className="runValue">
                 <span className="ltrIso">{fmtNum(runFutureSessionsCount)}</span>
               </div>
@@ -1267,19 +1267,19 @@ export default function RunDetails() {
 
       <div className="grid" style={{ marginBottom: 12 }}>
         <div className="card" style={{ gridColumn: "span 4" }}>
-          <div className="muted">סה"כ قيمة الباقات</div>
+          <div className="muted">إجمالي قيمة الباقات</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>
             <span className="ltrIso">{fmtILS(totals.agreed,2)}</span>
           </div>
         </div>
         <div className="card" style={{ gridColumn: "span 4" }}>
-          <div className="muted">סה"כ الשולם</div>
+          <div className="muted">إجمالي المدفوع</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>
             <span className="ltrIso">{fmtILS(totals.paid,2)}</span>
           </div>
         </div>
         <div className="card" style={{ gridColumn: "span 4" }}>
-          <div className="muted">סה"כ المتبقي</div>
+          <div className="muted">إجمالي المتبقي</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>
             {totals.balance.toFixed(2)}
           </div>
@@ -1292,21 +1292,21 @@ export default function RunDetails() {
           className={`tab ${tab === "participants" ? "active" : ""}`}
           onClick={() => setTab("participants")}
         >
-          ילדים
+          الأطفال
         </button>
         <button
           type="button"
           className={`tab ${tab === "sessions" ? "active" : ""}`}
           onClick={() => setTab("sessions")}
         >
-          שיעורים
+          الحصص
         </button>
         <button
           type="button"
           className={`tab ${tab === "payments" ? "active" : ""}`}
           onClick={() => setTab("payments")}
         >
-          תשלומים
+          الدفعات
         </button>
       </div>
 
@@ -1315,9 +1315,9 @@ export default function RunDetails() {
         <div className="card">
           <div className="pToolbar">
             <div className="pTitle">
-              <div className="h1">ילדים المسجلين</div>
+              <div className="h1">الأطفال المسجلين</div>
               <div className="pTitleHint muted">
-                اضغط على الكرت لפתח الניהול — والأزرار بالأسفل لלאختصارات.
+                اضغط على الكرت لفتح الإدارة — والأزرار بالأسفل للاختصارات.
               </div>
             </div>
 
@@ -1330,13 +1330,13 @@ export default function RunDetails() {
                   className="input pSearch"
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="חיפוש לפי שם הילד…"
+                  placeholder="بحث باسم الطفل…"
                 />
                 {q ? (
                   <span className="pClearBtn">
                     <IconButton
                       icon={<XCircle size={16} className="ico" />}
-                      title="נקה חיפוש"
+                      title="مسح البحث"
                       size="sm"
                       variant="ghost"
                       onClick={() => setQ("")}
@@ -1351,11 +1351,11 @@ export default function RunDetails() {
                 onChange={setPaymentFilter}
                 menuWidth="trigger"
                 options={[
-                  { value: "all", label: "כל המצבים" },
-                  { value: "paid", label: "שולם" },
-                  { value: "partial", label: "חלקי" },
-                  { value: "unpaid", label: "לא משלם" },
-                  { value: "free", label: "חינם" },
+                  { value: "all", label: "كل الحالات" },
+                  { value: "paid", label: "مدفوع" },
+                  { value: "partial", label: "جزئي" },
+                  { value: "unpaid", label: "غير دافع" },
+                  { value: "free", label: "مجاني" },
                 ]}
 />
 
@@ -1365,10 +1365,10 @@ export default function RunDetails() {
                 onChange={setSortBy}
                 menuWidth="trigger"
                 options={[
-                  { value: "balance_desc", label: "מיון: יתרה (גבוה לנמוך)" },
-                  { value: "balance_asc", label: "מיון: יתרה (נמוך לגבוה)" },
-                  { value: "name_asc", label: "מיון: שם (א-ת)" },
-                  { value: "name_desc", label: "מיון: שם (ת-א)" },
+                  { value: "balance_desc", label: "ترتيب: المتبقي (الأعلى)" },
+                  { value: "balance_asc", label: "ترتيب: المتبقي (الأقل)" },
+                  { value: "name_asc", label: "ترتيب: الاسم (أ-ي)" },
+                  { value: "name_desc", label: "ترتيب: الاسم (ي-أ)" },
                 ]}
 />
 
@@ -1400,7 +1400,7 @@ export default function RunDetails() {
           <hr className="sep" />
 
           {participantsFiltered.length === 0 ? (
-            <div className="muted">לא יש نتائج.</div>
+            <div className="muted">لا يوجد نتائج.</div>
           ) : (
             <div className="pGrid">
               {participantsFiltered.map((p) => {
@@ -1445,11 +1445,11 @@ export default function RunDetails() {
                       <div style={{ minWidth: 0 }}>
                         <div className="pName">{p.child_name}</div>
                         <div className="pMeta">
-                          <span className="metaItem" title="כיתה/רמה">
+                          <span className="metaItem" title="الصف/المستوى">
                             <GraduationCap size={14} className="ico" />
                             <span>{p.class ?? "-"}</span>
                           </span>
-                          <span className="metaItem" title="גיל">
+                          <span className="metaItem" title="العمر">
                             <Cake size={14} className="ico" />
                             <span className="ltrIso">
                               {p.age == null ? "—" : fmtNum(p.age)}
@@ -1462,7 +1462,7 @@ export default function RunDetails() {
                     </div>
 
                     <div className="pMain">
-                      <div className="pBig" title="יתרה">
+                      <div className="pBig" title="المبلغ المتبقي">
                         <div className="pBigTop">
                           <div className="pBigValue" dir="ltr">
                             {fmtILS(balance)}
@@ -1480,19 +1480,19 @@ export default function RunDetails() {
                         <div className="muted" style={{ fontSize: 12 }}>
                           <CreditCard size={14} className="ico" />{" "}
                           <span dir="ltr">{fmtILS(paid)}</span>{" "}
-                          <span style={{ opacity: 0.6 }}>מ</span>{" "}
+                          <span style={{ opacity: 0.6 }}>من</span>{" "}
                           <span dir="ltr">{fmtILS(agreed)}</span>
                         </div>
                       </div>
 
-                      <div className="pBig" title="יתרת שיעורים">
+                      <div className="pBig" title="رصيد الحصص">
                         <div className="pBigTop">
                           <div className="pBigValue" dir="ltr">
                             {fmtNum(pkgRemain)}
                           </div>
                           <div className="pBigLabel">
                             <Ticket size={14} className="ico" />{" "}
-                            <span>יתרה שיעורים</span>
+                            <span>رصيد حصص</span>
                           </div>
                         </div>
                         <div className="muted" style={{ fontSize: 12 }}>
@@ -1504,11 +1504,11 @@ export default function RunDetails() {
                         </div>
 
                         <div className="muted" style={{ fontSize: 12 }}>
-                          <CalendarDays size={14} className="ico" /> נוכח{" "}
+                          <CalendarDays size={14} className="ico" /> حضر{" "}
                           <b dir="ltr">{fmtNum(attended)}</b>
                           <span style={{ opacity: 0.6 }}> / </span>
                           <b dir="ltr">{fmtNum(runSessions)}</b>{" "}
-                          <span style={{ opacity: 0.65 }}>שיעורים بקורס</span>
+                          <span style={{ opacity: 0.65 }}>حصص بالدورة</span>
                         </div>
                       </div>
                     </div>
@@ -1520,21 +1520,21 @@ export default function RunDetails() {
                       <div className="pActionsLeft">
                         <IconButton
                           icon={<CreditCard size={16} className="ico" />}
-                          title="הוסף מחזור"
+                          title="إضافة دفعة"
                           variant="soft"
                           size="sm"
                           onClick={() => openPaymentModalFor(p, "remaining")}
                         />
                         <IconButton
                           icon={<Receipt size={16} className="ico" />}
-                          title="יומן תשלומים"
+                          title="سجل الدفعات"
                           variant="soft"
                           size="sm"
                           onClick={() => openPaymentHistory(p)}
                         />
                         <IconButton
                           icon={<Plus size={16} className="ico" />}
-                          title="הוסף שיעורים"
+                          title="إضافة حصص"
                           variant="soft"
                           size="sm"
                           onClick={() => {
@@ -1546,7 +1546,7 @@ export default function RunDetails() {
                         />
                         <IconButton
                           icon={<Settings2 size={16} className="ico" />}
-                          title="ניהול"
+                          title="إدارة"
                           variant="solid"
                           size="sm"
                           onClick={() => openManageFor(p)}
@@ -1554,7 +1554,7 @@ export default function RunDetails() {
                       </div>
 
                       <div className="pActionHint muted">
-                        تفاصيل أكثر داخل “ניהול”
+                        تفاصيل أكثر داخل “إدارة”
                       </div>
                     </div>
                   </div>
@@ -1565,7 +1565,7 @@ export default function RunDetails() {
 
           {!nextSession && (
             <div className="muted" style={{ marginTop: 12 }}>
-              אין שיעורים מתוזמנים بعد — اפתח تبويب “שיעורים” وولّد שיעורים.
+              لا يوجد حصص مجدولة بعد — افتح تبويب “الحصص” وولّد الحصص.
             </div>
           )}
         </div>
@@ -1575,7 +1575,7 @@ export default function RunDetails() {
       {tab === "sessions" && (
         <div className="grid">
           <div className="card" style={{ gridColumn: "span 5" }}>
-            <div className="h1">הפקה שיעורים</div>
+            <div className="h1">توليد حصص</div>
             <div className="muted" style={{ marginTop: 6 }}>
               أسبوعي: كل 7 أيام (قابل للتغيير).
             </div>
@@ -1584,7 +1584,7 @@ export default function RunDetails() {
 
             <div style={{ display: "grid", gap: 10 }}>
               <div>
-                <div className="muted">אוل שיעור (تاريخ/זמן)</div>
+                <div className="muted">أول حصة (تاريخ/وقت)</div>
                 <input
                   className="input"
                   type="datetime-local"
@@ -1605,7 +1605,7 @@ export default function RunDetails() {
                   />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div className="muted">מספר השיעורים</div>
+                  <div className="muted">عدد الحصص</div>
                   <input
                     className="input"
                     type="number"
@@ -1633,33 +1633,33 @@ export default function RunDetails() {
                 disabled={genLoading || !firstStart}
                 onClick={generateSessions}
               >
-                {genLoading ? "מפיק..." : "הפקה"}
+                {genLoading ? "جاري التوليد..." : "توليد"}
               </button>
 
               <hr className="sep" />
 
               <button type="button" className="btn" onClick={openCreateSession}>
-                + הוסף שיעור يدويًا
+                + إضافة حصة يدويًا
               </button>
             </div>
           </div>
 
           <div className="card" style={{ gridColumn: "span 7" }}>
-            <div className="h1">قائمة שיעורים</div>
+            <div className="h1">قائمة الحصص</div>
             <div className="muted" style={{ marginTop: 6 }}>
-              اضغط “حضور” للהתחברות بسرعة.
+              اضغط “حضور” للدخول بسرعة.
             </div>
 
             <hr className="sep" />
 
             {sessions.length === 0 ? (
-              <div className="muted">לא توجد שיעורים.</div>
+              <div className="muted">لا توجد حصص.</div>
             ) : (
               <table className="table">
                 <thead>
                   <tr>
-                    <th>الזמן</th>
-                    <th>סטטוס</th>
+                    <th>الوقت</th>
+                    <th>الحالة</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -1686,21 +1686,21 @@ export default function RunDetails() {
                             className="btn"
                             onClick={() => openEditSession(s)}
                           >
-                            <Pencil size={16} className="ico" /> עריכה
+                            <Pencil size={16} className="ico" /> تعديل
                           </button>
                           <button
                             type="button"
                             className="btn"
                             onClick={() => setSessionStatus(s.id, "done")}
                           >
-                            <CheckCircle2 size={16} className="ico" /> סיום
+                            <CheckCircle2 size={16} className="ico" /> إنهاء
                           </button>
                           <button
                             type="button"
                             className="btn danger"
                             onClick={() => setSessionStatus(s.id, "canceled")}
                           >
-                            <XCircle size={16} className="ico" /> ביטול
+                            <XCircle size={16} className="ico" /> إلغاء
                           </button>
                           <button
                             type="button"
@@ -1710,11 +1710,11 @@ export default function RunDetails() {
                                 open: true,
                                 type: "deleteSession",
                                 id: s.id,
-                                text: "למחוק את השיעור סופית?",
+                                text: "حذف الحصة نهائيًا؟",
                               })
                             }
                           >
-                            <Trash2 size={16} className="ico" /> מחיקה
+                            <Trash2 size={16} className="ico" /> حذف
                           </button>
                         </div>
                       </td>
@@ -1731,9 +1731,9 @@ export default function RunDetails() {
       {tab === "payments" && (
         <div className="grid">
           <div className="card" style={{ gridColumn: "span 5" }}>
-            <div className="h1">רישום מחזור</div>
+            <div className="h1">تسجيل دفعة</div>
             <div className="muted" style={{ marginTop: 6 }}>
-              תשלומים مربوطة بחבילה (تستمر عبر מחזורים مختلفة).
+              الدفعات مربوطة بالباقة (تستمر عبر دفعات مختلفة).
             </div>
 
             <hr className="sep" />
@@ -1743,29 +1743,29 @@ export default function RunDetails() {
               className="btn primary"
               onClick={() => setOpenPay(true)}
             >
-              + רישום מחזור
+              + تسجيل دفعة
             </button>
           </div>
 
           <div className="card" style={{ gridColumn: "span 7" }}>
-            <div className="h1">מחזורים ילדים זו מחזור</div>
+            <div className="h1">دفعات أطفال هذه الدفعة</div>
             <div className="muted" style={{ marginTop: 6 }}>
-              זו القائمة تהצגה מחזורים الباقات الخاصة بילדים זו מחזור.
+              هذه القائمة تعرض دفعات الباقات الخاصة بأطفال هذه الدفعة.
             </div>
 
             <hr className="sep" />
 
             {payments.length === 0 ? (
-              <div className="muted">לא توجد מחזורים بعد.</div>
+              <div className="muted">لا توجد دفعات بعد.</div>
             ) : (
               <table className="table">
                 <thead>
                   <tr>
-                    <th>ילד</th>
-                    <th>סכום</th>
-                    <th>الשיטה</th>
-                    <th>תאריך</th>
-                    <th>مלאحظة</th>
+                    <th>الطفل</th>
+                    <th>المبلغ</th>
+                    <th>الطريقة</th>
+                    <th>التاريخ</th>
+                    <th>ملاحظة</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -1798,11 +1798,11 @@ export default function RunDetails() {
                               open: true,
                               type: "deletePayment",
                               id: p.id,
-                              text: "למחוק את המחזור הזה?",
+                              text: "حذف هذه الدفعة؟",
                             })
                           }
                         >
-                          <Trash2 size={16} className="ico" /> מחיקה
+                          <Trash2 size={16} className="ico" /> حذف
                         </button>
                       </td>
                     </tr>
@@ -1816,10 +1816,10 @@ export default function RunDetails() {
 
       {/* ===================== MODALS ===================== */}
 
-      {/* ✅ כרטיס ניהול הילד داخل מחזור */}
+      {/* ✅ بطاقة إدارة الطفل داخل الدفعة */}
       <Modal
         open={openManage}
-        title={manageP ? `ניהול — ${manageP.child_name}` : "ניהול"}
+        title={manageP ? `إدارة — ${manageP.child_name}` : "إدارة"}
         onClose={() => setOpenManage(false)}
       >
         {!manageP ? (
@@ -1830,20 +1830,20 @@ export default function RunDetails() {
               <div style={{ fontSize: 18, fontWeight: 900 }}>
                 {manageP.child_name}{" "}
                 <span className="muted" style={{ fontWeight: 700 }}>
-                  — {manageP.class ?? "-"} — גיל: {manageP.age ?? "-"}
+                  — {manageP.class ?? "-"} — عمر: {manageP.age ?? "-"}
                 </span>
               </div>
 
               <div className="muted" style={{ marginTop: 8 }}>
                 حالة الدفع: {badgePayment(manageP.payment_status)} — قيمة
-                חבילה: <b>{Number(manageP.agreed_price || 0).toFixed(2)}</b> —
-                שולם: <b>{Number(manageP.paid_amount || 0).toFixed(2)}</b> —
+                الباقة: <b>{Number(manageP.agreed_price || 0).toFixed(2)}</b> —
+                مدفوع: <b>{Number(manageP.paid_amount || 0).toFixed(2)}</b> —
                 متبقي: <b>{Number(manageP.balance || 0).toFixed(2)}</b>
               </div>
 
               <div className="muted" style={{ marginTop: 8 }}>
                 <Ticket size={14} className="ico" />{" "}
-                <span style={{ opacity: 0.75 }}>שיעורים</span>{" "}
+                <span style={{ opacity: 0.75 }}>حصص</span>{" "}
                 <b dir="ltr">{fmtNum(manageP.package_sessions_remaining ?? 0)}</b>{" "}
                 <span style={{ opacity: 0.6 }}>متبقي</span>
                 <span style={{ opacity: 0.6 }}> — </span>
@@ -1873,13 +1873,13 @@ export default function RunDetails() {
 
               <div className="grid">
                 <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted">שם האם</div>
+                  <div className="muted">اسم الأم</div>
                   <div style={{ fontWeight: 800 }}>
                     {manageChild?.mother_name ?? "-"}
                   </div>
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted">טלפון האם</div>
+                  <div className="muted">هاتف الأم</div>
                   <div className="row" style={{ gap: 10 }}>
                     <div style={{ fontWeight: 800 }}>
                       {manageChild?.mother_phone ?? "-"}
@@ -1891,11 +1891,11 @@ export default function RunDetails() {
                         onClick={async () => {
                           const ok = await copyText(manageChild.mother_phone);
                           toast(
-                            ok ? "הועתק." : "ההעתקה נכשלה.",
+                            ok ? "تم النسخ." : "تعذر النسخ.",
                             ok ? "ok" : "danger",
                           );
                         }}
-                        title="העתק"
+                        title="نسخ"
                       >
                         <Copy size={16} className="ico" />
                       </button>
@@ -1904,13 +1904,13 @@ export default function RunDetails() {
                 </div>
 
                 <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted">שם האב</div>
+                  <div className="muted">اسم الأب</div>
                   <div style={{ fontWeight: 800 }}>
                     {manageChild?.father_name ?? "-"}
                   </div>
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted">טלפון האב</div>
+                  <div className="muted">هاتف الأب</div>
                   <div className="row" style={{ gap: 10 }}>
                     <div style={{ fontWeight: 800 }}>
                       {manageChild?.father_phone ?? "-"}
@@ -1922,11 +1922,11 @@ export default function RunDetails() {
                         onClick={async () => {
                           const ok = await copyText(manageChild.father_phone);
                           toast(
-                            ok ? "הועתק." : "ההעתקה נכשלה.",
+                            ok ? "تم النسخ." : "تعذر النسخ.",
                             ok ? "ok" : "danger",
                           );
                         }}
-                        title="העתק"
+                        title="نسخ"
                       >
                         <Copy size={16} className="ico" />
                       </button>
@@ -1938,7 +1938,7 @@ export default function RunDetails() {
               <div style={{ marginTop: 10 }}>
                 <IconButton
                   icon={<ExternalLink size={16} className="ico" />}
-                  title="פתח את קובץ הילד המלא"
+                  title="فتح ملف الطفل الكامل"
                   variant="ghost"
                   size="sm"
                   style={{ marginInlineStart: 8 }}
@@ -1952,7 +1952,7 @@ export default function RunDetails() {
 
             {/* Actions */}
             <div style={{ gridColumn: "span 12" }} className="card">
-              <div style={{ fontWeight: 900, marginBottom: 10 }}>שיעורים</div>
+              <div style={{ fontWeight: 900, marginBottom: 10 }}>الحصص</div>
 
               <div
                 className="row"
@@ -1964,7 +1964,7 @@ export default function RunDetails() {
                 }}
               >
                 <div>
-                  <div className="muted">סה"כ חבילה</div>
+                  <div className="muted">إجمالي الباقة</div>
                   <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
                     {fmtNum(manageP.package_sessions_total ?? 0)}
                   </div>
@@ -1978,14 +1978,14 @@ export default function RunDetails() {
                 </div>
 
                 <div>
-                  <div className="muted">حضر ב זו מחזור</div>
+                  <div className="muted">حضر في هذه الدفعة</div>
                   <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
                     {fmtNum(manageP.sessions_attended_in_run ?? 0)}
                   </div>
                 </div>
 
                 <div>
-                  <div className="muted">متوسط מחיר الשיעור</div>
+                  <div className="muted">متوسط سعر الحصة</div>
                   <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
                     {(() => {
                       const total = Number(manageP.agreed_price || 0);
@@ -2008,7 +2008,7 @@ export default function RunDetails() {
                         setOpenEnroll(true);
                       }}
                     >
-                      <ShoppingCart size={16} className="ico" /> شراء שיעורים
+                      <ShoppingCart size={16} className="ico" /> شراء حصص
                     </button>
 
                     <div
@@ -2021,14 +2021,14 @@ export default function RunDetails() {
                         border: "1px solid rgba(0,0,0,.08)",
                         background: "rgba(0,0,0,.02)",
                       }}
-                      title="עריכה מהירה ליתרה (ללא תשלום)"
+                      title="تعديل سريع للرصيد (بدون دفع)"
                     >
                       <button
                         type="button"
                         className="btn"
                         style={{ padding: "8px 12px" }}
                         onClick={() => quickAdjustFromManage(-1)}
-                        title="הורד שיעור"
+                        title="خصم حصة"
                       >
                         ➖
                       </button>
@@ -2037,7 +2037,7 @@ export default function RunDetails() {
                         className="btn"
                         style={{ padding: "8px 12px" }}
                         onClick={() => quickAdjustFromManage(1)}
-                        title="הוסף שיעור"
+                        title="إضافة حصة"
                       >
                         ➕
                       </button>
@@ -2048,7 +2048,7 @@ export default function RunDetails() {
 
               <hr className="sep" />
 
-              <div style={{ fontWeight: 900, marginBottom: 10 }}>الשולםات</div>
+              <div style={{ fontWeight: 900, marginBottom: 10 }}>المدفوعات</div>
               <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                 <button
                   type="button"
@@ -2070,7 +2070,7 @@ export default function RunDetails() {
                     openPaymentModalFor(manageP, "custom");
                   }}
                 >
-                  רישום מחזור
+                  تسجيل دفعة
                 </button>
 
                 <button
@@ -2081,7 +2081,7 @@ export default function RunDetails() {
                     openPaymentHistory(manageP);
                   }}
                 >
-                  יומן תשלומים
+                  سجل الدفعات
                 </button>
 
                 <button
@@ -2095,14 +2095,14 @@ export default function RunDetails() {
                     setOpenPrice(true);
                   }}
                 >
-                  עריכה الמחיר
+                  تعديل السعر
                 </button>
               </div>
 
               <hr className="sep" />
 
               <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                الרישום ב מחזור
+                التسجيل في الدفعة
               </div>
               <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                 {manageP.enrollment_status === "active" ? (
@@ -2115,7 +2115,7 @@ export default function RunDetails() {
                         open: true,
                         type: "inactive",
                         id: manageP.enrollment_id,
-                        text: `إيقاف רישום: ${manageP.child_name}`,
+                        text: `إيقاف تسجيل: ${manageP.child_name}`,
                       });
                     }}
                   >
@@ -2131,7 +2131,7 @@ export default function RunDetails() {
                         open: true,
                         type: "active",
                         id: manageP.enrollment_id,
-                        text: `הפעל מחדש: ${manageP.child_name}`,
+                        text: `إعادة تفعيل: ${manageP.child_name}`,
                       });
                     }}
                   >
@@ -2148,11 +2148,11 @@ export default function RunDetails() {
                       open: true,
                       type: "deleteEnroll",
                       id: manageP.enrollment_id,
-                      text: `מחיקה רישום מ זו מחזור: ${manageP.child_name}`,
+                      text: `حذف تسجيل من هذه الدفعة: ${manageP.child_name}`,
                     });
                   }}
                 >
-                  מחיקה الרישום
+                  حذف التسجيل
                 </button>
 
                 <button
@@ -2160,7 +2160,7 @@ export default function RunDetails() {
                   className="btn"
                   onClick={() => setOpenManage(false)}
                 >
-                  סגור
+                  إغلاق
                 </button>
               </div>
             </div>
@@ -2168,32 +2168,32 @@ export default function RunDetails() {
         )}
       </Modal>
 
-      {/* ✅ مودال רישום طفل */}
+      {/* ✅ مودال تسجيل طفل */}
       <Modal
         open={openEnroll}
-        title={enrollLocked ? `הוסף שיעורים — ${enrollLockedName}` : "רישום طفل"}
+        title={enrollLocked ? `إضافة حصص — ${enrollLockedName}` : "تسجيل طفل"}
         onClose={() => setOpenEnroll(false)}
       >
         <div className="muted">
-          إذا للطفل יתרה שיעורים سابق، تقدر تختار “استخدم الיתרה”.
+          إذا للطفل رصيد حصص سابق، تقدر تختار “استخدم الرصيد”.
         </div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">הילד</div>
+            <div className="muted">الطفل</div>
             <ModernSelect
               value={selectedChildId}
               onChange={setSelectedChildId}
               menuWidth="trigger"
               disabled={enrollLocked}
-              placeholder="— בחר ילד —"
+              placeholder="— اختر طفل —"
               options={[
-                { value: "", label: "— בחר ילד —" },
+                { value: "", label: "— اختر طفل —" },
                 ...((enrollLocked ? children : availableChildren) || []).map((c) => ({
                   value: c.id,
-                  label: `${c.name} — ${c.class ?? "-"} — גיל: ${c.age ?? "-"}`,
+                  label: `${c.name} — ${c.class ?? "-"} — عمر: ${c.age ?? "-"}`,
                 })),
               ]}
 />
@@ -2201,37 +2201,37 @@ export default function RunDetails() {
 
           <div style={{ gridColumn: "span 12" }} className="card">
             {pkgLoading ? (
-              <div>جاري فحص יתרה חבילה...</div>
+              <div>جاري فحص رصيد الباقة...</div>
             ) : pkgInfo ? (
               <div className="muted">
-                יתרה שיעורים سابق: <b>{Number(pkgInfo.sessions_remaining || 0)}</b>{" "}
+                رصيد حصص سابق: <b>{Number(pkgInfo.sessions_remaining || 0)}</b>{" "}
                 — المتبقي للدفع:{" "}
                 <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
               </div>
             ) : (
               <div className="muted">
-                לא יש יתרה سابق لזה القالب (או لم يتم فحصه بعد).
+                لا يوجد رصيد سابق لهذا القالب (أو لم يتم فحصه بعد).
               </div>
             )}
 
             <div className="muted" style={{ marginTop: 8 }}>
-              שיעורים קרובים ב זו מחזור: <b>{singlePreview.runFuture}</b> — הקצאה
+              حصص قادمة في هذه الدفعة: <b>{singlePreview.runFuture}</b> — تخصيص
               الآن: <b>{singlePreview.allocNow}</b> — ترحيل:{" "}
               <b>{singlePreview.carry}</b>
             </div>
           </div>
 
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">שיטה الרישום</div>
+            <div className="muted">طريقة التسجيل</div>
             <ModernSelect
               value={enrollMode}
               onChange={setEnrollMode}
               menuWidth="trigger"
               disabled={enrollLocked}
               options={[
-                { value: "auto", label: "אוטומטי" },
-                { value: "use_existing", label: "השתמש ביתרה הקיימת" },
-                { value: "buy_new", label: "רכישת שיעורים חדשים" },
+                { value: "auto", label: "تلقائي" },
+                { value: "use_existing", label: "استخدم الرصيد الموجود" },
+                { value: "buy_new", label: "شراء حصص جديدة" },
               ]}
 />
           </div>
@@ -2241,9 +2241,9 @@ export default function RunDetails() {
               Number(pkgInfo.sessions_remaining || 0) > 0)) && (
             <div style={{ gridColumn: "span 12" }} className="card">
               <div className="muted">
-                عند <b>استخدام الיתרה الموجود</b>، מחיר/مبلغ חבילה يأتي מ
-                חבילה السابقة لذلك לא نُعدّل الסה"כ هنا. إذا بدك تحدد مبلغ
-                جديد، غيّر “שיטה الרישום” إلى <b>רכישת שיעורים חדשים</b>.
+                عند <b>استخدام الرصيد الموجود</b>، سعر/مبلغ الباقة يأتي من
+                الباقة السابقة لذلك لا نُعدّل الإجمالي هنا. إذا بدك تحدد مبلغ
+                جديد، غيّر “طريقة التسجيل” إلى <b>شراء حصص جديدة</b>.
               </div>
             </div>
           )}
@@ -2254,7 +2254,7 @@ export default function RunDetails() {
             enrollLocked) && (
             <>
               <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">מספר השיעורים للشراء</div>
+                <div className="muted">عدد الحصص للشراء</div>
                 <input
                   className="input"
                   type="number"
@@ -2282,7 +2282,7 @@ export default function RunDetails() {
               </div>
 
               <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">מחיר الשיעור</div>
+                <div className="muted">سعر الحصة</div>
                 <input
                   className="input"
                   type="number"
@@ -2310,7 +2310,7 @@ export default function RunDetails() {
               </div>
 
               <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">סכום الסה"כ</div>
+                <div className="muted">المبلغ الإجمالي</div>
                 <input
                   className="input"
                   type="number"
@@ -2330,7 +2330,7 @@ export default function RunDetails() {
                   placeholder={String(defaultPrice)}
                 />
                 <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                  غيّر الסה"כ או מחיר الשיעור — رح يتحدث الثاني אוטומטיًا.
+                  غيّر الإجمالي أو سعر الحصة — رح يتحدث الثاني تلقائيًا.
                 </div>
               </div>
             </>
@@ -2343,28 +2343,28 @@ export default function RunDetails() {
               disabled={enrollSaving || !selectedChildId}
               onClick={purchaseAndEnrollSingle}
             >
-              {enrollSaving ? "שומר..." : "שמור"}
+              {enrollSaving ? "جاري الحفظ..." : "حفظ"}
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => setOpenEnroll(false)}
             >
-              ביטול
+              إلغاء
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* ✅ مودال רישום مجموعة */}
+      {/* ✅ مودال تسجيل مجموعة */}
       <Modal
         open={openBulk}
-        title="רישום مجموعة ילדים"
+        title="تسجيل مجموعة أطفال"
         onClose={() => setOpenBulk(false)}
       >
         <div className="muted">
-          اختَر عدة ילדים מ الجدول ثم اضغط “הוספה”. إذا طفل عنده יתרה שיעורים سابق
-          سيتم استخدامه אוטומטיًا.
+          اختَر عدة أطفال من الجدول ثم اضغط “إضافة”. إذا طفل عنده رصيد حصص سابق
+          سيتم استخدامه تلقائيًا.
         </div>
 
         <hr className="sep" />
@@ -2373,19 +2373,19 @@ export default function RunDetails() {
           <input
             className="input"
             style={{ width: 260 }}
-            placeholder="חיפוש לפי שם הילד..."
+            placeholder="بحث باسم الطفل..."
             value={bulkQ}
             onChange={(e) => setBulkQ(e.target.value)}
           />
           <button type="button" className="btn" onClick={bulkSelectAllFiltered}>
-            تحديد הכול
+            تحديد الكل
           </button>
           <button
             type="button"
             className="btn danger"
             onClick={bulkClearSelection}
           >
-            נקה التحديد
+            مسح التحديد
           </button>
 
           <div className="muted" style={{ alignSelf: "center" }}>
@@ -2395,18 +2395,18 @@ export default function RunDetails() {
 
         <div style={{ marginTop: 12 }}>
           {bulkCandidates.length === 0 ? (
-            <div className="card">לא יש ילדים متاحين.</div>
+            <div className="card">لا يوجد أطفال متاحين.</div>
           ) : (
             <div className="card" style={{ padding: 0 }}>
               <table className="table" style={{ margin: 0 }}>
                 <thead>
                   <tr>
                     <th style={{ width: 60 }}></th>
-                    <th>اלאسم</th>
-                    <th>כיתה</th>
-                    <th>גיל</th>
+                    <th>الاسم</th>
+                    <th>الصف</th>
+                    <th>العمر</th>
                     <th>جنس</th>
-                    <th>טלפון האם</th>
+                    <th>هاتف الأم</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2439,7 +2439,7 @@ export default function RunDetails() {
 
         <div className="grid">
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">מספר השיעורים (للילדים بدون יתרה سابق)</div>
+            <div className="muted">عدد الحصص (للأطفال بدون رصيد سابق)</div>
             <input
               className="input"
               type="number"
@@ -2456,14 +2456,14 @@ export default function RunDetails() {
               onChange={setBulkPriceMode}
               menuWidth="trigger"
               options={[
-                { value: "unified", label: "מחיר אחיד" },
-                { value: "perChild", label: "מחיר לכל ילד" },
+                { value: "unified", label: "سعر موحد" },
+                { value: "perChild", label: "سعر لكل طفل" },
               ]}
 />
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">الמחיר</div>
+            <div className="muted">السعر</div>
             {bulkPriceMode === "unified" ? (
               <input
                 className="input"
@@ -2476,7 +2476,7 @@ export default function RunDetails() {
               />
             ) : (
               <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                * الמחיר לכל ילד (إن احتجته) نطوره بالخطوة القادمة.
+                * السعر لكل طفل (إن احتجته) نطوره بالخطوة القادمة.
               </div>
             )}
           </div>
@@ -2488,27 +2488,27 @@ export default function RunDetails() {
               disabled={bulkSaving || bulkSelectedCount === 0}
               onClick={bulkPurchaseAndEnroll}
             >
-              {bulkSaving ? "מוסיף..." : `הוספה (${bulkSelectedCount})`}
+              {bulkSaving ? "جاري الإضافة..." : `إضافة (${bulkSelectedCount})`}
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => setOpenBulk(false)}
             >
-              ביטול
+              إلغاء
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* עריכה الמחיר */}
+      {/* تعديل السعر */}
       <Modal
         open={openPrice}
-        title="עריכה מחיר חבילה"
+        title="تعديل سعر الباقة"
         onClose={() => setOpenPrice(false)}
       >
         <div style={{ display: "grid", gap: 10 }}>
-          <div className="muted">מחיר חבילה (סה"כ)</div>
+          <div className="muted">سعر الباقة (إجمالي)</div>
           <input
             className="input"
             type="number"
@@ -2523,28 +2523,28 @@ export default function RunDetails() {
               className="btn primary"
               onClick={updatePackagePrice}
             >
-              שמור
+              حفظ
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => setOpenPrice(false)}
             >
-              ביטול
+              إلغاء
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* רישום מחזור */}
+      {/* تسجيل دفعة */}
       <Modal
         open={openPay}
-        title="רישום מחזור"
+        title="تسجيل دفعة"
         onClose={() => setOpenPay(false)}
       >
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">בחר הילד (מ זו מחזור)</div>
+            <div className="muted">اختر الطفل (من هذه الدفعة)</div>
             <ModernSelect
               value={payEnrollmentId}
               onChange={setPayEnrollmentId}
@@ -2555,14 +2555,14 @@ export default function RunDetails() {
                   .filter((p) => p.enrollment_status === "active")
                   .map((p) => ({
                     value: p.enrollment_id,
-                    label: `${p.child_name} — יתרה ${Number(p.balance).toFixed(2)}`,
+                    label: `${p.child_name} — باقي ${Number(p.balance).toFixed(2)}`,
                   })),
               ]}
 />
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">סכום</div>
+            <div className="muted">المبلغ</div>
             <input
               className="input"
               type="number"
@@ -2574,22 +2574,22 @@ export default function RunDetails() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">الשיטה</div>
+            <div className="muted">الطريقة</div>
             <ModernSelect
               value={payMethod}
               onChange={setPayMethod}
               menuWidth="trigger"
               options={[
-                { value: "cash", label: "במזומן" },
-                { value: "card", label: "כרטיס" },
-                { value: "transfer", label: "העברה" },
-                { value: "other", label: "אחר" },
+                { value: "cash", label: "نقدًا" },
+                { value: "card", label: "بطاقة" },
+                { value: "transfer", label: "تحويل" },
+                { value: "other", label: "أخرى" },
               ]}
 />
           </div>
 
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">مלאحظة</div>
+            <div className="muted">ملاحظة</div>
             <input
               className="input"
               value={payNote}
@@ -2604,23 +2604,23 @@ export default function RunDetails() {
               disabled={paySaving || !payEnrollmentId || !payAmount}
               onClick={addPayment}
             >
-              {paySaving ? "שומר..." : "שמור"}
+              {paySaving ? "جاري الحفظ..." : "حفظ"}
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => setOpenPay(false)}
             >
-              ביטול
+              إلغاء
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* יומן תשלומים */}
+      {/* سجل الدفعات */}
       <Modal
         open={openHistory}
-        title="יומן מחזורי חבילה"
+        title="سجل دفعات الباقة"
         onClose={() => setOpenHistory(false)}
       >
         <div className="muted" style={{ marginBottom: 10 }}>
@@ -2630,17 +2630,17 @@ export default function RunDetails() {
         </div>
 
         {historyLoading ? (
-          <div className="card">טוען...</div>
+          <div className="card">جاري التحميل...</div>
         ) : historyRows.length === 0 ? (
-          <div className="card">לא توجد מחזורים.</div>
+          <div className="card">لا توجد دفعات.</div>
         ) : (
           <table className="table">
             <thead>
               <tr>
-                <th>סכום</th>
-                <th>الשיטה</th>
-                <th>תאריך</th>
-                <th>مלאحظة</th>
+                <th>المبلغ</th>
+                <th>الطريقة</th>
+                <th>التاريخ</th>
+                <th>ملاحظة</th>
                 <th></th>
               </tr>
             </thead>
@@ -2662,11 +2662,11 @@ export default function RunDetails() {
                           open: true,
                           type: "deletePayment",
                           id: x.id,
-                          text: "למחוק את המחזור הזה?",
+                          text: "حذف هذه الدفعة؟",
                         })
                       }
                     >
-                      <Trash2 size={16} className="ico" /> מחיקה
+                      <Trash2 size={16} className="ico" /> حذف
                     </button>
                   </td>
                 </tr>
@@ -2676,10 +2676,10 @@ export default function RunDetails() {
         )}
       </Modal>
 
-      {/* עריכה/הוסף שיעור */}
+      {/* تعديل/إضافة حصة */}
       <Modal
         open={openSession}
-        title={sessionForm.id ? "עריכת שיעור" : "הוסף שיעור"}
+        title={sessionForm.id ? "تعديل حصة" : "إضافة حصة"}
         onClose={() => setOpenSession(false)}
       >
         <div className="grid">
@@ -2728,31 +2728,31 @@ export default function RunDetails() {
               disabled={sessionSaving}
               onClick={saveSession}
             >
-              {sessionSaving ? "שומר..." : "שמור"}
+              {sessionSaving ? "جاري الحفظ..." : "حفظ"}
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => setOpenSession(false)}
             >
-              ביטול
+              إلغاء
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* עריכה שיעורים */}
+      {/* تعديل الحصص */}
       <Modal
         open={openAdjust}
-        title={`עריכה שיעורים — ${adjChildName}`}
+        title={`تعديل الحصص — ${adjChildName}`}
         onClose={() => setOpenAdjust(false)}
       >
         <div className="muted">
           تقدر تنقص/تزيد:
           <br />
-          1) שיעורים מוקצהة لזו מחזור
+          1) حصص مخصصة لهذه الدفعة
           <br />
-          2) יתרה חבילה نفسه (إذا الشراء غلط)
+          2) رصيد الباقة نفسه (إذا الشراء غلط)
         </div>
 
         <hr className="sep" />
@@ -2760,17 +2760,17 @@ export default function RunDetails() {
         <div className="grid">
           <div style={{ gridColumn: "span 12" }} className="card">
             <div className="muted">
-              حضر: <b>{adjAttended}</b> — שיעורים קרובים بמחזור:{" "}
-              <b>{adjRunFuture}</b> — יתרה חבילה المتبقي:{" "}
+              حضر: <b>{adjAttended}</b> — حصص قادمة بالدفعة:{" "}
+              <b>{adjRunFuture}</b> — رصيد الباقة المتبقي:{" "}
               <b>{adjPkgRemaining}</b>
             </div>
             <div className="muted" style={{ marginTop: 6 }}>
-              أقصى הקצאה مسموح الآن: <b>{adjMaxAllowed}</b>
+              أقصى تخصيص مسموح الآن: <b>{adjMaxAllowed}</b>
             </div>
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">שיעורים מחזור (הקצאה)</div>
+            <div className="muted">حصص الدفعة (تخصيص)</div>
             <input
               className="input"
               type="number"
@@ -2782,7 +2782,7 @@ export default function RunDetails() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">עריכה יתרה חבילה (Δ שיעורים)</div>
+            <div className="muted">تعديل رصيد الباقة (Δ حصص)</div>
             <input
               className="input"
               type="number"
@@ -2790,7 +2790,7 @@ export default function RunDetails() {
               value={adjPkgDelta}
               onChange={(e) => setAdjPkgDelta(e.target.value)}
               disabled={!adjPackageId}
-              placeholder="לדוגמה: ‎-3 או +2"
+              placeholder="مثال: -3 أو +2"
             />
           </div>
 
@@ -2801,14 +2801,14 @@ export default function RunDetails() {
               disabled={adjSaving}
               onClick={saveAdjustments}
             >
-              {adjSaving ? "שומר..." : "שמור"}
+              {adjSaving ? "جاري الحفظ..." : "حفظ"}
             </button>
             <button
               type="button"
               className="btn"
               onClick={() => setOpenAdjust(false)}
             >
-              ביטול
+              إلغاء
             </button>
           </div>
         </div>
@@ -2817,10 +2817,10 @@ export default function RunDetails() {
       {/* Confirm */}
       <ConfirmDialog
         open={confirm.open}
-        title="אישור"
+        title="تأكيد"
         message={confirm.text}
-        confirmText="כן"
-        cancelText="ביטול"
+        confirmText="نعم"
+        cancelText="إلغاء"
         danger
         onCancel={() =>
           setConfirm({ open: false, type: null, id: null, text: "" })

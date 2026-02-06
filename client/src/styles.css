@@ -47,7 +47,7 @@
 html,body{height:100%}
 body{
   margin:0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Arabic", Arial, sans-serif;
+  font-family: "Noto Sans Hebrew", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   color:var(--text);
   background:
     radial-gradient(1100px 560px at 15% 0%, rgba(0,172,71,.07), transparent 64%),

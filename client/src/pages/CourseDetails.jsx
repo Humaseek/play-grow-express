@@ -193,9 +193,9 @@ export default function CourseDetails() {
   }, [runs]);
 
   function runBadge(status) {
-    if (status === "active") return <Badge variant="ok">פעיל</Badge>;
-    if (status === "done") return <Badge variant="info">הסתיים</Badge>;
-    return <Badge variant="danger">בוטל</Badge>;
+    if (status === "active") return <Badge variant="ok">فعّالة</Badge>;
+    if (status === "done") return <Badge variant="info">منتهية</Badge>;
+    return <Badge variant="danger">ملغاة</Badge>;
   }
 
   async function autoEnrollPackages(runId) {
@@ -215,14 +215,14 @@ export default function CourseDetails() {
             : rpc.data;
 
       toast(
-        `تمت المزاמة: הוספה/רענן ${insertedCount ?? 0} רישום אוטומטי حسب יתרת שיעורים.`,
+        `تمت المزامنة: إضافة/تحديث ${insertedCount ?? 0} تسجيل تلقائي حسب رصيد الحصص.`,
         "ok",
       );
 
       await load();
     } catch (e) {
       setError(e);
-      toast("ביצוע סנכרון אוטומטי נכשל.", "danger");
+      toast("فشل تنفيذ المزامنة التلقائية.", "danger");
     }
   }
 
@@ -234,8 +234,8 @@ export default function CourseDetails() {
       const finalLabel = label.trim()
         ? label.trim()
         : firstStart
-          ? `מחזור ${new Date(firstStart).toLocaleDateString("ar")}`
-          : "מחזור חדש";
+          ? `دفعة ${new Date(firstStart).toLocaleDateString("ar")}`
+          : "دفعة جديدة";
 
       const ins = await supabase
         .from("course_runs")
@@ -271,12 +271,12 @@ export default function CourseDetails() {
         await autoEnrollPackages(runId);
       } else {
         toast(
-          "המחזור נוצר. לאחר שתוסיף/תייצר שיעורים, השתמש בכפתור (סנכרון) כדי לרשום אוטומטית בעלי יתרת שיעורים.",
+          "تم إنشاء الدفعة. بعد ما تضيف/تولّد الحصص، استخدم زر (مزامنة) لتسجيل أصحاب رصيد الحصص تلقائيًا.",
           "info",
         );
       }
 
-      toast("המחזור נוצר בהצלחה.", "ok");
+      toast("تم إنشاء الدفعة بنجاح.", "ok");
 
       setOpen(false);
       setLabel("");
@@ -290,7 +290,7 @@ export default function CourseDetails() {
       navigate(`/runs/${runId}`);
     } catch (e) {
       setError(e);
-      toast("יצירת המחזור נכשלה.", "danger");
+      toast("فشل إنشاء الدفعة.", "danger");
     } finally {
       setSaving(false);
     }
@@ -305,11 +305,11 @@ export default function CourseDetails() {
 
     if (u.error) {
       setError(u.error);
-      toast("עדכון סטטוס המחזור נכשל.", "danger");
+      toast("فشل تحديث حالة الدفعة.", "danger");
       return;
     }
 
-    toast("סטטוס המחזור עודכן.", "ok");
+    toast("تم تحديث حالة الدفعة.", "ok");
     await load();
   }
 
@@ -319,18 +319,18 @@ export default function CourseDetails() {
 
     if (d.error) {
       setError(d.error);
-      toast("מחיקת המחזור נכשלה.", "danger");
+      toast("فشل حذف الدفعة.", "danger");
       return;
     }
 
-    toast("המחזור נמחק.", "ok");
+    toast("تم حذف الدفعة.", "ok");
     await load();
   }
 
   if (loading) {
     return (
       <div className="container page page--courses">
-        <div className="card">טוען...</div>
+        <div className="card">جاري التحميل...</div>
       </div>
     );
   }
@@ -347,14 +347,14 @@ export default function CourseDetails() {
     <div className="container page page--courses" dir="rtl">
       <PageHeader
         title={course.title}
-        subtitle={`سعة: ${course.capacity} — מחיר افتراضي: ${Number(course.default_price).toFixed(2)}`}
+        subtitle={`سعة: ${course.capacity} — سعر افتراضي: ${Number(course.default_price).toFixed(2)}`}
         actions={
           <>
             <button className="btn" onClick={() => navigate("/courses")}>
-              חזרה
+              رجوع
             </button>
             <button className="btn primary" onClick={() => setOpen(true)}>
-              <Plus size={18} /> פתח מחזור
+              <Plus size={18} /> فتح دفعة
             </button>
           </>
         }
@@ -362,14 +362,16 @@ export default function CourseDetails() {
 
       <ErrorBanner error={error} />
 
-      {/* KPI row – نفس ستايل صفحة "جدول היום" (Grid 12 columns) */}
+      {/* KPI row – نفس ستايل صفحة "جدول اليوم" (Grid 12 columns) */}
       <div className="grid" style={{ marginTop: 10 }}>
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.activeCount ? "ok" : "neutral"}
-            label="מחזורים פעילים"
+            label="دفعات شغالة"
             value={stats.activeCount}
-            hint={stats.totalRuns ? `מתוך ${stats.totalRuns}` : "אין מחזורים"}
+            hint={
+              stats.totalRuns ? `من أصل ${stats.totalRuns}` : "لا يوجد دفعات"
+            }
             icon={Layers}
           />
         </div>
@@ -377,9 +379,9 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.totalParticipants ? "info" : "neutral"}
-            label="משתתפים"
+            label="مشاركين"
             value={stats.totalParticipants}
-            hint="סך המשתתפים בכל המחזורים"
+            hint="مجموع المشاركين عبر الدفعات"
             icon={Users}
           />
         </div>
@@ -387,9 +389,9 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.nextSessionAt ? "warn" : "neutral"}
-            label="השיעור הקרוב"
+            label="أقرب حصة"
             value={stats.nextSessionAt ? fmtDT(stats.nextSessionAt) : "-"}
-            hint={stats.nextSessionAt ? "מתקרב" : "אין מועד"}
+            hint={stats.nextSessionAt ? "قريبة للتنفيذ" : "لا يوجد موعد"}
             icon={CalendarClock}
           />
         </div>
@@ -397,9 +399,9 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.totalSessions ? "neutral" : "neutral"}
-            label=""
+            label="إجمالي الحصص"
             value={stats.totalSessions}
-            hint="סך השיעורים בכל המחזורים"
+            hint="مجموع الحصص عبر الدفعات"
             icon={CalendarClock}
           />
         </div>
@@ -411,10 +413,10 @@ export default function CourseDetails() {
           style={{ justifyContent: "space-between", alignItems: "center" }}
         >
           <div>
-            <div className="cardTitle">תשלומים</div>
+            <div className="cardTitle">الدفعات</div>
           </div>
           <button className="btn primary" onClick={() => setOpen(true)}>
-            <Plus size={18} /> פתח מחזור
+            <Plus size={18} /> فتح دفعة
           </button>
         </div>
       </div>
@@ -422,12 +424,12 @@ export default function CourseDetails() {
       {sortedRuns.length === 0 ? (
         <div className="card" style={{ marginTop: 12 }}>
           <EmptyState
-            title="אין מחזורים לתבנית הזו עדיין"
-            description="פתח מחזור חדש כדי לקבוע את השיעור הראשון ומספר המפגשים (או הוסף שיעורים מאוחר יותר)."
+            title="لا يوجد دفعات لهذا القالب بعد"
+            description="افتح دفعة جديدة لتحديد أول حصة وعدد اللقاءات (أو أضف الحصص لاحقًا)."
             icon={Layers}
             actions={
               <button className="btn primary" onClick={() => setOpen(true)}>
-                <Plus size={18} /> פתח אוل מחזור
+                <Plus size={18} /> فتح أول دفعة
               </button>
             }
           />
@@ -435,7 +437,7 @@ export default function CourseDetails() {
       ) : (
         <div className="cardsGrid" style={{ marginTop: 12 }}>
           {sortedRuns.map((r) => {
-            const title = r.label || `מחזור #${r.run_id}`;
+            const title = r.label || `دفعة #${r.run_id}`;
             const isActive = r.status === "active";
             return (
               <div
@@ -459,12 +461,12 @@ export default function CourseDetails() {
                       </span>
                     </div>
                     <div className="muted" style={{ marginTop: 6 }}>
-                      השיעור הקרוב:{" "}
+                      أقرب حصة:{" "}
                       <span className="ltrIso">{fmtDT(r.next_session_at)}</span>
                     </div>
                     <div className="muted" style={{ marginTop: 4 }}>
                       السعة: <span className="ltrIso">{course.capacity}</span> •
-                      الמחיר اלאفتراضي:{" "}
+                      السعر الافتراضي:{" "}
                       <span className="ltrIso">
                         {Number(course.default_price).toFixed(2)}
                       </span>
@@ -474,11 +476,11 @@ export default function CourseDetails() {
 
                 <div className="statsRow">
                   <div className="stat">
-                    <span className="muted">שיעורים</span>
+                    <span className="muted">الحصص</span>
                     <b>{r.sessions_count ?? 0}</b>
                   </div>
                   <div className="stat">
-                    <span className="muted">משתתפים</span>
+                    <span className="muted">المشاركين</span>
                     <b>{r.participants_count ?? 0}</b>
                   </div>
                   <div className="stat">
@@ -491,10 +493,10 @@ export default function CourseDetails() {
                     <span className="muted">الحالة</span>
                     <b>
                       {r.status === "active"
-                        ? "פעיל"
+                        ? "شغالة"
                         : r.status === "done"
-                          ? "הסתיים"
-                          : "בוטל"}
+                          ? "منتهية"
+                          : "ملغاة"}
                     </b>
                   </div>
                 </div>
@@ -505,7 +507,7 @@ export default function CourseDetails() {
                 >
                   <IconButton
                     icon={RefreshCw}
-                    title="סנכרן ילדים לפי יתרת שיעורים"
+                    title="مزامنة الأطفال حسب رصيد الحصص"
                     variant="soft"
                     size="sm"
                     disabled={!isActive}
@@ -513,7 +515,7 @@ export default function CourseDetails() {
                   />
                   <IconButton
                     icon={CheckCircle2}
-                    title="סיים מחזור"
+                    title="إنهاء الدفعة"
                     variant="soft"
                     size="sm"
                     disabled={!isActive}
@@ -522,13 +524,13 @@ export default function CourseDetails() {
                         open: true,
                         type: "done",
                         runId: r.run_id,
-                        text: `סיים מחזור: ${title}`,
+                        text: `إنهاء الدفعة: ${title}`,
                       })
                     }
                   />
                   <IconButton
                     icon={Ban}
-                    title="ביטול מחזור"
+                    title="إلغاء الدفعة"
                     variant="danger"
                     size="sm"
                     disabled={!isActive}
@@ -537,14 +539,14 @@ export default function CourseDetails() {
                         open: true,
                         type: "canceled",
                         runId: r.run_id,
-                        text: `ביטול מחזור: ${title}`,
+                        text: `إلغاء الدفعة: ${title}`,
                       })
                     }
                   />
                   {r.status !== "active" ? (
                     <IconButton
                       icon={RotateCcw}
-                      title="הפעל מחדש"
+                      title="إعادة تفعيل"
                       variant="ghost"
                       size="sm"
                       onClick={() =>
@@ -552,14 +554,14 @@ export default function CourseDetails() {
                           open: true,
                           type: "reactivate",
                           runId: r.run_id,
-                          text: `האם ברצונך הפעל מחדש מחזור "${r.run_title}"؟`,
+                          text: `هل تريد إعادة تفعيل الدفعة "${r.run_title}"؟`,
                         })
                       }
                     />
                   ) : null}
                   <IconButton
                     icon={Trash2}
-                    title="מחיקה סופית"
+                    title="حذف نهائي"
                     variant="danger"
                     size="sm"
                     onClick={() =>
@@ -567,7 +569,7 @@ export default function CourseDetails() {
                         open: true,
                         type: "delete",
                         runId: r.run_id,
-                        text: `מחיקה סופית: ${title}`,
+                        text: `حذف نهائي: ${title}`,
                       })
                     }
                   />
@@ -578,26 +580,26 @@ export default function CourseDetails() {
         </div>
       )}
 
-      <Modal open={open} title="פתיחת מחזור חדש" onClose={() => setOpen(false)}>
+      <Modal open={open} title="فتح دفعة جديدة" onClose={() => setOpen(false)}>
         <div className="muted">
-          זה القالب ثابت، وكل مرة تפתח “מחזור” جديدة بتواريخ جديدة.
+          هذا القالب ثابت، وكل مرة تفتح “دفعة” جديدة بتواريخ جديدة.
         </div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">שם מחזור (اختياري)</div>
+            <div className="muted">اسم الدفعة (اختياري)</div>
             <input
               className="input"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="דוגמה: מועדון יום ראשון – פברואר 2026"
+              placeholder="مثال: نادي الأحد - فبراير 2026"
             />
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">אוل שיעור (تاريخ/זמן)</div>
+            <div className="muted">أول حصة (تاريخ/وقت)</div>
             <input
               className="input"
               type="datetime-local"
@@ -607,14 +609,14 @@ export default function CourseDetails() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">האם ברצונך הפקה שיעורים אוטומטיًا؟</div>
+            <div className="muted">هل تريد توليد الحصص تلقائيًا؟</div>
             <ModernSelect
               value={createSessions ? "1" : "0"}
               onChange={(v) => setCreateSessions(v === "1")}
               menuWidth="trigger"
               options={[
-                { value: "1", label: "כן" },
-                { value: "0", label: "לא" },
+                { value: "1", label: "نعم" },
+                { value: "0", label: "لا" },
               ]}
             />
           </div>
@@ -622,7 +624,7 @@ export default function CourseDetails() {
           {createSessions && (
             <>
               <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">مدة الשיעור (دقائق)</div>
+                <div className="muted">مدة الحصة (دقائق)</div>
                 <input
                   className="input"
                   type="number"
@@ -633,7 +635,7 @@ export default function CourseDetails() {
               </div>
 
               <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">מספר השיעורים</div>
+                <div className="muted">عدد الحصص</div>
                 <input
                   className="input"
                   type="number"
@@ -665,10 +667,10 @@ export default function CourseDetails() {
               disabled={saving}
               onClick={createRun}
             >
-              {saving ? "יוצר..." : "צור מחזור"}
+              {saving ? "جاري الإنشاء..." : "إنشاء الدفعة"}
             </button>
             <button className="btn" onClick={() => setOpen(false)}>
-              ביטול
+              إلغاء
             </button>
           </div>
         </div>
@@ -676,10 +678,10 @@ export default function CourseDetails() {
 
       <ConfirmDialog
         open={confirm.open}
-        title="אישור"
+        title="تأكيد"
         message={confirm.text}
-        confirmText="כן"
-        cancelText="ביטול"
+        confirmText="نعم"
+        cancelText="إلغاء"
         danger={confirm.type === "canceled" || confirm.type === "delete"}
         onCancel={() =>
           setConfirm({ open: false, type: null, runId: null, text: "" })
