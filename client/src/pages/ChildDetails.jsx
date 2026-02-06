@@ -5,9 +5,9 @@ import ErrorBanner from "../components/ErrorBanner";
 import Badge from "../components/Badge";
 
 function badgeRun(status) {
-  if (status === "active") return <Badge variant="ok">فعّالة</Badge>;
-  if (status === "done") return <Badge variant="info">منتهية</Badge>;
-  return <Badge variant="danger">ملغاة</Badge>;
+  if (status === "active") return <Badge variant="ok">פעיל</Badge>;
+  if (status === "done") return <Badge variant="info">הסתיים</Badge>;
+  return <Badge variant="danger">בוטל</Badge>;
 }
 
 export default function ChildDetails() {
@@ -74,13 +74,13 @@ export default function ChildDetails() {
   if (loading)
     return (
       <div className="container page page--children">
-        <div className="card">جاري التحميل...</div>
+        <div className="card">טוען...</div>
       </div>
     );
   if (!child)
     return (
       <div className="container">
-        <div className="card">الطفل غير موجود.</div>
+        <div className="card">הילד לא נמצא.</div>
       </div>
     );
 
@@ -90,14 +90,14 @@ export default function ChildDetails() {
         <div>
           <div className="h1">{child.name}</div>
           <div className="muted">
-            عمر: {child.age} — صف: {child.class ?? "-"} — بلد:{" "}
+            גיל: {child.age} — כיתה: {child.class ?? "-"} — יישוב:{" "}
             {child.country ?? "-"}
           </div>
         </div>
 
         <div className="row">
           <button className="btn" onClick={() => navigate("/children")}>
-            رجوع
+            חזרה
           </button>
         </div>
       </div>
@@ -106,19 +106,19 @@ export default function ChildDetails() {
 
       <div className="grid" style={{ marginBottom: 12 }}>
         <div className="card" style={{ gridColumn: "span 4" }}>
-          <div className="muted">متفق عليه</div>
+          <div className="muted">סוכם</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>
             {totals.agreed.toFixed(2)}
           </div>
         </div>
         <div className="card" style={{ gridColumn: "span 4" }}>
-          <div className="muted">مدفوع</div>
+          <div className="muted">שולם</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>
             {totals.paid.toFixed(2)}
           </div>
         </div>
         <div className="card" style={{ gridColumn: "span 4" }}>
-          <div className="muted">باقي</div>
+          <div className="muted">יתרה</div>
           <div style={{ fontSize: 26, fontWeight: 900 }}>
             {totals.balance.toFixed(2)}
           </div>
@@ -127,7 +127,7 @@ export default function ChildDetails() {
 
       <div className="grid" style={{ marginBottom: 12 }}>
         <div className="card" style={{ gridColumn: "span 6" }}>
-          <div className="h1">بيانات الأم</div>
+          <div className="h1">פרטי האם</div>
           <div className="muted" style={{ marginTop: 6 }}>
             {child.mother_name ?? "-"}
           </div>
@@ -138,18 +138,18 @@ export default function ChildDetails() {
               onClick={(e) => {
                 if (!child.mother_phone) {
                   e.preventDefault();
-                  toast("لا يوجد رقم للأم.", "warn");
+                  toast("אין מספר לאמא.", "warn");
                 }
               }}
             >
-              اتصال بالأم
+              התקשר לאמא
             </a>
             <div className="muted">{child.mother_phone ?? "-"}</div>
           </div>
         </div>
 
         <div className="card" style={{ gridColumn: "span 6" }}>
-          <div className="h1">بيانات الأب</div>
+          <div className="h1">פרטי האב</div>
           <div className="muted" style={{ marginTop: 6 }}>
             {child.father_name ?? "-"}
           </div>
@@ -160,11 +160,11 @@ export default function ChildDetails() {
               onClick={(e) => {
                 if (!child.father_phone) {
                   e.preventDefault();
-                  toast("لا يوجد رقم للأب.", "warn");
+                  toast("אין מספר לאבא.", "warn");
                 }
               }}
             >
-              اتصال بالأب
+              התקשר לאבא
             </a>
             <div className="muted">{child.father_phone ?? "-"}</div>
           </div>
@@ -172,25 +172,25 @@ export default function ChildDetails() {
       </div>
 
       <div className="card">
-        <div className="h1">الدورات/الدفعات المسجل فيها</div>
+        <div className="h1">קורסים/תשלומים שבהם רשום</div>
         <div className="muted" style={{ marginTop: 6 }}>
-          اضغط “فتح الدفعة” للذهاب مباشرة للحضور والدفع.
+          לחץ על "פתח מחזור" כדי לעבור ישירות לנוכחות ולתשלום.
         </div>
 
         <hr className="sep" />
 
         {enrollments.length === 0 ? (
-          <div className="muted">لا يوجد تسجيلات.</div>
+          <div className="muted">לא יש تسجيלאت.</div>
         ) : (
           <table className="table">
             <thead>
               <tr>
-                <th>الدورة</th>
-                <th>الدفعة</th>
-                <th>حالة الدفعة</th>
-                <th>متفق عليه</th>
-                <th>مدفوع</th>
-                <th>باقي</th>
+                <th>קורס</th>
+                <th>מחזור</th>
+                <th>حالة מחזור</th>
+                <th>סוכם</th>
+                <th>שולם</th>
+                <th>יתרה</th>
                 <th></th>
               </tr>
             </thead>
@@ -208,7 +208,7 @@ export default function ChildDetails() {
                       className="btn primary"
                       onClick={() => navigate(`/runs/${r.run_id}`)}
                     >
-                      فتح الدفعة
+                      פתח מחזור
                     </button>
                   </td>
                 </tr>

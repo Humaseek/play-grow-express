@@ -78,7 +78,7 @@ export default function Today() {
   const navigate = useNavigate();
   const { toast } = useOutletContext();
 
-  // view = "active" (dashboard للدورات الشغالة) | "day" (جدول اليوم)
+  // view = "active" (לוח מחוונים לקורסים פעילים) | "day" (جدول היום)
   const [view, setView] = useState("active");
 
   const [activeRuns, setActiveRuns] = useState([]);
@@ -96,7 +96,7 @@ export default function Today() {
     setLoading((s) => ({ ...s, active: true }));
     setError(null);
 
-    // 1) كل الدُفعات/الدورات الشغالة (مع next_session_at من view)
+    // 1) كل الدُفعات/קורסים الפעיל (مع next_session_at מ view)
     const { data: runs, error: runsErr } = await supabase
       .from("course_runs_summary_view")
       .select("*")
@@ -109,7 +109,7 @@ export default function Today() {
       return;
     }
 
-    // 2) جميع الحصص القادمة (مرة واحدة) → نحسب المتبقي + أقرب حصة + id
+    // 2) جميع שיעורים القادمة (مرة وיום ראשוןة) → نحسب المتبقي + השיעור הקרוב + id
     const nowIso = new Date().toISOString();
     const { data: upcoming, error: upErr } = await supabase
       .from("course_sessions")
@@ -177,9 +177,9 @@ export default function Today() {
       .slice()
       .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
 
-    // IMPORTANT: today_sessions_view أحيانًا ما ترجع نسبة الدفع الصحيحة.
-    // RunDetails يحسبها من بيانات المشاركين الفعّالين (agreed_price / paid_amount) من run_participants_view.
-    // عشان نطابق RunDetails 1:1، نحسب النسبة هنا بنفس الطريقة.
+    // IMPORTANT: today_sessions_view أحيانًا ما ترجع אחוז תשלום الصحيحة.
+    // RunDetails يحسبها מ بيانات משתתפים الفعّالين (agreed_price / paid_amount) מ run_participants_view.
+    // عشان نطابق RunDetails 1:1، نحسب النسبة هنا بنفس الשיטה.
     const runIds = Array.from(new Set(baseRows.map((r) => r.run_id).filter(Boolean)));
 
     const paidByRun = new Map(); // run_id(string) -> ratio(0..1)
@@ -245,7 +245,7 @@ export default function Today() {
     const next = activeRuns[0]?.next_session ?? null;
     const nextLabel = next
       ? `${fmtDay(next.start_at)} • ${formatTimeRange(next.start_at, next.end_at)}`
-      : "لا يوجد";
+      : "אין";
 
     return { runsCount, upcomingSum, participantsSum, next, nextLabel };
   }, [activeRuns]);
@@ -270,7 +270,7 @@ export default function Today() {
     const recordedPct = expectedSum === 0 ? 0 : (recordedSum / expectedSum) * 100;
     const presentPct = expectedSum === 0 ? 0 : (presentSum / expectedSum) * 100;
     // NOTE: supabase ممكن يرجّع numeric كـ string (مثال: "0.5")
-    // إذا جمعناها بدون تحويل، يصير concatenation وبعدين avg = NaN → يطلع 0%
+    // إذا جمعناها بدون העברה، يصير concatenation وبعدين avg = NaN → يطلع 0%
     const avgPaid =
       count === 0
         ? 0
@@ -303,10 +303,10 @@ export default function Today() {
 
     if (err) {
       setError(err);
-      toast("فشل تحديث حالة الحصة.", "danger");
+      toast("עדכון סטטוס השיעור נכשל.", "danger");
       return;
     }
-    toast("تم تحديث حالة الحصة.", "ok");
+    toast("סטטוס השיעור עודכן.", "ok");
     await loadTodayAgenda();
     await loadActiveRuns();
   }
@@ -316,11 +316,11 @@ export default function Today() {
   return (
     <div className="container page page--today">
       <PageHeader
-        title="لوحة التحكم"
+        title="לוח בקרה"
         subtitle={
           view === "active"
-            ? "الدورات/الورشات الشغّالة (لسا ظايل حصص) — مرتبة حسب الأقرب"
-            : "جدول اليوم — كروت مرتبة حسب الساعة (مثل كاليندر ليوم واحد)"
+            ? "קורסים/סדנאות פעילים (נשארו שיעורים) — ממוינים לפי הקרוב ביותר"
+            : "לוח היום — כרטיסים ממוינים לפי שעה (כמו יומן ליום אחד)"
         }
         actions={
           <div className="toolbar" style={{ gap: 10 }}>
@@ -330,29 +330,29 @@ export default function Today() {
                 onClick={() => setView("active")}
                 type="button"
               >
-                الدورات الشغّالة
+                קורסים الشغّالة
               </button>
               <button
                 className={`segmentedBtn ${view === "day" ? "isActive" : ""}`}
                 onClick={() => setView("day")}
                 type="button"
               >
-                جدول اليوم
+                جدول היום
               </button>
             </div>
 
             <IconButton
-              title="تحديث"
+              title="רענן"
               variant="soft"
               onClick={loadAll}
-              ariaLabel="تحديث"
+              ariaLabel="רענן"
             >
               <RefreshCcw size={18} />
             </IconButton>
 
-            <button className="btn soft" onClick={() => navigate("/courses")}>الدورات</button>
-            <button className="btn soft" onClick={() => navigate("/payments")}>الدفعات</button>
-            <button className="btn soft" onClick={() => navigate("/expenses")}>المصاريف</button>
+            <button className="btn soft" onClick={() => navigate("/courses")}>קורסים</button>
+            <button className="btn soft" onClick={() => navigate("/payments")}>תשלומים</button>
+            <button className="btn soft" onClick={() => navigate("/expenses")}>הוצאות</button>
           </div>
         }
       />
@@ -366,12 +366,12 @@ export default function Today() {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={Sparkles}
-                label="دورات/ورشات شغّالة"
+                label="קורסים/סדנאות פעילים"
                 value={activeStats.runsCount}
                 hint={
                   activeStats.next
-                    ? `أقرب حصة: ${activeStats.nextLabel}`
-                    : "لا يوجد حصص قادمة"
+                    ? `השיעור הקרוב: ${activeStats.nextLabel}`
+                    : "אין שיעורים קרובים"
                 }
                 variant={activeStats.runsCount === 0 ? "neutral" : "info"}
               />
@@ -380,9 +380,9 @@ export default function Today() {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={CalendarDays}
-                label="حصص قادمة"
+                label="שיעורים קרובים"
                 value={activeStats.upcomingSum}
-                hint="عدد الحصص المستقبلية عبر كل الدورات الشغّالة"
+                hint="מספר השיעורים העתידיים בכל הקורסים הפעילים"
                 variant={activeStats.upcomingSum === 0 ? "neutral" : "info"}
               />
             </div>
@@ -390,9 +390,9 @@ export default function Today() {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={ClipboardList}
-                label="مشاركين فعّالين"
+                label="משתתפים פעילים"
                 value={activeStats.participantsSum}
-                hint="مجموع المشاركين عبر الدورات الشغّالة"
+                hint="סך המשתתפים בכל הקורסים הפעילים"
                 variant={activeStats.participantsSum === 0 ? "neutral" : "ok"}
               />
             </div>
@@ -400,13 +400,13 @@ export default function Today() {
           </div>
 
           {loading.active ? (
-            <div className="card">جاري التحميل...</div>
+            <div className="card">טוען...</div>
           ) : activeRuns.length === 0 ? (
             <EmptyState
               icon={Sparkles}
-              title="لا توجد دورات شغّالة"
-              description="لإظهار الدورات هنا: أنشئ دفعة (Run) وأضف لها حصص مستقبلية. سيتم ترتيبها تلقائيًا حسب أقرب حصة."
-              actionLabel="اذهب إلى الدورات"
+              title="אין קורסים פעילים"
+              description="כדי להציג כאן קורסים: צור מחזור (Run) והוסף לו שיעורים עתידיים. המיון יתבצע אוטומטית לפי השיעור הקרוב."
+              actionLabel="עבור לקורסים"
               onAction={() => navigate("/courses")}
             />
           ) : (
@@ -428,16 +428,16 @@ export default function Today() {
                         <div className="titleRow">
                           <div className="titleMain">{r.title}</div>
                           <Badge variant={r.kind === "workshop" ? "info" : "neutral"}>
-                            {r.kind === "workshop" ? "ورشة" : "دورة"}
+                            {r.kind === "workshop" ? "סדנה" : "קורס"}
                           </Badge>
                         </div>
                         <div className="muted" style={{ marginTop: 6 }}>
-                          {r.label} • المشاركين: <b>{r.participants_count ?? 0}</b>
+                          {r.label} • משתתפים: <b>{r.participants_count ?? 0}</b>
                         </div>
                       </div>
 
                       <div className="stack" style={{ gap: 8, alignItems: "flex-end" }}>
-                        <Badge variant="info">أقرب حصة</Badge>
+                        <Badge variant="info">השיעור הקרוב</Badge>
                         <div style={{ fontWeight: 950 }}>{when}</div>
                       </div>
                     </div>
@@ -446,13 +446,13 @@ export default function Today() {
 
                     <div className="row space" style={{ alignItems: "center" }}>
                       <div className="muted">
-                        حصص متبقية: <b>{r.upcoming_count}</b>
+                        שיעורים متبقية: <b>{r.upcoming_count}</b>
                       </div>
 
                       <div className="actionsRow">
                         {next?.id ? (
                           <IconButton
-                            title="فتح حصة الأقرب (الحضور)"
+                            title="פתח את השיעור הקרוב (נוכחות)"
                             variant="primary"
                             onClick={() => navigate(`/sessions/${next.id}/attendance`)}
                           >
@@ -461,14 +461,14 @@ export default function Today() {
                         ) : null}
 
                         <IconButton
-                          title="تفاصيل الدفعة"
+                          title="פרטי מחזור"
                           onClick={() => navigate(`/runs/${r.run_id}`)}
                         >
                           <Layers size={18} />
                         </IconButton>
 
                         <IconButton
-                          title="قالب الدورة"
+                          title="תבנית קורס"
                           onClick={() => navigate(`/courses/${r.template_id}`)}
                         >
                           <LayoutTemplate size={18} />
@@ -490,12 +490,12 @@ export default function Today() {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={CalendarDays}
-                label="حصص اليوم"
+                label="שיעורי היום"
                 value={dayStats.count}
                 hint={
                   dayStats.next
-                    ? `أقرب حصة: ${formatTimeRange(dayStats.next.start_at, dayStats.next.end_at)}`
-                    : "لا يوجد حصص مجدولة"
+                    ? `השיעור הקרוב: ${formatTimeRange(dayStats.next.start_at, dayStats.next.end_at)}`
+                    : "אין שיעורים מתוזמנים"
                 }
                 variant={dayStats.count === 0 ? "neutral" : "info"}
               />
@@ -504,9 +504,9 @@ export default function Today() {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={Sparkles}
-                label="مجدولة"
+                label="מתוזמן"
                 value={dayStats.scheduled}
-                hint="حصص قابلة للتنفيذ اليوم"
+                hint="שיעורים לביצוע היום"
                 variant={dayStats.scheduled === 0 ? "neutral" : "info"}
               />
             </div>
@@ -514,9 +514,9 @@ export default function Today() {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={ClipboardList}
-                label="الحضور المسجل"
+                label="נוכחות רשומה"
                 value={`${dayStats.recordedSum}/${dayStats.expectedSum}`}
-                hint={`${dayStats.recordedPct.toFixed(0)}% من المتوقع`}
+                hint={`${dayStats.recordedPct.toFixed(0)}% מ צפוי`}
                 variant={pctVariant(dayStats.recordedPct)}
               />
             </div>
@@ -524,22 +524,22 @@ export default function Today() {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={Banknote}
-                label="متوسط الدفع"
+                label="ממוצע תשלום"
                 value={`${paidPctKpi.toFixed(0)}%`}
-                hint="نسبة الدفع عبر كل حصص اليوم"
+                hint="אחוז תשלום בכל שיעורי היום"
                 variant={paidVariant(dayStats.avgPaid)}
               />
             </div>
           </div>
 
           {loading.day ? (
-            <div className="card">جاري التحميل...</div>
+            <div className="card">טוען...</div>
           ) : todayRows.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
-              title="لا توجد حصص اليوم"
-              description="أضف حصص من داخل الدفعة (Run) وستظهر هنا فورًا كجدول يوم واحد."
-              actionLabel="اذهب إلى الدورات"
+              title="לא توجد שיעורי היום"
+              description="הוסף שיעורים מתוך המחזור (Run) והם יופיעו כאן מיד כלוח יום אחד."
+              actionLabel="עבור לקורסים"
               onAction={() => navigate("/courses")}
             />
           ) : (
@@ -569,7 +569,7 @@ export default function Today() {
                             <Badge
                               variant={r.kind === "workshop" ? "info" : "neutral"}
                             >
-                              {r.kind === "workshop" ? "ورشة" : "دورة"}
+                              {r.kind === "workshop" ? "סדנה" : "קורס"}
                             </Badge>
                           </div>
                           <div className="muted" style={{ marginTop: 6 }}>
@@ -587,10 +587,10 @@ export default function Today() {
                           }
                         >
                           {r.status === "scheduled"
-                            ? "مجدولة"
+                            ? "מתוזמן"
                             : r.status === "done"
-                              ? "منتهية"
-                              : "ملغاة"}
+                              ? "הסתיים"
+                              : "בוטל"}
                         </Badge>
                       </div>
 
@@ -598,11 +598,11 @@ export default function Today() {
 
                       <div className="row space" style={{ gap: 10, flexWrap: "wrap" }}>
                         <div className="pill">
-                          <span className="muted">الحضور المسجل</span>
+                          <span className="muted">נוכחות רשומה</span>
                           <b>{recorded}/{expected}</b>
                         </div>
                         <div className="pill">
-                          <span className="muted">الحاضر</span>
+                          <span className="muted">الנוכח</span>
                           <b>{present}/{expected}</b>
                         </div>
                         <div className="pill">
@@ -612,7 +612,7 @@ export default function Today() {
                           </Badge>
                         </div>
                         <div className="pill">
-                          <span className="muted">تسجيل الحضور</span>
+                          <span className="muted">רישום נוכחות</span>
                           <Badge variant={pctVariant(recordedPct)}>
                             {recordedPct.toFixed(0)}%
                           </Badge>
@@ -621,7 +621,7 @@ export default function Today() {
 
                       <div className="actionsRow" style={{ marginTop: 12 }}>
                         <IconButton
-                          title="فتح الحضور"
+                          title="פתח נוכחות"
                           variant="primary"
                           onClick={() =>
                             navigate(`/sessions/${r.session_id}/attendance`)
@@ -631,21 +631,21 @@ export default function Today() {
                         </IconButton>
 
                         <IconButton
-                          title="تفاصيل الدفعة"
+                          title="פרטי מחזור"
                           onClick={() => navigate(`/runs/${r.run_id}`)}
                         >
                           <Layers size={18} />
                         </IconButton>
 
                         <IconButton
-                          title="قالب الدورة"
+                          title="תבנית קורס"
                           onClick={() => navigate(`/courses/${r.course_id}`)}
                         >
                           <LayoutTemplate size={18} />
                         </IconButton>
 
                         <IconButton
-                          title="إنهاء"
+                          title="סיום"
                           onClick={() =>
                             setConfirm({
                               open: true,
@@ -659,7 +659,7 @@ export default function Today() {
                         </IconButton>
 
                         <IconButton
-                          title="إلغاء"
+                          title="ביטול"
                           variant="danger"
                           onClick={() =>
                             setConfirm({
@@ -684,14 +684,14 @@ export default function Today() {
 
       <ConfirmDialog
         open={confirm.open}
-        title="تأكيد"
+        title="אישור"
         message={
           confirm.action === "done"
-            ? "هل تريد إنهاء الحصة؟"
-            : "هل تريد إلغاء الحصة؟"
+            ? "האם לסיים את השיעור?"
+            : "האם לבטל את השיעור?"
         }
-        confirmText="نعم"
-        cancelText="إلغاء"
+        confirmText="כן"
+        cancelText="ביטול"
         danger={confirm.action !== "done"}
         onCancel={() => setConfirm({ open: false, action: null, sessionId: null })}
         onConfirm={async () => {

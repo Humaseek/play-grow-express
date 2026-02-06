@@ -643,7 +643,7 @@ export default function Payments() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={CreditCard}
-          title="لا توجد دفعات ضمن الفلاتر الحالية"
+          title="אין מחזורים במסננים הנוכחיים"
           description="جرّب تغيير نطاق التاريخ أو مسح البحث."
           actionLabel="إضافة دفعة"
           onAction={openAddModal}

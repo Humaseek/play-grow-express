@@ -21,13 +21,13 @@ export default function Layout() {
       if (!mounted) return;
 
       if (error) {
-        push("فشل فحص صلاحية الأدمن.", "danger");
+        push("בדיקת הרשאות מנהל נכשלה.", "danger");
         setCheckingAdmin(false);
         return;
       }
 
       if (!data) {
-        // ليس أدمن -> صفحة not-admin
+        // ليس أدמ -> صفحة not-admin
         if (location.pathname !== "/not-admin")
           navigate("/not-admin", { replace: true });
       }
@@ -54,7 +54,7 @@ export default function Layout() {
       <main className="main">
         {checkingAdmin ? (
           <div className="container">
-            <div className="card">جاري التحقق من صلاحيات الأدمن...</div>
+            <div className="card">בודק הרשאות מנהל...</div>
           </div>
         ) : (
           <div className="page">

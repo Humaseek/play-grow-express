@@ -11,7 +11,7 @@ export default function ModernSelect({
   value,
   onChange,
   options,
-  placeholder = "اختر",
+  placeholder = "בחר",
   disabled = false,
   className = "",
   /** if true, renders without outer border/padding (useful inside Control) */

@@ -2,7 +2,7 @@ import React from "react";
 
 /**
  * PageHeader
- * - هيدر موحّد لكل الصفحات: عنوان + وصف + أكشنز
+ * - هيدر موحّد لكل כיתהحات: عنوان + وصف + أكشنز
  * - يدعم Accent Theme للصفحة عبر CSS variables (--page-accent)
  */
 export default function PageHeader({ title, subtitle, actions }) {

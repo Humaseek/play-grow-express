@@ -46,10 +46,10 @@ function fmtSessionLabel(startAt, endAt) {
 }
 
 function methodLabel(m) {
-  if (m === "cash") return "نقدي";
-  if (m === "card") return "بطاقة";
-  if (m === "transfer") return "تحويل";
-  return "أخرى";
+  if (m === "cash") return "מזומן";
+  if (m === "card") return "כרטיס";
+  if (m === "transfer") return "העברה";
+  return "אחר";
 }
 
 function statusFromEnrollment(enr) {
@@ -58,15 +58,15 @@ function statusFromEnrollment(enr) {
   const bal = Number(enr?.balance || 0);
 
   if (agreed <= 0) {
-    return { key: "free", label: "مجاني", variant: "info", rowClass: "" };
+    return { key: "free", label: "חינם", variant: "info", rowClass: "" };
   }
   if (bal <= 0) {
-    return { key: "paid", label: "مدفوع", variant: "ok", rowClass: "rowPaid" };
+    return { key: "paid", label: "שולם", variant: "ok", rowClass: "rowPaid" };
   }
   if (paid > 0) {
-    return { key: "partial", label: "جزئي", variant: "warn", rowClass: "rowPartial" };
+    return { key: "partial", label: "חלקי", variant: "warn", rowClass: "rowPartial" };
   }
-  return { key: "unpaid", label: "غير مدفوع", variant: "danger", rowClass: "rowUnpaid" };
+  return { key: "unpaid", label: "לא שולם", variant: "danger", rowClass: "rowUnpaid" };
 }
 
 function toInputDatetimeLocal(dt) {
@@ -425,13 +425,13 @@ export default function Payments() {
 
   async function createPayment() {
     if (!payEnrollmentId) {
-      toast("اختر اشتراكًا (الطفل/الدورة).", "warn");
+      toast("בחר הרשמה (ילד/קורס).", "warn");
       return;
     }
 
     const amount = Number(payAmount);
     if (!amount || amount <= 0) {
-      toast("أدخل مبلغ صحيح.", "warn");
+      toast("הזן סכום תקין.", "warn");
       return;
     }
 
@@ -460,14 +460,14 @@ export default function Payments() {
 
     if (ins.error) {
       setError(ins.error);
-      toast("فشل تسجيل الدفعة.", "danger");
+      toast("רישום המחזור נכשל.", "danger");
       return;
     }
 
     toast(
       supportsSessionId || !sessionId
-        ? "تم تسجيل الدفعة."
-        : "تم تسجيل الدفعة (بدون ربط بالحصة — فعّل ترحيل قاعدة البيانات).",
+        ? "המחזור נרשם."
+        : "המחזור נרשם (ללא קישור לשיעור — הפעל את מיגרציית בסיס הנתונים).",
       "ok",
     );
 
@@ -479,10 +479,10 @@ export default function Payments() {
     const d = await supabase.from("payments").delete().eq("id", id);
     if (d.error) {
       setError(d.error);
-      toast("فشل حذف الدفعة.", "danger");
+      toast("מחיקת המחזור נכשלה.", "danger");
       return;
     }
-    toast("تم حذف الدفعة.", "ok");
+    toast("המחזור נמחק.", "ok");
     await loadPayments();
   }
 
@@ -492,24 +492,24 @@ export default function Payments() {
       const b = toDate ? new Date(toDate).toLocaleDateString("ar") : "—";
       return `${a} → ${b}`;
     }
-    if (rangePreset === "30d") return "آخر 30 يوم";
-    if (rangePreset === "90d") return "آخر 90 يوم";
-    if (rangePreset === "this_month") return "هذا الشهر";
-    return "كل الدفعات";
+    if (rangePreset === "30d") return "30 הימים האחרונים";
+    if (rangePreset === "90d") return "90 הימים האחרונים";
+    if (rangePreset === "this_month") return "החודש";
+    return "כל התשלומים";
   }, [rangePreset, fromDate, toDate]);
 
   return (
     <div className="container page page--payments">
       <PageHeader
-        title="الدفعات"
-        subtitle={`عرض وإدارة الدفعات — ${rangeHint}`}
+        title="תשלומים"
+        subtitle={`הצגה וניהול תשלומים — ${rangeHint}`}
         actions={
           <div className="toolbar">
             <button className="btn" onClick={loadPayments}>
-              تحديث
+              רענן
             </button>
             <button className="btn primary" onClick={openAddModal}>
-              <Plus size={18} /> إضافة دفعة
+              <Plus size={18} /> הוסף מחזור
             </button>
           </div>
         }
@@ -522,36 +522,36 @@ export default function Payments() {
       <div className="kpiGrid4" style={{ marginBottom: 14 }}>
         <KpiCard
           icon={Banknote}
-          label="إجمالي الدفعات"
+          label="סה"כ תשלומים"
           value={`${fmtMoney(kpis.total)}₪`}
-          hint="ضمن النطاق الحالي"
+          hint="בטווח הנוכחי"
           variant={kpis.total === 0 ? "neutral" : "info"}
           className="kpi--accent"
                   />
 
         <KpiCard
           icon={CreditCard}
-          label="عدد الدفعات"
+          label="מספר תשלומים"
           value={kpis.count}
-          hint="سجلات دفعات"
+          hint="יומן מחזורים"
           variant={kpis.count === 0 ? "neutral" : "info"}
           className="kpi--accent"
                   />
 
         <KpiCard
           icon={Banknote}
-          label="نقدي"
+          label="מזומן"
           value={`${fmtMoney(kpis.cash)}₪`}
-          hint="مجموع المدفوع نقدًا"
+          hint="סה"כ ששולם במזומן"
           variant={kpis.cash === 0 ? "neutral" : "ok"}
           className="kpi--accent"
                   />
 
         <KpiCard
           icon={UserRound}
-          label="أطفال لديهم دفعات"
+          label="ילדים עם מחזורים"
           value={kpis.uniqChildren}
-          hint={`متوسط الدفعة: ${fmtMoney(kpis.avg)}₪`}
+          hint={`ממוצע תשלום: ${fmtMoney(kpis.avg)}₪`}
           variant={kpis.uniqChildren === 0 ? "neutral" : "info"}
           className="kpi--accent"
                   />
@@ -567,7 +567,7 @@ export default function Payments() {
               style={{ minWidth: 260, width: "auto" }}
             >
               <input
-                placeholder="ابحث: طفل / دورة / ملاحظة"
+                placeholder="חפש: ילד / קורס / הערה"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                   />
@@ -582,13 +582,13 @@ export default function Payments() {
                 bare
                 value={method}
                 onChange={setMethod}
-                placeholder="كل الطرق"
+                placeholder="כל השיטות"
                 options={[
-                  { value: "all", label: "كل الطرق" },
-                  { value: "cash", label: "نقدي" },
-                  { value: "card", label: "بطاقة" },
-                  { value: "transfer", label: "تحويل" },
-                  { value: "other", label: "أخرى" },
+                  { value: "all", label: "כל השיטות" },
+                  { value: "cash", label: "מזומן" },
+                  { value: "card", label: "כרטיס" },
+                  { value: "transfer", label: "העברה" },
+                  { value: "other", label: "אחר" },
                 ]}
                   />
             </Control>
@@ -602,13 +602,13 @@ export default function Payments() {
                 bare
                 value={statusFilter}
                 onChange={setStatusFilter}
-                placeholder="كل الحالات"
+                placeholder="כל המצבים"
                 options={[
-                  { value: "all", label: "كل الحالات" },
-                  { value: "paid", label: "مدفوع" },
-                  { value: "partial", label: "جزئي" },
-                  { value: "unpaid", label: "غير مدفوع" },
-                  { value: "free", label: "مجاني" },
+                  { value: "all", label: "כל המצבים" },
+                  { value: "paid", label: "שולם" },
+                  { value: "partial", label: "חלקי" },
+                  { value: "unpaid", label: "לא שולם" },
+                  { value: "free", label: "חינם" },
                 ]}
                   />
             </Control>
@@ -622,12 +622,12 @@ export default function Payments() {
                 bare
                 value={rangePreset}
                 onChange={setRangePreset}
-                placeholder="آخر 90 يوم"
+                placeholder="90 הימים האחרונים"
                 options={[
-                  { value: "30d", label: "آخر 30 يوم" },
-                  { value: "90d", label: "آخر 90 يوم" },
-                  { value: "this_month", label: "هذا الشهر" },
-                  { value: "custom", label: "تخصيص" },
+                  { value: "30d", label: "30 הימים האחרונים" },
+                  { value: "90d", label: "90 הימים האחרונים" },
+                  { value: "this_month", label: "החודש" },
+                  { value: "custom", label: "הקצאה" },
                 ]}
                   />
             </Control>
@@ -635,7 +635,7 @@ export default function Payments() {
             {rangePreset === "custom" ? (
               <>
                 <div className="filtersBar__date" style={{ minWidth: 160 }}>
-                    <div className="label">من</div>
+                    <div className="label">מ</div>
                     <input
                       className="input"
                       type="date"
@@ -660,15 +660,15 @@ export default function Payments() {
       </div>
 
       {loading ? (
-        <div className="card">جاري التحميل...</div>
+        <div className="card">טוען...</div>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={CreditCard}
-          title="لا توجد دفعات ضمن الفلاتر الحالية"
-          description="جرّب تغيير نطاق التاريخ أو مسح البحث."
-          actionLabel="إضافة دفعة"
+          title="אין מחזורים במסננים הנוכחיים"
+          description="נסה לשנות את טווח התאריכים או לנקות את החיפוש."
+          actionLabel="הוסף מחזור"
           onAction={openAddModal}
-          secondaryLabel="مسح الفلاتر"
+          secondaryLabel="נקה מסננים"
           onSecondary={() => {
             setSearch("");
             setMethod("all");
@@ -683,15 +683,15 @@ export default function Payments() {
           <table className="table">
             <thead>
               <tr>
-                <th>التاريخ</th>
-                <th>الطفل</th>
-                <th>الدورة</th>
-                <th>الدفعة</th>
-                <th>الحصة</th>
-                <th>المبلغ</th>
-                <th>الطريقة</th>
-                <th>الحالة</th>
-                <th>ملاحظة</th>
+                <th>תאריך</th>
+                <th>ילד</th>
+                <th>קורס</th>
+                <th>מחזור</th>
+                <th>الשיעור</th>
+                <th>סכום</th>
+                <th>الשיטה</th>
+                <th>סטטוס</th>
+                <th>مלאحظة</th>
                 <th></th>
               </tr>
             </thead>
@@ -736,7 +736,7 @@ export default function Payments() {
                           className="linkBtn"
                           onClick={() => navigate(`/runs/${p.run_id}`)}
                         >
-                          {p.run_label ?? `دفعة #${p.run_id}`}
+                          {p.run_label ?? `מחזור #${p.run_id}`}
                         </button>
                       ) : (
                         <span>{p.run_label ?? "—"}</span>
@@ -748,7 +748,7 @@ export default function Payments() {
                         <button
                           className="linkBtn"
                           onClick={() => navigate(`/sessions/${p.session_id}/attendance`)}
-                          title="فتح صفحة الحضور"
+                          title="פתח דף נוכחות"
                         >
                           <span className="row" style={{ gap: 6 }}>
                             <LinkIcon size={16} />
@@ -777,7 +777,7 @@ export default function Payments() {
                       <IconButton
                         icon={Trash2}
                         label=""
-                        title="حذف"
+                        title="מחיקה"
                         iconOnly
                         onClick={() => setConfirm({ open: true, id: p.id })}
                   />
@@ -793,18 +793,18 @@ export default function Payments() {
       {/* Add Payment Modal */}
       <Modal
         open={openAdd}
-        title="إضافة دفعة"
+        title="הוסף מחזור"
         onClose={() => setOpenAdd(false)}
       >
         <div style={{ padding: 16 }}>
           {pickerLoading ? (
-            <div className="card">جاري تحميل الاشتراكات...</div>
+            <div className="card">جاري تحميل اלאشتراكات...</div>
           ) : (
             <>
               <div className="grid" style={{ marginBottom: 12 }}>
                 <div style={{ gridColumn: "span 6" }}>
                   <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
-                    الاشتراك (طفل / دورة / دفعة)
+                    הרשמה (ילד / קורס / מחזור)
                   </div>
                   <ModernSelect
                     value={payEnrollmentId}
@@ -814,16 +814,16 @@ export default function Payments() {
                       await loadSessionsForEnrollment(v);
                     }}
                     menuWidth="trigger"
-                    placeholder="— اختر —"
+                    placeholder="— בחר —"
                     options={[
-                      { value: "", label: "— اختر —" },
+                      { value: "", label: "— בחר —" },
                       ...pickerFiltered.map((x) => {
                         const st = statusFromEnrollment(x);
                         const label = `${x.child_name} — ${x.course_title} — ${x.run_label}`;
                         const hint =
                           Number(x.agreed_price || 0) > 0
                             ? ` (متبقي: ${fmtMoney(x.balance)}₪)`
-                            : " (مجاني)";
+                            : " (חינם)";
                         return {
                           value: x.enrollment_id,
                           label: `${label}${hint}`,
@@ -836,14 +836,14 @@ export default function Payments() {
 
                 <div style={{ gridColumn: "span 6" }}>
                   <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
-                    ربط بالحصة (اختياري)
+                    ربط بالשיעור (اختياري)
                   </div>
                   <ModernSelect
                     value={paySessionId}
                     onChange={setPaySessionId}
                     menuWidth="trigger"
                     disabled={!supportsSessionId}
-                    placeholder={supportsSessionId ? "—" : "غير مدعوم"}
+                    placeholder={supportsSessionId ? "—" : "לא נתמך"}
                     options={[
                       { value: "", label: "—" },
                       ...((sessions || [])).map((s) => ({
@@ -858,14 +858,14 @@ export default function Payments() {
               <div className="grid" style={{ marginBottom: 12 }}>
                 <div style={{ gridColumn: "span 4" }}>
                   <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
-                    المبلغ
+                    סכום
                   </div>
                   <div className="input">
                     <input
                       type="number"
                       value={payAmount}
                       onChange={(e) => setPayAmount(e.target.value)}
-                      placeholder="مثال: 120"
+                      placeholder="לדוגמה: 120"
                   />
                     <span className="muted" style={{ fontWeight: 950 }}>
                       ₪
@@ -890,24 +890,24 @@ export default function Payments() {
 
                 <div style={{ gridColumn: "span 4" }}>
                   <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
-                    طريقة الدفع
+                    שיטת תשלום
                   </div>
                   <ModernSelect
                     value={payMethod}
                     onChange={setPayMethod}
                     menuWidth="trigger"
                     options={[
-                      { value: "cash", label: "نقدي" },
-                      { value: "card", label: "بطاقة" },
-                      { value: "transfer", label: "تحويل" },
-                      { value: "other", label: "أخرى" },
+                      { value: "cash", label: "מזומן" },
+                      { value: "card", label: "כרטיס" },
+                      { value: "transfer", label: "העברה" },
+                      { value: "other", label: "אחר" },
                     ]}
                   />
                 </div>
 
                 <div style={{ gridColumn: "span 4" }}>
                   <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
-                    وقت الدفع
+                    זמן תשלום
                   </div>
                   <div className="input">
                     <input
@@ -921,23 +921,23 @@ export default function Payments() {
 
               <div style={{ marginBottom: 12 }}>
                 <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
-                  ملاحظة (اختياري)
+                  مלאحظة (اختياري)
                 </div>
                 <div className="input">
                   <input
                     value={payNote}
                     onChange={(e) => setPayNote(e.target.value)}
-                    placeholder="مثال: دفعة جزئية / تحويل بنك"
+                    placeholder="לדוגמה: תשלום חלקי / העברה בנקאית"
                   />
                 </div>
               </div>
 
               <div className="row" style={{ gap: 10 }}>
                 <button className="btn primary" onClick={createPayment}>
-                  <Plus size={18} /> حفظ
+                  <Plus size={18} /> שמור
                 </button>
                 <button className="btn" onClick={() => setOpenAdd(false)}>
-                  إلغاء
+                  ביטול
                 </button>
               </div>
             </>
@@ -947,10 +947,10 @@ export default function Payments() {
 
       <ConfirmDialog
         open={confirm.open}
-        title="حذف دفعة"
-        message="هل أنت متأكد أنك تريد حذف هذه الدفعة؟"
-        confirmText="حذف"
-        cancelText="إلغاء"
+        title="מחיקת מחזור"
+        message="האם אתה בטוח שברצונך למחוק מחזור זה?"
+        confirmText="מחיקה"
+        cancelText="ביטול"
         danger
         onCancel={() => setConfirm({ open: false, id: null })}
         onConfirm={async () => {

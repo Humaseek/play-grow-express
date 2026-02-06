@@ -4,14 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
-const {
-  PORT = "3000",
-  SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY,
-} = process.env;
+const { PORT = "3000", SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Missing env vars. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env");
+  console.error(
+    "Missing env vars. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env",
+  );
   process.exit(1);
 }
 
@@ -64,20 +62,14 @@ function normalizeChildRow(row) {
   // Prefer real columns; fallback to PGMETA in class_level
   const meta = parseMetaFromClassLevel(row.class_level);
 
-  const dob =
-    row.date_of_birth ??
-    meta?.date_of_birth ??
-    meta?.dob ??
-    null;
+  const dob = row.date_of_birth ?? meta?.date_of_birth ?? meta?.dob ?? null;
 
   const classLevel =
-    (row.class_level && !String(row.class_level).trim().startsWith("PGMETA:"))
+    row.class_level && !String(row.class_level).trim().startsWith("PGMETA:")
       ? row.class_level
       : (meta?.class_level ?? meta?.class ?? null);
 
-  const age =
-    (row.age ?? null) ??
-    calcAgeFromDob(dob);
+  const age = row.age ?? null ?? calcAgeFromDob(dob);
 
   return {
     id: row.id,
@@ -102,10 +94,13 @@ async function requireAdmin(req, res, next) {
     const token = m?.[1];
 
     if (!token) {
-      return res.status(401).json({ error: "Missing Authorization Bearer token" });
+      return res
+        .status(401)
+        .json({ error: "Missing Authorization Bearer token" });
     }
 
-    const { data: userData, error: userErr } = await supabaseAdmin.auth.getUser(token);
+    const { data: userData, error: userErr } =
+      await supabaseAdmin.auth.getUser(token);
     if (userErr || !userData?.user) {
       return res.status(401).json({ error: "Invalid or expired token" });
     }
@@ -120,17 +115,25 @@ async function requireAdmin(req, res, next) {
       .single();
 
     if (profErr) {
-      return res.status(500).json({ error: "Failed to read profiles", details: profErr.message });
+      return res
+        .status(500)
+        .json({ error: "Failed to read profiles", details: profErr.message });
     }
 
     if (profile?.role !== "admin") {
       return res.status(403).json({ error: "Forbidden (not admin)" });
     }
 
-    req.user = { id: userId, email: userData.user.email, full_name: profile.full_name };
+    req.user = {
+      id: userId,
+      email: userData.user.email,
+      full_name: profile.full_name,
+    };
     next();
   } catch (e) {
-    res.status(500).json({ error: "Server error", details: String(e?.message || e) });
+    res
+      .status(500)
+      .json({ error: "Server error", details: String(e?.message || e) });
   }
 }
 
@@ -146,7 +149,9 @@ app.get("/api/me", requireAdmin, (req, res) => {
 app.get("/api/children", requireAdmin, async (req, res) => {
   const { data, error } = await supabaseAdmin
     .from("children")
-    .select("id, full_name, created_at, age, class_level, date_of_birth, gender, country, mother_name, mother_phone, father_name, father_phone")
+    .select(
+      "id, full_name, created_at, age, class_level, date_of_birth, gender, country, mother_name, mother_phone, father_name, father_phone",
+    )
     .order("created_at", { ascending: false });
 
   if (error) return res.status(500).json({ error: error.message });
@@ -163,9 +168,12 @@ app.post("/api/children", requireAdmin, async (req, res) => {
   const date_of_birth = body.date_of_birth ? String(body.date_of_birth) : null;
   const class_level = body.class_level ? String(body.class_level).trim() : null;
 
-  let age = body.age === "" || body.age === null || body.age === undefined ? null : Number(body.age);
+  let age =
+    body.age === "" || body.age === null || body.age === undefined
+      ? null
+      : Number(body.age);
   if (age !== null && Number.isNaN(age)) age = null;
-  if (date_of_birth && (age === null)) age = calcAgeFromDob(date_of_birth);
+  if (date_of_birth && age === null) age = calcAgeFromDob(date_of_birth);
 
   const payload = {
     full_name,
@@ -180,7 +188,11 @@ app.post("/api/children", requireAdmin, async (req, res) => {
     father_phone: body.father_phone ? String(body.father_phone).trim() : null,
   };
 
-  const { data, error } = await supabaseAdmin.from("children").insert(payload).select().single();
+  const { data, error } = await supabaseAdmin
+    .from("children")
+    .insert(payload)
+    .select()
+    .single();
   if (error) return res.status(500).json({ error: error.message });
 
   res.json({ ok: true, row: normalizeChildRow(data) });
@@ -196,9 +208,12 @@ app.put("/api/children/:id", requireAdmin, async (req, res) => {
   const date_of_birth = body.date_of_birth ? String(body.date_of_birth) : null;
   const class_level = body.class_level ? String(body.class_level).trim() : null;
 
-  let age = body.age === "" || body.age === null || body.age === undefined ? null : Number(body.age);
+  let age =
+    body.age === "" || body.age === null || body.age === undefined
+      ? null
+      : Number(body.age);
   if (age !== null && Number.isNaN(age)) age = null;
-  if (date_of_birth && (age === null)) age = calcAgeFromDob(date_of_birth);
+  if (date_of_birth && age === null) age = calcAgeFromDob(date_of_birth);
 
   const payload = {
     full_name,
@@ -213,7 +228,12 @@ app.put("/api/children/:id", requireAdmin, async (req, res) => {
     father_phone: body.father_phone ? String(body.father_phone).trim() : null,
   };
 
-  const { data, error } = await supabaseAdmin.from("children").update(payload).eq("id", id).select().single();
+  const { data, error } = await supabaseAdmin
+    .from("children")
+    .update(payload)
+    .eq("id", id)
+    .select()
+    .single();
   if (error) return res.status(500).json({ error: error.message });
 
   res.json({ ok: true, row: normalizeChildRow(data) });
@@ -229,7 +249,7 @@ app.delete("/api/children/:id", requireAdmin, async (req, res) => {
 });
 
 // SPA fallback (optional)
-app.get("*", (req, res) => {
+app.get("/", (req, res) => {
   res.sendFile(process.cwd() + "/public/index.html");
 });
 

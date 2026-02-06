@@ -14,12 +14,12 @@ export default function SessionsStepper({
 
   return (
     <div className="stepperCard">
-      <div className="muted">عدد الحصص</div>
+      <div className="muted">מספר השיעורים</div>
 
       <div className="row" style={{ gap: 8, alignItems: "center" }}>
         <IconButton
           icon="−"
-          title="إنقاص حصة"
+          title="הפחת שיעור"
           variant="danger"
           size="sm"
           disabled={busy || s <= 0}
@@ -30,7 +30,7 @@ export default function SessionsStepper({
 
         <IconButton
           icon="+"
-          title="زيادة حصة"
+          title="הוסף שיעור"
           variant="primary"
           size="sm"
           disabled={busy}
@@ -39,13 +39,13 @@ export default function SessionsStepper({
 
         {busy && (
           <span className="muted" style={{ marginInlineStart: 8 }}>
-            جاري...
+            טוען...
           </span>
         )}
       </div>
 
       <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-        سعر الحصة: {Number.isFinite(unit) ? unit.toFixed(2) : "0.00"}
+        מחיר לשיעור: {Number.isFinite(unit) ? unit.toFixed(2) : "0.00"}
       </div>
     </div>
   );

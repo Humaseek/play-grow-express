@@ -16,17 +16,17 @@ function fmtDT(dt) {
 const STATUS = ["present", "absent", "excused", "none"];
 
 function statusLabel(s) {
-  if (s === "present") return "حاضر";
-  if (s === "absent") return "غائب";
-  if (s === "excused") return "معذور";
-  return "غير مسجل";
+  if (s === "present") return "נוכח";
+  if (s === "absent") return "נעדר";
+  if (s === "excused") return "מוצדק";
+  return "לא נרשם";
 }
 
 function statusBadge(s) {
-  if (s === "present") return <Badge variant="ok">حاضر</Badge>;
-  if (s === "absent") return <Badge variant="danger">غائب</Badge>;
-  if (s === "excused") return <Badge variant="warn">معذور</Badge>;
-  return <Badge variant="info">غير مسجل</Badge>;
+  if (s === "present") return <Badge variant="ok">נוכח</Badge>;
+  if (s === "absent") return <Badge variant="danger">נעדר</Badge>;
+  if (s === "excused") return <Badge variant="warn">מוצדק</Badge>;
+  return <Badge variant="info">לא נרשם</Badge>;
 }
 
 export default function Attendance() {
@@ -63,7 +63,7 @@ export default function Attendance() {
     if (!s.data.run_id) {
       setError({
         message:
-          "هذه الحصة غير مربوطة بـ Run (run_id). تأكد من توليد الحصص من صفحة الدفعة.",
+          "השיעור הזה לא מקושר ל‑Run (run_id). ודא שיצרת את השיעורים מדף המחזור.",
       });
       setLoading(false);
       return;
@@ -152,8 +152,8 @@ export default function Attendance() {
         enrollment_id: Number(r.enrollment_id),
         status: att[r.enrollment_id] === "none" ? null : att[r.enrollment_id],
       }));
-      // إذا none نحذفها بدل ما نخزن null
-      // 1) Upsert للحالات غير none
+      // إذا none نמחיקהها بدل ما نخزن null
+      // 1) Upsert للحاלאت غير none
       const toUpsert = payload.filter((x) => x.status !== null);
       if (toUpsert.length) {
         const up = await supabase
@@ -162,7 +162,7 @@ export default function Attendance() {
         if (up.error) throw up.error;
       }
 
-      // 2) Delete للحالات none (إذا موجودة سابقاً)
+      // 2) Delete للحاלאت none (إذا موجودة سابقاً)
       const toDelete = payload
         .filter((x) => x.status === null)
         .map((x) => x.enrollment_id);
@@ -175,11 +175,11 @@ export default function Attendance() {
         if (del.error) throw del.error;
       }
 
-      toast("تم حفظ الحضور.", "ok");
+      toast("הנוכחות נשמרה.", "ok");
       await load();
     } catch (e) {
       setError(e);
-      toast("فشل حفظ الحضور.", "danger");
+      toast("שמירת הנוכחות נכשלה.", "danger");
     } finally {
       setSaving(false);
     }
@@ -188,14 +188,14 @@ export default function Attendance() {
   if (loading)
     return (
       <div className="container page page--runs">
-        <div className="card">جاري التحميل...</div>
+        <div className="card">טוען...</div>
       </div>
     );
 
   return (
     <div className="container">
       <PageHeader
-  title="الحضور"
+  title="נוכחות"
   subtitle={
     session
       ? `${summary?.title ?? ""} — ${summary?.label ?? ""} • ${fmtDT(session.start_at)} → ${fmtDT(session.end_at)}`
@@ -205,14 +205,14 @@ export default function Attendance() {
     <div className="toolbar">
       {summary && (
         <button className="btn" onClick={() => navigate(`/runs/${summary.run_id}`)}>
-          <ArrowRight size={18} /> رجوع للدفعة
+          <ArrowRight size={18} /> חזרה למחזור
         </button>
       )}
       <button className="btn" onClick={load}>
-        <RefreshCw size={18} /> تحديث
+        <RefreshCw size={18} /> רענן
       </button>
       <button className="btn primary" disabled={saving} onClick={saveAll}>
-        <Save size={18} /> {saving ? "جاري الحفظ..." : "حفظ"}
+        <Save size={18} /> {saving ? "שומר..." : "שמור"}
       </button>
     </div>
   }
@@ -221,35 +221,35 @@ export default function Attendance() {
 <ErrorBanner error={error} />
 
       <div className="row" style={{ flexWrap: "wrap", marginBottom: 10 }}>
-        <Badge variant="info">المتوقع: {stats.expected}</Badge>
-        <Badge variant="ok">حاضر: {stats.present}</Badge>
-        <Badge variant="danger">غائب: {stats.absent}</Badge>
-        <Badge variant="warn">معذور: {stats.excused}</Badge>
-        <Badge variant="info">غير مسجل: {stats.none}</Badge>
+        <Badge variant="info">צפוי: {stats.expected}</Badge>
+        <Badge variant="ok">נוכח: {stats.present}</Badge>
+        <Badge variant="danger">נעדר: {stats.absent}</Badge>
+        <Badge variant="warn">מוצדק: {stats.excused}</Badge>
+        <Badge variant="info">לא נרשם: {stats.none}</Badge>
       </div>
 
       <div className="toolbar" style={{ marginBottom: 10 }}>
         <button className="btn" onClick={() => setAll("present")}>
-          <CheckCircle2 size={18} /> كلهم حاضر
+          <CheckCircle2 size={18} /> כולם נוכח
         </button>
         <button className="btn" onClick={() => setAll("absent")}>
-          <XCircle size={18} /> كلهم غائب
+          <XCircle size={18} /> כולם נעדר
         </button>
         <button className="btn" onClick={() => setAll("none")}>
-          <Eraser size={18} /> مسح الكل
+          <Eraser size={18} /> נקה הכול
         </button>
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState icon={Users} title="لا يوجد أطفال فعالين في هذه الدفعة" description="أضف مشاركين إلى الدفعة أولًا، ثم عد للحضور لتسجيل الحالة." actionLabel="الذهاب للدفعة" onAction={() => summary && navigate(`/runs/${summary.run_id}`)} />
+        <EmptyState icon={Users} title="אין ילדים פעילים במחזור הזה" description="הוסף משתתפים למחזור קודם, ואז חזור לנוכחות כדי לרשום סטטוס." actionLabel="עבור למחזור" onAction={() => summary && navigate(`/runs/${summary.run_id}`)} />
       ) : (
         <div className="tableWrap">
           <table className="table">
           <thead>
             <tr>
-              <th>الطفل</th>
-              <th>الحالة</th>
-              <th>اختيار</th>
+              <th>ילד</th>
+              <th>סטטוס</th>
+              <th>בחירה</th>
             </tr>
           </thead>
           <tbody>

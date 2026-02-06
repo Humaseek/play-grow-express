@@ -182,7 +182,7 @@ export default function Expenses() {
 
     const byCat = new Map();
     for (const r of filtered) {
-      const c = (r.category || "غير مصنف").trim() || "غير مصنف";
+      const c = (r.category || "ללא קטגוריה").trim() || "ללא קטגוריה";
       byCat.set(c, (byCat.get(c) || 0) + Number(r.amount || 0));
     }
     const top = Array.from(byCat.entries()).sort((a, b) => b[1] - a[1])[0];
@@ -222,11 +222,11 @@ export default function Expenses() {
   async function saveExpense() {
     const amount = Number(expAmount);
     if (!expDate) {
-      toast("اختر تاريخ المصروف.", "warn");
+      toast("בחר תאריך הוצאה.", "warn");
       return;
     }
     if (!amount || amount <= 0) {
-      toast("أدخل مبلغ صحيح.", "warn");
+      toast("הזן סכום תקין.", "warn");
       return;
     }
 
@@ -241,18 +241,18 @@ export default function Expenses() {
       const up = await supabase.from("expenses").update(payload).eq("id", editId);
       if (up.error) {
         setError(up.error);
-        toast("فشل تعديل المصروف.", "danger");
+        toast("עדכון ההוצאה נכשל.", "danger");
         return;
       }
-      toast("تم تعديل المصروف.", "ok");
+      toast("ההוצאה עודכנה.", "ok");
     } else {
       const ins = await supabase.from("expenses").insert([payload]);
       if (ins.error) {
         setError(ins.error);
-        toast("فشل تسجيل المصروف.", "danger");
+        toast("רישום ההוצאה נכשל.", "danger");
         return;
       }
-      toast("تم تسجيل المصروف.", "ok");
+      toast("ההוצאה נרשמה.", "ok");
     }
 
     setOpenAdd(false);
@@ -263,25 +263,25 @@ export default function Expenses() {
     const d = await supabase.from("expenses").delete().eq("id", id);
     if (d.error) {
       setError(d.error);
-      toast("فشل حذف المصروف.", "danger");
+      toast("מחיקת ההוצאה נכשלה.", "danger");
       return;
     }
-    toast("تم حذف المصروف.", "ok");
+    toast("ההוצאה נמחקה.", "ok");
     await load();
   }
 
   return (
     <div className="container page page--expenses">
       <PageHeader
-        title="المصاريف"
-        subtitle="تسجيل وتتبع مصاريف التشغيل"
+        title="הוצאות"
+        subtitle="רישום ומעקב אחר הוצאות תפעול"
         actions={
           <div className="toolbar">
             <button className="btn" onClick={load}>
-              تحديث
+              רענן
             </button>
             <button className="btn primary" onClick={openCreate}>
-              <Plus size={18} /> تسجيل مصروف
+              <Plus size={18} /> רישום הוצאה
             </button>
           </div>
         }
@@ -293,8 +293,8 @@ export default function Expenses() {
         <div className="card">
           <EmptyState
             icon={AlertTriangle}
-            title="جدول المصاريف غير جاهز"
-            description="شغّل ترحيل قاعدة البيانات مرة واحدة، وبعدها ستظهر المصاريف هنا."
+            title="טבלת הוצאות לא מוכנה"
+            description="הפעל את מיגרציית בסיס הנתונים פעם אחת, ואז ההוצאות יופיעו כאן."
           />
 </div>
       ) : (
@@ -302,16 +302,16 @@ export default function Expenses() {
           <div className="kpiGrid4" style={{ marginBottom: 14 }}>
             <KpiCard
               icon={Receipt}
-              label="إجمالي المصاريف"
+              label="סה"כ הוצאות"
               value={`${fmtMoney(stats.total)} ₪`}
-              hint={stats.count ? `عدد القيود: ${stats.count}` : "لا توجد قيود"}
+              hint={stats.count ? `عدد القيود: ${stats.count}` : "לא توجد قيود"}
               variant={stats.total === 0 ? "neutral" : "warn"}
               className="kpi--accent"
             />
 
             <KpiCard
               icon={Layers}
-              label="أعلى تصنيف"
+              label="קטגוריה מובילה"
               value={stats.topCat}
               hint={stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"}
               variant={stats.topCat !== "—" ? "info" : "neutral"}
@@ -320,18 +320,18 @@ export default function Expenses() {
 
             <KpiCard
               icon={Banknote}
-              label="متوسط المصروف"
+              label="ממוצע הוצאה"
               value={`${fmtMoney(stats.avg)} ₪`}
-              hint={stats.count ? "لكل قيد" : "—"}
+              hint={stats.count ? "לכל רשומה" : "—"}
               variant={stats.avg === 0 ? "neutral" : "info"}
               className="kpi--accent"
             />
 
             <KpiCard
               icon={Banknote}
-              label="أكبر مصروف"
+              label="ההוצאה הגדולה ביותר"
               value={`${fmtMoney(stats.max)} ₪`}
-              hint={stats.max === 0 ? "—" : "أعلى قيمة داخل الفلتر الحالي"}
+              hint={stats.max === 0 ? "—" : "ערך מקסימלי במסנן הנוכחי"}
               variant={stats.max === 0 ? "neutral" : "danger"}
               className="kpi--accent"
             />
@@ -344,7 +344,7 @@ export default function Expenses() {
                   <input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="بحث (وصف / تصنيف)"
+                    placeholder="חיפוש (תיאור / קטגוריה)"
                   />
                 </Control>
 
@@ -353,9 +353,9 @@ export default function Expenses() {
                     bare
                     value={cat}
                     onChange={setCat}
-                    placeholder="كل التصنيفات"
+                    placeholder="כל הקטגוריות"
                     options={[
-                      { value: "all", label: "كل التصنيفات" },
+                      { value: "all", label: "כל הקטגוריות" },
                       ...categories.map((c) => ({ value: c, label: c })),
                     ]}
                   />
@@ -366,12 +366,12 @@ export default function Expenses() {
                     bare
                     value={rangePreset}
                     onChange={setRangePreset}
-                    placeholder="هذا الشهر"
+                    placeholder="החודש"
                     options={[
-                      { value: "this_month", label: "هذا الشهر" },
-                      { value: "30d", label: "آخر 30 يوم" },
-                      { value: "custom", label: "مخصص" },
-                      { value: "all", label: "الكل" },
+                      { value: "this_month", label: "החודש" },
+                      { value: "30d", label: "30 הימים האחרונים" },
+                      { value: "custom", label: "מוקצה" },
+                      { value: "all", label: "הכול" },
                     ]}
                   />
                 </Control>
@@ -392,17 +392,17 @@ export default function Expenses() {
           </div>
 
           {loading ? (
-            <div className="card">جاري التحميل...</div>
+            <div className="card">טוען...</div>
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={Receipt}
-              title={rows.length === 0 ? "لا توجد مصاريف بعد" : "لا توجد نتائج"}
+              title={rows.length === 0 ? "אין הוצאות עדיין" : "אין תוצאות"}
               description={
                 rows.length === 0
-                  ? "ابدأ بتسجيل مصاريف التشغيل (إيجار، مواصلات، أدوات، تسويق...)."
-                  : "جرّب تغيير الفلاتر أو البحث."
+                  ? "התחל ברישום הוצאות תפעול (שכירות, נסיעות, ציוד, שיווק...)."
+                  : "נסה לשנות את המסננים או את החיפוש."
               }
-              actionLabel={rows.length === 0 ? "سجل أول مصروف" : "سجل مصروف"}
+              actionLabel={rows.length === 0 ? "רשום הוצאה ראשונה" : "רשום הוצאה"}
               onAction={openCreate}
             />
           ) : (
@@ -410,10 +410,10 @@ export default function Expenses() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>التاريخ</th>
+                    <th>תאריך</th>
                     <th>التصنيف</th>
                     <th>الوصف</th>
-                    <th>المبلغ</th>
+                    <th>סכום</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -431,13 +431,13 @@ export default function Expenses() {
                       <td style={{ whiteSpace: "nowrap" }}>
                         <div className="row" style={{ justifyContent: "flex-end" }}>
                           <IconButton
-                            title="تعديل"
+                            title="עריכה"
                             onClick={() => openEdit(r)}
                             icon={Pencil}
                             variant="soft"
                           />
                           <IconButton
-                            title="حذف"
+                            title="מחיקה"
                             onClick={() => setConfirm({ open: true, id: r.id })}
                             icon={Trash2}
                             variant="danger"
@@ -455,13 +455,13 @@ export default function Expenses() {
 
       <Modal
         open={openAdd}
-        title={editId ? "تعديل مصروف" : "تسجيل مصروف"}
+        title={editId ? "עריכת הוצאה" : "רישום הוצאה"}
         onClose={() => setOpenAdd(false)}
       >
         <div className="card" style={{ border: "none", boxShadow: "none" }}>
           <div className="grid" style={{ marginBottom: 12 }}>
             <div style={{ gridColumn: "span 4" }}>
-              <div className="label">التاريخ</div>
+              <div className="label">תאריך</div>
               <div className="input">
                 <input
                   type="date"
@@ -472,7 +472,7 @@ export default function Expenses() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="label">المبلغ (₪)</div>
+              <div className="label">סכום (₪)</div>
               <div className="input">
                 <input
                   type="number"
@@ -480,7 +480,7 @@ export default function Expenses() {
                   step="0.01"
                   value={expAmount}
                   onChange={(e) => setExpAmount(e.target.value)}
-                  placeholder="مثال: 120"
+                  placeholder="לדוגמה: 120"
                 />
               </div>
             </div>
@@ -491,7 +491,7 @@ export default function Expenses() {
                 <input
                   value={expCategory}
                   onChange={(e) => setExpCategory(e.target.value)}
-                  placeholder="مثال: إيجار / مواصلات / أدوات"
+                  placeholder="לדוגמה: שכירות / נסיעות / ציוד"
                 />
               </div>
             </div>
@@ -502,7 +502,7 @@ export default function Expenses() {
                 <input
                   value={expDesc}
                   onChange={(e) => setExpDesc(e.target.value)}
-                  placeholder="تفاصيل المصروف"
+                  placeholder="פרטי הוצאה"
                 />
               </div>
             </div>
@@ -510,10 +510,10 @@ export default function Expenses() {
 
           <div className="row" style={{ gap: 10 }}>
             <button className="btn primary" onClick={saveExpense}>
-              <Plus size={18} /> حفظ
+              <Plus size={18} /> שמור
             </button>
             <button className="btn" onClick={() => setOpenAdd(false)}>
-              إلغاء
+              ביטול
             </button>
           </div>
         </div>
@@ -521,10 +521,10 @@ export default function Expenses() {
 
       <ConfirmDialog
         open={confirm.open}
-        title="حذف مصروف"
-        message="هل أنت متأكد أنك تريد حذف هذا المصروف؟"
-        confirmText="حذف"
-        cancelText="إلغاء"
+        title="מחיקת הוצאה"
+        message="האם אתה בטוח שברצונך למחוק הוצאה זו?"
+        confirmText="מחיקה"
+        cancelText="ביטול"
         danger
         onCancel={() => setConfirm({ open: false, id: null })}
         onConfirm={async () => {

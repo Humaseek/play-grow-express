@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
-import { supabase } from "./supabaseClient";
+import { supabase, isSupabaseConfigured } from "./supabaseClient";
 import ErrorBoundary from "./components/ErrorBoundary";
+import ConfigMissing from "./pages/ConfigMissing";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
@@ -19,6 +20,11 @@ import Payments from "./pages/Payments";
 import Expenses from "./pages/Expenses";
 
 export default function App() {
+  // If Supabase env vars are missing, render a friendly screen instead of a white page.
+  if (!isSupabaseConfigured || !supabase) {
+    return <ConfigMissing />;
+  }
+
   const [session, setSession] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -49,7 +55,7 @@ export default function App() {
       <div
         style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}
       >
-        <div style={{ color: "#64748b", fontWeight: 800 }}>تحميل...</div>
+        <div style={{ color: "#64748b", fontWeight: 800 }}>טוען...</div>
       </div>
     );
   }

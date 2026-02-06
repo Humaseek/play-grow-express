@@ -153,7 +153,7 @@ export default function Children() {
       };
 
       if (!payload.name || !payload.birth_date) {
-        toast("الاسم وتاريخ الميلاد مطلوبين.", "warn");
+        toast("שם ותאריך לידה נדרשים.", "warn");
         setSaving(false);
         return;
       }
@@ -164,11 +164,11 @@ export default function Children() {
           .update(payload)
           .eq("id", form.id);
         if (error) throw error;
-        toast("تم تعديل بيانات الطفل.", "ok");
+        toast("פרטי הילד עודכנו.", "ok");
       } else {
         const { error } = await supabase.from("children").insert([payload]);
         if (error) throw error;
-        toast("تم إضافة الطفل.", "ok");
+        toast("הילד נוסף.", "ok");
       }
 
       setOpenForm(false);
@@ -176,7 +176,7 @@ export default function Children() {
       await loadAll();
     } catch (e2) {
       setError(e2);
-      toast("فشل الحفظ.", "danger");
+      toast("שמירה נכשלה.", "danger");
     } finally {
       setSaving(false);
     }
@@ -187,23 +187,23 @@ export default function Children() {
     const { error } = await supabase.from("children").delete().eq("id", id);
     if (error) {
       setError(error);
-      toast("فشل الحذف.", "danger");
+      toast("מחיקה נכשלה.", "danger");
       return;
     }
-    toast("تم حذف الطفل.", "ok");
+    toast("הילד נמחק.", "ok");
     await loadAll();
   }
 
   return (
     <div className="container page page--children">
       <PageHeader
-  title="الأطفال"
-  subtitle="بحث سريع + إدارة بيانات الأطفال"
+  title="ילדים"
+  subtitle="חיפוש מהיר + ניהול נתוני ילדים"
   actions={
     <div className="toolbar">
       <input
         className="input"
-        placeholder="بحث بالاسم أو الهاتف..."
+        placeholder="חיפוש לפי שם או טלפון..."
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
@@ -217,22 +217,22 @@ export default function Children() {
 <ErrorBanner error={error} />
 
       {loading ? (
-        <div className="card">جاري التحميل...</div>
+        <div className="card">טוען...</div>
       ) : filtered.length === 0 ? (
-        <EmptyState icon={UserRound} title="لا يوجد أطفال بعد" description="ابدأ بإضافة أول طفل حتى تتمكن من تسجيله في حصص أو دفعات." actionLabel="إضافة طفل" onAction={openCreate} />
+        <EmptyState icon={UserRound} title="אין ילדים עדיין" description="התחל בהוספת ילד ראשון כדי לשבץ אותו לשיעורים או למחזורים." actionLabel="הוסף ילד" onAction={openCreate} />
       ) : (
         <div className="tableWrap">
           <table className="table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>الاسم</th>
-              <th>العمر</th>
-              <th>الصف</th>
+              <th>اלאسم</th>
+              <th>גיל</th>
+              <th>כיתה</th>
               <th>الجنس</th>
               <th>البلد</th>
-              <th>هاتف الأم</th>
-              <th>هاتف الأب</th>
+              <th>טלפון האם</th>
+              <th>טלפון האב</th>
               <th></th>
             </tr>
           </thead>
@@ -241,7 +241,7 @@ export default function Children() {
               <tr key={r.id}>
                 <td className="muted">{r.id}</td>
 
-                {/* ✅ الاسم يفتح ملف الطفل */}
+                {/* ✅ اלאسم يפתח ملف הילד */}
                 <td style={{ fontWeight: 800 }}>
                   <button
                     className="linkBtn"
@@ -254,7 +254,7 @@ export default function Children() {
                 <td>{r.age}</td>
                 <td className="muted">{r.class ?? "-"}</td>
                 <td className="muted">
-                  {r.gender === "male" ? "ذكر" : "أنثى"}
+                  {r.gender === "male" ? "זכר" : "נקבה"}
                 </td>
                 <td className="muted">{r.country || "-"}</td>
                 <td className="muted">{r.mother_phone ?? "-"}</td>
@@ -262,12 +262,12 @@ export default function Children() {
                 <td>
                   <div className="row">
                     <div className="actionsRow">
-                      <IconButton title="تعديل" onClick={() => openEdit(r)}>
+                      <IconButton title="עריכה" onClick={() => openEdit(r)}>
                         <Pencil size={18} />
                       </IconButton>
 
                       <IconButton
-                        title="حذف"
+                        title="מחיקה"
                         variant="danger"
                         onClick={() =>
                           setConfirmDel({ open: true, id: r.id, name: r.name })
@@ -287,7 +287,7 @@ export default function Children() {
 
       <Modal
         open={openForm}
-        title={form.id ? "تعديل طفل" : "إضافة طفل"}
+        title={form.id ? "עריכת ילד" : "הוסף ילד"}
         onClose={() => {
           setOpenForm(false);
           setForm(emptyForm);
@@ -295,7 +295,7 @@ export default function Children() {
       >
         <form onSubmit={saveChild} className="grid">
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">الاسم *</div>
+            <div className="muted">اלאسم *</div>
             <input
               className="input"
               value={form.name}
@@ -304,7 +304,7 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 3" }}>
-            <div className="muted">تاريخ الميلاد *</div>
+            <div className="muted">تاريخ الميלאد *</div>
             <input
               className="input"
               type="date"
@@ -322,14 +322,14 @@ export default function Children() {
               onChange={(v) => setForm((p) => ({ ...p, gender: v }))}
               menuWidth="trigger"
               options={[
-                { value: "male", label: "ذكر" },
-                { value: "female", label: "أنثى" },
+                { value: "male", label: "זכר" },
+                { value: "female", label: "נקבה" },
               ]}
 />
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">الصف</div>
+            <div className="muted">כיתה</div>
             <input
               className="input"
               value={form.class}
@@ -346,12 +346,12 @@ export default function Children() {
               onChange={(v) => setForm((p) => ({ ...p, country_id: v }))}
               menuWidth="trigger"
               options={(countries || []).map((c) => ({ value: c.id, label: c.name }))}
-              placeholder="اختر الدولة"
+              placeholder="בחר מדינה"
 />
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">أو بلد جديد</div>
+            <div className="muted">או بلد جديد</div>
             <input
               className="input"
               value={form.new_country}
@@ -362,7 +362,7 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">اسم الأم</div>
+            <div className="muted">שם האם</div>
             <input
               className="input"
               value={form.mother_name}
@@ -372,7 +372,7 @@ export default function Children() {
             />
           </div>
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">هاتف الأم</div>
+            <div className="muted">טלפון האם</div>
             <input
               className="input"
               value={form.mother_phone}
@@ -383,7 +383,7 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">اسم الأب</div>
+            <div className="muted">שם האב</div>
             <input
               className="input"
               value={form.father_name}
@@ -393,7 +393,7 @@ export default function Children() {
             />
           </div>
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">هاتف الأب</div>
+            <div className="muted">טלפון האב</div>
             <input
               className="input"
               value={form.father_phone}
@@ -404,7 +404,7 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">ملاحظات</div>
+            <div className="muted">הערות</div>
             <textarea
               className="input"
               rows={3}
@@ -417,7 +417,7 @@ export default function Children() {
 
           <div className="row" style={{ gridColumn: "span 12" }}>
             <button className="btn primary" disabled={saving}>
-              {saving ? "جاري الحفظ..." : "حفظ"}
+              {saving ? "שומר..." : "שמור"}
             </button>
             <button
               type="button"
@@ -427,7 +427,7 @@ export default function Children() {
                 setForm(emptyForm);
               }}
             >
-              إلغاء
+              ביטול
             </button>
           </div>
         </form>
@@ -435,10 +435,10 @@ export default function Children() {
 
       <ConfirmDialog
         open={confirmDel.open}
-        title="حذف طفل"
-        message={`هل تريد حذف الطفل: ${confirmDel.name} ؟`}
-        confirmText="حذف"
-        cancelText="إلغاء"
+        title="מחיקת ילד"
+        message={`האם ברצונך מחיקה הילד: ${confirmDel.name} ؟`}
+        confirmText="מחיקה"
+        cancelText="ביטול"
         danger
         onCancel={() => setConfirmDel({ open: false, id: null, name: "" })}
         onConfirm={async () => {

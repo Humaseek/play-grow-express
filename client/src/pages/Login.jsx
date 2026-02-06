@@ -26,9 +26,9 @@ export default function Login() {
   return (
     <div className="container" style={{ maxWidth: 560 }}>
       <div className="card">
-        <div className="h1">تسجيل دخول الأدمن</div>
+        <div className="h1">התחברות מנהל</div>
         <div className="muted" style={{ marginTop: 6 }}>
-          إذا الحساب ليس أدمن، لن يستطيع رؤية أي بيانات.
+          אם החשבון אינו מנהל, לא תהיה גישה לנתונים.
         </div>
 
         <hr className="sep" />
@@ -39,7 +39,7 @@ export default function Login() {
           <input
             className="input"
             type="email"
-            placeholder="الإيميل"
+            placeholder="אימייל"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -48,14 +48,14 @@ export default function Login() {
           <input
             className="input"
             type="password"
-            placeholder="كلمة المرور"
+            placeholder="סיסמה"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
 
           <button className="btn primary" disabled={loading}>
-            {loading ? "جاري الدخول..." : "دخول"}
+            {loading ? "מתחבר..." : "התחברות"}
           </button>
         </form>
       </div>
