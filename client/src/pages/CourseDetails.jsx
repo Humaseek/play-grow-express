@@ -197,7 +197,6 @@ export default function CourseDetails() {
  if (status === "done") return <Badge variant="info">Completed</Badge>;
  return <Badge variant="danger">Canceled</Badge>;
  }
- }
 
  async function createRun() {
  setSaving(true);
@@ -207,7 +206,7 @@ export default function CourseDetails() {
  const finalLabel = label.trim()
  ? label.trim()
  : firstStart
- ? ` ${new Date(firstStart).toLocaleDateString("ar")}`
+ ? ` ${new Date(firstStart).toLocaleDateString("en-US")}`
  : " ";
 
  const ins = await supabase
@@ -302,20 +301,20 @@ export default function CourseDetails() {
  if (!course) {
  return (
  <div className="container">
- <div className="card"> .</div>
+ <div className="card">Course not found.</div>
  </div>
  );
  }
 
  return (
- <div className="container page page--courses" dir="rtl">
+ <div className="container page page--courses">
  <PageHeader
  title={course.title}
- subtitle={`: ${course.capacity} — : ${Number(course.default_price).toFixed(2)}`}
+ subtitle={`Capacity: ${course.capacity} — Default price: ${Number(course.default_price).toFixed(2)}`}
  actions={
  <>
  <button className="btn" onClick={() => navigate("/courses")}>
- 
+  Back
  </button>
  <button className="btn primary" onClick={() => setOpen(true)}>
  <Plus size={18} /> 

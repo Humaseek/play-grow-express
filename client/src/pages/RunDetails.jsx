@@ -2321,7 +2321,7 @@ export default function RunDetails() {
  </div>
  )}
 
- {(enrollMode === "buy_new") || enrollLocked) && (
+ {((enrollMode === "buy_new") || enrollLocked) && (
  <>
  <div style={{ gridColumn: "span 4" }}>
  <div className="muted">Sessions to add</div>
