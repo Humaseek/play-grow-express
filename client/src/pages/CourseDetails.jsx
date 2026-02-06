@@ -397,7 +397,7 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.totalSessions ? "neutral" : "neutral"}
-            label="ס'ה שיעורים"
+            label=""
             value={stats.totalSessions}
             hint="סך השיעורים בכל המחזורים"
             icon={CalendarClock}

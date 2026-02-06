@@ -178,7 +178,10 @@ export default function Expenses() {
     const total = filtered.reduce((acc, r) => acc + Number(r.amount || 0), 0);
     const count = filtered.length;
     const avg = count === 0 ? 0 : total / count;
-    const max = filtered.reduce((m, r) => Math.max(m, Number(r.amount || 0)), 0);
+    const max = filtered.reduce(
+      (m, r) => Math.max(m, Number(r.amount || 0)),
+      0,
+    );
 
     const byCat = new Map();
     for (const r of filtered) {
@@ -238,7 +241,10 @@ export default function Expenses() {
     };
 
     if (editId) {
-      const up = await supabase.from("expenses").update(payload).eq("id", editId);
+      const up = await supabase
+        .from("expenses")
+        .update(payload)
+        .eq("id", editId);
       if (up.error) {
         setError(up.error);
         toast("עדכון ההוצאה נכשל.", "danger");
@@ -296,13 +302,13 @@ export default function Expenses() {
             title="טבלת הוצאות לא מוכנה"
             description="הפעל את מיגרציית בסיס הנתונים פעם אחת, ואז ההוצאות יופיעו כאן."
           />
-</div>
+        </div>
       ) : (
         <>
           <div className="kpiGrid4" style={{ marginBottom: 14 }}>
             <KpiCard
               icon={Receipt}
-              label="סה"כ הוצאות"
+              label=""
               value={`${fmtMoney(stats.total)} ₪`}
               hint={stats.count ? `عدد القيود: ${stats.count}` : "לא توجد قيود"}
               variant={stats.total === 0 ? "neutral" : "warn"}
@@ -313,7 +319,9 @@ export default function Expenses() {
               icon={Layers}
               label="קטגוריה מובילה"
               value={stats.topCat}
-              hint={stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"}
+              hint={
+                stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"
+              }
               variant={stats.topCat !== "—" ? "info" : "neutral"}
               className="kpi--accent"
             />
@@ -338,9 +346,16 @@ export default function Expenses() {
           </div>
 
           <div className="card" style={{ marginBottom: 12 }}>
-            <div className="toolbar" style={{ justifyContent: "space-between" }}>
+            <div
+              className="toolbar"
+              style={{ justifyContent: "space-between" }}
+            >
               <div className="filtersBar">
-                <Control icon={Search} className="" style={{ minWidth: 260, width: "auto", flex: "1 1 320px" }}>
+                <Control
+                  icon={Search}
+                  className=""
+                  style={{ minWidth: 260, width: "auto", flex: "1 1 320px" }}
+                >
                   <input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
@@ -348,7 +363,10 @@ export default function Expenses() {
                   />
                 </Control>
 
-                <Control icon={Filter} style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}>
+                <Control
+                  icon={Filter}
+                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
+                >
                   <ModernSelect
                     bare
                     value={cat}
@@ -361,7 +379,10 @@ export default function Expenses() {
                   />
                 </Control>
 
-                <Control icon={CalendarDays} style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}>
+                <Control
+                  icon={CalendarDays}
+                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
+                >
                   <ModernSelect
                     bare
                     value={rangePreset}
@@ -377,14 +398,27 @@ export default function Expenses() {
                 </Control>
 
                 {rangePreset === "custom" ? (
-                  <div className="filtersBar" style={{ justifyContent: "flex-start" }}>
+                  <div
+                    className="filtersBar"
+                    style={{ justifyContent: "flex-start" }}
+                  >
                     <div className="input">
-                      <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+                      <input
+                        type="date"
+                        value={fromDate}
+                        onChange={(e) => setFromDate(e.target.value)}
+                      />
                     </div>
                     <div className="input">
-                      <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+                      <input
+                        type="date"
+                        value={toDate}
+                        onChange={(e) => setToDate(e.target.value)}
+                      />
                     </div>
-                    <button className="btn" onClick={load}>تطبيق</button>
+                    <button className="btn" onClick={load}>
+                      تطبيق
+                    </button>
                   </div>
                 ) : null}
               </div>
@@ -402,7 +436,9 @@ export default function Expenses() {
                   ? "התחל ברישום הוצאות תפעול (שכירות, נסיעות, ציוד, שיווק...)."
                   : "נסה לשנות את המסננים או את החיפוש."
               }
-              actionLabel={rows.length === 0 ? "רשום הוצאה ראשונה" : "רשום הוצאה"}
+              actionLabel={
+                rows.length === 0 ? "רשום הוצאה ראשונה" : "רשום הוצאה"
+              }
               onAction={openCreate}
             />
           ) : (
@@ -420,7 +456,9 @@ export default function Expenses() {
                 <tbody>
                   {filtered.map((r) => (
                     <tr key={r.id}>
-                      <td style={{ whiteSpace: "nowrap" }}>{fmtDate(r.spent_on)}</td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        {fmtDate(r.spent_on)}
+                      </td>
                       <td>{r.category || <span className="muted">—</span>}</td>
                       <td style={{ minWidth: 260 }}>
                         {r.description || <span className="muted">—</span>}
@@ -429,7 +467,10 @@ export default function Expenses() {
                         {fmtMoney(r.amount)} ₪
                       </td>
                       <td style={{ whiteSpace: "nowrap" }}>
-                        <div className="row" style={{ justifyContent: "flex-end" }}>
+                        <div
+                          className="row"
+                          style={{ justifyContent: "flex-end" }}
+                        >
                           <IconButton
                             title="עריכה"
                             onClick={() => openEdit(r)}

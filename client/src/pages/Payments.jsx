@@ -64,9 +64,19 @@ function statusFromEnrollment(enr) {
     return { key: "paid", label: "שולם", variant: "ok", rowClass: "rowPaid" };
   }
   if (paid > 0) {
-    return { key: "partial", label: "חלקי", variant: "warn", rowClass: "rowPartial" };
+    return {
+      key: "partial",
+      label: "חלקי",
+      variant: "warn",
+      rowClass: "rowPartial",
+    };
   }
-  return { key: "unpaid", label: "לא שולם", variant: "danger", rowClass: "rowUnpaid" };
+  return {
+    key: "unpaid",
+    label: "לא שולם",
+    variant: "danger",
+    rowClass: "rowUnpaid",
+  };
 }
 
 function toInputDatetimeLocal(dt) {
@@ -103,11 +113,15 @@ function rangeFromPreset(preset) {
   const end = endOfDay(now);
 
   if (preset === "30d") {
-    const start = startOfDay(new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000));
+    const start = startOfDay(
+      new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
+    );
     return { start, end };
   }
   if (preset === "90d") {
-    const start = startOfDay(new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000));
+    const start = startOfDay(
+      new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000),
+    );
     return { start, end };
   }
   if (preset === "this_month") {
@@ -177,7 +191,8 @@ export default function Payments() {
         .select(baseSelect)
         .order("paid_at", { ascending: false });
 
-      if (activeRange.start) q = q.gte("paid_at", activeRange.start.toISOString());
+      if (activeRange.start)
+        q = q.gte("paid_at", activeRange.start.toISOString());
       if (activeRange.end) q = q.lte("paid_at", activeRange.end.toISOString());
 
       const r = await q;
@@ -193,14 +208,18 @@ export default function Payments() {
           .select(legacySelect)
           .order("paid_at", { ascending: false });
 
-        if (activeRange.start) q2 = q2.gte("paid_at", activeRange.start.toISOString());
-        if (activeRange.end) q2 = q2.lte("paid_at", activeRange.end.toISOString());
+        if (activeRange.start)
+          q2 = q2.gte("paid_at", activeRange.start.toISOString());
+        if (activeRange.end)
+          q2 = q2.lte("paid_at", activeRange.end.toISOString());
 
         const r2 = await q2;
         if (r2.error) throw r2.error;
 
         // Enrich with run -> course info
-        const runIds = Array.from(new Set((r2.data ?? []).map((x) => x.run_id).filter(Boolean)));
+        const runIds = Array.from(
+          new Set((r2.data ?? []).map((x) => x.run_id).filter(Boolean)),
+        );
         const runMap = new Map();
         if (runIds.length) {
           const rs = await supabase
@@ -242,7 +261,9 @@ export default function Payments() {
       setPayments(rows);
 
       // Load enrollments summary for status
-      const enrollmentIds = Array.from(new Set(rows.map((x) => x.enrollment_id).filter(Boolean)));
+      const enrollmentIds = Array.from(
+        new Set(rows.map((x) => x.enrollment_id).filter(Boolean)),
+      );
       const map = new Map();
 
       if (enrollmentIds.length) {
@@ -287,12 +308,16 @@ export default function Payments() {
         // Fallback: try child_enrollments_view + children_view
         const ce = await supabase
           .from("child_enrollments_view")
-          .select("enrollment_id,child_id,run_id,enrollment_status,agreed_price,paid_amount,balance,title,label")
+          .select(
+            "enrollment_id,child_id,run_id,enrollment_status,agreed_price,paid_amount,balance,title,label",
+          )
           .order("enrollment_id", { ascending: false })
           .limit(1000);
         if (ce.error) throw r.error;
 
-        const childIds = Array.from(new Set((ce.data ?? []).map((x) => x.child_id).filter(Boolean)));
+        const childIds = Array.from(
+          new Set((ce.data ?? []).map((x) => x.child_id).filter(Boolean)),
+        );
         const cm = new Map();
         if (childIds.length) {
           const ch = await supabase
@@ -329,7 +354,9 @@ export default function Payments() {
   }
 
   async function loadSessionsForEnrollment(enrollmentId) {
-    const enr = enrollments.find((x) => String(x.enrollment_id) === String(enrollmentId));
+    const enr = enrollments.find(
+      (x) => String(x.enrollment_id) === String(enrollmentId),
+    );
     if (!enr?.run_id) {
       setSessions([]);
       return;
@@ -387,7 +414,9 @@ export default function Payments() {
     const cash = filtered
       .filter((x) => x.method === "cash")
       .reduce((acc, x) => acc + Number(x.amount || 0), 0);
-    const uniqChildren = new Set(filtered.map((x) => x.child_id).filter(Boolean)).size;
+    const uniqChildren = new Set(
+      filtered.map((x) => x.child_id).filter(Boolean),
+    ).size;
     const avg = count === 0 ? 0 : total / count;
 
     return { total, count, cash, uniqChildren, avg };
@@ -406,7 +435,10 @@ export default function Payments() {
   }, [enrollments]);
 
   const selectedEnrollment = useMemo(
-    () => enrollments.find((x) => String(x.enrollment_id) === String(payEnrollmentId)) ?? null,
+    () =>
+      enrollments.find(
+        (x) => String(x.enrollment_id) === String(payEnrollmentId),
+      ) ?? null,
     [enrollments, payEnrollmentId],
   );
 
@@ -435,7 +467,8 @@ export default function Payments() {
       return;
     }
 
-    const paidAtIso = parseInputDatetimeLocal(payAt) ?? new Date().toISOString();
+    const paidAtIso =
+      parseInputDatetimeLocal(payAt) ?? new Date().toISOString();
 
     const payload = {
       enrollment_id: Number(payEnrollmentId),
@@ -452,7 +485,12 @@ export default function Payments() {
     let ins = await supabase.from("payments").insert([payload]);
 
     // 2) Fallback if DB not upgraded
-    if (ins.error && String(ins.error.message || "").toLowerCase().includes("session_id")) {
+    if (
+      ins.error &&
+      String(ins.error.message || "")
+        .toLowerCase()
+        .includes("session_id")
+    ) {
       setSupportsSessionId(false);
       const { session_id, ...payload2 } = payload;
       ins = await supabase.from("payments").insert([payload2]);
@@ -513,21 +551,20 @@ export default function Payments() {
             </button>
           </div>
         }
-                  />
+      />
 
       <ErrorBanner error={error} />
-
 
       {/* KPI Row */}
       <div className="kpiGrid4" style={{ marginBottom: 14 }}>
         <KpiCard
           icon={Banknote}
-          label="סה"כ תשלומים"
+          label=""
           value={`${fmtMoney(kpis.total)}₪`}
           hint="בטווח הנוכחי"
           variant={kpis.total === 0 ? "neutral" : "info"}
           className="kpi--accent"
-                  />
+        />
 
         <KpiCard
           icon={CreditCard}
@@ -536,16 +573,16 @@ export default function Payments() {
           hint="יומן מחזורים"
           variant={kpis.count === 0 ? "neutral" : "info"}
           className="kpi--accent"
-                  />
+        />
 
         <KpiCard
           icon={Banknote}
           label="מזומן"
           value={`${fmtMoney(kpis.cash)}₪`}
-          hint="סה"כ ששולם במזומן"
+          hint=""
           variant={kpis.cash === 0 ? "neutral" : "ok"}
           className="kpi--accent"
-                  />
+        />
 
         <KpiCard
           icon={UserRound}
@@ -554,13 +591,19 @@ export default function Payments() {
           hint={`ממוצע תשלום: ${fmtMoney(kpis.avg)}₪`}
           variant={kpis.uniqChildren === 0 ? "neutral" : "info"}
           className="kpi--accent"
-                  />
+        />
       </div>
 
       {/* Filters */}
       <div className="card" style={{ marginBottom: 12 }}>
-        <div className="toolbar" style={{ justifyContent: "flex-start", gap: 10 }}>
-          <div className="filtersBar filtersBar--oneLine" style={{ width: "100%" }}>
+        <div
+          className="toolbar"
+          style={{ justifyContent: "flex-start", gap: 10 }}
+        >
+          <div
+            className="filtersBar filtersBar--oneLine"
+            style={{ width: "100%" }}
+          >
             <Control
               icon={Search}
               className="filtersBar__search"
@@ -570,7 +613,7 @@ export default function Payments() {
                 placeholder="חפש: ילד / קורס / הערה"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                  />
+              />
             </Control>
 
             <Control
@@ -590,7 +633,7 @@ export default function Payments() {
                   { value: "transfer", label: "העברה" },
                   { value: "other", label: "אחר" },
                 ]}
-                  />
+              />
             </Control>
 
             <Control
@@ -610,7 +653,7 @@ export default function Payments() {
                   { value: "unpaid", label: "לא שולם" },
                   { value: "free", label: "חינם" },
                 ]}
-                  />
+              />
             </Control>
 
             <Control
@@ -629,28 +672,28 @@ export default function Payments() {
                   { value: "this_month", label: "החודש" },
                   { value: "custom", label: "הקצאה" },
                 ]}
-                  />
+              />
             </Control>
 
             {rangePreset === "custom" ? (
               <>
                 <div className="filtersBar__date" style={{ minWidth: 160 }}>
-                    <div className="label">מ</div>
-                    <input
-                      className="input"
-                      type="date"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
+                  <div className="label">מ</div>
+                  <input
+                    className="input"
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
                   />
                 </div>
 
                 <div className="filtersBar__date" style={{ minWidth: 160 }}>
-                    <div className="label">إلى</div>
-                    <input
-                      className="input"
-                      type="date"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
+                  <div className="label">إلى</div>
+                  <input
+                    className="input"
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
                   />
                 </div>
               </>
@@ -677,7 +720,7 @@ export default function Payments() {
             setFromDate("");
             setToDate("");
           }}
-                  />
+        />
       ) : (
         <div className="tableWrap">
           <table className="table">
@@ -747,12 +790,17 @@ export default function Payments() {
                       {p.session_id ? (
                         <button
                           className="linkBtn"
-                          onClick={() => navigate(`/sessions/${p.session_id}/attendance`)}
+                          onClick={() =>
+                            navigate(`/sessions/${p.session_id}/attendance`)
+                          }
                           title="פתח דף נוכחות"
                         >
                           <span className="row" style={{ gap: 6 }}>
                             <LinkIcon size={16} />
-                            {fmtSessionLabel(p.session_start_at, p.session_end_at)}
+                            {fmtSessionLabel(
+                              p.session_start_at,
+                              p.session_end_at,
+                            )}
                           </span>
                         </button>
                       ) : (
@@ -768,7 +816,15 @@ export default function Payments() {
                     </td>
 
                     <td style={{ maxWidth: 260 }}>
-                      <span style={{ display: "inline-block", maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          maxWidth: 260,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {p.note ?? "—"}
                       </span>
                     </td>
@@ -780,7 +836,7 @@ export default function Payments() {
                         title="מחיקה"
                         iconOnly
                         onClick={() => setConfirm({ open: true, id: p.id })}
-                  />
+                      />
                     </td>
                   </tr>
                 );
@@ -803,7 +859,10 @@ export default function Payments() {
             <>
               <div className="grid" style={{ marginBottom: 12 }}>
                 <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     הרשמה (ילד / קורס / מחזור)
                   </div>
                   <ModernSelect
@@ -835,7 +894,10 @@ export default function Payments() {
                 </div>
 
                 <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     ربط بالשיעור (اختياري)
                   </div>
                   <ModernSelect
@@ -846,7 +908,7 @@ export default function Payments() {
                     placeholder={supportsSessionId ? "—" : "לא נתמך"}
                     options={[
                       { value: "", label: "—" },
-                      ...((sessions || [])).map((s) => ({
+                      ...(sessions || []).map((s) => ({
                         value: s.id,
                         label: `${fmtDateTime24(s.start_at)} — ${s.status}`,
                       })),
@@ -857,7 +919,10 @@ export default function Payments() {
 
               <div className="grid" style={{ marginBottom: 12 }}>
                 <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     סכום
                   </div>
                   <div className="input">
@@ -866,19 +931,29 @@ export default function Payments() {
                       value={payAmount}
                       onChange={(e) => setPayAmount(e.target.value)}
                       placeholder="לדוגמה: 120"
-                  />
+                    />
                     <span className="muted" style={{ fontWeight: 950 }}>
                       ₪
                     </span>
                   </div>
                   {selectedEnrollment ? (
-                    <div className="muted" style={{ marginTop: 6, fontWeight: 850 }}>
-                      المتبقي: <span style={{ fontWeight: 950 }}>{fmtMoney(selectedEnrollment.balance)}₪</span>
+                    <div
+                      className="muted"
+                      style={{ marginTop: 6, fontWeight: 850 }}
+                    >
+                      المتبقي:{" "}
+                      <span style={{ fontWeight: 950 }}>
+                        {fmtMoney(selectedEnrollment.balance)}₪
+                      </span>
                       {Number(selectedEnrollment.balance || 0) > 0 ? (
                         <button
                           className="linkBtn"
                           style={{ marginInlineStart: 10 }}
-                          onClick={() => setPayAmount(String(Number(selectedEnrollment.balance || 0)))}
+                          onClick={() =>
+                            setPayAmount(
+                              String(Number(selectedEnrollment.balance || 0)),
+                            )
+                          }
                           type="button"
                         >
                           تعبئة المتبقي
@@ -889,7 +964,10 @@ export default function Payments() {
                 </div>
 
                 <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     שיטת תשלום
                   </div>
                   <ModernSelect
@@ -906,7 +984,10 @@ export default function Payments() {
                 </div>
 
                 <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     זמן תשלום
                   </div>
                   <div className="input">
@@ -914,13 +995,16 @@ export default function Payments() {
                       type="datetime-local"
                       value={payAt}
                       onChange={(e) => setPayAt(e.target.value)}
-                  />
+                    />
                   </div>
                 </div>
               </div>
 
               <div style={{ marginBottom: 12 }}>
-                <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                <div
+                  className="muted"
+                  style={{ fontWeight: 900, marginBottom: 6 }}
+                >
                   مלאحظة (اختياري)
                 </div>
                 <div className="input">
@@ -958,7 +1042,7 @@ export default function Payments() {
           setConfirm({ open: false, id: null });
           if (id) await deletePayment(id);
         }}
-                  />
+      />
     </div>
   );
 }
