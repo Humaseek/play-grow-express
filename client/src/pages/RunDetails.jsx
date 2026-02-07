@@ -878,17 +878,7 @@ export default function RunDetails() {
   }
 }
 
- // 3) Remove enrollment from this run
- const d = await supabase.from("enrollments").delete().eq("id", enrollmentId);
- if (d.error) throw d.error;
-
- toast("Enrollment removed. Credits cleared for this run.", "ok");
- await loadFixed();
- } catch (e) {
- setError(e);
- toast("Failed to remove enrollment.", "danger");
- }
- 
+	// (Removed stray block that was outside an async function and broke Vite build.)
 
  async function generateSessions() {
  if (!firstStart) {
@@ -3029,3 +3019,4 @@ export default function RunDetails() {
  </div>
  </div>
  );
+}
