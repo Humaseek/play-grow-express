@@ -325,7 +325,7 @@ export default function Today() {
         title="Dashboard"
         subtitle={
           view === "active"
-            ? "Active courses/workshops (with upcoming sessions) — ordered by next session"
+            ? ""
             : "Today's agenda — sessions ordered by time (single-day calendar view)"
         }
         actions={
