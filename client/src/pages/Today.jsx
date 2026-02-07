@@ -414,9 +414,7 @@ export default function Today() {
  ) : activeRuns.length === 0 ? (
  <EmptyState
  icon={Sparkles}
- title="No "
- description=" Courses : (Run) . ."
- actionLabel=" Courses"
+ title="No sessions today" description="There are no scheduled sessions for today." actionLabel="View schedule"
  onAction={() => navigate("/courses")}
  />
  ) : (

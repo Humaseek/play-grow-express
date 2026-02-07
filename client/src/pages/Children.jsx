@@ -176,7 +176,7 @@ export default function Children() {
  await loadAll();
  } catch (e2) {
  setError(e2);
- toast("Failed Save.", "danger");
+ toast("Failed to save child.", "danger");
  } finally {
  setSaving(false);
  }
@@ -187,10 +187,10 @@ export default function Children() {
  const { error } = await supabase.from("children").delete().eq("id", id);
  if (error) {
  setError(error);
- toast("Failed Delete.", "danger");
+ toast("Failed to delete child.", "danger");
  return;
  }
- toast(" Delete .", "ok");
+ toast("Child deleted.", "ok");
  await loadAll();
  }
 
@@ -203,12 +203,12 @@ export default function Children() {
  <div className="toolbar">
  <input
  className="input"
- placeholder="Search Name ..."
+ placeholder="Search by name…"
  value={q}
  onChange={(e) => setQ(e.target.value)}
  />
  <button className="btn primary" onClick={openCreate}>
- <Plus size={18} /> 
+ <Plus size={18} /> Add child
  </button>
  </div>
  }
@@ -219,23 +219,23 @@ export default function Children() {
  {loading ? (
  <div className="card">Loading...</div>
  ) : filtered.length === 0 ? (
- <EmptyState icon={UserRound} title="No " description=" Add Enroll ." actionLabel="Add " onAction={openCreate} />
+ <EmptyState icon={UserRound} title="No children found" description="Add a child to start enrolling." actionLabel="Add child" onAction={openCreate} />
  ) : (
  <div className="tableWrap">
  <table className="table">
  <thead>
- <tr>
- <th>ID</th>
- <th>Name</th>
- <th></th>
- <th></th>
- <th></th>
- <th></th>
- <th> </th>
- <th> </th>
- <th></th>
- </tr>
- </thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Class</th>
+            <th>Gender</th>
+            <th>Country</th>
+            <th>Mother phone</th>
+            <th>Father phone</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
  <tbody>
  {filtered.map((r) => (
  <tr key={r.id}>
@@ -254,7 +254,7 @@ export default function Children() {
  <td>{r.age}</td>
  <td className="muted">{r.class ?? "-"}</td>
  <td className="muted">
- {r.gender === "male" ? "" : ""}
+ {r.gender === "male" ? "Male" : "Female"}
  </td>
  <td className="muted">{r.country || "-"}</td>
  <td className="muted">{r.mother_phone ?? "-"}</td>
@@ -287,7 +287,7 @@ export default function Children() {
 
  <Modal
  open={openForm}
- title={form.id ? "Edit " : "Add "}
+ title={form.id ? "Edit child" : "Add child"}
  onClose={() => {
  setOpenForm(false);
  setForm(emptyForm);
@@ -316,20 +316,20 @@ export default function Children() {
  </div>
 
  <div style={{ gridColumn: "span 3" }}>
- <div className="muted"></div>
+ <div className="muted">Gender</div>
  <ModernSelect
  value={form.gender}
  onChange={(v) => setForm((p) => ({ ...p, gender: v }))}
  menuWidth="trigger"
  options={[
- { value: "male", label: "" },
- { value: "female", label: "" },
+ { value: "male", label: "Male" },
+ { value: "female", label: "Female" },
  ]}
 />
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted"></div>
+        <div className="muted">Class</div>
  <input
  className="input"
  value={form.class}
@@ -340,13 +340,13 @@ export default function Children() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted"> ()</div>
+ <div className="muted">Country</div>
  <ModernSelect
  value={form.country_id}
  onChange={(v) => setForm((p) => ({ ...p, country_id: v }))}
  menuWidth="trigger"
  options={(countries || []).map((c) => ({ value: c.id, label: c.name }))}
- placeholder=" "
+ placeholder="Select a country…"
 />
  </div>
 

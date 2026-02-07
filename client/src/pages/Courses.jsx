@@ -124,7 +124,7 @@ export default function Courses() {
 
  const sorted = [...list];
  if (sortBy === "title") {
- sorted.sort((a, b) => String(a.title ?? "").localeCompare(String(b.title ?? ""), "ar"));
+ sorted.sort((a, b) => String(a.title ?? "").localeCompare(String(b.title ?? ""), "en"));
  } else if (sortBy === "next") {
  sorted.sort((a, b) => {
  const ad = meta[a.id]?.nextSessionAt ? new Date(meta[a.id].nextSessionAt) : null;
@@ -154,7 +154,7 @@ export default function Courses() {
  }
 
  function kindLabel(k) {
- return k === "workshop" ? "" : "";
+  return k === "workshop" ? "Workshop" : "Course";
  }
 
  function openCreate() {
@@ -233,18 +233,18 @@ export default function Courses() {
  const { error } = await supabase.from("courses").delete().eq("id", id);
  if (error) {
  setError(error);
- toast("Failed Delete.", "danger");
+ toast("Failed to delete course.", "danger");
  return;
  }
- toast(" Delete .", "ok");
+ toast("Course deleted.", "ok");
  await load();
  }
 
  return (
  <div className="container page page--courses">
  <PageHeader
- title="Courses "
- subtitle=" Courses/ — "
+ title="Courses"
+     subtitle="Manage courses and workshops"
  actions={
  <div className="pageHeader__actions">
  <button className="btn soft" onClick={load} title="Refresh">
@@ -257,54 +257,53 @@ export default function Courses() {
  {/* Filters */}
  <div className="card" style={{ marginBottom: 14 }}>
  <div className="sectionRow">
- <div className="sectionLabel">No</div>
+ <div className="sectionLabel">Filters</div>
  </div>
 
  <div className="filtersBar">
  <input
  className="input filtersBar__search"
- placeholder="Search ..."
+ placeholder="Search courses…"
  value={q}
  onChange={(e) => setQ(e.target.value)}
  />
 
  <ModernSelect
- className="filtersBar__select"
- value={kindFilter}
- onChange={setKindFilter}
- menuWidth="trigger"
- options={[
- { value: "all", label: " " },
- { value: "course", label: "" },
- { value: "workshop", label: "" },
- ]}
-/>
+        className="filtersBar__select"
+        value={kindFilter}
+        onChange={setKindFilter}
+        menuWidth="trigger"
+        options={[
+          { value: "all", label: "All types" },
+          { value: "course", label: "Courses" },
+          { value: "workshop", label: "Workshops" },
+        ]}
+      />
 
- <ModernSelect
- className="filtersBar__select"
- value={activeFilter}
- onChange={setActiveFilter}
- menuWidth="trigger"
- options={[
- { value: "all", label: " No" },
- { value: "active", label: "" },
- { value: "inactive", label: " " },
- ]}
-/>
+      <ModernSelect
+        className="filtersBar__select"
+        value={activeFilter}
+        onChange={setActiveFilter}
+        menuWidth="trigger"
+        options={[
+          { value: "all", label: "All statuses" },
+          { value: "active", label: "Active" },
+          { value: "inactive", label: "Inactive" },
+        ]}
+      />
 
- <ModernSelect
- className="filtersBar__select"
- value={sortBy}
- onChange={setSortBy}
- menuWidth="trigger"
- options={[
- { value: "updated_desc", label: " Refresh" },
- { value: "title_asc", label: " (-)" },
- { value: "participants_desc", label: " " },
- ]}
-/>
-
- <button className="btn primary filtersBar__btn" onClick={openCreate}>
+      <ModernSelect
+        className="filtersBar__select"
+        value={sortBy}
+        onChange={setSortBy}
+        menuWidth="trigger"
+        options={[
+          { value: "newest", label: "Newest" },
+          { value: "title", label: "Title (A–Z)" },
+          { value: "next", label: "Next session" },
+        ]}
+      />
+<button className="btn primary filtersBar__btn" onClick={openCreate}>
  <Plus size={18} /> Add
  </button>
  </div>
@@ -315,7 +314,7 @@ export default function Courses() {
  {loading ? (
  <div className="card">Loading...</div>
  ) : filtered.length === 0 ? (
- <EmptyState icon={BookOpen} title="No " description=" / Add ." actionLabel=" " onAction={openCreate} />
+ <EmptyState icon={BookOpen} title="No courses found" description="Create your first course to get started." actionLabel="Create course" onAction={openCreate} />
  ) : (
  <div className="cardsGrid">
  {filtered.map((r) => {

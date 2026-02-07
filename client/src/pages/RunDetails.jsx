@@ -319,15 +319,14 @@ export default function RunDetails() {
  setSelectedChildId(String(newId || ""));
  setOpenNewChild(false);
 
- // If user wants immediate enroll, keep the enroll modal open and execute purchase flow.
- if (enrollNow && newId) {
- setOpenEnroll(true);
- // Force "buy_new" mode for clarity
- setEnrollMode("buy_new");
- await purchaseAndEnrollSpecificChild(newId);
- } else {
- toast("Child created.", "ok");
- }
+ // If user wants immediate enroll, keep the enroll modal open.
+    if (enrollNow && newId) {
+      setOpenEnroll(true);
+      setEnrollMode("buy_new");
+      toast("Child created. Set sessions and click Save to enroll.", "ok");
+    } else {
+      toast("Child created.", "ok");
+    }
 
  // reset
  setNewChildForm({
@@ -523,7 +522,7 @@ export default function RunDetails() {
  list.sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
  } else if (sortBy === "name_asc") {
  list.sort((a, b) =>
- String(a.child_name).localeCompare(String(b.child_name), "ar"),
+ String(a.child_name).localeCompare(String(b.child_name), "en"),
  );
  }
  return list;
@@ -551,7 +550,7 @@ export default function RunDetails() {
 
  if (!selectedChildId) {
  setPkgInfo(null);
- setEnrollMode("auto");
+ // setEnrollMode("auto");
  return;
  }
 
@@ -611,7 +610,7 @@ export default function RunDetails() {
  setBuyUnitPrice(s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "");
  setBuyPriceEditMode("total");
  setPkgInfo(null);
- setEnrollMode("auto");
+ // setEnrollMode("auto");
  setOpenEnroll(true);
  }
 
@@ -699,7 +698,13 @@ export default function RunDetails() {
  setError(null);
 
  try {
- if (mode === "use_existing") {
+ if (enrollMode === "use_existing") {
+      const remaining = Number(pkgInfo?.sessions_remaining ?? 0);
+      if (remaining <= 0) {
+        toast("This child has no existing credits. Please choose ‘Buy new sessions’.", "warn");
+        setEnrollSaving(false);
+        return;
+      }
  const rpc = await supabase.rpc("enroll_from_existing_package", {
  p_run_id: Number(runId),
  p_child_id: Number(selectedChildId),
@@ -809,14 +814,14 @@ export default function RunDetails() {
 
  if (u.error) throw u.error;
 
- toast(" Edit .", "ok");
+ toast("Enrollment updated.", "ok");
  setOpenPrice(false);
  setPricePackageId(null);
  setPriceValue("");
  await loadFixed();
  } catch (e) {
  setError(e);
- toast("Failed Edit .", "danger");
+ toast("Failed to edit enrollment.", "danger");
  }
  }
 
@@ -835,20 +840,43 @@ export default function RunDetails() {
  await loadFixed();
  }
 
- async function deleteEnrollment(enrollmentId) {
- setError(null);
+ async function deleteEnrollment(enrollmentId, childName, packageId) {
+  // Remove the child from this run without deleting the child record or payments.
+  setError(null);
 
- // Find related package for this enrollment so we can clear any remaining credits.
- const row = participants.find((x) => Number(x.enrollment_id) === Number(enrollmentId));
- const packageId = row?.package_id ? Number(row.package_id) : null;
+  try {
+    // 1) Mark enrollment as withdrawn (so it disappears from active participants)
+    const updEnroll = await supabase
+      .from("enrollments")
+      .update({ status: "withdrawn", sessions_allocated: 0 })
+      .eq("id", enrollmentId);
 
- try {
- // 1) Delete payments (if any) linked to this package/enrollment
- if (packageId) {
- await supabase.from("payments").delete().eq("package_id", packageId);
- // 2) Delete the package itself (this effectively removes remaining sessions/credits)
- await supabase.from("course_packages").delete().eq("id", packageId);
- }
+    if (updEnroll.error) throw updEnroll.error;
+
+    // 2) Close the package by setting sessions_total = sessions_used (remaining becomes 0)
+    if (packageId) {
+      const bal = await supabase
+        .from("package_balance_view")
+        .select("sessions_used")
+        .eq("package_id", packageId)
+        .maybeSingle();
+
+      if (!bal.error) {
+        const used = Number(bal.data?.sessions_used ?? 0);
+        await supabase
+          .from("course_packages")
+          .update({ sessions_total: used, status: "closed" })
+          .eq("id", packageId);
+      }
+    }
+
+    toast(`Removed ${childName} from this course. Remaining sessions set to 0.`, "ok");
+    await load();
+  } catch (e) {
+    setError(e);
+    toast("Failed to remove enrollment.", "danger");
+  }
+}
 
  // 3) Remove enrollment from this run
  const d = await supabase.from("enrollments").delete().eq("id", enrollmentId);
@@ -860,7 +888,7 @@ export default function RunDetails() {
  setError(e);
  toast("Failed to remove enrollment.", "danger");
  }
- }
+ 
 
  async function generateSessions() {
  if (!firstStart) {
@@ -941,7 +969,7 @@ export default function RunDetails() {
  .update(payload)
  .eq("id", sessionForm.id);
  if (u.error) throw u.error;
- toast(" Edit .", "ok");
+ toast("Enrollment updated.", "ok");
  } else {
  const ins = await supabase.from("course_sessions").insert([payload]);
  if (ins.error) throw ins.error;
@@ -1109,7 +1137,7 @@ export default function RunDetails() {
  await loadFixed();
  } catch (e) {
  setError(e);
- toast("Failed Edit .", "danger");
+ toast("Failed to edit enrollment.", "danger");
  }
  }
 
@@ -1168,7 +1196,7 @@ export default function RunDetails() {
  setTab("participants");
  } catch (e) {
  setError(e);
- toast("Failed Edit .", "danger");
+ toast("Failed to edit enrollment.", "danger");
  } finally {
  setAdjSaving(false);
  }
@@ -2271,7 +2299,7 @@ export default function RunDetails() {
  { value: "", label: "— Select child —" },
  ...((enrollLocked ? children : availableChildren) || []).map((c) => ({
  value: c.id,
- label: `${c.name} — ${c.class ?? "-"} — : ${c.age ?? "-"}`,
+ label: `${c.name} — ${c.class ?? "-"} — Age: ${c.age ?? "-"}`,
  })),
  ]}
 />
@@ -2528,12 +2556,11 @@ export default function RunDetails() {
  {/* ✅ Enroll */}
  <Modal
  open={openBulk}
- title="Enroll "
+ title="Enroll children"
  onClose={() => setOpenBulk(false)}
  >
  <div className="muted">
- “Add”. 
- .
+ Select the children you want to enroll, then click “Enroll selected”.
  </div>
 
  <hr className="sep" />
@@ -2542,29 +2569,19 @@ export default function RunDetails() {
  <input
  className="input"
  style={{ width: 260 }}
- placeholder="Search Child..."
+ placeholder="Search child…"
  value={bulkQ}
  onChange={(e) => setBulkQ(e.target.value)}
  />
- <button type="button" className="btn" onClick={bulkSelectAllFiltered}>
- 
- </button>
- <button
- type="button"
- className="btn danger"
- onClick={bulkClearSelection}
- >
- 
- </button>
+ <button type="button" className="btn" onClick={bulkSelectAllFiltered}>Select all</button>
+ <button type="button" className="btn danger" onClick={bulkClearSelection}>Clear</button>
 
- <div className="muted" style={{ alignSelf: "center" }}>
- : <b>{bulkSelectedCount}</b>
- </div>
+ <div className="muted" style={{ alignSelf: "center" }}>Selected: <b>{bulkSelectedCount}</b></div>
  </div>
 
  <div style={{ marginTop: 12 }}>
  {bulkCandidates.length === 0 ? (
- <div className="card">No .</div>
+ <div className="card">No children found.</div>
  ) : (
  <div className="card" style={{ padding: 0 }}>
  <table className="table" style={{ margin: 0 }}>
@@ -2708,7 +2725,7 @@ export default function RunDetails() {
  {/* Enroll */}
  <Modal
  open={openPay}
- title="Enroll "
+ title="Enroll children"
  onClose={() => setOpenPay(false)}
  >
  <div className="grid">
@@ -2801,7 +2818,7 @@ export default function RunDetails() {
  {historyLoading ? (
  <div className="card">Loading...</div>
  ) : historyRows.length === 0 ? (
- <div className="card">No .</div>
+ <div className="card">No children found.</div>
  ) : (
  <table className="table">
  <thead>
@@ -3012,4 +3029,3 @@ export default function RunDetails() {
  </div>
  </div>
  );
-}

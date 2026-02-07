@@ -29,7 +29,7 @@ import {
 
 function fmtMoney(n) {
  const x = Number(n || 0);
- return x.toLocaleString("ar", { maximumFractionDigits: 2 });
+ return x.toLocaleString("en", { maximumFractionDigits: 2 });
 }
 
 function fmtDT(dt) {
@@ -400,7 +400,7 @@ export default function Payments() {
  const ax = a.enrollment_status === "active" ? 0 : 1;
  const bx = b.enrollment_status === "active" ? 0 : 1;
  if (ax !== bx) return ax - bx;
- return String(a.child_name).localeCompare(String(b.child_name), "ar");
+ return String(a.child_name).localeCompare(String(b.child_name), "en");
  });
  return list;
  }, [enrollments]);
@@ -488,8 +488,8 @@ export default function Payments() {
 
  const rangeHint = useMemo(() => {
  if (rangePreset === "custom") {
- const a = fromDate ? new Date(fromDate).toLocaleDateString("ar") : "—";
- const b = toDate ? new Date(toDate).toLocaleDateString("ar") : "—";
+ const a = fromDate ? new Date(fromDate).toLocaleDateString("en") : "—";
+ const b = toDate ? new Date(toDate).toLocaleDateString("en") : "—";
  return `${a} → ${b}`;
  }
  if (rangePreset === "30d") return " 30 ";

@@ -241,7 +241,7 @@ export default function Attendance() {
  </div>
 
  {rows.length === 0 ? (
- <EmptyState icon={Users} title="No " description=" Enroll Status." actionLabel=" " onAction={() => summary && navigate(`/runs/${summary.run_id}`)} />
+ <EmptyState icon={Users} title="No attendance records" description="Select a run to view attendance." actionLabel="Go to courses" onAction={() => summary && navigate(`/runs/${summary.run_id}`)} />
  ) : (
  <div className="tableWrap">
  <table className="table">

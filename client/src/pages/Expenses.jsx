@@ -27,13 +27,13 @@ import {
 
 function fmtMoney(n) {
  const x = Number(n || 0);
- return x.toLocaleString("ar", { maximumFractionDigits: 2 });
+ return x.toLocaleString("en", { maximumFractionDigits: 2 });
 }
 
 function fmtDate(d) {
  if (!d) return "—";
  const dt = new Date(d);
- return dt.toLocaleDateString("ar", {
+ return dt.toLocaleDateString("en", {
  year: "numeric",
  month: "2-digit",
  day: "2-digit",
@@ -155,7 +155,7 @@ export default function Expenses() {
  const c = (r.category || "").trim();
  if (c) s.add(c);
  }
- return Array.from(s).sort((a, b) => a.localeCompare(b, "ar"));
+ return Array.from(s).sort((a, b) => a.localeCompare(b, "en"));
  }, [rows]);
 
  const filtered = useMemo(() => {

@@ -21,7 +21,7 @@ export default function Layout() {
  if (!mounted) return;
 
  if (error) {
- push("Failed No .", "danger");
+ push("Failed to check permissions.", "danger");
  setCheckingAdmin(false);
  return;
  }
@@ -54,7 +54,7 @@ export default function Layout() {
  <main className="main">
  {checkingAdmin ? (
  <div className="container">
- <div className="card"> No ...</div>
+ <div className="card">Checking permissions…</div>
  </div>
  ) : (
  <div className="page">
