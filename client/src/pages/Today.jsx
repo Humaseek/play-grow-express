@@ -323,11 +323,7 @@ export default function Today() {
     <div className="container page page--today">
       <PageHeader
         title="Dashboard"
-        subtitle={
-          view === "active"
-            ? ""
-            : "Today's agenda — sessions ordered by time (single-day calendar view)"
-        }
+        subtitle={view === "active" ? "" : ""}
         actions={
           <div className="toolbar" style={{ gap: 10 }}>
             <div className="segmented">
