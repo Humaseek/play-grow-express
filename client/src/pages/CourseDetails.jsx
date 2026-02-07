@@ -376,7 +376,7 @@ export default function CourseDetails() {
  style={{ justifyContent: "space-between", alignItems: "center" }}
  >
  <div>
- <div className="cardTitle"></div>
+ <div className="cardTitle">جاري التحميل...</div>
  </div>
  <button className="btn primary" onClick={() => setOpen(true)}>
  <Plus size={18} /> 
@@ -439,15 +439,15 @@ export default function CourseDetails() {
 
  <div className="statsRow">
  <div className="stat">
- <span className="muted"></span>
+ <span className="muted">الحصص</span>
  <b>{r.sessions_count ?? 0}</b>
  </div>
  <div className="stat">
- <span className="muted"></span>
+ <span className="muted">المشاركين</span>
  <b>{r.participants_count ?? 0}</b>
  </div>
  <div className="stat">
- <span className="muted"> </span>
+ <span className="muted">أقرب موعد</span>
  <b className="ltrIso" style={{ fontSize: 14 }}>
  {fmtDT(r.next_session_at)}
  </b>
@@ -572,7 +572,7 @@ export default function CourseDetails() {
  </div>
 
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"> </div>
+ <div className="muted">لم يتم العثور على القالب.</div>
  <ModernSelect
  value={createSessions ? "1" : "0"}
  onChange={(v) => setCreateSessions(v === "1")}
@@ -598,7 +598,7 @@ export default function CourseDetails() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted"> </div>
+ <div className="muted">Payments</div>
  <input
  className="input"
  type="number"
@@ -609,7 +609,7 @@ export default function CourseDetails() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted"> </div>
+ <div className="muted">هذا القالب ثابت، وكل مرة تفتح “دفعة” جديدة بتواريخ جديدة.</div>
  <input
  className="input"
  type="number"

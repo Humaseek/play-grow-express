@@ -635,7 +635,7 @@ export default function Payments() {
  {rangePreset === "custom" ? (
  <>
  <div className="filtersBar__date" style={{ minWidth: 160 }}>
- <div className="label"></div>
+ <div className="label">من</div>
  <input
  className="input"
  type="date"
@@ -645,7 +645,7 @@ export default function Payments() {
  </div>
 
  <div className="filtersBar__date" style={{ minWidth: 160 }}>
- <div className="label"></div>
+ <div className="label">إلى</div>
  <input
  className="input"
  type="date"
@@ -684,15 +684,15 @@ export default function Payments() {
  <thead>
  <tr>
  <th>Date</th>
- <th></th>
- <th></th>
- <th></th>
- <th></th>
+ <th>Date</th>
+ <th>الطفل</th>
+ <th>الدورة</th>
+ <th>الدفعة</th>
  <th>Amount</th>
- <th></th>
+ <th>الحصة</th>
  <th>Status</th>
  <th>No</th>
- <th></th>
+ <th>Amount</th>
  </tr>
  </thead>
  <tbody>
@@ -889,9 +889,7 @@ export default function Payments() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
- 
- </div>
+ <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>جاري التحميل...</div>
  <ModernSelect
  value={payMethod}
  onChange={setPayMethod}
@@ -906,9 +904,7 @@ export default function Payments() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
- 
- </div>
+ <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>جاري تحميل الاشتراكات...</div>
  <div className="input">
  <input
  type="datetime-local"

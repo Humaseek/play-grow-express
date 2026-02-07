@@ -23,10 +23,10 @@ function statusLabel(s) {
 }
 
 function statusBadge(s) {
- if (s === "present") return <Badge variant="ok"></Badge>;
- if (s === "absent") return <Badge variant="danger"></Badge>;
- if (s === "excused") return <Badge variant="warn"></Badge>;
- return <Badge variant="info"> </Badge>;
+ if (s === "present") return <Badge variant="ok">حاضر</Badge>;
+ if (s === "absent") return <Badge variant="danger">غائب</Badge>;
+ if (s === "excused") return <Badge variant="warn">معذور</Badge>;
+ return <Badge variant="info">غير مسجل</Badge>;
 }
 
 export default function Attendance() {
@@ -247,9 +247,9 @@ export default function Attendance() {
  <table className="table">
  <thead>
  <tr>
- <th></th>
+ <th>الطفل</th>
  <th>Status</th>
- <th></th>
+ <th>الحالة</th>
  </tr>
  </thead>
  <tbody>

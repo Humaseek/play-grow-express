@@ -1230,17 +1230,17 @@ export default function RunDetails() {
  <div className="statRow" style={{ marginTop: 10 }}>
  <span className="statChip" title="">
  <Users size={16} className="ico" />
- <span className="statLabel"></span>
+ <span className="statLabel">مشاركين</span>
  <b className="ltrIso">{fmtNum(totals.activeCount)}</b>
  </span>
  <span className="statChip" title="">
  <CalendarDays size={16} className="ico" />
- <span className="statLabel"></span>
+ <span className="statLabel">حصص</span>
  <b className="ltrIso">{fmtNum(summary.sessions_count)}</b>
  </span>
  <span className="statChip" title=" ">
  <CreditCard size={16} className="ico" />
- <span className="statLabel"> </span>
+ <span className="statLabel">نسبة الدفع</span>
  <b className="ltrIso">{fmtNum((totals.paidRatio * 100).toFixed(0))}%</b>
  </span>
  </div>
@@ -1280,7 +1280,7 @@ export default function RunDetails() {
  <Tag />
  </div>
  <div style={{ minWidth: 0 }}>
- <div className="runLabel"></div>
+ <div className="runLabel">جاري التحميل...</div>
  <div className="runValue">{summary.label || "—"}</div>
  </div>
  </div>
@@ -1303,7 +1303,7 @@ export default function RunDetails() {
  <CalendarClock />
  </div>
  <div style={{ minWidth: 0 }}>
- <div className="runLabel"> </div>
+ <div className="runLabel">لم يتم العثور على الدفعة.</div>
  <div className="runValue">
  <span className="ltrIso">{fmtDT(summary.next_session_at)}</span>
  </div>
@@ -1315,7 +1315,7 @@ export default function RunDetails() {
  <CalendarPlus />
  </div>
  <div style={{ minWidth: 0 }}>
- <div className="runLabel"> </div>
+ <div className="runLabel">الدورة</div>
  <div className="runValue">
  <span className="ltrIso">{fmtNum(runFutureSessionsCount)}</span>
  </div>
@@ -1326,7 +1326,7 @@ export default function RunDetails() {
 
  <div className="grid" style={{ marginBottom: 12 }}>
  <div className="card" style={{ gridColumn: "span 4" }}>
- <div className="muted"> </div>
+ <div className="muted">اليوم / الساعة</div>
  <div style={{ fontSize: 26, fontWeight: 900 }}>
  <span className="ltrIso">{fmtILS(totals.agreed,2)}</span>
  </div>
@@ -1338,7 +1338,7 @@ export default function RunDetails() {
  </div>
  </div>
  <div className="card" style={{ gridColumn: "span 4" }}>
- <div className="muted"> </div>
+ <div className="muted">أقرب حصة</div>
  <div style={{ fontSize: 26, fontWeight: 900 }}>
  {totals.balance.toFixed(2)}
  </div>
@@ -1565,7 +1565,7 @@ export default function RunDetails() {
  </div>
  <div className="pBigLabel">
  <Hourglass size={14} className="ico" />{" "}
- <span></span>
+ <span>متبقي</span>
  </div>
  </div>
 
@@ -1576,7 +1576,7 @@ export default function RunDetails() {
  <div className="muted" style={{ fontSize: 12 }}>
  <CreditCard size={14} className="ico" />{" "}
  <span dir="ltr">{fmtILS(paid)}</span>{" "}
- <span style={{ opacity: 0.6 }}></span>{" "}
+ <span style={{ opacity: 0.6 }}>من</span>{" "}
  <span dir="ltr">{fmtILS(agreed)}</span>
  </div>
  </div>
@@ -1588,23 +1588,23 @@ export default function RunDetails() {
  </div>
  <div className="pBigLabel">
  <Ticket size={14} className="ico" />{" "}
- <span> </span>
+ <span>رصيد حصص</span>
  </div>
  </div>
  <div className="muted" style={{ fontSize: 12 }}>
  <CheckCircle2 size={14} className="ico" />{" "}
- <span style={{ opacity: 0.75 }}> </span>{" "}
+ <span style={{ opacity: 0.75 }}>تم استخدامها</span>{" "}
  <b dir="ltr">{fmtNum(pkgUsed)}</b>{' '}
- <span style={{ opacity: 0.55 }}> / </span>
+ <span style={{ opacity: 0.55 }}>حصص بالدورة</span>
  <b dir="ltr">{fmtNum(pkgTotal)}</b>
  </div>
 
  <div className="muted" style={{ fontSize: 12 }}>
  <CalendarDays size={14} className="ico" /> {" "}
  <b dir="ltr">{fmtNum(attended)}</b>
- <span style={{ opacity: 0.6 }}> / </span>
+ <span style={{ opacity: 0.6 }}>حصص</span>
  <b dir="ltr">{fmtNum(runSessions)}</b>{" "}
- <span style={{ opacity: 0.65 }}> </span>
+ <span style={{ opacity: 0.65 }}>متبقي</span>
  </div>
  </div>
  </div>
@@ -1671,7 +1671,7 @@ export default function RunDetails() {
  {tab === "sessions" && (
  <div className="grid">
  <div className="card" style={{ gridColumn: "span 5" }}>
- <div className="h1"> </div>
+ <div className="h1">حصص قادمة</div>
  <div className="muted" style={{ marginTop: 6 }}>
  : 7 ( ).
  </div>
@@ -1701,7 +1701,7 @@ export default function RunDetails() {
  />
  </div>
  <div style={{ flex: 1 }}>
- <div className="muted"> </div>
+ <div className="muted">إجمالي قيمة الباقات</div>
  <input
  className="input"
  type="number"
@@ -1713,7 +1713,7 @@ export default function RunDetails() {
  </div>
 
  <div>
- <div className="muted"> </div>
+ <div className="muted">إجمالي المدفوع</div>
  <input
  className="input"
  type="number"
@@ -1741,7 +1741,7 @@ export default function RunDetails() {
  </div>
 
  <div className="card" style={{ gridColumn: "span 7" }}>
- <div className="h1"> </div>
+ <div className="h1">إجمالي المتبقي</div>
  <div className="muted" style={{ marginTop: 6 }}>
  “” .
  </div>
@@ -1754,9 +1754,9 @@ export default function RunDetails() {
  <table className="table">
  <thead>
  <tr>
- <th></th>
+ <th>الوقت</th>
  <th>Status</th>
- <th></th>
+ <th>الحالة</th>
  </tr>
  </thead>
  <tbody>
@@ -1844,7 +1844,7 @@ export default function RunDetails() {
  </div>
 
  <div className="card" style={{ gridColumn: "span 7" }}>
- <div className="h1"> </div>
+ <div className="h1">الأطفال المسجلين</div>
  <div className="muted" style={{ marginTop: 6 }}>
  View .
  </div>
@@ -1859,10 +1859,10 @@ export default function RunDetails() {
  <tr>
  <th>Child</th>
  <th>Amount</th>
- <th></th>
+ <th>الطفل</th>
  <th>Date</th>
  <th>No</th>
- <th></th>
+ <th>Amount</th>
  </tr>
  </thead>
  <tbody>
@@ -1939,9 +1939,9 @@ export default function RunDetails() {
 
  <div className="muted" style={{ marginTop: 8 }}>
  <Ticket size={14} className="ico" />{" "}
- <span style={{ opacity: 0.75 }}></span>{" "}
+ <span style={{ opacity: 0.75 }}>تم استخدامها</span>{" "}
  <b dir="ltr">{fmtNum(manageP.package_sessions_remaining ?? 0)}</b>{" "}
- <span style={{ opacity: 0.6 }}></span>
+ <span style={{ opacity: 0.6 }}>حضر</span>
  <span style={{ opacity: 0.6 }}> — </span>
  <CheckCircle2 size={14} className="ico" />{" "}
  <span style={{ opacity: 0.75 }}> </span>{" "}
@@ -1965,17 +1965,17 @@ export default function RunDetails() {
 
  {/* Contact */}
  <div style={{ gridColumn: "span 12" }} className="card">
- <div style={{ fontWeight: 900, marginBottom: 8 }}></div>
+ <div style={{ fontWeight: 900, marginBottom: 8 }}>اضغط على الكرت لفتح الإدارة — والأزرار بالأسفل للاختصارات.</div>
 
  <div className="grid">
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"> </div>
+ <div className="muted">لا يوجد نتائج.</div>
  <div style={{ fontWeight: 800 }}>
  {manageChild?.mother_name ?? "-"}
  </div>
  </div>
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"> </div>
+ <div className="muted">تفاصيل أكثر داخل “إدارة”</div>
  <div className="row" style={{ gap: 10 }}>
  <div style={{ fontWeight: 800 }}>
  {manageChild?.mother_phone ?? "-"}
@@ -2000,13 +2000,13 @@ export default function RunDetails() {
  </div>
 
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"> </div>
+ <div className="muted">لا يوجد حصص مجدولة بعد — افتح تبويب “الحصص” وولّد الحصص.</div>
  <div style={{ fontWeight: 800 }}>
  {manageChild?.father_name ?? "-"}
  </div>
  </div>
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"> </div>
+ <div className="muted">توليد حصص</div>
  <div className="row" style={{ gap: 10 }}>
  <div style={{ fontWeight: 800 }}>
  {manageChild?.father_phone ?? "-"}
@@ -2048,7 +2048,7 @@ export default function RunDetails() {
 
  {/* Actions */}
  <div style={{ gridColumn: "span 12" }} className="card">
- <div style={{ fontWeight: 900, marginBottom: 10 }}></div>
+ <div style={{ fontWeight: 900, marginBottom: 10 }}>أسبوعي: كل 7 أيام (قابل للتغيير).</div>
 
  <div
  className="row"
@@ -2060,21 +2060,21 @@ export default function RunDetails() {
  }}
  >
  <div>
- <div className="muted"> </div>
+ <div className="muted">أول حصة (تاريخ/وقت)</div>
  <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
  {fmtNum(manageP.package_sessions_total ?? 0)}
  </div>
  </div>
 
  <div>
- <div className="muted"></div>
+ <div className="muted">المدة (دقائق)</div>
  <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
  {fmtNum(manageP.package_sessions_remaining ?? 0)}
  </div>
  </div>
 
  <div>
- <div className="muted"> </div>
+ <div className="muted">عدد الحصص</div>
  <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
  {fmtNum(manageP.sessions_attended_in_run ?? 0)}
  </div>
@@ -2332,9 +2332,9 @@ export default function RunDetails() {
  {(enrollMode === "use_existing") && (
  <div style={{ gridColumn: "span 12" }} className="card">
  <div className="muted">
- <b> </b> / 
+ <b>استخدام الرصيد الموجود</b> / 
  No . 
- “Enrollment method” <b> </b>.
+ “Enrollment method” <b>شراء حصص جديدة</b>.
  </div>
  </div>
  )}
@@ -2577,12 +2577,12 @@ export default function RunDetails() {
  <table className="table" style={{ margin: 0 }}>
  <thead>
  <tr>
- <th style={{ width: 60 }}></th>
+ <th style={{ width: 60 }}>الطريقة</th>
  <th>Name</th>
- <th></th>
- <th></th>
- <th></th>
- <th> </th>
+ <th>Date</th>
+ <th>ملاحظة</th>
+ <th>الاسم</th>
+ <th>الصف</th>
  </tr>
  </thead>
  <tbody>
@@ -2626,7 +2626,7 @@ export default function RunDetails() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted"></div>
+ <div className="muted">كل كم يوم؟</div>
  <ModernSelect
  value={bulkPriceMode}
  onChange={setBulkPriceMode}
@@ -2639,7 +2639,7 @@ export default function RunDetails() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted"></div>
+ <div className="muted">قائمة الحصص</div>
  {bulkPriceMode === "unified" ? (
  <input
  className="input"
@@ -2750,7 +2750,7 @@ export default function RunDetails() {
  </div>
 
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"></div>
+ <div className="muted">اضغط “حضور” للدخول بسرعة.</div>
  <ModernSelect
  value={payMethod}
  onChange={setPayMethod}
@@ -2814,10 +2814,10 @@ export default function RunDetails() {
  <thead>
  <tr>
  <th>Amount</th>
- <th></th>
+ <th>العمر</th>
  <th>Date</th>
  <th>No</th>
- <th></th>
+ <th>جنس</th>
  </tr>
  </thead>
  <tbody>
@@ -2860,7 +2860,7 @@ export default function RunDetails() {
  >
  <div className="grid">
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"></div>
+ <div className="muted">لا توجد حصص.</div>
  <input
  className="input"
  type="datetime-local"
@@ -2872,7 +2872,7 @@ export default function RunDetails() {
  </div>
 
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"></div>
+ <div className="muted">تسجيل دفعة</div>
  <input
  className="input"
  type="datetime-local"

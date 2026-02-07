@@ -447,7 +447,7 @@ export default function Today() {
                         className="stack"
                         style={{ gap: 8, alignItems: "flex-end" }}
                       >
-                        <Badge variant="info"> </Badge>
+                        <Badge variant="info">أقرب حصة</Badge>
                         <div style={{ fontWeight: 950 }}>{when}</div>
                       </div>
                     </div>
@@ -549,9 +549,9 @@ export default function Today() {
           ) : todayRows.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
-              title="No Today"
-              description=" (Run) ."
-              actionLabel=" Courses"
+              title="No active courses"
+              description="To show courses here: create a Run and add future sessions. They will be ordered automatically by the next session."
+              actionLabel="Go to Courses"
               onAction={() => navigate("/courses")}
             />
           ) : (
@@ -619,19 +619,19 @@ export default function Today() {
                         style={{ gap: 10, flexWrap: "wrap" }}
                       >
                         <div className="pill">
-                          <span className="muted"> </span>
+                          <span className="muted">الحضور المسجل</span>
                           <b>
                             {recorded}/{expected}
                           </b>
                         </div>
                         <div className="pill">
-                          <span className="muted"></span>
+                          <span className="muted">الحاضر</span>
                           <b>
                             {present}/{expected}
                           </b>
                         </div>
                         <div className="pill">
-                          <span className="muted"></span>
+                          <span className="muted">Payment</span>
                           <Badge variant={paidVariant(r.paid_ratio)}>
                             {paidPct.toFixed(0)}%
                           </Badge>

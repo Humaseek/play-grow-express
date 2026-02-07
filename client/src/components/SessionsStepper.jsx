@@ -14,7 +14,7 @@ export default function SessionsStepper({
 
  return (
  <div className="stepperCard">
- <div className="muted"> </div>
+ <div className="muted">عدد الحصص</div>
 
  <div className="row" style={{ gap: 8, alignItems: "center" }}>
  <IconButton

@@ -5,9 +5,9 @@ import ErrorBanner from "../components/ErrorBanner";
 import Badge from "../components/Badge";
 
 function badgeRun(status) {
- if (status === "active") return <Badge variant="ok"></Badge>;
- if (status === "done") return <Badge variant="info"></Badge>;
- return <Badge variant="danger"></Badge>;
+ if (status === "active") return <Badge variant="ok">فعّالة</Badge>;
+ if (status === "done") return <Badge variant="info">منتهية</Badge>;
+ return <Badge variant="danger">ملغاة</Badge>;
 }
 
 export default function ChildDetails() {
@@ -106,7 +106,7 @@ export default function ChildDetails() {
 
  <div className="grid" style={{ marginBottom: 12 }}>
  <div className="card" style={{ gridColumn: "span 4" }}>
- <div className="muted"> </div>
+ <div className="muted">جاري التحميل...</div>
  <div style={{ fontSize: 26, fontWeight: 900 }}>
  {totals.agreed.toFixed(2)}
  </div>
@@ -118,7 +118,7 @@ export default function ChildDetails() {
  </div>
  </div>
  <div className="card" style={{ gridColumn: "span 4" }}>
- <div className="muted"></div>
+ <div className="muted">الطفل غير موجود.</div>
  <div style={{ fontSize: 26, fontWeight: 900 }}>
  {totals.balance.toFixed(2)}
  </div>
@@ -127,7 +127,7 @@ export default function ChildDetails() {
 
  <div className="grid" style={{ marginBottom: 12 }}>
  <div className="card" style={{ gridColumn: "span 6" }}>
- <div className="h1"> </div>
+ <div className="h1">متفق عليه</div>
  <div className="muted" style={{ marginTop: 6 }}>
  {child.mother_name ?? "-"}
  </div>
@@ -149,7 +149,7 @@ export default function ChildDetails() {
  </div>
 
  <div className="card" style={{ gridColumn: "span 6" }}>
- <div className="h1"> </div>
+ <div className="h1">مدفوع</div>
  <div className="muted" style={{ marginTop: 6 }}>
  {child.father_name ?? "-"}
  </div>
@@ -185,13 +185,13 @@ export default function ChildDetails() {
  <table className="table">
  <thead>
  <tr>
- <th></th>
- <th></th>
- <th> </th>
- <th> </th>
+ <th>الدورة</th>
+ <th>الدفعة</th>
+ <th>حالة الدفعة</th>
+ <th>متفق عليه</th>
  <th>Paid</th>
- <th></th>
- <th></th>
+ <th>مدفوع</th>
+ <th>باقي</th>
  </tr>
  </thead>
  <tbody>

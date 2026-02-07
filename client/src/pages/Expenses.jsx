@@ -384,7 +384,7 @@ export default function Expenses() {
  <div className="input">
  <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
  </div>
- <button className="btn" onClick={load}></button>
+ <button className="btn" onClick={load}>تحديث</button>
  </div>
  ) : null}
  </div>
@@ -411,10 +411,10 @@ export default function Expenses() {
  <thead>
  <tr>
  <th>Date</th>
- <th></th>
- <th></th>
+ <th>Date</th>
+ <th>التصنيف</th>
  <th>Amount</th>
- <th></th>
+ <th>Description</th>
  </tr>
  </thead>
  <tbody>
@@ -486,7 +486,7 @@ export default function Expenses() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="label"></div>
+ <div className="label">جاري التحميل...</div>
  <div className="input">
  <input
  value={expCategory}
@@ -497,7 +497,7 @@ export default function Expenses() {
  </div>
 
  <div style={{ gridColumn: "span 12" }}>
- <div className="label"></div>
+ <div className="label">Date</div>
  <div className="input">
  <input
  value={expDesc}

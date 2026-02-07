@@ -351,7 +351,7 @@ export default function Children() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted"> </div>
+ <div className="muted">جاري التحميل...</div>
  <input
  className="input"
  value={form.new_country}
@@ -362,7 +362,7 @@ export default function Children() {
  </div>
 
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"> </div>
+ <div className="muted">الاسم *</div>
  <input
  className="input"
  value={form.mother_name}
@@ -372,7 +372,7 @@ export default function Children() {
  />
  </div>
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"> </div>
+ <div className="muted">تاريخ الميلاد *</div>
  <input
  className="input"
  value={form.mother_phone}
@@ -383,7 +383,7 @@ export default function Children() {
  </div>
 
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"> </div>
+ <div className="muted">الجنس</div>
  <input
  className="input"
  value={form.father_name}
@@ -393,7 +393,7 @@ export default function Children() {
  />
  </div>
  <div style={{ gridColumn: "span 6" }}>
- <div className="muted"> </div>
+ <div className="muted">الصف</div>
  <input
  className="input"
  value={form.father_phone}

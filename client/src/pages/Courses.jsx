@@ -342,13 +342,13 @@ export default function Courses() {
  {kindLabel(r.kind)}
  </span>
  {r.is_active ? (
- <span className="badge ok"></span>
+ <span className="badge ok">فعّالة</span>
  ) : (
- <span className="badge danger"> </span>
+ <span className="badge danger">غير فعّالة</span>
  )}
  </div>
 
- <span className="muted" style={{ fontSize: 12 }}> </span>
+ <span className="muted" style={{ fontSize: 12 }}>اضغط لفتح</span>
  </div>
 
  <div style={{ marginTop: 10 }}>
@@ -434,7 +434,7 @@ export default function Courses() {
  </div>
 
  <div style={{ gridColumn: "span 5" }}>
- <div className="muted"></div>
+ <div className="muted">فلاتر</div>
  <ModernSelect
  value={form.kind}
  onChange={(v) => setForm((p) => ({ ...p, kind: v }))}
@@ -447,7 +447,7 @@ export default function Courses() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted"></div>
+ <div className="muted">جاري التحميل...</div>
  <input
  className="input"
  type="number"
@@ -474,7 +474,7 @@ export default function Courses() {
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted"></div>
+ <div className="muted">₪ السعر الافتراضي</div>
  <ModernSelect
  value={form.is_active ? "1" : "0"}
  onChange={(v) => setForm((p) => ({ ...p, is_active: v === "1" }))}
