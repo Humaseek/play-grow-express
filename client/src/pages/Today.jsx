@@ -200,29 +200,30 @@ export default function Today() {
 
           const agreed = Number(p.agreed_price ?? 0);
           const paid = Number(p.paid_amount ?? 0);
-
-          const prev = agg.get(rid) ?? { agreed: 0, paid: 0 };
-          prev.agreed += Number.isFinite(agreed) ? agreed : 0;
-          prev.paid += Number.isFinite(paid) ? paid : 0;
-          agg.set(rid, prev);
+          const cur = agg.get(rid) ?? { agreed: 0, paid: 0 };
+          cur.agreed += agreed;
+          cur.paid += paid;
+          agg.set(rid, cur);
         }
 
-        for (const [rid, v] of agg.entries()) {
-          const ratio = v.agreed === 0 ? 0 : v.paid / v.agreed;
-          paidByRun.set(rid, clamp(ratio, 0, 1));
+        for (const [rid, a] of agg.entries()) {
+          const ratio = a.agreed <= 0 ? 0 : clamp(a.paid / a.agreed, 0, 1);
+          paidByRun.set(rid, ratio);
         }
       }
     }
 
-    const enriched = baseRows.map((r) => {
-      const key = String(r.run_id ?? "");
-      const pr = paidByRun.has(key)
-        ? paidByRun.get(key)
-        : normalizeRatio(r.paid_ratio);
-      return { ...r, paid_ratio: pr };
+    const normalized = baseRows.map((r) => {
+      const rid = String(r.run_id ?? "");
+      const fallbackPaid = paidByRun.get(rid) ?? 0;
+
+      return {
+        ...r,
+        paid_ratio: normalizeRatio(r.paid_ratio ?? fallbackPaid),
+      };
     });
 
-    setTodayRows(enriched);
+    setTodayRows(normalized);
     setLoading((s) => ({ ...s, day: false }));
   }
 
@@ -238,44 +239,44 @@ export default function Today() {
   const activeStats = useMemo(() => {
     const runsCount = activeRuns.length;
     const upcomingSum = activeRuns.reduce(
-      (acc, r) => acc + (r.upcoming_count ?? 0),
+      (acc, r) => acc + Number(r.upcoming_count ?? 0),
       0,
     );
     const participantsSum = activeRuns.reduce(
-      (acc, r) => acc + (r.participants_count ?? 0),
+      (acc, r) => acc + Number(r.participants_count ?? 0),
       0,
     );
 
     const next = activeRuns[0]?.next_session ?? null;
     const nextLabel = next
       ? `${fmtDay(next.start_at)} • ${formatTimeRange(next.start_at, next.end_at)}`
-      : "No ";
+      : "No upcoming sessions";
 
     return { runsCount, upcomingSum, participantsSum, next, nextLabel };
   }, [activeRuns]);
 
   const dayStats = useMemo(() => {
     const count = todayRows.length;
+
     const scheduled = todayRows.filter((r) => r.status === "scheduled").length;
 
     const expectedSum = todayRows.reduce(
-      (acc, r) => acc + (r.expected_count ?? 0),
+      (acc, r) => acc + Number(r.expected_count ?? 0),
       0,
     );
     const recordedSum = todayRows.reduce(
-      (acc, r) => acc + (r.attendance_recorded ?? 0),
+      (acc, r) => acc + Number(r.attendance_recorded ?? 0),
       0,
     );
     const presentSum = todayRows.reduce(
-      (acc, r) => acc + (r.present_count ?? 0),
+      (acc, r) => acc + Number(r.present_count ?? 0),
       0,
     );
 
     const recordedPct =
       expectedSum === 0 ? 0 : (recordedSum / expectedSum) * 100;
     const presentPct = expectedSum === 0 ? 0 : (presentSum / expectedSum) * 100;
-    // NOTE: supabase numeric string (: "0.5")
-    // concatenation avg = NaN → 0%
+
     const avgPaid =
       count === 0
         ? 0
@@ -308,10 +309,10 @@ export default function Today() {
 
     if (err) {
       setError(err);
-      toast("Failed Refresh .", "danger");
+      toast("Failed to update session status.", "danger");
       return;
     }
-    toast(" Refresh .", "ok");
+    toast("Session status updated.", "ok");
     await loadTodayAgenda();
     await loadActiveRuns();
   }
@@ -321,8 +322,12 @@ export default function Today() {
   return (
     <div className="container page page--today">
       <PageHeader
-        title=" "
-        subtitle={view === "active" ? "Dashboard" : " Today"}
+        title="Dashboard"
+        subtitle={
+          view === "active"
+            ? "Active courses/workshops (with upcoming sessions) — ordered by next session"
+            : "Today's agenda — sessions ordered by time (single-day calendar view)"
+        }
         actions={
           <div className="toolbar" style={{ gap: 10 }}>
             <div className="segmented">
@@ -331,14 +336,14 @@ export default function Today() {
                 onClick={() => setView("active")}
                 type="button"
               >
-                Courses
+                Active Courses
               </button>
               <button
                 className={`segmentedBtn ${view === "day" ? "isActive" : ""}`}
                 onClick={() => setView("day")}
                 type="button"
               >
-                Today
+                Today&apos;s Agenda
               </button>
             </div>
 
@@ -358,7 +363,7 @@ export default function Today() {
               Payments
             </button>
             <button className="btn soft" onClick={() => navigate("/expenses")}>
-              Expense
+              Expenses
             </button>
           </div>
         }
@@ -373,9 +378,13 @@ export default function Today() {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={Sparkles}
-                label="/ "
+                label="Active Runs"
                 value={activeStats.runsCount}
-                hint={activeStats.next ? ` : ${activeStats.nextLabel}` : "No "}
+                hint={
+                  activeStats.next
+                    ? `Next session: ${activeStats.nextLabel}`
+                    : "No upcoming sessions"
+                }
                 variant={activeStats.runsCount === 0 ? "neutral" : "info"}
               />
             </div>
@@ -383,9 +392,9 @@ export default function Today() {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={CalendarDays}
-                label=" "
+                label="Upcoming Sessions"
                 value={activeStats.upcomingSum}
-                hint=" Courses "
+                hint="Total number of future sessions across all active runs"
                 variant={activeStats.upcomingSum === 0 ? "neutral" : "info"}
               />
             </div>
@@ -393,9 +402,9 @@ export default function Today() {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={ClipboardList}
-                label=" "
+                label="Active Participants"
                 value={activeStats.participantsSum}
-                hint=" Courses "
+                hint="Total participants across active runs"
                 variant={activeStats.participantsSum === 0 ? "neutral" : "ok"}
               />
             </div>
@@ -406,9 +415,9 @@ export default function Today() {
           ) : activeRuns.length === 0 ? (
             <EmptyState
               icon={Sparkles}
-              title="No sessions today"
-              description="There are no scheduled sessions for today."
-              actionLabel="View schedule"
+              title="No active courses"
+              description="To show courses here: create a Run and add future sessions. Runs are ordered automatically by the next session."
+              actionLabel="Go to Courses"
               onAction={() => navigate("/courses")}
             />
           ) : (
@@ -435,11 +444,12 @@ export default function Today() {
                           <Badge
                             variant={r.kind === "workshop" ? "info" : "neutral"}
                           >
-                            {r.kind === "workshop" ? "" : ""}
+                            {r.kind === "workshop" ? "Workshop" : "Course"}
                           </Badge>
                         </div>
                         <div className="muted" style={{ marginTop: 6 }}>
-                          {r.label} • : <b>{r.participants_count ?? 0}</b>
+                          {r.label} • Participants:{" "}
+                          <b>{r.participants_count ?? 0}</b>
                         </div>
                       </div>
 
@@ -447,7 +457,7 @@ export default function Today() {
                         className="stack"
                         style={{ gap: 8, alignItems: "flex-end" }}
                       >
-                        <Badge variant="info">أقرب حصة</Badge>
+                        <Badge variant="info">Next session</Badge>
                         <div style={{ fontWeight: 950 }}>{when}</div>
                       </div>
                     </div>
@@ -456,13 +466,13 @@ export default function Today() {
 
                     <div className="row space" style={{ alignItems: "center" }}>
                       <div className="muted">
-                        : <b>{r.upcoming_count}</b>
+                        Remaining sessions: <b>{r.upcoming_count}</b>
                       </div>
 
                       <div className="actionsRow">
                         {next?.id ? (
                           <IconButton
-                            title=" ()"
+                            title="Open next session (attendance)"
                             variant="primary"
                             onClick={() =>
                               navigate(`/sessions/${next.id}/attendance`)
@@ -473,14 +483,14 @@ export default function Today() {
                         ) : null}
 
                         <IconButton
-                          title="Details "
+                          title="Run details"
                           onClick={() => navigate(`/runs/${r.run_id}`)}
                         >
                           <Layers size={18} />
                         </IconButton>
 
                         <IconButton
-                          title=" "
+                          title="Course template"
                           onClick={() => navigate(`/courses/${r.template_id}`)}
                         >
                           <LayoutTemplate size={18} />
@@ -502,12 +512,12 @@ export default function Today() {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={CalendarDays}
-                label=" Today"
+                label="Today's Sessions"
                 value={dayStats.count}
                 hint={
                   dayStats.next
-                    ? ` : ${formatTimeRange(dayStats.next.start_at, dayStats.next.end_at)}`
-                    : "No "
+                    ? `Next session: ${formatTimeRange(dayStats.next.start_at, dayStats.next.end_at)}`
+                    : "No sessions scheduled"
                 }
                 variant={dayStats.count === 0 ? "neutral" : "info"}
               />
@@ -516,9 +526,9 @@ export default function Today() {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={Sparkles}
-                label=""
+                label="Scheduled"
                 value={dayStats.scheduled}
-                hint=" Today"
+                hint="Sessions scheduled for today"
                 variant={dayStats.scheduled === 0 ? "neutral" : "info"}
               />
             </div>
@@ -526,9 +536,9 @@ export default function Today() {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={ClipboardList}
-                label=" "
+                label="Attendance Recorded"
                 value={`${dayStats.recordedSum}/${dayStats.expectedSum}`}
-                hint={`${dayStats.recordedPct.toFixed(0)}% `}
+                hint={`${dayStats.recordedPct.toFixed(0)}% of expected`}
                 variant={pctVariant(dayStats.recordedPct)}
               />
             </div>
@@ -536,9 +546,9 @@ export default function Today() {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={Banknote}
-                label=" "
+                label="Average Payment"
                 value={`${paidPctKpi.toFixed(0)}%`}
-                hint=" Today"
+                hint="Payment ratio across today's sessions"
                 variant={paidVariant(dayStats.avgPaid)}
               />
             </div>
@@ -549,8 +559,8 @@ export default function Today() {
           ) : todayRows.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
-              title="No active courses"
-              description="To show courses here: create a Run and add future sessions. They will be ordered automatically by the next session."
+              title="No sessions today"
+              description="Add sessions inside a Run and they will appear here immediately as a one-day agenda."
               actionLabel="Go to Courses"
               onAction={() => navigate("/courses")}
             />
@@ -587,7 +597,7 @@ export default function Today() {
                                 r.kind === "workshop" ? "info" : "neutral"
                               }
                             >
-                              {r.kind === "workshop" ? "" : ""}
+                              {r.kind === "workshop" ? "Workshop" : "Course"}
                             </Badge>
                           </div>
                           <div className="muted" style={{ marginTop: 6 }}>
@@ -605,10 +615,10 @@ export default function Today() {
                           }
                         >
                           {r.status === "scheduled"
-                            ? ""
+                            ? "Scheduled"
                             : r.status === "done"
-                              ? ""
-                              : ""}
+                              ? "Completed"
+                              : "Canceled"}
                         </Badge>
                       </div>
 
@@ -619,13 +629,13 @@ export default function Today() {
                         style={{ gap: 10, flexWrap: "wrap" }}
                       >
                         <div className="pill">
-                          <span className="muted">الحضور المسجل</span>
+                          <span className="muted">Recorded attendance</span>
                           <b>
                             {recorded}/{expected}
                           </b>
                         </div>
                         <div className="pill">
-                          <span className="muted">الحاضر</span>
+                          <span className="muted">Present</span>
                           <b>
                             {present}/{expected}
                           </b>
@@ -637,7 +647,7 @@ export default function Today() {
                           </Badge>
                         </div>
                         <div className="pill">
-                          <span className="muted">Enroll </span>
+                          <span className="muted">Attendance rate</span>
                           <Badge variant={pctVariant(recordedPct)}>
                             {recordedPct.toFixed(0)}%
                           </Badge>
@@ -646,7 +656,7 @@ export default function Today() {
 
                       <div className="actionsRow" style={{ marginTop: 12 }}>
                         <IconButton
-                          title=" "
+                          title="Open attendance"
                           variant="primary"
                           onClick={() =>
                             navigate(`/sessions/${r.session_id}/attendance`)
@@ -656,21 +666,21 @@ export default function Today() {
                         </IconButton>
 
                         <IconButton
-                          title="Details "
+                          title="Run details"
                           onClick={() => navigate(`/runs/${r.run_id}`)}
                         >
                           <Layers size={18} />
                         </IconButton>
 
                         <IconButton
-                          title=" "
+                          title="Course template"
                           onClick={() => navigate(`/courses/${r.course_id}`)}
                         >
                           <LayoutTemplate size={18} />
                         </IconButton>
 
                         <IconButton
-                          title=""
+                          title="Complete"
                           onClick={() =>
                             setConfirm({
                               open: true,
@@ -709,8 +719,12 @@ export default function Today() {
 
       <ConfirmDialog
         open={confirm.open}
-        title=""
-        message={confirm.action === "done" ? " " : " Cancel "}
+        title="Confirm"
+        message={
+          confirm.action === "done"
+            ? "Mark this session as completed?"
+            : "Cancel this session?"
+        }
         confirmText="Yes"
         cancelText="Cancel"
         danger={confirm.action !== "done"}
