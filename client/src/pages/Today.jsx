@@ -358,7 +358,7 @@ export default function Today() {
               Payments
             </button>
             <button className="btn soft" onClick={() => navigate("/expenses")}>
-              Expenses
+              Expense
             </button>
           </div>
         }
