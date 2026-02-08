@@ -132,18 +132,6 @@ export default function ChildDetails() {
             {child.mother_name ?? "-"}
           </div>
           <div className="row" style={{ marginTop: 10, flexWrap: "wrap" }}>
-            <a
-              className="btn primary"
-              href={child.mother_phone ? `tel:${child.mother_phone}` : "#"}
-              onClick={(e) => {
-                if (!child.mother_phone) {
-                  e.preventDefault();
-                  toast("No phone number.", "warn");
-                }
-              }}
-            >
-              Call
-            </a>
             <div className="muted">{child.mother_phone ?? "-"}</div>
           </div>
         </div>
