@@ -153,7 +153,7 @@ export default function Children() {
       };
 
       if (!payload.name || !payload.birth_date) {
-        toast("Name Birth date Required.", "warn");
+        toast("Name and birth date are required.", "warn");
         setSaving(false);
         return;
       }
@@ -198,7 +198,7 @@ export default function Children() {
     <div className="container page page--children">
       <PageHeader
         title="Children"
-        subtitle=""
+        subtitle="Manage children"
         actions={
           <div className="toolbar">
             <input
@@ -364,10 +364,11 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">جاري التحميل...</div>
+            <div className="muted">New country (optional)</div>
             <input
               className="input"
               value={form.new_country}
+              placeholder="e.g. Israel"
               onChange={(e) =>
                 setForm((p) => ({ ...p, new_country: e.target.value }))
               }
@@ -375,20 +376,22 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">الاسم *</div>
+            <div className="muted">Mother name</div>
             <input
               className="input"
               value={form.mother_name}
+              placeholder="e.g. Sarah"
               onChange={(e) =>
                 setForm((p) => ({ ...p, mother_name: e.target.value }))
               }
             />
           </div>
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">تاريخ الميلاد *</div>
+            <div className="muted">Mother phone</div>
             <input
               className="input"
               value={form.mother_phone}
+              placeholder="e.g. 050-1234567"
               onChange={(e) =>
                 setForm((p) => ({ ...p, mother_phone: e.target.value }))
               }
@@ -396,20 +399,22 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">الجنس</div>
+            <div className="muted">Father name</div>
             <input
               className="input"
               value={form.father_name}
+              placeholder="e.g. Ahmad"
               onChange={(e) =>
                 setForm((p) => ({ ...p, father_name: e.target.value }))
               }
             />
           </div>
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">الصف</div>
+            <div className="muted">Father phone</div>
             <input
               className="input"
               value={form.father_phone}
+              placeholder="e.g. 052-1234567"
               onChange={(e) =>
                 setForm((p) => ({ ...p, father_phone: e.target.value }))
               }
@@ -417,10 +422,11 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">No</div>
+            <div className="muted">Notes (optional)</div>
             <textarea
               className="input"
               rows={3}
+              placeholder="Optional notes..."
               value={form.notes}
               onChange={(e) =>
                 setForm((p) => ({ ...p, notes: e.target.value }))
