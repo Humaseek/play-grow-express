@@ -519,6 +519,12 @@ export default function Expenses() {
               <div className="label">Date</div>
               <div className="input">
                 <input
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    background: "transparent",
+                    outline: "none",
+                  }}
                   type="date"
                   value={expDate}
                   onChange={(e) => setExpDate(e.target.value)}
@@ -530,6 +536,12 @@ export default function Expenses() {
               <div className="label">Amount (₪)</div>
               <div className="input">
                 <input
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    background: "transparent",
+                    outline: "none",
+                  }}
                   type="number"
                   min="0"
                   step="0.01"
@@ -544,6 +556,12 @@ export default function Expenses() {
               <div className="label">Category</div>
               <div className="input">
                 <input
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    background: "transparent",
+                    outline: "none",
+                  }}
                   value={expCategory}
                   onChange={(e) => setExpCategory(e.target.value)}
                   placeholder="e.g. Transport"
@@ -555,6 +573,12 @@ export default function Expenses() {
               <div className="label">Description</div>
               <div className="input">
                 <input
+                  style={{
+                    width: "100%",
+                    border: "none",
+                    background: "transparent",
+                    outline: "none",
+                  }}
                   value={expDesc}
                   onChange={(e) => setExpDesc(e.target.value)}
                   placeholder="e.g. taxi, supplies, rent..."
