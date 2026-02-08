@@ -522,18 +522,18 @@ export default function Payments() {
  <div className="kpiGrid4" style={{ marginBottom: 14 }}>
  <KpiCard
  icon={Banknote}
- label=" "
+ label="Total received"
  value={`${fmtMoney(kpis.total)}₪`}
- hint=" "
+ hint="Sum of payments in the current view"
  variant={kpis.total === 0 ? "neutral" : "info"}
  className="kpi--accent"
  />
 
  <KpiCard
  icon={CreditCard}
- label=" "
+ label="Payments"
  value={kpis.count}
- hint="No "
+ hint="Number of payments in the current view"
  variant={kpis.count === 0 ? "neutral" : "info"}
  className="kpi--accent"
  />
@@ -549,9 +549,9 @@ export default function Payments() {
 
  <KpiCard
  icon={UserRound}
- label=" "
+ label="Unique payers"
  value={kpis.uniqChildren}
- hint={` : ${fmtMoney(kpis.avg)}₪`}
+ hint={`Average payment: ${fmtMoney(kpis.avg)}₪`}
  variant={kpis.uniqChildren === 0 ? "neutral" : "info"}
  className="kpi--accent"
  />
@@ -622,11 +622,11 @@ export default function Payments() {
  bare
  value={rangePreset}
  onChange={setRangePreset}
- placeholder=" 90 "
+ placeholder="Last 90 days"
  options={[
- { value: "30d", label: " 30 " },
- { value: "90d", label: " 90 " },
- { value: "this_month", label: " " },
+ { value: "30d", label: "Last 30 days" },
+ { value: "90d", label: "Last 90 days" },
+ { value: "this_month", label: "This month" },
  { value: "custom", label: "Custom range" },
  ]}
  />
