@@ -129,7 +129,7 @@ export default function ChildDetails() {
         <div className="card" style={{ gridColumn: "span 6" }}>
           <div className="h1">Mother</div>
           <div className="muted" style={{ marginTop: 6 }}>
-            {child.mother_name ?? "-"}
+            {child.mother_name ?? ""}
           </div>
           <div className="row" style={{ marginTop: 10, flexWrap: "wrap" }}>
             <div className="muted">{child.mother_phone ?? "-"}</div>
