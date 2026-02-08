@@ -129,7 +129,7 @@ export default function ChildDetails() {
         <div className="card" style={{ gridColumn: "span 6" }}>
           <div className="h1">Mother</div>
           <div className="muted" style={{ marginTop: 6 }}>
-            {child.mother_name ?? ""}
+            {child.mother_name ?? "-"}
           </div>
           <div className="row" style={{ marginTop: 10, flexWrap: "wrap" }}>
             <div className="muted">{child.mother_phone ?? "-"}</div>
@@ -142,18 +142,6 @@ export default function ChildDetails() {
             {child.father_name ?? "-"}
           </div>
           <div className="row" style={{ marginTop: 10, flexWrap: "wrap" }}>
-            <a
-              className="btn primary"
-              href={child.father_phone ? `tel:${child.father_phone}` : "#"}
-              onClick={(e) => {
-                if (!child.father_phone) {
-                  e.preventDefault();
-                  toast("No phone number.", "warn");
-                }
-              }}
-            >
-              Call
-            </a>
             <div className="muted">{child.father_phone ?? "-"}</div>
           </div>
         </div>
