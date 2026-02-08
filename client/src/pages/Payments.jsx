@@ -934,7 +934,7 @@ export default function Payments() {
                       type="number"
                       value={payAmount}
                       onChange={(e) => setPayAmount(e.target.value)}
-                      placeholder="e.g. 120"
+                      placeholder=""
                     />
                     <span className="muted" style={{ fontWeight: 950 }}>
                       ₪
