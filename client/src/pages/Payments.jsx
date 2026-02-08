@@ -836,7 +836,7 @@ export default function Payments() {
 
  <div style={{ gridColumn: "span 6" }}>
  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
- ()
+ Session (optional)
  </div>
  <ModernSelect
  value={paySessionId}
@@ -860,7 +860,7 @@ export default function Payments() {
  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
  Amount
  </div>
- <div className="input">
+ <Control>
  <input
  type="number"
  value={payAmount}
@@ -870,10 +870,10 @@ export default function Payments() {
  <span className="muted" style={{ fontWeight: 950 }}>
  ₪
  </span>
- </div>
+</Control>
  {selectedEnrollment ? (
  <div className="muted" style={{ marginTop: 6, fontWeight: 850 }}>
- : <span style={{ fontWeight: 950 }}>{fmtMoney(selectedEnrollment.balance)}₪</span>
+ Balance: <span style={{ fontWeight: 950 }}>{fmtMoney(selectedEnrollment.balance)}₪</span>
  {Number(selectedEnrollment.balance || 0) > 0 ? (
  <button
  className="linkBtn"
