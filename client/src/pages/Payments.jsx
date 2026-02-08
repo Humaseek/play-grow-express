@@ -425,13 +425,13 @@ export default function Payments() {
 
  async function createPayment() {
  if (!payEnrollmentId) {
- toast(" (/).", "warn");
+ toast("Please choose an enrollment.", "warn");
  return;
  }
 
  const amount = Number(payAmount);
  if (!amount || amount <= 0) {
- toast(" .", "warn");
+ toast("Please enter a valid amount.", "warn");
  return;
  }
 
@@ -460,14 +460,14 @@ export default function Payments() {
 
  if (ins.error) {
  setError(ins.error);
- toast("Failed Enroll .", "danger");
+ toast("Failed to create payment.", "danger");
  return;
  }
 
  toast(
  supportsSessionId || !sessionId
- ? " Enroll ."
- : " Enroll ( — ).",
+ ? "Payment saved."
+ : "Payment saved (session link not stored).",
  "ok",
  );
 
@@ -479,10 +479,10 @@ export default function Payments() {
  const d = await supabase.from("payments").delete().eq("id", id);
  if (d.error) {
  setError(d.error);
- toast("Failed Delete .", "danger");
+ toast("Failed to delete payment.", "danger");
  return;
  }
- toast(" Delete .", "ok");
+ toast("Payment deleted.", "ok");
  await loadPayments();
  }
 
@@ -492,24 +492,24 @@ export default function Payments() {
  const b = toDate ? new Date(toDate).toLocaleDateString("en") : "—";
  return `${a} → ${b}`;
  }
- if (rangePreset === "30d") return " 30 ";
- if (rangePreset === "90d") return " 90 ";
- if (rangePreset === "this_month") return " ";
- return " ";
- }, [rangePreset, fromDate, toDate]);
+ if (rangePreset === "30d") return "Last 30 days";
+ if (rangePreset === "90d") return "Last 90 days";
+ if (rangePreset === "this_month") return "This month";
+ return "All time";
+  }, [rangePreset, fromDate, toDate]);
 
  return (
  <div className="container page page--payments">
  <PageHeader
- title=""
- subtitle={`View — ${rangeHint}`}
+ title="Payments"
+ subtitle={`Range: ${rangeHint}`}
  actions={
  <div className="toolbar">
  <button className="btn" onClick={loadPayments}>
  Refresh
  </button>
  <button className="btn primary" onClick={openAddModal}>
- <Plus size={18} /> Add 
+ <Plus size={18} /> Add payment
  </button>
  </div>
  }
@@ -540,9 +540,9 @@ export default function Payments() {
 
  <KpiCard
  icon={Banknote}
- label=""
+  label="Cash total"
  value={`${fmtMoney(kpis.cash)}₪`}
- hint=" Paid "
+  hint="Sum of cash payments"
  variant={kpis.cash === 0 ? "neutral" : "ok"}
  className="kpi--accent"
  />
@@ -567,7 +567,7 @@ export default function Payments() {
  style={{ minWidth: 260, width: "auto" }}
  >
  <input
- placeholder="Search: / / No"
+ placeholder="Search payments..."
  value={search}
  onChange={(e) => setSearch(e.target.value)}
  />
@@ -582,13 +582,13 @@ export default function Payments() {
  bare
  value={method}
  onChange={setMethod}
- placeholder=" "
+ placeholder="All methods"
  options={[
- { value: "all", label: " " },
- { value: "cash", label: "" },
- { value: "card", label: "" },
- { value: "transfer", label: "" },
- { value: "other", label: "" },
+ { value: "all", label: "All methods" },
+ { value: "cash", label: "Cash" },
+ { value: "card", label: "Card" },
+ { value: "transfer", label: "Bank transfer" },
+ { value: "other", label: "Other" },
  ]}
  />
  </Control>
@@ -602,12 +602,12 @@ export default function Payments() {
  bare
  value={statusFilter}
  onChange={setStatusFilter}
- placeholder=" No"
+ placeholder="All statuses"
  options={[
- { value: "all", label: " No" },
+ { value: "all", label: "All statuses" },
  { value: "paid", label: "Paid" },
  { value: "partial", label: "Partial" },
- { value: "unpaid", label: " Paid" },
+ { value: "unpaid", label: "Unpaid" },
  { value: "free", label: "Free" },
  ]}
  />
@@ -627,7 +627,7 @@ export default function Payments() {
  { value: "30d", label: " 30 " },
  { value: "90d", label: " 90 " },
  { value: "this_month", label: " " },
- { value: "custom", label: "" },
+ { value: "custom", label: "Custom range" },
  ]}
  />
  </Control>
@@ -635,7 +635,7 @@ export default function Payments() {
  {rangePreset === "custom" ? (
  <>
  <div className="filtersBar__date" style={{ minWidth: 160 }}>
- <div className="label">من</div>
+ <div className="label">From</div>
  <input
  className="input"
  type="date"
@@ -645,7 +645,7 @@ export default function Payments() {
  </div>
 
  <div className="filtersBar__date" style={{ minWidth: 160 }}>
- <div className="label">إلى</div>
+ <div className="label">To</div>
  <input
  className="input"
  type="date"
@@ -664,11 +664,11 @@ export default function Payments() {
  ) : filtered.length === 0 ? (
  <EmptyState
  icon={CreditCard}
- title="No No "
- description=" Date Search."
- actionLabel="Add "
+ title="No payments found"
+ description="Try adjusting filters, or add a new payment."
+ actionLabel="Add payment"
  onAction={openAddModal}
- secondaryLabel=" No"
+ secondaryLabel="Reset filters"
  onSecondary={() => {
  setSearch("");
  setMethod("all");
@@ -683,16 +683,16 @@ export default function Payments() {
  <table className="table">
  <thead>
  <tr>
- <th>Date</th>
- <th>Date</th>
- <th>الطفل</th>
- <th>الدورة</th>
- <th>الدفعة</th>
- <th>Amount</th>
- <th>الحصة</th>
- <th>Status</th>
- <th>No</th>
- <th>Amount</th>
+ <th>Paid at</th>
+  <th>Child</th>
+  <th>Course</th>
+  <th>Run</th>
+  <th>Session</th>
+  <th>Amount</th>
+  <th>Method</th>
+  <th>Status</th>
+  <th>Note</th>
+  <th></th>
  </tr>
  </thead>
  <tbody>
@@ -748,7 +748,7 @@ export default function Payments() {
  <button
  className="linkBtn"
  onClick={() => navigate(`/sessions/${p.session_id}/attendance`)}
- title=" "
+ title="Open session attendance"
  >
  <span className="row" style={{ gap: 6 }}>
  <LinkIcon size={16} />
@@ -793,18 +793,18 @@ export default function Payments() {
  {/* Add Payment Modal */}
  <Modal
  open={openAdd}
- title="Add "
+ title="Add payment"
  onClose={() => setOpenAdd(false)}
  >
  <div style={{ padding: 16 }}>
  {pickerLoading ? (
- <div className="card"> No...</div>
+ <div className="card">Loading...</div>
  ) : (
  <>
  <div className="grid" style={{ marginBottom: 12 }}>
  <div style={{ gridColumn: "span 6" }}>
  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
- No ( / / )
+ Enrollment
  </div>
  <ModernSelect
  value={payEnrollmentId}
@@ -814,15 +814,15 @@ export default function Payments() {
  await loadSessionsForEnrollment(v);
  }}
  menuWidth="trigger"
- placeholder="— —"
+ placeholder="Select enrollment..."
  options={[
- { value: "", label: "— —" },
+ { value: "", label: "Select enrollment..." },
  ...pickerFiltered.map((x) => {
  const st = statusFromEnrollment(x);
  const label = `${x.child_name} — ${x.course_title} — ${x.run_label}`;
  const hint =
  Number(x.agreed_price || 0) > 0
- ? ` (: ${fmtMoney(x.balance)}₪)`
+ ? ` (Balance: ${fmtMoney(x.balance)}₪)`
  : " (Free)";
  return {
  value: x.enrollment_id,
@@ -843,9 +843,9 @@ export default function Payments() {
  onChange={setPaySessionId}
  menuWidth="trigger"
  disabled={!supportsSessionId}
- placeholder={supportsSessionId ? "—" : " "}
+ placeholder={supportsSessionId ? "No session" : "Session linking not supported"}
  options={[
- { value: "", label: "—" },
+ { value: "", label: "No session" },
  ...((sessions || [])).map((s) => ({
  value: s.id,
  label: `${fmtDateTime24(s.start_at)} — ${s.status}`,
@@ -865,7 +865,7 @@ export default function Payments() {
  type="number"
  value={payAmount}
  onChange={(e) => setPayAmount(e.target.value)}
- placeholder=": 120"
+ placeholder="e.g. 120"
  />
  <span className="muted" style={{ fontWeight: 950 }}>
  ₪
@@ -882,29 +882,29 @@ export default function Payments() {
  type="button"
  >
  
- </button>
+ Use balance</button>
  ) : null}
  </div>
  ) : null}
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>جاري التحميل...</div>
+ <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>Payment method</div>
  <ModernSelect
  value={payMethod}
  onChange={setPayMethod}
  menuWidth="trigger"
- options={[
- { value: "cash", label: "" },
- { value: "card", label: "" },
- { value: "transfer", label: "" },
- { value: "other", label: "" },
- ]}
+  options={[
+  { value: "cash", label: "Cash" },
+  { value: "card", label: "Card" },
+  { value: "transfer", label: "Bank transfer" },
+  { value: "other", label: "Other" },
+  ]}
  />
  </div>
 
  <div style={{ gridColumn: "span 4" }}>
- <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>جاري تحميل الاشتراكات...</div>
+ <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>Paid at</div>
  <div className="input">
  <input
  type="datetime-local"
@@ -917,13 +917,13 @@ export default function Payments() {
 
  <div style={{ marginBottom: 12 }}>
  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
- No ()
+ Note (optional)
  </div>
  <div className="input">
  <input
  value={payNote}
  onChange={(e) => setPayNote(e.target.value)}
- placeholder=": Partial / "
+ placeholder="e.g. partial payment, discount, etc."
  />
  </div>
  </div>
@@ -943,8 +943,8 @@ export default function Payments() {
 
  <ConfirmDialog
  open={confirm.open}
- title="Delete "
- message=" Delete "
+ title="Delete payment"
+ message="Are you sure you want to delete this payment? This action cannot be undone."
  confirmText="Delete"
  cancelText="Cancel"
  danger
