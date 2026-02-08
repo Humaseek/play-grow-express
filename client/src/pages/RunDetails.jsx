@@ -1260,7 +1260,9 @@ export default function RunDetails() {
               type="button"
               className="btn"
               onClick={() => navigate(`/courses/${summary.template_id}`)}
-            ></button>
+            >
+              Back
+            </button>
 
             {nextSession && (
               <button
@@ -1269,7 +1271,9 @@ export default function RunDetails() {
                 onClick={() =>
                   navigate(`/sessions/${nextSession.id}/attendance`)
                 }
-              ></button>
+              >
+                Attendance
+              </button>
             )}
 
             <button type="button" className="btn" onClick={loadFixed}>
@@ -1277,8 +1281,7 @@ export default function RunDetails() {
             </button>
           </div>
         </div>
-
-        <ErrorBanner error={error} />
+        {error ? <ErrorBanner error={error} /> : null}
 
         <div className="card" style={{ marginBottom: 12 }}>
           <div className="runStrip">
@@ -1497,6 +1500,7 @@ export default function RunDetails() {
                     }}
                   >
                     <Plus size={16} className="ico" />
+                    Attendance
                   </button>
 
                   <button
@@ -1505,6 +1509,7 @@ export default function RunDetails() {
                     onClick={() => setOpenBulk(true)}
                   >
                     <Plus size={16} className="ico" />
+                    Back
                   </button>
                 </div>
               </div>
@@ -1515,7 +1520,15 @@ export default function RunDetails() {
             {participantsFiltered.length === 0 ? (
               <div className="muted">No items found.</div>
             ) : (
-              <div className="pGrid">
+              <div
+                className="pGrid"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                  gap: 16,
+                  alignItems: "start",
+                }}
+              >
                 {participantsFiltered.map((p) => {
                   const agreed = Number(p.agreed_price || 0);
                   const paid = Number(p.paid_amount || 0);
