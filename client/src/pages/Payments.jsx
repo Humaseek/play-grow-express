@@ -934,7 +934,7 @@ export default function Payments() {
                       type="number"
                       value={payAmount}
                       onChange={(e) => setPayAmount(e.target.value)}
-                      placeholder=""
+                      placeholder="e.g. 120"
                     />
                     <span className="muted" style={{ fontWeight: 950 }}>
                       ₪
@@ -994,13 +994,13 @@ export default function Payments() {
                   >
                     Paid at
                   </div>
-                  <div className="input">
+                  <Control>
                     <input
                       type="datetime-local"
                       value={payAt}
                       onChange={(e) => setPayAt(e.target.value)}
                     />
-                  </div>
+                  </Control>
                 </div>
               </div>
 
@@ -1011,13 +1011,13 @@ export default function Payments() {
                 >
                   Note (optional)
                 </div>
-                <div className="input">
+                <Control>
                   <input
                     value={payNote}
                     onChange={(e) => setPayNote(e.target.value)}
                     placeholder="e.g. partial payment, discount, etc."
                   />
-                </div>
+                </Control>
               </div>
 
               <div className="row" style={{ gap: 10 }}>
