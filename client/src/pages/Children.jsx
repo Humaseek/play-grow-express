@@ -236,7 +236,7 @@ export default function Children() {
                 <th>Age</th>
                 <th>Class</th>
                 <th>Gender</th>
-                <th>Country</th>
+                <th>City</th>
                 <th>Mother phone</th>
                 <th>Father phone</th>
                 <th>Actions</th>
@@ -350,7 +350,7 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">Country</div>
+            <div className="muted">City</div>
             <ModernSelect
               value={form.country_id}
               onChange={(v) => setForm((p) => ({ ...p, country_id: v }))}
