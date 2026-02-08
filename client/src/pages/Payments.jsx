@@ -934,7 +934,7 @@ export default function Payments() {
                       type="number"
                       value={payAmount}
                       onChange={(e) => setPayAmount(e.target.value)}
-                      placeholder="e.g. 120"
+                      placeholder="120"
                     />
                     <span className="muted" style={{ fontWeight: 950 }}>
                       ₪
@@ -1015,7 +1015,7 @@ export default function Payments() {
                   <input
                     value={payNote}
                     onChange={(e) => setPayNote(e.target.value)}
-                    placeholder="e.g. partial payment, discount, etc."
+                    placeholder=""
                   />
                 </Control>
               </div>
