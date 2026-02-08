@@ -174,6 +174,19 @@ export default function Expenses() {
  return list;
  }, [rows, q, cat]);
 
+ const rangeHint = useMemo(() => {
+  if (rangePreset === "custom") {
+   const a = fromDate ? new Date(fromDate).toLocaleDateString("en") : "—";
+   const b = toDate ? new Date(toDate).toLocaleDateString("en") : "—";
+   return `${a} → ${b}`;
+  }
+  if (rangePreset === "this_month") return "This month";
+  if (rangePreset === "30d") return "Last 30 days";
+  if (rangePreset === "all") return "All time";
+  return "This month";
+ }, [rangePreset, fromDate, toDate]);
+
+
  const stats = useMemo(() => {
  const total = filtered.reduce((acc, r) => acc + Number(r.amount || 0), 0);
  const count = filtered.length;
@@ -249,10 +262,10 @@ export default function Expenses() {
  const ins = await supabase.from("expenses").insert([payload]);
  if (ins.error) {
  setError(ins.error);
- toast("Failed Enroll .", "danger");
+ toast("Failed to save expense.", "danger");
  return;
  }
- toast(" Enroll .", "ok");
+ toast("Expense saved.", "ok");
  }
 
  setOpenAdd(false);
@@ -273,15 +286,15 @@ export default function Expenses() {
  return (
  <div className="container page page--expenses">
  <PageHeader
- title=""
- subtitle="Enroll "
+ title="Expenses"
+ subtitle={`Range: ${rangeHint}`}
  actions={
  <div className="toolbar">
  <button className="btn" onClick={load}>
  Refresh
  </button>
  <button className="btn primary" onClick={openCreate}>
- <Plus size={18} /> Enroll 
+ <Plus size={18} /> Add expense
  </button>
  </div>
  }
@@ -293,8 +306,8 @@ export default function Expenses() {
  <div className="card">
  <EmptyState
  icon={AlertTriangle}
- title=" "
- description=" ."
+ title="Expenses table not found"
+ description="The expenses table is missing. Please run the database migrations (or create the table) and refresh."
  />
 </div>
  ) : (
@@ -302,16 +315,16 @@ export default function Expenses() {
  <div className="kpiGrid4" style={{ marginBottom: 14 }}>
  <KpiCard
  icon={Receipt}
- label=" "
+ label="Total spent"
  value={`${fmtMoney(stats.total)} ₪`}
- hint={stats.count ? ` : ${stats.count}` : "No "}
+ hint={stats.count ? `${stats.count} expense${stats.count === 1 ? "" : "s"}` : "No expenses"}
  variant={stats.total === 0 ? "neutral" : "warn"}
  className="kpi--accent"
  />
 
  <KpiCard
  icon={Layers}
- label=" "
+ label="Top category"
  value={stats.topCat}
  hint={stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"}
  variant={stats.topCat !== "—" ? "info" : "neutral"}
@@ -320,18 +333,18 @@ export default function Expenses() {
 
  <KpiCard
  icon={Banknote}
- label=" "
+ label="Average expense"
  value={`${fmtMoney(stats.avg)} ₪`}
- hint={stats.count ? " " : "—"}
+ hint={stats.count ? "Average per expense" : "—"}
  variant={stats.avg === 0 ? "neutral" : "info"}
  className="kpi--accent"
  />
 
  <KpiCard
  icon={Banknote}
- label=" "
+ label="Largest expense"
  value={`${fmtMoney(stats.max)} ₪`}
- hint={stats.max === 0 ? "—" : " "}
+ hint={stats.max === 0 ? "—" : "Largest single expense"}
  variant={stats.max === 0 ? "neutral" : "danger"}
  className="kpi--accent"
  />
@@ -344,7 +357,7 @@ export default function Expenses() {
  <input
  value={q}
  onChange={(e) => setQ(e.target.value)}
- placeholder="Search ( / )"
+ placeholder="Search expenses..."
  />
  </Control>
 
@@ -353,9 +366,9 @@ export default function Expenses() {
  bare
  value={cat}
  onChange={setCat}
- placeholder=" "
+ placeholder="All categories"
  options={[
- { value: "all", label: " " },
+ { value: "all", label: "All categories" },
  ...categories.map((c) => ({ value: c, label: c })),
  ]}
  />
@@ -366,12 +379,12 @@ export default function Expenses() {
  bare
  value={rangePreset}
  onChange={setRangePreset}
- placeholder=" "
+ placeholder="This month"
  options={[
- { value: "this_month", label: " " },
- { value: "30d", label: " 30 " },
- { value: "custom", label: "" },
- { value: "all", label: "" },
+ { value: "this_month", label: "This month" },
+ { value: "30d", label: "Last 30 days" },
+ { value: "custom", label: "Custom range" },
+ { value: "all", label: "All time" },
  ]}
  />
  </Control>
@@ -384,7 +397,7 @@ export default function Expenses() {
  <div className="input">
  <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
  </div>
- <button className="btn" onClick={load}>تحديث</button>
+ <button className="btn" onClick={load}>Apply</button>
  </div>
  ) : null}
  </div>
@@ -396,13 +409,13 @@ export default function Expenses() {
  ) : filtered.length === 0 ? (
  <EmptyState
  icon={Receipt}
- title={rows.length === 0 ? "No " : "No "}
+ title={rows.length === 0 ? "No expenses yet" : "No results found"}
  description={
  rows.length === 0
- ? " Enroll ( No ...)."
- : " No Search."
+ ? "Add your first expense to start tracking spending."
+ : "Try adjusting your search or filters."
  }
- actionLabel={rows.length === 0 ? " " : " "}
+ actionLabel="Add expense"
  onAction={openCreate}
  />
  ) : (
@@ -411,10 +424,10 @@ export default function Expenses() {
  <thead>
  <tr>
  <th>Date</th>
- <th>Date</th>
- <th>التصنيف</th>
- <th>Amount</th>
+ <th>Category</th>
  <th>Description</th>
+ <th>Amount</th>
+ <th></th>
  </tr>
  </thead>
  <tbody>
@@ -455,7 +468,7 @@ export default function Expenses() {
 
  <Modal
  open={openAdd}
- title={editId ? "Edit " : "Enroll "}
+ title={editId ? "Edit expense" : "Add expense"}
  onClose={() => setOpenAdd(false)}
  >
  <div className="card" style={{ border: "none", boxShadow: "none" }}>
@@ -480,29 +493,29 @@ export default function Expenses() {
  step="0.01"
  value={expAmount}
  onChange={(e) => setExpAmount(e.target.value)}
- placeholder=": 120"
+ placeholder="e.g. 120"
  />
  </div>
  </div>
 
- <div style={{ gridColumn: "span 4" }}>
- <div className="label">جاري التحميل...</div>
+ <div className="label">Category</div>
+ <div className="label">Category</div>
  <div className="input">
  <input
  value={expCategory}
  onChange={(e) => setExpCategory(e.target.value)}
- placeholder=": / No / "
+ placeholder="e.g. Transport"
  />
  </div>
  </div>
 
  <div style={{ gridColumn: "span 12" }}>
- <div className="label">Date</div>
+ <div className="label">Description</div>
  <div className="input">
  <input
  value={expDesc}
  onChange={(e) => setExpDesc(e.target.value)}
- placeholder="Details "
+ placeholder="e.g. taxi, supplies, rent..."
  />
  </div>
  </div>
@@ -521,8 +534,8 @@ export default function Expenses() {
 
  <ConfirmDialog
  open={confirm.open}
- title="Delete "
- message=" Delete "
+ title="Delete expense"
+ message="Are you sure you want to delete this expense? This action cannot be undone."
  confirmText="Delete"
  cancelText="Cancel"
  danger
