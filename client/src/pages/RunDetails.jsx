@@ -932,6 +932,11 @@ export default function RunDetails() {
     setOpenSession(true);
   }
 
+  function openCreateEnroll() {
+    setNewChildEnrollNow(true);
+    setOpenNewChild(true);
+  }
+
   function openEditSession(s) {
     const startLocal = new Date(s.start_at);
     const endLocal = new Date(s.end_at);
@@ -1480,7 +1485,10 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => setCreateChildOpen(true)}
+                    onClick={() => {
+                    setNewChildEnrollNow(false);
+                    setOpenNewChild(true);
+                  }}
                   >
                     + New child...
                   </button>
