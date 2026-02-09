@@ -744,38 +744,45 @@ export default function RunDetails() {
     const d = Number(delta);
     if (!Number.isFinite(id) || !Number.isFinite(d) || d === 0) return;
 
+    // Read once so we can pass the correct RPC parameter (p_new_allocated)
+    const cur = await supabase
+      .from("enrollments")
+      .select("sessions_allocated")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (cur.error) throw cur.error;
+
+    const current = Number(cur.data?.sessions_allocated ?? 0);
+    const next = Math.max(0, current + d);
+
     // 1) Try RPC (if exists)
     const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
       p_enrollment_id: id,
-      p_delta: d,
+      p_new_allocated: next,
     });
 
     if (!rpc.error) return;
 
+    // If RPC is missing / signature mismatch, fall back to direct update.
     const msg = String(rpc.error?.message ?? "");
-    const missingFn = msg.includes("Could not find the function") ||
-      msg.includes("schema cache");
-    if (!missingFn) throw rpc.error;
+    const shouldFallback =
+      msg.includes("Could not find the function") ||
+      msg.includes("schema cache") ||
+      msg.includes("No function matches") ||
+      msg.includes("does not exist");
 
-    // 2) Fallback: read + write sessions_allocated directly
-    const cur = await supabase
-      .from("enrollments")
-      .select("id,sessions_allocated")
-      .eq("id", id)
-      .single();
-    if (cur.error) throw cur.error;
-
-    const now = Number(cur.data?.sessions_allocated ?? 0);
-    const next = Math.max(0, now + d);
+    if (!shouldFallback) throw rpc.error;
 
     const upd = await supabase
       .from("enrollments")
       .update({ sessions_allocated: next })
       .eq("id", id);
+
     if (upd.error) throw upd.error;
   }
 
-  
+
 async function reactivateWithdrawnEnrollment(childId) {
   // If the child was previously removed (withdrawn) from this run,
   // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
@@ -908,25 +915,29 @@ async function purchaseAndEnrollSingle() {
       const msg = String(e?.message || e || "");
       // ✅
       if (msg.includes("uq_run_child") || msg.includes("duplicate key value")) {
-  const existing = participants.find(
-    (x) => Number(x.child_id) === Number(selectedChildId),
-  );
+        const existing = participants.find(
+          (x) => Number(x.child_id) === Number(selectedChildId),
+        );
 
-  // ✅ If the existing enrollment is withdrawn, allow re-enroll
-  if (existing?.enrollment_status === "withdrawn") {
-    // Re-open the same enrollment/package and add sessions
-    await reactivateWithdrawnEnrollment(selectedChildId);
-    return;
-  }
+        // If the existing enrollment is withdrawn, allow re-enroll
+        if (existing?.enrollment_status === "withdrawn") {
+          await reactivateWithdrawnEnrollment(selectedChildId);
+          return;
+        }
 
-  toast("This child is already enrolled in this run.", "warn");
+        toast("This child is already enrolled in this run.", "warn");
 
-  if (existing) {
-    setOpenEnroll(false);
-    openManageFor(existing);
-    return;
-  }
-}
+        if (existing) {
+          setOpenEnroll(false);
+          openManageFor(existing);
+          return;
+        }
+
+        // Local list may be stale; refresh and stop here (avoid generic failure toast)
+        setOpenEnroll(false);
+        await loadFixed();
+        return;
+      }
 
       setError(e);
       toast("Operation failed.", "danger");
