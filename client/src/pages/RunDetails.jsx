@@ -151,7 +151,6 @@ export default function RunDetails() {
   const [childStatusFilter, setChildStatusFilter] = useState("all"); // all | active | inactive
   const [childSort, setChildSort] = useState("balance_desc"); // balance_desc | balance_asc | name_asc | name_desc
 
-
   // Enroll modal (single)
   const [openEnroll, setOpenEnroll] = useState(false);
   const [selectedChildId, setSelectedChildId] = useState("");
@@ -526,7 +525,9 @@ export default function RunDetails() {
     const s = childSearch.trim().toLowerCase();
     if (s) {
       list = list.filter((p) =>
-        String(p.child_name ?? "").toLowerCase().includes(s),
+        String(p.child_name ?? "")
+          .toLowerCase()
+          .includes(s),
       );
     }
 
@@ -542,11 +543,17 @@ export default function RunDetails() {
       list.sort((a, b) => Number(a.balance || 0) - Number(b.balance || 0));
     } else if (childSort === "name_asc") {
       list.sort((a, b) =>
-        String(a.child_name ?? "").localeCompare(String(b.child_name ?? ""), "en"),
+        String(a.child_name ?? "").localeCompare(
+          String(b.child_name ?? ""),
+          "en",
+        ),
       );
     } else if (childSort === "name_desc") {
       list.sort((a, b) =>
-        String(b.child_name ?? "").localeCompare(String(a.child_name ?? ""), "en"),
+        String(b.child_name ?? "").localeCompare(
+          String(a.child_name ?? ""),
+          "en",
+        ),
       );
     }
 
@@ -1429,82 +1436,73 @@ export default function RunDetails() {
                 className="pControls"
                 style={{
                   display: "flex",
-                  flexDirection: "column",
                   gap: 10,
-                  flex: "1 1 640px",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  flex: "1 1 720px",
                   minWidth: 320,
                 }}
               >
+                {/* Search */}
                 <div
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "wrap",
-                    alignItems: "center",
-                  }}
+                  className="inputWithIcon"
+                  style={{ flex: "1 1 320px", minWidth: 240 }}
                 >
-                  <div
-                    className="inputWithIcon"
-                    style={{ flex: "1 1 320px", minWidth: 240 }}
-                  >
-                    <Search size={16} />
-                    <input
-                      className="input"
-                      value={childSearch}
-                      onChange={(e) => setChildSearch(e.target.value)}
-                      placeholder="Search Child..."
-                      style={{ width: "100%" }}
-                    />
-                  </div>
-
-                  <select
+                  <Search size={16} />
+                  <input
                     className="input"
-                    value={childStatusFilter}
-                    onChange={(e) => setChildStatusFilter(e.target.value)}
-                    style={{ flex: "0 0 170px" }}
-                  >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-
-                  <select
-                    className="input"
-                    value={childSort}
-                    onChange={(e) => setChildSort(e.target.value)}
-                    style={{ flex: "0 0 210px" }}
-                  >
-                    <option value="balance_desc">Balance: high to low</option>
-                    <option value="balance_asc">Balance: low to high</option>
-                    <option value="name_asc">Name: A to Z</option>
-                    <option value="name_desc">Name: Z to A</option>
-                  </select>
+                    value={childSearch}
+                    onChange={(e) => setChildSearch(e.target.value)}
+                    placeholder="Search Child..."
+                    style={{ width: "100%" }}
+                  />
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "wrap",
-                    justifyContent: "flex-end",
-                  }}
+                {/* Status */}
+                <select
+                  className="input"
+                  value={childStatusFilter}
+                  onChange={(e) => setChildStatusFilter(e.target.value)}
+                  style={{ flex: "0 0 170px" }}
+                  aria-label="Status filter"
                 >
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => setCreateChildOpen(true)}
-                  >
-                    + New child...
-                  </button>
+                  <option value="all">All</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
 
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={openCreateEnroll}
-                  >
-                    <Plus size={16} /> Create &amp; Enroll
-                  </button>
-                </div>
+                {/* Sort */}
+                <select
+                  className="input"
+                  value={childSort}
+                  onChange={(e) => setChildSort(e.target.value)}
+                  style={{ flex: "0 0 210px" }}
+                  aria-label="Sort"
+                >
+                  <option value="balance_desc">Balance: high to low</option>
+                  <option value="balance_asc">Balance: low to high</option>
+                  <option value="name_asc">Name: A to Z</option>
+                  <option value="name_desc">Name: Z to A</option>
+                </select>
+
+                {/* Actions (push to the end when there's space) */}
+                <div style={{ flex: "1 1 120px" }} />
+
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setCreateChildOpen(true)}
+                >
+                  + New child...
+                </button>
+
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={openCreateEnroll}
+                >
+                  <Plus size={16} /> Create &amp; Enroll
+                </button>
               </div>
             </div>
 
