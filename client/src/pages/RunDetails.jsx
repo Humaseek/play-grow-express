@@ -147,11 +147,10 @@ export default function RunDetails() {
   const [error, setError] = useState(null);
 
   // Filters
-  const [q, setQ] = useState("");
-  // Child list search (header section)
+  // Children filters
   const [childSearch, setChildSearch] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("balance_desc");
+  const [childStatusFilter, setChildStatusFilter] = useState("all"); // all | active | inactive
+  const [childSort, setChildSort] = useState("balance_desc"); // balance_desc | balance_asc | name_asc | name_desc
 
   // Enroll modal (single)
   const [openEnroll, setOpenEnroll] = useState(false);
@@ -172,13 +171,22 @@ export default function RunDetails() {
     name: "",
     birth_date: "",
     class: "",
+    country: "",
     gender: "male",
+    mother_name: "",
     mother_phone: "",
+    father_name: "",
     father_phone: "",
     notes: "",
   });
   const [newChildSaving, setNewChildSaving] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
+
+  // Quick action: open "Add child" modal and auto-enroll into this run
+  const openCreateEnroll = () => {
+    setNewChildEnrollNow(true);
+    setOpenNewChild(true);
+  };
 
   // Package info + mode
   const [pkgInfo, setPkgInfo] = useState(null);
@@ -523,21 +531,43 @@ export default function RunDetails() {
 
   const participantsFiltered = useMemo(() => {
     let list = [...participants];
-    const s = q.trim().toLowerCase();
-    if (s)
-      list = list.filter((p) => (p.child_name ?? "").toLowerCase().includes(s));
-    if (paymentFilter !== "all")
-      list = list.filter((p) => p.payment_status === paymentFilter);
+    const s = childSearch.trim().toLowerCase();
+    if (s) {
+      list = list.filter((p) =>
+        String(p.child_name ?? "")
+          .toLowerCase()
+          .includes(s),
+      );
+    }
 
-    if (sortBy === "balance_desc") {
+    if (childStatusFilter !== "all") {
+      list = list.filter((p) => {
+        const isActive = p.enrollment_status === "active";
+        return childStatusFilter === "active" ? isActive : !isActive;
+      });
+    }
+
+    if (childSort === "balance_desc") {
       list.sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
-    } else if (sortBy === "name_asc") {
+    } else if (childSort === "balance_asc") {
+      list.sort((a, b) => Number(a.balance || 0) - Number(b.balance || 0));
+    } else if (childSort === "name_asc") {
       list.sort((a, b) =>
-        String(a.child_name).localeCompare(String(b.child_name), "en"),
+        String(a.child_name ?? "").localeCompare(
+          String(b.child_name ?? ""),
+          "en",
+        ),
+      );
+    } else if (childSort === "name_desc") {
+      list.sort((a, b) =>
+        String(b.child_name ?? "").localeCompare(
+          String(a.child_name ?? ""),
+          "en",
+        ),
       );
     }
     return list;
-  }, [participants, q, paymentFilter, sortBy]);
+  }, [participants, childSearch, childStatusFilter, childSort]);
 
   // ✅ Child: children
   const manageChild = useMemo(() => {
@@ -1421,25 +1451,41 @@ export default function RunDetails() {
                   minWidth: 320,
                 }}
               >
+                {/* Filters */}
                 <div
                   style={{
                     display: "flex",
                     gap: 10,
-                    flexWrap: "wrap",
+                    flexWrap: "nowrap",
                     alignItems: "center",
+                    width: "100%",
+                    overflowX: "auto",
                   }}
                 >
                   <div
-                    className="inputWithIcon"
-                    style={{ flex: "1 1 320px", minWidth: 240 }}
+                    style={{
+                      position: "relative",
+                      flex: "1 1 0px",
+                      minWidth: 0,
+                    }}
                   >
-                    <Search size={16} />
+                    <Search
+                      size={16}
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        pointerEvents: "none",
+                        opacity: 0.7,
+                      }}
+                    />
                     <input
                       className="input"
                       value={childSearch}
                       onChange={(e) => setChildSearch(e.target.value)}
                       placeholder="Search Child..."
-                      style={{ width: "100%" }}
+                      style={{ width: "100%", paddingLeft: 38 }}
                     />
                   </div>
 
@@ -1447,7 +1493,7 @@ export default function RunDetails() {
                     className="input"
                     value={childStatusFilter}
                     onChange={(e) => setChildStatusFilter(e.target.value)}
-                    style={{ flex: "0 0 170px" }}
+                    style={{ flex: "0 1 150px", minWidth: 130 }}
                   >
                     <option value="all">All</option>
                     <option value="active">Active</option>
@@ -1458,7 +1504,7 @@ export default function RunDetails() {
                     className="input"
                     value={childSort}
                     onChange={(e) => setChildSort(e.target.value)}
-                    style={{ flex: "0 0 210px" }}
+                    style={{ flex: "0 1 210px", minWidth: 170 }}
                   >
                     <option value="balance_desc">Balance: high to low</option>
                     <option value="balance_asc">Balance: low to high</option>
@@ -1467,6 +1513,7 @@ export default function RunDetails() {
                   </select>
                 </div>
 
+                {/* Actions */}
                 <div
                   style={{
                     display: "flex",
@@ -1478,9 +1525,20 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => setCreateChildOpen(true)}
+                    onClick={() => {
+                      setEnrollLocked(false);
+                      setOpenEnroll(true);
+                    }}
                   >
-                    + New child...
+                    + Add child to course
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setOpenBulk(true)}
+                  >
+                    + Add multiple
                   </button>
 
                   <button
@@ -1488,7 +1546,7 @@ export default function RunDetails() {
                     className="btn primary"
                     onClick={openCreateEnroll}
                   >
-                    <Plus size={16} /> Create &amp; Enroll
+                    <Plus size={16} /> Add &amp; Enroll
                   </button>
                 </div>
               </div>
@@ -1502,10 +1560,11 @@ export default function RunDetails() {
               <div
                 className="pGrid"
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                  display: "flex",
+                  flexWrap: "wrap",
                   gap: 16,
-                  alignItems: "start",
+                  alignItems: "stretch",
+                  justifyContent: "flex-start",
                 }}
               >
                 {participantsFiltered.map((p) => {
@@ -1539,6 +1598,7 @@ export default function RunDetails() {
                     <div
                       key={p.enrollment_id}
                       className="pCard"
+                      style={{ width: 380, maxWidth: "100%" }}
                       role="button"
                       tabIndex={0}
                       onClick={() => openManageFor(p)}
@@ -1986,17 +2046,20 @@ export default function RunDetails() {
 
               {/* Contact */}
               <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontWeight: 900, marginBottom: 8 }}>Contact</div>
+                <div style={{ fontWeight: 900, marginBottom: 8 }}>
+                  Click the card to open Manage — use the buttons below for
+                  shortcuts.
+                </div>
 
                 <div className="grid">
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Mother name</div>
+                    <div className="muted">No results.</div>
                     <div style={{ fontWeight: 800 }}>
                       {manageChild?.mother_name ?? "-"}
                     </div>
                   </div>
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Mother phone</div>
+                    <div className="muted">More details inside "Manage"</div>
                     <div className="row" style={{ gap: 10 }}>
                       <div style={{ fontWeight: 800 }}>
                         {manageChild?.mother_phone ?? "-"}
@@ -2007,10 +2070,7 @@ export default function RunDetails() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.mother_phone);
-                            toast(
-                              ok ? "Copied." : "Copy failed.",
-                              ok ? "ok" : "danger",
-                            );
+                            toast(ok ? " ." : " .", ok ? "ok" : "danger");
                           }}
                           title=""
                         >
@@ -2021,13 +2081,16 @@ export default function RunDetails() {
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Father name</div>
+                    <div className="muted">
+                      No sessions scheduled yet — open the "Sessions" tab and
+                      generate sessions.
+                    </div>
                     <div style={{ fontWeight: 800 }}>
                       {manageChild?.father_name ?? "-"}
                     </div>
                   </div>
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Father phone</div>
+                    <div className="muted">Generate sessions</div>
                     <div className="row" style={{ gap: 10 }}>
                       <div style={{ fontWeight: 800 }}>
                         {manageChild?.father_phone ?? "-"}
@@ -2038,10 +2101,7 @@ export default function RunDetails() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.father_phone);
-                            toast(
-                              ok ? "Copied." : "Copy failed.",
-                              ok ? "ok" : "danger",
-                            );
+                            toast(ok ? " ." : " .", ok ? "ok" : "danger");
                           }}
                           title=""
                         >
@@ -2055,7 +2115,7 @@ export default function RunDetails() {
                 <div style={{ marginTop: 10 }}>
                   <IconButton
                     icon={<ExternalLink size={16} className="ico" />}
-                    title="Open child profile"
+                    title=" Child "
                     variant="ghost"
                     size="sm"
                     style={{ marginInlineStart: 8 }}
@@ -2069,7 +2129,9 @@ export default function RunDetails() {
 
               {/* Actions */}
               <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Actions</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                  Weekly: every 7 days (editable).
+                </div>
 
                 <div
                   className="row"
@@ -2081,34 +2143,28 @@ export default function RunDetails() {
                   }}
                 >
                   <div>
-                    <div className="muted">Total sessions</div>
+                    <div className="muted">First session (date/time)</div>
                     <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
                       {fmtNum(manageP.package_sessions_total ?? 0)}
                     </div>
                   </div>
 
                   <div>
-                    <div className="muted">Remaining sessions</div>
+                    <div className="muted">Duration (minutes)</div>
                     <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
                       {fmtNum(manageP.package_sessions_remaining ?? 0)}
                     </div>
                   </div>
 
                   <div>
-                    <div className="muted">Used sessions</div>
+                    <div className="muted">Number of sessions</div>
                     <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
-                      {fmtNum(
-                        Math.max(
-                          0,
-                          (manageP.package_sessions_total ?? 0) -
-                            (manageP.package_sessions_remaining ?? 0),
-                        ),
-                      )}
+                      {fmtNum(manageP.sessions_attended_in_run ?? 0)}
                     </div>
                   </div>
 
                   <div>
-                    <div className="muted">Unit price</div>
+                    <div className="muted"> Unit price</div>
                     <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
                       {(() => {
                         const total = Number(manageP.agreed_price || 0);
@@ -2130,7 +2186,6 @@ export default function RunDetails() {
                           setSelectedChildId(String(manageP.child_id));
                           setOpenEnroll(true);
                         }}
-                        title="Add sessions / enroll"
                       >
                         <ShoppingCart size={16} className="ico" />
                       </button>
@@ -2172,9 +2227,7 @@ export default function RunDetails() {
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                  Payments
-                </div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>Paid</div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   <button
                     type="button"
@@ -2184,9 +2237,7 @@ export default function RunDetails() {
                       setOpenManage(false);
                       openPaymentModalFor(manageP, "remaining");
                     }}
-                  >
-                    Pay remaining
-                  </button>
+                  ></button>
 
                   <button
                     type="button"
@@ -2196,7 +2247,7 @@ export default function RunDetails() {
                       openPaymentModalFor(manageP, "custom");
                     }}
                   >
-                    Add payment
+                    Enroll
                   </button>
 
                   <button
@@ -2206,9 +2257,7 @@ export default function RunDetails() {
                       setOpenManage(false);
                       openPaymentHistory(manageP);
                     }}
-                  >
-                    Payment history
-                  </button>
+                  ></button>
 
                   <button
                     type="button"
@@ -2221,15 +2270,13 @@ export default function RunDetails() {
                       setOpenPrice(true);
                     }}
                   >
-                    Edit price
+                    Edit
                   </button>
                 </div>
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                  Enrollment
-                </div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>Enroll</div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   {manageP.enrollment_status === "active" ? (
                     <button
@@ -2244,9 +2291,7 @@ export default function RunDetails() {
                           text: ` Enroll: ${manageP.child_name}`,
                         });
                       }}
-                    >
-                      Deactivate enroll
-                    </button>
+                    ></button>
                   ) : (
                     <button
                       type="button"
@@ -2260,9 +2305,7 @@ export default function RunDetails() {
                           text: ` : ${manageP.child_name}`,
                         });
                       }}
-                    >
-                      Activate enroll
-                    </button>
+                    ></button>
                   )}
 
                   <button
@@ -2499,7 +2542,7 @@ export default function RunDetails() {
               />
             </div>
 
-            <div style={{ gridColumn: "span 6" }}>
+            <div style={{ gridColumn: "span 4" }}>
               <div className="muted">Birth date *</div>
               <input
                 className="input"
@@ -2511,7 +2554,21 @@ export default function RunDetails() {
               />
             </div>
 
-            <div style={{ gridColumn: "span 6" }}>
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Gender</div>
+              <select
+                className="input"
+                value={newChildForm.gender}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
+                }
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
               <div className="muted">Class</div>
               <input
                 className="input"
@@ -2524,17 +2581,30 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Gender</div>
-              <select
+              <div className="muted">City</div>
+              <input
                 className="input"
-                value={newChildForm.gender}
+                value={newChildForm.country}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
+                  setNewChildForm((p) => ({ ...p, country: e.target.value }))
                 }
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
+                placeholder="e.g. Tayibe"
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Mother name</div>
+              <input
+                className="input"
+                value={newChildForm.mother_name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    mother_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Sarah"
+              />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
@@ -2549,6 +2619,21 @@ export default function RunDetails() {
                   }))
                 }
                 placeholder=""
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Father name</div>
+              <input
+                className="input"
+                value={newChildForm.father_name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    father_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Ahmad"
               />
             </div>
 
