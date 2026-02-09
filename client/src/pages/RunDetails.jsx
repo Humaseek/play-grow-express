@@ -1456,13 +1456,15 @@ export default function RunDetails() {
                   style={{
                     display: "flex",
                     gap: 10,
-                    flexWrap: "wrap",
+                    flexWrap: "nowrap",
                     alignItems: "center",
+                    width: "100%",
+                    overflowX: "auto",
                   }}
                 >
                   <div
                     className="inputWithIcon"
-                    style={{ flex: "1 1 320px", minWidth: 240 }}
+                    style={{ flex: "1 1 0px", minWidth: 0 }}
                   >
                     <Search size={16} />
                     <input
@@ -1478,7 +1480,7 @@ export default function RunDetails() {
                     className="input"
                     value={childStatusFilter}
                     onChange={(e) => setChildStatusFilter(e.target.value)}
-                    style={{ flex: "0 0 170px" }}
+                    style={{ flex: "0 1 150px", minWidth: 130 }}
                   >
                     <option value="all">All</option>
                     <option value="active">Active</option>
@@ -1489,7 +1491,7 @@ export default function RunDetails() {
                     className="input"
                     value={childSort}
                     onChange={(e) => setChildSort(e.target.value)}
-                    style={{ flex: "0 0 210px" }}
+                    style={{ flex: "0 1 210px", minWidth: 170 }}
                   >
                     <option value="balance_desc">Balance: high to low</option>
                     <option value="balance_asc">Balance: low to high</option>
