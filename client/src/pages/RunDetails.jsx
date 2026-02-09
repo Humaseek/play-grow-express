@@ -1546,10 +1546,11 @@ export default function RunDetails() {
               <div
                 className="pGrid"
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                  display: "flex",
+                  flexWrap: "wrap",
                   gap: 16,
-                  alignItems: "start",
+                  alignItems: "stretch",
+                  justifyContent: "flex-start",
                 }}
               >
                 {participantsFiltered.map((p) => {
@@ -1583,6 +1584,7 @@ export default function RunDetails() {
                     <div
                       key={p.enrollment_id}
                       className="pCard"
+                      style={{ width: 380, maxWidth: "100%" }}
                       role="button"
                       tabIndex={0}
                       onClick={() => openManageFor(p)}
