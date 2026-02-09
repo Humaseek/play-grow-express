@@ -2173,7 +2173,7 @@ async function bulkPurchaseAndEnroll() {
                   type="button"
                   className="btn"
                   style={{ width: "100%" }}
-                  onClick={openNewSession}
+                  onClick={openCreateSession}
                 >
                   <Plus size={16} className="ico" /> Add single session
                 </button>
