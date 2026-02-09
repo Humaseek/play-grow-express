@@ -147,13 +147,10 @@ export default function RunDetails() {
   const [error, setError] = useState(null);
 
   // Filters
-  const [q, setQ] = useState("");
-  // Child list search (header section)
+  // Children filters
   const [childSearch, setChildSearch] = useState("");
   const [childStatusFilter, setChildStatusFilter] = useState("all"); // all | active | inactive
   const [childSort, setChildSort] = useState("balance_desc"); // balance_desc | balance_asc | name_asc | name_desc
-  const [paymentFilter, setPaymentFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("balance_desc");
 
   // Enroll modal (single)
   const [openEnroll, setOpenEnroll] = useState(false);
@@ -174,13 +171,22 @@ export default function RunDetails() {
     name: "",
     birth_date: "",
     class: "",
+    country: "",
     gender: "male",
+    mother_name: "",
     mother_phone: "",
+    father_name: "",
     father_phone: "",
     notes: "",
   });
   const [newChildSaving, setNewChildSaving] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
+
+  // Quick action: open "Add child" modal and auto-enroll into this run
+  const openCreateEnroll = () => {
+    setNewChildEnrollNow(true);
+    setOpenNewChild(true);
+  };
 
   // Package info + mode
   const [pkgInfo, setPkgInfo] = useState(null);
@@ -306,8 +312,11 @@ export default function RunDetails() {
         name,
         birth_date: birth,
         class: (newChildForm.class || "").trim() || null,
+        country: (newChildForm.country || "").trim() || null,
         gender: newChildForm.gender || "male",
+        mother_name: (newChildForm.mother_name || "").trim() || null,
         mother_phone: (newChildForm.mother_phone || "").trim() || null,
+        father_name: (newChildForm.father_name || "").trim() || null,
         father_phone: (newChildForm.father_phone || "").trim() || null,
         notes: (newChildForm.notes || "").trim() || null,
       };
@@ -341,8 +350,11 @@ export default function RunDetails() {
         name: "",
         birth_date: "",
         class: "",
+        country: "",
         gender: "male",
+        mother_name: "",
         mother_phone: "",
+        father_name: "",
         father_phone: "",
         notes: "",
       });
@@ -519,7 +531,6 @@ export default function RunDetails() {
 
   const participantsFiltered = useMemo(() => {
     let list = [...participants];
-
     const s = childSearch.trim().toLowerCase();
     if (s) {
       list = list.filter((p) =>
@@ -555,7 +566,6 @@ export default function RunDetails() {
         ),
       );
     }
-
     return list;
   }, [participants, childSearch, childStatusFilter, childSort]);
 
@@ -686,12 +696,6 @@ export default function RunDetails() {
     setBulkPriceMode("unified");
     setBulkUnifiedPrice(String(defaultPrice));
     setBulkPerChildPrice({});
-  }
-
-  // Create child and enroll immediately (from this run)
-  function openCreateEnroll() {
-    setNewChildEnrollNow(true);
-    setOpenNewChild(true);
   }
 
   function toggleBulkChild(childId) {
@@ -1447,6 +1451,7 @@ export default function RunDetails() {
                   minWidth: 320,
                 }}
               >
+                {/* Filters */}
                 <div
                   style={{
                     display: "flex",
@@ -1493,6 +1498,7 @@ export default function RunDetails() {
                   </select>
                 </div>
 
+                {/* Actions */}
                 <div
                   style={{
                     display: "flex",
@@ -1506,42 +1512,18 @@ export default function RunDetails() {
                     className="btn"
                     onClick={() => {
                       setEnrollLocked(false);
-                      setEnrollLockedName("");
-                      setSelectedChildId("");
-                      setEnrollMode("buy_new");
-                      setBuySessions(8);
-                      setBuyPriceEditMode("total");
-                      setBuyUnitPrice("");
-                      setBuyPriceTotal(String(defaultPrice ?? ""));
                       setOpenEnroll(true);
                     }}
                   >
-                    + Add child
+                    + Add child to course
                   </button>
 
                   <button
                     type="button"
                     className="btn"
-                    onClick={openBulkModal}
-                    disabled={availableChildren.length === 0}
-                    title={
-                      availableChildren.length === 0
-                        ? "No available children to enroll."
-                        : ""
-                    }
+                    onClick={() => setOpenBulk(true)}
                   >
                     + Add multiple
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setNewChildEnrollNow(false);
-                      setOpenNewChild(true);
-                    }}
-                  >
-                    + Create child
                   </button>
 
                   <button
@@ -1549,7 +1531,7 @@ export default function RunDetails() {
                     className="btn primary"
                     onClick={openCreateEnroll}
                   >
-                    <Plus size={16} /> Create &amp; Enroll
+                    <Plus size={16} /> Add &amp; Enroll
                   </button>
                 </div>
               </div>
@@ -2543,7 +2525,7 @@ export default function RunDetails() {
               />
             </div>
 
-            <div style={{ gridColumn: "span 6" }}>
+            <div style={{ gridColumn: "span 4" }}>
               <div className="muted">Birth date *</div>
               <input
                 className="input"
@@ -2555,7 +2537,21 @@ export default function RunDetails() {
               />
             </div>
 
-            <div style={{ gridColumn: "span 6" }}>
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Gender</div>
+              <select
+                className="input"
+                value={newChildForm.gender}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
+                }
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
               <div className="muted">Class</div>
               <input
                 className="input"
@@ -2568,17 +2564,30 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Gender</div>
-              <select
+              <div className="muted">City</div>
+              <input
                 className="input"
-                value={newChildForm.gender}
+                value={newChildForm.country}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
+                  setNewChildForm((p) => ({ ...p, country: e.target.value }))
                 }
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
+                placeholder="e.g. Tayibe"
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Mother name</div>
+              <input
+                className="input"
+                value={newChildForm.mother_name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    mother_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Sarah"
+              />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
@@ -2593,6 +2602,21 @@ export default function RunDetails() {
                   }))
                 }
                 placeholder=""
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Father name</div>
+              <input
+                className="input"
+                value={newChildForm.father_name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    father_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Ahmad"
               />
             </div>
 
