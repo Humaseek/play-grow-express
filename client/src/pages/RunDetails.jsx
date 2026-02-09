@@ -148,6 +148,8 @@ export default function RunDetails() {
 
   // Filters
   const [q, setQ] = useState("");
+  // Child list search (header section)
+  const [childSearch, setChildSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [sortBy, setSortBy] = useState("balance_desc");
 
