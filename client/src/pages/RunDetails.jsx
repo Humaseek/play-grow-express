@@ -173,7 +173,8 @@ export default function RunDetails() {
     class: "",
     gender: "male",
     country_id: 1,
-    mother_name: "",
+        new_country_name: \"\",
+mother_name: "",
     mother_phone: "",
     father_name: "",
     father_phone: "",
@@ -332,6 +333,35 @@ export default function RunDetails() {
     setError(null);
 
     try {
+      let countryId = newChildForm.country_id ? Number(newChildForm.country_id) : null;
+
+      // If user typed a new country/city name, create (or reuse) it and use its id.
+      const newCountryName = (newChildForm.new_country_name || "").trim();
+      if (newCountryName) {
+        // Try find existing
+        const existing = await supabase
+          .from("countries")
+          .select("id")
+          .eq("name", newCountryName)
+          .maybeSingle();
+        if (existing.error && existing.status !== 406) throw existing.error;
+
+        if (existing.data?.id) {
+          countryId = existing.data.id;
+        } else {
+          const created = await supabase
+            .from("countries")
+            .insert([{ name: newCountryName }])
+            .select("id")
+            .single();
+          if (created.error) throw created.error;
+          countryId = created.data?.id ?? countryId;
+        }
+
+        // refresh dropdown list (best-effort)
+        loadCountriesSafe();
+      }
+
       const payload = {
         name,
         birth_date: birth,
@@ -342,7 +372,7 @@ export default function RunDetails() {
         father_name: (newChildForm.father_name || "").trim() || null,
         father_phone: (newChildForm.father_phone || "").trim() || null,
         notes: (newChildForm.notes || "").trim() || null,
-        country_id: newChildForm.country_id ? Number(newChildForm.country_id) : null,
+        country_id: countryId,
       };
 
       const ins = await supabase
@@ -376,6 +406,7 @@ export default function RunDetails() {
         class: "",
         gender: "male",
         country_id: 1,
+        new_country_name: \"\",
         mother_name: "",
         mother_phone: "",
         father_name: "",
@@ -2854,81 +2885,186 @@ async function bulkPurchaseAndEnroll() {
         </Modal>
 
         {/* New child (inline) */}
-        <Modal
-          open={openNewChild}
-          title={newChildEnrollNow ? "Create child & enroll" : "Create child"}
-          onClose={() => setOpenNewChild(false)}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Name *</div>
-              <input
-                className="input"
-                value={newChildForm.name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, name: e.target.value }))
-                }
-                placeholder="Child name"
-              />
-            </div>
+<Modal
+  open={openNewChild}
+  title={newChildEnrollNow ? "Create child & enroll" : "Add child"}
+  onClose={() => setOpenNewChild(false)}
+>
+  <div className="grid">
+    <div style={{ gridColumn: "span 12" }}>
+      <div className="muted">Name *</div>
+      <input
+        className="input"
+        value={newChildForm.name}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, name: e.target.value }))
+        }
+        placeholder=""
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Birth date *</div>
-              <input
-                className="input"
-                type="date"
-                value={newChildForm.birth_date}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, birth_date: e.target.value }))
-                }
-              />
-            </div>
+    <div style={{ gridColumn: "span 4" }}>
+      <div className="muted">Birth date *</div>
+      <input
+        className="input"
+        type="date"
+        value={newChildForm.birth_date}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, birth_date: e.target.value }))
+        }
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Gender</div>
-              <select
-                className="input"
-                value={newChildForm.gender}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
-                }
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-            </div>
+    <div style={{ gridColumn: "span 4" }}>
+      <div className="muted">Gender</div>
+      <select
+        className="input"
+        value={newChildForm.gender}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, gender: e.target.value }))
+        }
+      >
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+    </div>
 
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Class</div>
-              <input
-                className="input"
-                value={newChildForm.class}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, class: e.target.value }))
-                }
-                placeholder="e.g. A1"
-              />
-            </div>
+    <div style={{ gridColumn: "span 4" }}>
+      <div className="muted">Class</div>
+      <input
+        className="input"
+        value={newChildForm.class}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, class: e.target.value }))
+        }
+        placeholder=""
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">City</div>
-              <select
-                className="input"
-                value={newChildForm.country_id ?? ""}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, country_id: e.target.value }))
-                }
-                disabled={countriesLoading}
-              >
-                <option value="">Select...</option>
-                {(countries ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-        </Modal>
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">City</div>
+      <select
+        className="input"
+        value={newChildForm.country_id ?? ""}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, country_id: e.target.value }))
+        }
+        disabled={countriesLoading}
+      >
+        <option value="">{countriesLoading ? "Loading..." : "Select a country..."}</option>
+        {(countries ?? []).map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">New country (optional)</div>
+      <input
+        className="input"
+        value={newChildForm.new_country_name}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, new_country_name: e.target.value }))
+        }
+        placeholder="e.g. Israel"
+      />
+    </div>
+
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">Mother name</div>
+      <input
+        className="input"
+        value={newChildForm.mother_name}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, mother_name: e.target.value }))
+        }
+        placeholder="e.g. Sarah"
+      />
+    </div>
+
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">Mother phone</div>
+      <input
+        className="input"
+        value={newChildForm.mother_phone}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, mother_phone: e.target.value }))
+        }
+        placeholder="e.g. 050-1234567"
+      />
+    </div>
+
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">Father name</div>
+      <input
+        className="input"
+        value={newChildForm.father_name}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, father_name: e.target.value }))
+        }
+        placeholder="e.g. Ahmad"
+      />
+    </div>
+
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">Father phone</div>
+      <input
+        className="input"
+        value={newChildForm.father_phone}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, father_phone: e.target.value }))
+        }
+        placeholder="e.g. 052-1234567"
+      />
+    </div>
+
+    <div style={{ gridColumn: "span 12" }}>
+      <div className="muted">Notes (optional)</div>
+      <textarea
+        className="input"
+        rows={4}
+        value={newChildForm.notes}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, notes: e.target.value }))
+        }
+        placeholder="Optional notes..."
+      />
+    </div>
+
+    <div
+      style={{
+        gridColumn: "span 12",
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        paddingTop: 8,
+      }}
+    >
+      <button
+        type="button"
+        className="btn"
+        onClick={() => setOpenNewChild(false)}
+        disabled={newChildSaving}
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => createChildInline({ enrollNow: newChildEnrollNow })}
+        disabled={newChildSaving}
+      >
+        {newChildSaving
+          ? "Saving..."
+          : newChildEnrollNow
+            ? "Create & enroll"
+            : "Save"}
+      </button>
+    </div>
+  </div>
+</Modal>
 
         {/* ✅ Bulk enroll */}
         <Modal
