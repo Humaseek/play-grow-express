@@ -1789,7 +1789,7 @@ async function bulkPurchaseAndEnroll() {
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 10,
+                  gap: 8,
                   flex: "1 1 640px",
                   minWidth: 320,
                 }}
@@ -2285,19 +2285,23 @@ async function bulkPurchaseAndEnroll() {
                               <button
                                 type="button"
                                 className="btn primary"
-                                style={{ padding: "8px 12px", height: 36, whiteSpace: "nowrap" }}
+                                title="Manage"
+                                aria-label="Manage"
+                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                                 onClick={() => navigate(`/sessions/${s.id}/attendance`)}
                               >
-                                <Settings2 size={16} className="ico" /> Manage
+                                <Settings2 size={16} className="ico" />
                               </button>
 
                               <button
                                 type="button"
                                 className="btn"
-                                style={{ padding: "8px 12px", height: 36, whiteSpace: "nowrap" }}
+                                title="Edit"
+                                aria-label="Edit"
+                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                                 onClick={() => openEditSession(s)}
                               >
-                                <Pencil size={16} className="ico" /> Edit
+                                <Pencil size={16} className="ico" />
                               </button>
                             </div>
 
@@ -2312,7 +2316,9 @@ async function bulkPurchaseAndEnroll() {
                               <button
                                 type="button"
                                 className="btn"
-                                style={{ padding: "8px 12px", height: 36, whiteSpace: "nowrap" }}
+                                title={isDone ? "Reopen" : "Mark done"}
+                                aria-label={isDone ? "Reopen" : "Mark done"}
+                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                                 onClick={() =>
                                   setSessionStatus(
                                     s.id,
@@ -2322,11 +2328,11 @@ async function bulkPurchaseAndEnroll() {
                               >
                                 {isDone ? (
                                   <>
-                                    <CheckCircle2 size={16} className="ico" /> Reopen
+                                    <CheckCircle2 size={16} className="ico" />
                                   </>
                                 ) : (
                                   <>
-                                    <CheckCircle2 size={16} className="ico" /> Mark done
+                                    <CheckCircle2 size={16} className="ico" />
                                   </>
                                 )}
                               </button>
@@ -2334,7 +2340,9 @@ async function bulkPurchaseAndEnroll() {
                               <button
                                 type="button"
                                 className="btn danger"
-                                style={{ padding: "8px 12px", height: 36, whiteSpace: "nowrap" }}
+                                title={isCancelled ? "Restore" : "Cancel"}
+                                aria-label={isCancelled ? "Restore" : "Cancel"}
+                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                                 onClick={() =>
                                   setSessionStatus(
                                     s.id,
@@ -2344,11 +2352,11 @@ async function bulkPurchaseAndEnroll() {
                               >
                                 {isCancelled ? (
                                   <>
-                                    <CheckCircle2 size={16} className="ico" /> Restore
+                                    <CheckCircle2 size={16} className="ico" />
                                   </>
                                 ) : (
                                   <>
-                                    <XCircle size={16} className="ico" /> Cancel
+                                    <XCircle size={16} className="ico" />
                                   </>
                                 )}
                               </button>
@@ -2356,10 +2364,12 @@ async function bulkPurchaseAndEnroll() {
                               <button
                                 type="button"
                                 className="btn danger"
-                                style={{ padding: "8px 12px", height: 36, whiteSpace: "nowrap" }}
+                                title="Delete"
+                                aria-label="Delete"
+                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
                                 onClick={() => deleteSession(s.id)}
                               >
-                                <Trash2 size={16} className="ico" /> Delete
+                                <Trash2 size={16} className="ico" />
                               </button>
                             </div>
                           </div>
