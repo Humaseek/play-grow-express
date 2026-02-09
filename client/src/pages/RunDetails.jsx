@@ -147,11 +147,10 @@ export default function RunDetails() {
   const [error, setError] = useState(null);
 
   // Filters
-  const [q, setQ] = useState("");
-  // Child list search (header section)
+  // Children filters
   const [childSearch, setChildSearch] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("balance_desc");
+  const [childStatusFilter, setChildStatusFilter] = useState("all"); // all | active | inactive
+  const [childSort, setChildSort] = useState("balance_desc"); // balance_desc | balance_asc | name_asc | name_desc
 
   // Enroll modal (single)
   const [openEnroll, setOpenEnroll] = useState(false);
@@ -172,13 +171,22 @@ export default function RunDetails() {
     name: "",
     birth_date: "",
     class: "",
+    country: "",
     gender: "male",
+    mother_name: "",
     mother_phone: "",
+    father_name: "",
     father_phone: "",
     notes: "",
   });
   const [newChildSaving, setNewChildSaving] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
+
+  // Quick action: open "Add child" modal and auto-enroll into this run
+  const openCreateEnroll = () => {
+    setNewChildEnrollNow(true);
+    setOpenNewChild(true);
+  };
 
   // Package info + mode
   const [pkgInfo, setPkgInfo] = useState(null);
@@ -304,8 +312,11 @@ export default function RunDetails() {
         name,
         birth_date: birth,
         class: (newChildForm.class || "").trim() || null,
+        country: (newChildForm.country || "").trim() || null,
         gender: newChildForm.gender || "male",
+        mother_name: (newChildForm.mother_name || "").trim() || null,
         mother_phone: (newChildForm.mother_phone || "").trim() || null,
+        father_name: (newChildForm.father_name || "").trim() || null,
         father_phone: (newChildForm.father_phone || "").trim() || null,
         notes: (newChildForm.notes || "").trim() || null,
       };
@@ -339,8 +350,11 @@ export default function RunDetails() {
         name: "",
         birth_date: "",
         class: "",
+        country: "",
         gender: "male",
+        mother_name: "",
         mother_phone: "",
+        father_name: "",
         father_phone: "",
         notes: "",
       });
@@ -511,27 +525,58 @@ export default function RunDetails() {
   }, [participants]);
 
   const availableChildren = useMemo(() => {
-    const enrolled = new Set(participants.map((p) => p.child_id));
-    return children.filter((c) => !enrolled.has(c.id));
+    // Allow re-enrolling kids that were previously withdrawn from this run:
+    // only treat ACTIVE enrollments as "enrolled".
+    const enrolledActive = new Set(
+      participants
+        .filter((p) => p.enrollment_status === "active")
+        .map((p) => Number(p.child_id)),
+    );
+    return children.filter((c) => !enrolledActive.has(c.id));
   }, [children, participants]);
 
   const participantsFiltered = useMemo(() => {
     let list = [...participants];
-    const s = q.trim().toLowerCase();
-    if (s)
-      list = list.filter((p) => (p.child_name ?? "").toLowerCase().includes(s));
-    if (paymentFilter !== "all")
-      list = list.filter((p) => p.payment_status === paymentFilter);
+    const s = childSearch.trim().toLowerCase();
+    if (s) {
+      list = list.filter((p) =>
+        String(p.child_name ?? "")
+          .toLowerCase()
+          .includes(s),
+      );
+    }
 
-    if (sortBy === "balance_desc") {
+    // Hide withdrawn enrollments by default
+    list = list.filter((p) => p.enrollment_status !== "withdrawn");
+
+    if (childStatusFilter !== "all") {
+      list = list.filter((p) => {
+        const isActive = p.enrollment_status === "active";
+        return childStatusFilter === "active" ? isActive : !isActive;
+      });
+    }
+
+    if (childSort === "balance_desc") {
       list.sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
-    } else if (sortBy === "name_asc") {
+    } else if (childSort === "balance_asc") {
+      list.sort((a, b) => Number(a.balance || 0) - Number(b.balance || 0));
+    } else if (childSort === "name_asc") {
       list.sort((a, b) =>
-        String(a.child_name).localeCompare(String(b.child_name), "en"),
+        String(a.child_name ?? "").localeCompare(
+          String(b.child_name ?? ""),
+          "en",
+        ),
+      );
+    } else if (childSort === "name_desc") {
+      list.sort((a, b) =>
+        String(b.child_name ?? "").localeCompare(
+          String(a.child_name ?? ""),
+          "en",
+        ),
       );
     }
     return list;
-  }, [participants, q, paymentFilter, sortBy]);
+  }, [participants, childSearch, childStatusFilter, childSort]);
 
   // ✅ Child: children
   const manageChild = useMemo(() => {
@@ -692,7 +737,122 @@ export default function RunDetails() {
     setBulkPerChildPrice({});
   }
 
-  async function purchaseAndEnrollSingle() {
+  // Some environments don't have the RPC `adjust_enrollment_allocated_sessions`.
+  // We try RPC first, and if it's missing we fall back to a direct update.
+  async function bumpEnrollmentAllocated(enrollmentId, delta) {
+    const id = Number(enrollmentId);
+    const d = Number(delta);
+    if (!Number.isFinite(id) || !Number.isFinite(d) || d === 0) return;
+
+    // 1) Try RPC (if exists)
+    const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
+      p_enrollment_id: id,
+      p_delta: d,
+    });
+
+    if (!rpc.error) return;
+
+    const msg = String(rpc.error?.message ?? "");
+    const missingFn = msg.includes("Could not find the function") ||
+      msg.includes("schema cache");
+    if (!missingFn) throw rpc.error;
+
+    // 2) Fallback: read + write sessions_allocated directly
+    const cur = await supabase
+      .from("enrollments")
+      .select("id,sessions_allocated")
+      .eq("id", id)
+      .single();
+    if (cur.error) throw cur.error;
+
+    const now = Number(cur.data?.sessions_allocated ?? 0);
+    const next = Math.max(0, now + d);
+
+    const upd = await supabase
+      .from("enrollments")
+      .update({ sessions_allocated: next })
+      .eq("id", id);
+    if (upd.error) throw upd.error;
+  }
+
+  
+async function reactivateWithdrawnEnrollment(childId) {
+  // If the child was previously removed (withdrawn) from this run,
+  // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
+  // but we still allow setting a NEW price and "fresh" add-sessions inputs.
+  const existing = participants.find(
+    (p) =>
+      Number(p.child_id) === Number(childId) &&
+      p.enrollment_status === "withdrawn",
+  );
+  if (!existing) return false;
+
+  const sessionsToBuyRaw = Number(buySessions);
+  const sessionsToBuy = Number.isFinite(sessionsToBuyRaw) ? sessionsToBuyRaw : 0;
+
+  const priceTotalNum = (() => {
+    const s = Number.isFinite(sessionsToBuy) && sessionsToBuy > 0
+      ? sessionsToBuy
+      : 0;
+
+    if (buyPriceEditMode === "unit") {
+      const u = buyUnitPrice === "" ? 0 : Number(buyUnitPrice);
+      return Number.isFinite(u) ? u * s : 0;
+    }
+
+    const t = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
+    return Number.isFinite(t) ? t : 0;
+  })();
+
+  try {
+    setError(null);
+
+    // 1) Reactivate enrollment
+    const upd = await supabase
+      .from("enrollments")
+      .update({ status: "active" })
+      .eq("id", existing.enrollment_id);
+    if (upd.error) throw upd.error;
+
+    // 2) Re-open + UPDATE package price (so re-enroll can have a NEW price)
+    if (existing.package_id) {
+      const pkgUpd = await supabase
+        .from("course_packages")
+        .update({ status: "active", price_total: priceTotalNum })
+        .eq("id", existing.package_id);
+      if (pkgUpd.error) throw pkgUpd.error;
+
+      // Add sessions back to the package total (keeps sessions_used consistent)
+      if (sessionsToBuy > 0) {
+        const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+          p_package_id: Number(existing.package_id),
+          p_delta: Number(sessionsToBuy),
+        });
+        if (rpcPkg.error) throw rpcPkg.error;
+      }
+    }
+
+    // 3) Allocate sessions for THIS run enrollment (so run balance matches)
+    if (sessionsToBuy > 0) {
+      await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
+      toast("Child re-enrolled successfully.", "ok");
+    } else {
+      toast("Enrollment re-activated. Add sessions then click Save.", "ok");
+    }
+
+    setOpenEnroll(false);
+    await loadFixed();
+    setTab("participants");
+    return true;
+  } catch (e) {
+    setError(e);
+    toast("Failed to re-enroll child.", "danger");
+    return true;
+  }
+}
+
+
+async function purchaseAndEnrollSingle() {
     if (!summary) return;
     if (!selectedChildId) {
       toast("Select a child.", "warn");
@@ -719,6 +879,14 @@ export default function RunDetails() {
         });
 
         if (rpc.error) {
+          const msg = String(rpc.error?.message || rpc.error || "");
+          // If the child has a withdrawn enrollment, we can't insert a new row
+          // due to uq_run_child. Reactivate instead.
+          if (msg.includes("uq_run_child") || msg.includes("duplicate key")) {
+            await reactivateWithdrawnEnrollment(selectedChildId);
+            return;
+          }
+
           toast("No remaining sessions found for this child.", "warn");
           setError(rpc.error);
           return;
@@ -731,23 +899,34 @@ export default function RunDetails() {
         }
       }
       // buy_new
+      // If previously removed (withdrawn), re-activate instead of inserting a new enrollment.
+      const handled = await reactivateWithdrawnEnrollment(selectedChildId);
+      if (handled) return;
+
       await purchaseAndEnrollSpecificChild(selectedChildId);
     } catch (e) {
       const msg = String(e?.message || e || "");
       // ✅
       if (msg.includes("uq_run_child") || msg.includes("duplicate key value")) {
-        toast("This child is already enrolled in this run.", "warn");
+  const existing = participants.find(
+    (x) => Number(x.child_id) === Number(selectedChildId),
+  );
 
-        // ( participants)
-        const existing = participants.find(
-          (x) => Number(x.child_id) === Number(selectedChildId),
-        );
-        if (existing) {
-          setOpenEnroll(false);
-          openManageFor(existing);
-          return;
-        }
-      }
+  // ✅ If the existing enrollment is withdrawn, allow re-enroll
+  if (existing?.enrollment_status === "withdrawn") {
+    // Re-open the same enrollment/package and add sessions
+    await reactivateWithdrawnEnrollment(selectedChildId);
+    return;
+  }
+
+  toast("This child is already enrolled in this run.", "warn");
+
+  if (existing) {
+    setOpenEnroll(false);
+    openManageFor(existing);
+    return;
+  }
+}
 
       setError(e);
       toast("Operation failed.", "danger");
@@ -756,107 +935,7 @@ export default function RunDetails() {
     }
   }
 
-  
-// ======== Re-enroll helper (handles uq_run_child) ========
-async function adjustEnrollmentAllocatedFallback(enrollmentId, delta) {
-  // Prefer RPC if it exists; otherwise fallback to a direct update.
-  const d = Number(delta);
-  if (!Number.isFinite(d) || d === 0) return;
-
-  const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
-    p_enrollment_id: Number(enrollmentId),
-    p_delta: d,
-  });
-
-  if (!rpc.error) return;
-
-  const msg = String(rpc.error?.message || rpc.error || "");
-  if (
-    msg.includes("Could not find the function") ||
-    msg.includes("schema cache")
-  ) {
-    // Fallback: enrollments.sessions_allocated += delta
-    const cur = await supabase
-      .from("enrollments")
-      .select("sessions_allocated")
-      .eq("id", enrollmentId)
-      .maybeSingle();
-    if (cur.error) throw cur.error;
-
-    const current = Number(cur.data?.sessions_allocated || 0);
-    const upd = await supabase
-      .from("enrollments")
-      .update({ sessions_allocated: current + d })
-      .eq("id", enrollmentId);
-    if (upd.error) throw upd.error;
-    return;
-  }
-
-  // Unknown RPC error
-  throw rpc.error;
-}
-
-async function reactivateWithdrawnEnrollmentGeneric(childId, sessionsToBuy, priceTotal) {
-  // If a child was previously removed (withdrawn) from this run,
-  // we re-activate the same enrollment/package (unique constraint),
-  // then apply new price + sessions.
-  const existing = participants.find(
-    (p) =>
-      Number(p.child_id) === Number(childId) &&
-      String(p.enrollment_status) === "withdrawn",
-  );
-
-  if (!existing) return false;
-
-  const sessionsNum = Number(sessionsToBuy);
-  if (!Number.isFinite(sessionsNum) || sessionsNum <= 0) {
-    // Still allow re-activation even if sessions is 0
-    const updEnroll0 = await supabase
-      .from("enrollments")
-      .update({ status: "active" })
-      .eq("id", existing.enrollment_id);
-    if (updEnroll0.error) throw updEnroll0.error;
-
-    if (existing.package_id) {
-      const updPkg0 = await supabase
-        .from("course_packages")
-        .update({ status: "active", price_total: Number(priceTotal) || 0 })
-        .eq("id", existing.package_id);
-      if (updPkg0.error) throw updPkg0.error;
-    }
-
-    return true;
-  }
-
-  // 1) Reactivate enrollment
-  const updEnroll = await supabase
-    .from("enrollments")
-    .update({ status: "active" })
-    .eq("id", existing.enrollment_id);
-  if (updEnroll.error) throw updEnroll.error;
-
-  // 2) Re-open package + set new price + add sessions back
-  if (existing.package_id) {
-    const updPkg = await supabase
-      .from("course_packages")
-      .update({ status: "active", price_total: Number(priceTotal) || 0 })
-      .eq("id", existing.package_id);
-    if (updPkg.error) throw updPkg.error;
-
-    const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
-      p_package_id: Number(existing.package_id),
-      p_delta: Number(sessionsNum),
-    });
-    if (rpcPkg.error) throw rpcPkg.error;
-  }
-
-  // 3) Allocate sessions for this enrollment
-  await adjustEnrollmentAllocatedFallback(existing.enrollment_id, sessionsNum);
-
-  return true;
-}
-
-async function bulkPurchaseAndEnroll() {
+  async function bulkPurchaseAndEnroll() {
     if (!summary) return;
     if (bulkSelectedCount === 0) {
       toast("Select children first.", "warn");
@@ -882,27 +961,14 @@ async function bulkPurchaseAndEnroll() {
           priceNum = v === undefined || v === null || v === "" ? 0 : Number(v);
         }
 
-        // Try to enroll normally; if uq_run_child triggers, re-activate the withdrawn enrollment instead.
-const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
-  p_run_id: Number(runId),
-  p_child_id: Number(childId),
-  p_sessions: sessionsToBuy,
-  p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
-});
+        const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
+          p_run_id: Number(runId),
+          p_child_id: Number(childId),
+          p_sessions: sessionsToBuy,
+          p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
+        });
 
-if (rpc2.error) {
-  const msg = String(rpc2.error?.message || rpc2.error || "");
-  if (msg.includes("uq_run_child") || msg.includes("duplicate key value")) {
-    // Re-enroll previously-withdrawn child (same enrollment/package)
-    const handled = await reactivateWithdrawnEnrollmentGeneric(
-      childId,
-      sessionsToBuy,
-      Number.isFinite(priceNum) ? priceNum : 0,
-    );
-    if (handled) continue;
-  }
-  throw rpc2.error;
-}
+        if (rpc2.error) throw rpc2.error;
       }
 
       toast(`Enrolled ${bulkSelectedCount} children.`, "ok");
@@ -995,7 +1061,7 @@ if (rpc2.error) {
         `Removed ${childName} from this course. Remaining sessions set to 0.`,
         "ok",
       );
-      await load();
+      await loadFixed();
     } catch (e) {
       setError(e);
       toast("Failed to remove enrollment.", "danger");
@@ -1290,11 +1356,8 @@ if (rpc2.error) {
 
     try {
       if (Number(adjNewAllocated) !== Number(adjAllocatedNow)) {
-        const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
-          p_enrollment_id: Number(adjEnrollmentId),
-          p_new_allocated: Number(adjNewAllocated),
-        });
-        if (rpc.error) throw rpc.error;
+        const delta = Number(adjNewAllocated) - Number(adjAllocatedNow);
+        await bumpEnrollmentAllocated(adjEnrollmentId, delta);
       }
 
       if (adjPackageId && Number(adjPkgDelta) !== 0) {
@@ -1528,25 +1591,41 @@ if (rpc2.error) {
                   minWidth: 320,
                 }}
               >
+                {/* Filters */}
                 <div
                   style={{
                     display: "flex",
                     gap: 10,
-                    flexWrap: "wrap",
+                    flexWrap: "nowrap",
                     alignItems: "center",
+                    width: "100%",
+                    overflowX: "auto",
                   }}
                 >
                   <div
-                    className="inputWithIcon"
-                    style={{ flex: "1 1 320px", minWidth: 240 }}
+                    style={{
+                      position: "relative",
+                      flex: "1 1 0px",
+                      minWidth: 0,
+                    }}
                   >
-                    <Search size={16} />
+                    <Search
+                      size={16}
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        pointerEvents: "none",
+                        opacity: 0.7,
+                      }}
+                    />
                     <input
                       className="input"
                       value={childSearch}
                       onChange={(e) => setChildSearch(e.target.value)}
                       placeholder="Search Child..."
-                      style={{ width: "100%" }}
+                      style={{ width: "100%", paddingLeft: 38 }}
                     />
                   </div>
 
@@ -1554,7 +1633,7 @@ if (rpc2.error) {
                     className="input"
                     value={childStatusFilter}
                     onChange={(e) => setChildStatusFilter(e.target.value)}
-                    style={{ flex: "0 0 170px" }}
+                    style={{ flex: "0 1 150px", minWidth: 130 }}
                   >
                     <option value="all">All</option>
                     <option value="active">Active</option>
@@ -1565,7 +1644,7 @@ if (rpc2.error) {
                     className="input"
                     value={childSort}
                     onChange={(e) => setChildSort(e.target.value)}
-                    style={{ flex: "0 0 210px" }}
+                    style={{ flex: "0 1 210px", minWidth: 170 }}
                   >
                     <option value="balance_desc">Balance: high to low</option>
                     <option value="balance_asc">Balance: low to high</option>
@@ -1574,6 +1653,7 @@ if (rpc2.error) {
                   </select>
                 </div>
 
+                {/* Actions */}
                 <div
                   style={{
                     display: "flex",
@@ -1585,9 +1665,20 @@ if (rpc2.error) {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => setCreateChildOpen(true)}
+                    onClick={() => {
+                      setEnrollLocked(false);
+                      setOpenEnroll(true);
+                    }}
                   >
-                    + New child...
+                    + Add child to course
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setOpenBulk(true)}
+                  >
+                    + Add multiple
                   </button>
 
                   <button
@@ -1595,7 +1686,7 @@ if (rpc2.error) {
                     className="btn primary"
                     onClick={openCreateEnroll}
                   >
-                    <Plus size={16} /> Create &amp; Enroll
+                    <Plus size={16} /> Add &amp; Enroll
                   </button>
                 </div>
               </div>
@@ -1609,10 +1700,11 @@ if (rpc2.error) {
               <div
                 className="pGrid"
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                  display: "flex",
+                  flexWrap: "wrap",
                   gap: 16,
-                  alignItems: "start",
+                  alignItems: "stretch",
+                  justifyContent: "flex-start",
                 }}
               >
                 {participantsFiltered.map((p) => {
@@ -1646,6 +1738,7 @@ if (rpc2.error) {
                     <div
                       key={p.enrollment_id}
                       className="pCard"
+                      style={{ width: 380, maxWidth: "100%" }}
                       role="button"
                       tabIndex={0}
                       onClick={() => openManageFor(p)}
@@ -2036,79 +2129,134 @@ if (rpc2.error) {
 
         {/* ===================== MODALS ===================== */}
 
-        {/* ✅ Child */}
+                {/* ✅ Child */}
         <Modal
           open={openManage}
-          title={manageP ? ` — ${manageP.child_name}` : ""}
+          title={manageP ? `Manage — ${manageP.child_name}` : "Manage"}
           onClose={() => setOpenManage(false)}
         >
           {!manageP ? (
-            <div className="card">—</div>
+            <div className="muted">—</div>
           ) : (
             <div className="grid">
+              {/* Summary */}
               <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontSize: 18, fontWeight: 900 }}>
-                  {manageP.child_name}{" "}
-                  <span className="muted" style={{ fontWeight: 700 }}>
-                    — {manageP.class ?? "-"} — : {manageP.age ?? "-"}
-                  </span>
+                <div
+                  className="row"
+                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+                >
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 900 }}>
+                      {manageP.child_name}{" "}
+                      <span className="muted" style={{ fontWeight: 700 }}>
+                        — {manageP.class ?? "-"} — Age: {manageP.age ?? "-"}
+                      </span>
+                    </div>
+
+                    <div className="row" style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                      {badgePayment(manageP.payment_status)}
+                      {manageP.enrollment_status === "active" ? (
+                        <Badge variant="ok">Active</Badge>
+                      ) : (
+                        <Badge variant="warn">Inactive</Badge>
+                      )}
+                      {manageP.is_free ? <Badge variant="info">Free</Badge> : null}
+                    </div>
+                  </div>
+
+                  <div className="row" style={{ gap: 18, flexWrap: "wrap" }}>
+                    <div>
+                      <div className="muted">Agreed</div>
+                      <div style={{ fontWeight: 900 }} dir="ltr">
+                        {fmtILS(manageP.agreed_price || 0)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="muted">Paid</div>
+                      <div style={{ fontWeight: 900 }} dir="ltr">
+                        {fmtILS(manageP.paid_amount || 0)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="muted">Balance</div>
+                      <div style={{ fontWeight: 900 }} dir="ltr">
+                        {fmtILS(manageP.balance || 0)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="muted" style={{ marginTop: 8 }}>
-                  : {badgePayment(manageP.payment_status)} — :{" "}
-                  <b>{Number(manageP.agreed_price || 0).toFixed(2)}</b> — Paid:{" "}
-                  <b>{Number(manageP.paid_amount || 0).toFixed(2)}</b> — :{" "}
-                  <b>{Number(manageP.balance || 0).toFixed(2)}</b>
-                </div>
+                <hr className="sep" />
 
-                <div className="muted" style={{ marginTop: 8 }}>
-                  <Ticket size={14} className="ico" />{" "}
-                  <span style={{ opacity: 0.75 }}>Used</span>{" "}
-                  <b dir="ltr">
-                    {fmtNum(manageP.package_sessions_remaining ?? 0)}
-                  </b>{" "}
-                  <span style={{ opacity: 0.6 }}>Attend</span>
-                  <span style={{ opacity: 0.6 }}> — </span>
-                  <CheckCircle2 size={14} className="ico" />{" "}
-                  <span style={{ opacity: 0.75 }}> </span>{" "}
-                  <b dir="ltr">
-                    {fmtNum(
-                      Math.max(
-                        0,
-                        (manageP.package_sessions_total ?? 0) -
-                          (manageP.package_sessions_remaining ?? 0),
-                      ),
-                    )}
-                  </b>
-                  <span style={{ opacity: 0.6 }}> / </span>
-                  <b dir="ltr">{fmtNum(manageP.package_sessions_total ?? 0)}</b>
-                  <span style={{ opacity: 0.6 }}> — </span>
-                  <CalendarDays size={14} className="ico" />{" "}
-                  <span style={{ opacity: 0.75 }}></span>{" "}
-                  <b dir="ltr">
-                    {fmtNum(manageP.sessions_attended_in_run ?? 0)}
-                  </b>
+                <div className="row" style={{ gap: 14, flexWrap: "wrap" }}>
+                  <div className="row" style={{ gap: 8 }}>
+                    <Ticket size={14} className="ico" />
+                    <span className="muted">Total</span>
+                    <b dir="ltr">{fmtNum(manageP.package_sessions_total ?? 0)}</b>
+                  </div>
+
+                  <div className="row" style={{ gap: 8 }}>
+                    <Hourglass size={14} className="ico" />
+                    <span className="muted">Remaining</span>
+                    <b dir="ltr">{fmtNum(manageP.package_sessions_remaining ?? 0)}</b>
+                  </div>
+
+                  <div className="row" style={{ gap: 8 }}>
+                    <CheckCircle2 size={14} className="ico" />
+                    <span className="muted">Used</span>
+                    <b dir="ltr">
+                      {fmtNum(
+                        Math.max(
+                          0,
+                          (manageP.package_sessions_total ?? 0) -
+                            (manageP.package_sessions_remaining ?? 0),
+                        ),
+                      )}
+                    </b>
+                  </div>
+
+                  <div className="row" style={{ gap: 8 }}>
+                    <CalendarDays size={14} className="ico" />
+                    <span className="muted">Attended in run</span>
+                    <b dir="ltr">{fmtNum(manageP.sessions_attended_in_run ?? 0)}</b>
+                  </div>
                 </div>
               </div>
 
-              {/* Contact */}
+              {/* Contact + quick link */}
               <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontWeight: 900, marginBottom: 8 }}>
-                  Click the card to open Manage — use the buttons below for
-                  shortcuts.
+                <div
+                  className="row"
+                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+                >
+                  <div style={{ fontWeight: 900 }}>Contact</div>
+
+                  <div className="row" style={{ gap: 10 }}>
+                    <IconButton
+                      icon={<ExternalLink size={16} className="ico" />}
+                      title="Open child profile"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/children/${manageP.child_id}`);
+                      }}
+                    />
+                  </div>
                 </div>
+
+                <hr className="sep" />
 
                 <div className="grid">
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">No results.</div>
-                    <div style={{ fontWeight: 800 }}>
-                      {manageChild?.mother_name ?? "-"}
-                    </div>
+                    <div className="muted">Mother name</div>
+                    <div style={{ fontWeight: 800 }}>{manageChild?.mother_name ?? "-"}</div>
                   </div>
+
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">More details inside "Manage"</div>
+                    <div className="muted">Mother phone</div>
                     <div className="row" style={{ gap: 10 }}>
-                      <div style={{ fontWeight: 800 }}>
+                      <div style={{ fontWeight: 800 }} dir="ltr">
                         {manageChild?.mother_phone ?? "-"}
                       </div>
                       {manageChild?.mother_phone ? (
@@ -2117,9 +2265,9 @@ if (rpc2.error) {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.mother_phone);
-                            toast(ok ? " ." : " .", ok ? "ok" : "danger");
+                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
                           }}
-                          title=""
+                          title="Copy"
                         >
                           <Copy size={16} className="ico" />
                         </button>
@@ -2128,18 +2276,14 @@ if (rpc2.error) {
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">
-                      No sessions scheduled yet — open the "Sessions" tab and
-                      generate sessions.
-                    </div>
-                    <div style={{ fontWeight: 800 }}>
-                      {manageChild?.father_name ?? "-"}
-                    </div>
+                    <div className="muted">Father name</div>
+                    <div style={{ fontWeight: 800 }}>{manageChild?.father_name ?? "-"}</div>
                   </div>
+
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Generate sessions</div>
+                    <div className="muted">Father phone</div>
                     <div className="row" style={{ gap: 10 }}>
-                      <div style={{ fontWeight: 800 }}>
+                      <div style={{ fontWeight: 800 }} dir="ltr">
                         {manageChild?.father_phone ?? "-"}
                       </div>
                       {manageChild?.father_phone ? (
@@ -2148,9 +2292,9 @@ if (rpc2.error) {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.father_phone);
-                            toast(ok ? " ." : " .", ok ? "ok" : "danger");
+                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
                           }}
-                          title=""
+                          title="Copy"
                         >
                           <Copy size={16} className="ico" />
                         </button>
@@ -2158,27 +2302,11 @@ if (rpc2.error) {
                     </div>
                   </div>
                 </div>
-
-                <div style={{ marginTop: 10 }}>
-                  <IconButton
-                    icon={<ExternalLink size={16} className="ico" />}
-                    title=" Child "
-                    variant="ghost"
-                    size="sm"
-                    style={{ marginInlineStart: 8 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/children/${manageP.child_id}`);
-                    }}
-                  />
-                </div>
               </div>
 
               {/* Actions */}
               <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                  Weekly: every 7 days (editable).
-                </div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>Actions</div>
 
                 <div
                   className="row"
@@ -2190,28 +2318,7 @@ if (rpc2.error) {
                   }}
                 >
                   <div>
-                    <div className="muted">First session (date/time)</div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
-                      {fmtNum(manageP.package_sessions_total ?? 0)}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="muted">Duration (minutes)</div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
-                      {fmtNum(manageP.package_sessions_remaining ?? 0)}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="muted">Number of sessions</div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
-                      {fmtNum(manageP.sessions_attended_in_run ?? 0)}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="muted"> Unit price</div>
+                    <div className="muted">Unit price</div>
                     <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
                       {(() => {
                         const total = Number(manageP.agreed_price || 0);
@@ -2221,60 +2328,59 @@ if (rpc2.error) {
                     </div>
                   </div>
 
-                  <div className="row" style={{ gap: 10 }}>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        setOpenManage(false);
+                        setEnrollLocked(true);
+                        setEnrollLockedName(manageP.child_name);
+                        setSelectedChildId(String(manageP.child_id));
+                        setOpenEnroll(true);
+                      }}
+                      title="Add sessions"
+                    >
+                      <ShoppingCart size={16} className="ico" /> Add sessions
+                    </button>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 6,
+                        alignItems: "center",
+                        padding: 6,
+                        borderRadius: 12,
+                        border: "1px solid rgba(0,0,0,.08)",
+                        background: "rgba(0,0,0,.02)",
+                      }}
+                      title="Adjust remaining sessions"
+                    >
                       <button
                         type="button"
                         className="btn"
-                        onClick={() => {
-                          setOpenManage(false);
-                          setEnrollLocked(true);
-                          setEnrollLockedName(manageP.child_name);
-                          setSelectedChildId(String(manageP.child_id));
-                          setOpenEnroll(true);
-                        }}
+                        style={{ padding: "8px 12px" }}
+                        onClick={() => quickAdjustFromManage(-1)}
+                        title="Decrease"
                       >
-                        <ShoppingCart size={16} className="ico" />
+                        <Minus size={16} className="ico" />
                       </button>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 6,
-                          alignItems: "center",
-                          padding: 6,
-                          borderRadius: 12,
-                          border: "1px solid rgba(0,0,0,.08)",
-                          background: "rgba(0,0,0,.02)",
-                        }}
-                        title="Edit ( )"
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ padding: "8px 12px" }}
+                        onClick={() => quickAdjustFromManage(1)}
+                        title="Increase"
                       >
-                        <button
-                          type="button"
-                          className="btn"
-                          style={{ padding: "8px 12px" }}
-                          onClick={() => quickAdjustFromManage(-1)}
-                          title=" "
-                        >
-                          ➖
-                        </button>
-                        <button
-                          type="button"
-                          className="btn"
-                          style={{ padding: "8px 12px" }}
-                          onClick={() => quickAdjustFromManage(1)}
-                          title="Add "
-                        >
-                          ➕
-                        </button>
-                      </div>
+                        <Plus size={16} className="ico" />
+                      </button>
                     </div>
                   </div>
                 </div>
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Paid</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>Payments</div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   <button
                     type="button"
@@ -2284,7 +2390,9 @@ if (rpc2.error) {
                       setOpenManage(false);
                       openPaymentModalFor(manageP, "remaining");
                     }}
-                  ></button>
+                  >
+                    <CreditCard size={16} className="ico" /> Pay remaining
+                  </button>
 
                   <button
                     type="button"
@@ -2294,7 +2402,7 @@ if (rpc2.error) {
                       openPaymentModalFor(manageP, "custom");
                     }}
                   >
-                    Enroll
+                    <Receipt size={16} className="ico" /> Add payment
                   </button>
 
                   <button
@@ -2304,7 +2412,9 @@ if (rpc2.error) {
                       setOpenManage(false);
                       openPaymentHistory(manageP);
                     }}
-                  ></button>
+                  >
+                    <CalendarClock size={16} className="ico" /> History
+                  </button>
 
                   <button
                     type="button"
@@ -2317,13 +2427,13 @@ if (rpc2.error) {
                       setOpenPrice(true);
                     }}
                   >
-                    Edit
+                    <Pencil size={16} className="ico" /> Edit price
                   </button>
                 </div>
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Enroll</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>Enrollment</div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   {manageP.enrollment_status === "active" ? (
                     <button
@@ -2335,10 +2445,12 @@ if (rpc2.error) {
                           open: true,
                           type: "inactive",
                           id: manageP.enrollment_id,
-                          text: ` Enroll: ${manageP.child_name}`,
+                          text: `Deactivate enrollment: ${manageP.child_name}`,
                         });
                       }}
-                    ></button>
+                    >
+                      <XCircle size={16} className="ico" /> Deactivate
+                    </button>
                   ) : (
                     <button
                       type="button"
@@ -2349,10 +2461,12 @@ if (rpc2.error) {
                           open: true,
                           type: "active",
                           id: manageP.enrollment_id,
-                          text: ` : ${manageP.child_name}`,
+                          text: `Activate enrollment: ${manageP.child_name}`,
                         });
                       }}
-                    ></button>
+                    >
+                      <CheckCircle2 size={16} className="ico" /> Activate
+                    </button>
                   )}
 
                   <button
@@ -2363,12 +2477,16 @@ if (rpc2.error) {
                       setConfirm({
                         open: true,
                         type: "deleteEnroll",
-                        id: manageP.enrollment_id,
-                        text: `Delete Enroll : ${manageP.child_name}`,
+                        id: {
+                          enrollmentId: manageP.enrollment_id,
+                          packageId: manageP.package_id,
+                          childName: manageP.child_name,
+                        },
+                        text: `Delete enrollment: ${manageP.child_name}`,
                       });
                     }}
                   >
-                    Delete Enroll
+                    <Trash2 size={16} className="ico" /> Delete enroll
                   </button>
 
                   <button
@@ -2589,7 +2707,7 @@ if (rpc2.error) {
               />
             </div>
 
-            <div style={{ gridColumn: "span 6" }}>
+            <div style={{ gridColumn: "span 4" }}>
               <div className="muted">Birth date *</div>
               <input
                 className="input"
@@ -2601,7 +2719,21 @@ if (rpc2.error) {
               />
             </div>
 
-            <div style={{ gridColumn: "span 6" }}>
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Gender</div>
+              <select
+                className="input"
+                value={newChildForm.gender}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
+                }
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
               <div className="muted">Class</div>
               <input
                 className="input"
@@ -2614,17 +2746,30 @@ if (rpc2.error) {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Gender</div>
-              <select
+              <div className="muted">City</div>
+              <input
                 className="input"
-                value={newChildForm.gender}
+                value={newChildForm.country}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
+                  setNewChildForm((p) => ({ ...p, country: e.target.value }))
                 }
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
+                placeholder="e.g. Tayibe"
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Mother name</div>
+              <input
+                className="input"
+                value={newChildForm.mother_name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    mother_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Sarah"
+              />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
@@ -2639,6 +2784,21 @@ if (rpc2.error) {
                   }))
                 }
                 placeholder=""
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Father name</div>
+              <input
+                className="input"
+                value={newChildForm.father_name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    father_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Ahmad"
               />
             </div>
 
@@ -2702,7 +2862,7 @@ if (rpc2.error) {
           </div>
         </Modal>
 
-        {/* ✅ Enroll */}
+        {/* ✅ Bulk enroll */}
         <Modal
           open={openBulk}
           title="Enroll children"
@@ -3183,7 +3343,12 @@ if (rpc2.error) {
 
             if (type === "inactive") await setEnrollmentStatus(id, "inactive");
             if (type === "active") await setEnrollmentStatus(id, "active");
-            if (type === "deleteEnroll") await deleteEnrollment(id);
+            if (type === "deleteEnroll") {
+              const enrollmentId = id?.enrollmentId ?? id;
+              const childName = id?.childName ?? "";
+              const packageId = id?.packageId ?? null;
+              await deleteEnrollment(enrollmentId, childName, packageId);
+            }
 
             if (type === "deleteSession") await deleteSession(id);
             if (type === "deletePayment") await deletePayment(id);
