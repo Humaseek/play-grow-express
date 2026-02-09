@@ -1386,130 +1386,101 @@ export default function RunDetails() {
         {/* ===================== PARTICIPANTS ===================== */}
         {tab === "participants" && (
           <div className="card">
-            <div className="pToolbar">
+            <div
+              className="pToolbar"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                gap: 16,
+                flexWrap: "wrap",
+              }}
+            >
               <div className="pTitle">
-                <div className="h1">Children </div>
-                <div className="pTitleHint muted">
+                <h2>Children</h2>
+                <div className="muted small">
                   {participantsFiltered.length} of {participants.length}
                 </div>
               </div>
 
-              <div className="pControls">
-                <div className="pSearchWrap">
-                  <span className="pSearchIcon" aria-hidden="true">
-                    <Search size={16} className="ico" />
-                  </span>
-                  <input
-                    className="input pSearch"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder="Search Child…"
-                  />
-                  {q ? (
-                    <span className="pClearBtn">
-                      <IconButton
-                        icon={<XCircle size={16} className="ico" />}
-                        title=" Search"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setQ("")}
-                      />
-                    </span>
-                  ) : null}
-                </div>
-
-                <ModernSelect
-                  className="pSelect"
-                  value={paymentFilter}
-                  onChange={setPaymentFilter}
-                  menuWidth="trigger"
-                  options={[
-                    { value: "all", label: " No" },
-                    { value: "paid", label: "Paid" },
-                    { value: "partial", label: "Partial" },
-                    { value: "unpaid", label: "Unpaid" },
-                    { value: "free", label: "Free" },
-                  ]}
-                />
+              <div
+                className="pControls"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                  flex: "1 1 640px",
+                  minWidth: 320,
+                }}
+              >
                 <div
                   style={{
-                    marginTop: 8,
                     display: "flex",
-                    gap: 8,
+                    gap: 10,
                     flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    className="inputWithIcon"
+                    style={{ flex: "1 1 320px", minWidth: 240 }}
+                  >
+                    <Search size={16} />
+                    <input
+                      className="input"
+                      value={childSearch}
+                      onChange={(e) => setChildSearch(e.target.value)}
+                      placeholder="Search Child..."
+                      style={{ width: "100%" }}
+                    />
+                  </div>
+
+                  <select
+                    className="input"
+                    value={childStatusFilter}
+                    onChange={(e) => setChildStatusFilter(e.target.value)}
+                    style={{ flex: "0 0 170px" }}
+                  >
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+
+                  <select
+                    className="input"
+                    value={childSort}
+                    onChange={(e) => setChildSort(e.target.value)}
+                    style={{ flex: "0 0 210px" }}
+                  >
+                    <option value="balance_desc">Balance: high to low</option>
+                    <option value="balance_asc">Balance: low to high</option>
+                    <option value="name_asc">Name: A to Z</option>
+                    <option value="name_desc">Name: Z to A</option>
+                  </select>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-end",
                   }}
                 >
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => {
-                      setNewChildEnrollNow(false);
-                      setOpenNewChild(true);
-                      setNewChildForm({
-                        name: "",
-                        birth_date: "",
-                        class: "",
-                        gender: "male",
-                        mother_phone: "",
-                        father_phone: "",
-                        notes: "",
-                      });
-                    }}
-                    disabled={enrollLocked}
+                    onClick={() => setCreateChildOpen(true)}
                   >
-                    <Plus size={16} /> New child…
+                    + New child...
                   </button>
 
                   <button
                     type="button"
                     className="btn primary"
-                    onClick={() => {
-                      setNewChildEnrollNow(true);
-                      setOpenNewChild(true);
-                      // We'll create & enroll from the child modal
-                    }}
-                    disabled={enrollLocked}
-                    title="Create a new child record and enroll immediately"
+                    onClick={openCreateEnroll}
                   >
-                    <Plus size={16} /> Create & Enroll
-                  </button>
-                </div>
-
-                <ModernSelect
-                  className="pSelect"
-                  value={sortBy}
-                  onChange={setSortBy}
-                  menuWidth="trigger"
-                  options={[
-                    { value: "balance_desc", label: "Balance: high to low" },
-                    { value: "balance_asc", label: "Balance: low to high" },
-                    { value: "name_asc", label: ": Name (-)" },
-                    { value: "name_desc", label: ": Name (-)" },
-                  ]}
-                />
-
-                <div className="pAddGroup">
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={() => {
-                      setEnrollLocked(false);
-                      setEnrollLockedName("");
-                      setSelectedChildId("");
-                      setOpenEnroll(true);
-                    }}
-                  >
-                    <Plus size={16} className="ico" />
-                    Attendance
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn soft"
-                    onClick={() => setOpenBulk(true)}
-                  >
-                    <Plus size={16} className="ico" />
-                    Back
+                    <Plus size={16} /> Create &amp; Enroll
                   </button>
                 </div>
               </div>
