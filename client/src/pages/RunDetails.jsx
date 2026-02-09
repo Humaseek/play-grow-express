@@ -2173,7 +2173,7 @@ async function bulkPurchaseAndEnroll() {
                   type="button"
                   className="btn"
                   style={{ width: "100%" }}
-                  onClick={openCreateSession}
+                  onClick={openNewSession}
                 >
                   <Plus size={16} className="ico" /> Add single session
                 </button>
@@ -2192,102 +2192,155 @@ async function bulkPurchaseAndEnroll() {
               {!sessions?.length ? (
                 <div className="muted">No sessions yet.</div>
               ) : (
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 220 }}>Date</th>
-                      <th style={{ width: 180 }}>Time</th>
-                      <th style={{ width: 140 }}>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <div style={{ width: "100%", overflowX: "auto" }}>
+                  <div
+                    className="sessionList"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                      minWidth: 760,
+                    }}
+                  >
                     {sessions.map((s) => {
                       const isDone = s.status === "done";
                       const isCancelled = s.status === "cancelled";
                       return (
-                        <tr key={s.id}>
-                          <td>
-                            <div style={{ fontWeight: 600 }}>{fmtDate(s.start_at)}</div>
+                        <div
+                          key={s.id}
+                          className="sessionRow"
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "minmax(160px, 1.2fr) minmax(200px, 1.4fr) minmax(130px, 0.8fr) minmax(280px, 1.6fr)",
+                            gap: 16,
+                            alignItems: "center",
+                            padding: "12px 14px",
+                            border: "1px solid rgba(0,0,0,0.08)",
+                            borderRadius: 14,
+                          }}
+                        >
+                          {/* Date */}
+                          <div style={{ lineHeight: 1.15 }}>
+                            <div style={{ fontWeight: 700 }}>{fmtDate(s.start_at)}</div>
                             <div className="muted">{fmtWeekday(s.start_at)}</div>
-                          </td>
-                          <td>
-                            <div>
+                          </div>
+
+                          {/* Time */}
+                          <div style={{ lineHeight: 1.15 }}>
+                            <div style={{ fontWeight: 600 }}>
                               {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
                             </div>
                             <div className="muted">{fmtDT(s.start_at)}</div>
-                          </td>
-                          <td>
-                            <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(0,0,0,0.12)", fontSize: 12, textTransform: "capitalize" }}>{s.status}</span>
-                          </td>
-                          <td>
-                            <div className="topActions" style={{ flexWrap: "wrap", gap: 8 }}>
-                              <button
-                                type="button"
-                                className="btn primary"
-                                onClick={() => navigate(`/sessions/${s.id}/attendance`)}
-                              >
-                                <Settings2 size={16} className="ico" /> Manage
-                              </button>
+                          </div>
 
-                              <button
-                                type="button"
-                                className="btn"
-                                onClick={() => openEditSession(s)}
-                              >
-                                <Pencil size={16} className="ico" /> Edit
-                              </button>
+                          {/* Status */}
+                          <div>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                padding: "6px 10px",
+                                borderRadius: 999,
+                                background:
+                                  isDone
+                                    ? "rgba(34,197,94,0.12)"
+                                    : isCancelled
+                                    ? "rgba(239,68,68,0.10)"
+                                    : "rgba(0,0,0,0.06)",
+                                border: "1px solid rgba(0,0,0,0.08)",
+                                fontSize: 12,
+                                textTransform: "capitalize",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {s.status}
+                            </span>
+                          </div>
 
-                              <button
-                                type="button"
-                                className="btn"
-                                onClick={() =>
-                                  setSessionStatus(s.id, isDone ? "scheduled" : "done")
-                                }
-                              >
-                                {isDone ? (
-                                  <>
-                                    <XCircle size={16} className="ico" /> Reopen
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle2 size={16} className="ico" /> Mark done
-                                  </>
-                                )}
-                              </button>
+                          {/* Actions */}
+                          <div
+                            className="topActions"
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 8,
+                              justifyContent: "flex-end",
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className="btn primary"
+                              style={{ padding: "8px 12px", height: 36 }}
+                              onClick={() => navigate(`/sessions/${s.id}/attendance`)}
+                            >
+                              <Settings2 size={16} className="ico" /> Manage
+                            </button>
 
-                              <button
-                                type="button"
-                                className="btn danger"
-                                onClick={() =>
-                                  setSessionStatus(s.id, isCancelled ? "scheduled" : "cancelled")
-                                }
-                              >
-                                {isCancelled ? (
-                                  <>
-                                    <CheckCircle2 size={16} className="ico" /> Restore
-                                  </>
-                                ) : (
-                                  <>
-                                    <XCircle size={16} className="ico" /> Cancel
-                                  </>
-                                )}
-                              </button>
+                            <button
+                              type="button"
+                              className="btn"
+                              style={{ padding: "8px 12px", height: 36 }}
+                              onClick={() => openEditSession(s)}
+                            >
+                              <Pencil size={16} className="ico" /> Edit
+                            </button>
 
-                              <button
-                                type="button"
-                                className="btn danger"
-                                onClick={() => deleteSession(s.id)}
-                              >
-                                <Trash2 size={16} className="ico" /> Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
+                            <button
+                              type="button"
+                              className="btn"
+                              style={{ padding: "8px 12px", height: 36 }}
+                              onClick={() =>
+                                setSessionStatus(s.id, isDone ? "scheduled" : "done")
+                              }
+                            >
+                              {isDone ? (
+                                <>
+                                  <XCircle size={16} className="ico" /> Reopen
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 size={16} className="ico" /> Mark done
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn danger"
+                              style={{ padding: "8px 12px", height: 36 }}
+                              onClick={() =>
+                                setSessionStatus(
+                                  s.id,
+                                  isCancelled ? "scheduled" : "cancelled"
+                                )
+                              }
+                            >
+                              {isCancelled ? (
+                                <>
+                                  <CheckCircle2 size={16} className="ico" /> Restore
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle size={16} className="ico" /> Cancel
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn danger"
+                              style={{ padding: "8px 12px", height: 36 }}
+                              onClick={() => deleteSession(s.id)}
+                            >
+                              <Trash2 size={16} className="ico" /> Delete
+                            </button>
+                          </div>
+                        </div>
                       );
                     })}
-                  </tbody>
-                </table>
+                  </div>
+                </div>
               )}
             </div>
           </div>
