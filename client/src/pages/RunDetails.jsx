@@ -540,6 +540,9 @@ export default function RunDetails() {
       );
     }
 
+    // Hide withdrawn enrollments by default
+    list = list.filter((p) => p.enrollment_status !== "withdrawn");
+
     if (childStatusFilter !== "all") {
       list = list.filter((p) => {
         const isActive = p.enrollment_status === "active";
@@ -1989,7 +1992,7 @@ export default function RunDetails() {
 
         {/* ===================== MODALS ===================== */}
 
-                {/* ✅ Child */}
+        {/* ✅ Child */}
         <Modal
           open={openManage}
           title={manageP ? `Manage — ${manageP.child_name}` : "Manage"}
@@ -2003,7 +2006,11 @@ export default function RunDetails() {
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
-                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+                  style={{
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
                 >
                   <div>
                     <div style={{ fontSize: 18, fontWeight: 900 }}>
@@ -2013,14 +2020,19 @@ export default function RunDetails() {
                       </span>
                     </div>
 
-                    <div className="row" style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                    <div
+                      className="row"
+                      style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}
+                    >
                       {badgePayment(manageP.payment_status)}
                       {manageP.enrollment_status === "active" ? (
                         <Badge variant="ok">Active</Badge>
                       ) : (
                         <Badge variant="warn">Inactive</Badge>
                       )}
-                      {manageP.is_free ? <Badge variant="info">Free</Badge> : null}
+                      {manageP.is_free ? (
+                        <Badge variant="info">Free</Badge>
+                      ) : null}
                     </div>
                   </div>
 
@@ -2052,13 +2064,17 @@ export default function RunDetails() {
                   <div className="row" style={{ gap: 8 }}>
                     <Ticket size={14} className="ico" />
                     <span className="muted">Total</span>
-                    <b dir="ltr">{fmtNum(manageP.package_sessions_total ?? 0)}</b>
+                    <b dir="ltr">
+                      {fmtNum(manageP.package_sessions_total ?? 0)}
+                    </b>
                   </div>
 
                   <div className="row" style={{ gap: 8 }}>
                     <Hourglass size={14} className="ico" />
                     <span className="muted">Remaining</span>
-                    <b dir="ltr">{fmtNum(manageP.package_sessions_remaining ?? 0)}</b>
+                    <b dir="ltr">
+                      {fmtNum(manageP.package_sessions_remaining ?? 0)}
+                    </b>
                   </div>
 
                   <div className="row" style={{ gap: 8 }}>
@@ -2078,7 +2094,9 @@ export default function RunDetails() {
                   <div className="row" style={{ gap: 8 }}>
                     <CalendarDays size={14} className="ico" />
                     <span className="muted">Attended in run</span>
-                    <b dir="ltr">{fmtNum(manageP.sessions_attended_in_run ?? 0)}</b>
+                    <b dir="ltr">
+                      {fmtNum(manageP.sessions_attended_in_run ?? 0)}
+                    </b>
                   </div>
                 </div>
               </div>
@@ -2087,7 +2105,11 @@ export default function RunDetails() {
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
-                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+                  style={{
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
                 >
                   <div style={{ fontWeight: 900 }}>Contact</div>
 
@@ -2110,7 +2132,9 @@ export default function RunDetails() {
                 <div className="grid">
                   <div style={{ gridColumn: "span 6" }}>
                     <div className="muted">Mother name</div>
-                    <div style={{ fontWeight: 800 }}>{manageChild?.mother_name ?? "-"}</div>
+                    <div style={{ fontWeight: 800 }}>
+                      {manageChild?.mother_name ?? "-"}
+                    </div>
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
@@ -2125,7 +2149,10 @@ export default function RunDetails() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.mother_phone);
-                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
                           }}
                           title="Copy"
                         >
@@ -2137,7 +2164,9 @@ export default function RunDetails() {
 
                   <div style={{ gridColumn: "span 6" }}>
                     <div className="muted">Father name</div>
-                    <div style={{ fontWeight: 800 }}>{manageChild?.father_name ?? "-"}</div>
+                    <div style={{ fontWeight: 800 }}>
+                      {manageChild?.father_name ?? "-"}
+                    </div>
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
@@ -2152,7 +2181,10 @@ export default function RunDetails() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.father_phone);
-                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
                           }}
                           title="Copy"
                         >
@@ -2240,7 +2272,9 @@ export default function RunDetails() {
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Payments</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                  Payments
+                </div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   <button
                     type="button"
@@ -2293,7 +2327,9 @@ export default function RunDetails() {
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Enrollment</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                  Enrollment
+                </div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   {manageP.enrollment_status === "active" ? (
                     <button
@@ -2337,7 +2373,11 @@ export default function RunDetails() {
                       setConfirm({
                         open: true,
                         type: "deleteEnroll",
-                        id: manageP.enrollment_id,
+                        id: {
+                          enrollmentId: manageP.enrollment_id,
+                          packageId: manageP.package_id,
+                          childName: manageP.child_name,
+                        },
                         text: `Delete enrollment: ${manageP.child_name}`,
                       });
                     }}
@@ -3199,7 +3239,12 @@ export default function RunDetails() {
 
             if (type === "inactive") await setEnrollmentStatus(id, "inactive");
             if (type === "active") await setEnrollmentStatus(id, "active");
-            if (type === "deleteEnroll") await deleteEnrollment(id);
+            if (type === "deleteEnroll") {
+              const enrollmentId = id?.enrollmentId ?? id;
+              const childName = id?.childName ?? "";
+              const packageId = id?.packageId ?? null;
+              await deleteEnrollment(enrollmentId, childName, packageId);
+            }
 
             if (type === "deleteSession") await deleteSession(id);
             if (type === "deletePayment") await deletePayment(id);
