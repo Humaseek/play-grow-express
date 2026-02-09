@@ -150,8 +150,6 @@ export default function RunDetails() {
   const [q, setQ] = useState("");
   // Child list search (header section)
   const [childSearch, setChildSearch] = useState("");
-  const [childStatusFilter, setChildStatusFilter] = useState("all"); // all | active | inactive
-  const [childSort, setChildSort] = useState("balance_desc"); // balance_desc | balance_asc | name_asc | name_desc
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [sortBy, setSortBy] = useState("balance_desc");
 
@@ -181,12 +179,6 @@ export default function RunDetails() {
   });
   const [newChildSaving, setNewChildSaving] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
-
-  // ✅ Create child + enroll (opens the "Add & Enroll" flow)
-  const openCreateEnroll = () => {
-    setNewChildEnrollNow(true);
-    setOpenNewChild(true);
-  };
 
   // Package info + mode
   const [pkgInfo, setPkgInfo] = useState(null);
@@ -525,47 +517,21 @@ export default function RunDetails() {
 
   const participantsFiltered = useMemo(() => {
     let list = [...participants];
+    const s = q.trim().toLowerCase();
+    if (s)
+      list = list.filter((p) => (p.child_name ?? "").toLowerCase().includes(s));
+    if (paymentFilter !== "all")
+      list = list.filter((p) => p.payment_status === paymentFilter);
 
-    // Search by child name
-    const s = (childSearch ?? "").trim().toLowerCase();
-    if (s) {
-      list = list.filter((p) =>
-        String(p.child_name ?? "")
-          .toLowerCase()
-          .includes(s),
-      );
-    }
-
-    // Status filter: use enrollment_status
-    if (childStatusFilter === "active") {
-      list = list.filter((p) => p.enrollment_status === "active");
-    } else if (childStatusFilter === "inactive") {
-      list = list.filter((p) => p.enrollment_status !== "active");
-    }
-
-    // Sorting
-    if (childSort === "balance_desc") {
+    if (sortBy === "balance_desc") {
       list.sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
-    } else if (childSort === "balance_asc") {
-      list.sort((a, b) => Number(a.balance || 0) - Number(b.balance || 0));
-    } else if (childSort === "name_asc") {
+    } else if (sortBy === "name_asc") {
       list.sort((a, b) =>
-        String(a.child_name ?? "").localeCompare(
-          String(b.child_name ?? ""),
-          "en",
-        ),
-      );
-    } else if (childSort === "name_desc") {
-      list.sort((a, b) =>
-        String(b.child_name ?? "").localeCompare(
-          String(a.child_name ?? ""),
-          "en",
-        ),
+        String(a.child_name).localeCompare(String(b.child_name), "en"),
       );
     }
-
     return list;
-  }, [participants, childSearch, childStatusFilter, childSort]);
+  }, [participants, q, paymentFilter, sortBy]);
 
   // ✅ Child: children
   const manageChild = useMemo(() => {
@@ -790,113 +756,107 @@ export default function RunDetails() {
     }
   }
 
-  // ======== Re-enroll helper (handles uq_run_child) ========
-  async function adjustEnrollmentAllocatedFallback(enrollmentId, delta) {
-    // Prefer RPC if it exists; otherwise fallback to a direct update.
-    const d = Number(delta);
-    if (!Number.isFinite(d) || d === 0) return;
+  
+// ======== Re-enroll helper (handles uq_run_child) ========
+async function adjustEnrollmentAllocatedFallback(enrollmentId, delta) {
+  // Prefer RPC if it exists; otherwise fallback to a direct update.
+  const d = Number(delta);
+  if (!Number.isFinite(d) || d === 0) return;
 
-    const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
-      p_enrollment_id: Number(enrollmentId),
-      p_delta: d,
-    });
+  const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
+    p_enrollment_id: Number(enrollmentId),
+    p_delta: d,
+  });
 
-    if (!rpc.error) return;
+  if (!rpc.error) return;
 
-    const msg = String(rpc.error?.message || rpc.error || "");
-    if (
-      msg.includes("Could not find the function") ||
-      msg.includes("schema cache")
-    ) {
-      // Fallback: enrollments.sessions_allocated += delta
-      const cur = await supabase
-        .from("enrollments")
-        .select("sessions_allocated")
-        .eq("id", enrollmentId)
-        .maybeSingle();
-      if (cur.error) throw cur.error;
+  const msg = String(rpc.error?.message || rpc.error || "");
+  if (
+    msg.includes("Could not find the function") ||
+    msg.includes("schema cache")
+  ) {
+    // Fallback: enrollments.sessions_allocated += delta
+    const cur = await supabase
+      .from("enrollments")
+      .select("sessions_allocated")
+      .eq("id", enrollmentId)
+      .maybeSingle();
+    if (cur.error) throw cur.error;
 
-      const current = Number(cur.data?.sessions_allocated || 0);
-      const upd = await supabase
-        .from("enrollments")
-        .update({ sessions_allocated: current + d })
-        .eq("id", enrollmentId);
-      if (upd.error) throw upd.error;
-      return;
-    }
-
-    // Unknown RPC error
-    throw rpc.error;
+    const current = Number(cur.data?.sessions_allocated || 0);
+    const upd = await supabase
+      .from("enrollments")
+      .update({ sessions_allocated: current + d })
+      .eq("id", enrollmentId);
+    if (upd.error) throw upd.error;
+    return;
   }
 
-  async function reactivateWithdrawnEnrollmentGeneric(
-    childId,
-    sessionsToBuy,
-    priceTotal,
-  ) {
-    // If a child was previously removed (withdrawn) from this run,
-    // we re-activate the same enrollment/package (unique constraint),
-    // then apply new price + sessions.
-    const existing = participants.find(
-      (p) =>
-        Number(p.child_id) === Number(childId) &&
-        String(p.enrollment_status) === "withdrawn",
-    );
+  // Unknown RPC error
+  throw rpc.error;
+}
 
-    if (!existing) return false;
+async function reactivateWithdrawnEnrollmentGeneric(childId, sessionsToBuy, priceTotal) {
+  // If a child was previously removed (withdrawn) from this run,
+  // we re-activate the same enrollment/package (unique constraint),
+  // then apply new price + sessions.
+  const existing = participants.find(
+    (p) =>
+      Number(p.child_id) === Number(childId) &&
+      String(p.enrollment_status) === "withdrawn",
+  );
 
-    const sessionsNum = Number(sessionsToBuy);
-    if (!Number.isFinite(sessionsNum) || sessionsNum <= 0) {
-      // Still allow re-activation even if sessions is 0
-      const updEnroll0 = await supabase
-        .from("enrollments")
-        .update({ status: "active" })
-        .eq("id", existing.enrollment_id);
-      if (updEnroll0.error) throw updEnroll0.error;
+  if (!existing) return false;
 
-      if (existing.package_id) {
-        const updPkg0 = await supabase
-          .from("course_packages")
-          .update({ status: "active", price_total: Number(priceTotal) || 0 })
-          .eq("id", existing.package_id);
-        if (updPkg0.error) throw updPkg0.error;
-      }
-
-      return true;
-    }
-
-    // 1) Reactivate enrollment
-    const updEnroll = await supabase
+  const sessionsNum = Number(sessionsToBuy);
+  if (!Number.isFinite(sessionsNum) || sessionsNum <= 0) {
+    // Still allow re-activation even if sessions is 0
+    const updEnroll0 = await supabase
       .from("enrollments")
       .update({ status: "active" })
       .eq("id", existing.enrollment_id);
-    if (updEnroll.error) throw updEnroll.error;
+    if (updEnroll0.error) throw updEnroll0.error;
 
-    // 2) Re-open package + set new price + add sessions back
     if (existing.package_id) {
-      const updPkg = await supabase
+      const updPkg0 = await supabase
         .from("course_packages")
         .update({ status: "active", price_total: Number(priceTotal) || 0 })
         .eq("id", existing.package_id);
-      if (updPkg.error) throw updPkg.error;
-
-      const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
-        p_package_id: Number(existing.package_id),
-        p_delta: Number(sessionsNum),
-      });
-      if (rpcPkg.error) throw rpcPkg.error;
+      if (updPkg0.error) throw updPkg0.error;
     }
-
-    // 3) Allocate sessions for this enrollment
-    await adjustEnrollmentAllocatedFallback(
-      existing.enrollment_id,
-      sessionsNum,
-    );
 
     return true;
   }
 
-  async function bulkPurchaseAndEnroll() {
+  // 1) Reactivate enrollment
+  const updEnroll = await supabase
+    .from("enrollments")
+    .update({ status: "active" })
+    .eq("id", existing.enrollment_id);
+  if (updEnroll.error) throw updEnroll.error;
+
+  // 2) Re-open package + set new price + add sessions back
+  if (existing.package_id) {
+    const updPkg = await supabase
+      .from("course_packages")
+      .update({ status: "active", price_total: Number(priceTotal) || 0 })
+      .eq("id", existing.package_id);
+    if (updPkg.error) throw updPkg.error;
+
+    const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+      p_package_id: Number(existing.package_id),
+      p_delta: Number(sessionsNum),
+    });
+    if (rpcPkg.error) throw rpcPkg.error;
+  }
+
+  // 3) Allocate sessions for this enrollment
+  await adjustEnrollmentAllocatedFallback(existing.enrollment_id, sessionsNum);
+
+  return true;
+}
+
+async function bulkPurchaseAndEnroll() {
     if (!summary) return;
     if (bulkSelectedCount === 0) {
       toast("Select children first.", "warn");
@@ -923,29 +883,26 @@ export default function RunDetails() {
         }
 
         // Try to enroll normally; if uq_run_child triggers, re-activate the withdrawn enrollment instead.
-        const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
-          p_run_id: Number(runId),
-          p_child_id: Number(childId),
-          p_sessions: sessionsToBuy,
-          p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
-        });
+const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
+  p_run_id: Number(runId),
+  p_child_id: Number(childId),
+  p_sessions: sessionsToBuy,
+  p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
+});
 
-        if (rpc2.error) {
-          const msg = String(rpc2.error?.message || rpc2.error || "");
-          if (
-            msg.includes("uq_run_child") ||
-            msg.includes("duplicate key value")
-          ) {
-            // Re-enroll previously-withdrawn child (same enrollment/package)
-            const handled = await reactivateWithdrawnEnrollmentGeneric(
-              childId,
-              sessionsToBuy,
-              Number.isFinite(priceNum) ? priceNum : 0,
-            );
-            if (handled) continue;
-          }
-          throw rpc2.error;
-        }
+if (rpc2.error) {
+  const msg = String(rpc2.error?.message || rpc2.error || "");
+  if (msg.includes("uq_run_child") || msg.includes("duplicate key value")) {
+    // Re-enroll previously-withdrawn child (same enrollment/package)
+    const handled = await reactivateWithdrawnEnrollmentGeneric(
+      childId,
+      sessionsToBuy,
+      Number.isFinite(priceNum) ? priceNum : 0,
+    );
+    if (handled) continue;
+  }
+  throw rpc2.error;
+}
       }
 
       toast(`Enrolled ${bulkSelectedCount} children.`, "ok");
