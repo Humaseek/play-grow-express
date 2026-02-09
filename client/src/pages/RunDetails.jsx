@@ -174,7 +174,7 @@ export default function RunDetails() {
     gender: "male",
     country_id: 1,
     new_country_name: "",
-    mother_name: "",
+mother_name: "",
     mother_phone: "",
     father_name: "",
     father_phone: "",
@@ -333,9 +333,7 @@ export default function RunDetails() {
     setError(null);
 
     try {
-      let countryId = newChildForm.country_id
-        ? Number(newChildForm.country_id)
-        : null;
+      let countryId = newChildForm.country_id ? Number(newChildForm.country_id) : null;
 
       // If user typed a new country/city name, create (or reuse) it and use its id.
       const newCountryName = (newChildForm.new_country_name || "").trim();
@@ -408,7 +406,7 @@ export default function RunDetails() {
         class: "",
         gender: "male",
         country_id: 1,
-        new_country_name: "",
+    new_country_name: "",
         mother_name: "",
         mother_phone: "",
         father_name: "",
@@ -839,140 +837,138 @@ export default function RunDetails() {
     if (upd.error) throw upd.error;
   }
 
-  async function reactivateWithdrawnEnrollment(childId) {
-    // If the child was previously removed (withdrawn) from this run,
-    // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
-    // but we still allow setting a NEW price and "fresh" add-sessions inputs.
-    const existing = participants.find(
-      (p) =>
-        Number(p.child_id) === Number(childId) &&
-        p.enrollment_status === "withdrawn",
-    );
-    if (!existing) return false;
 
-    const sessionsToBuyRaw = Number(buySessions);
-    const sessionsToBuy = Number.isFinite(sessionsToBuyRaw)
-      ? sessionsToBuyRaw
+async function reactivateWithdrawnEnrollment(childId) {
+  // If the child was previously removed (withdrawn) from this run,
+  // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
+  // but we still allow setting a NEW price and "fresh" add-sessions inputs.
+  const existing = participants.find(
+    (p) =>
+      Number(p.child_id) === Number(childId) &&
+      p.enrollment_status === "withdrawn",
+  );
+  if (!existing) return false;
+
+  const sessionsToBuyRaw = Number(buySessions);
+  const sessionsToBuy = Number.isFinite(sessionsToBuyRaw) ? sessionsToBuyRaw : 0;
+
+  const priceTotalNum = (() => {
+    const s = Number.isFinite(sessionsToBuy) && sessionsToBuy > 0
+      ? sessionsToBuy
       : 0;
 
-    const priceTotalNum = (() => {
-      const s =
-        Number.isFinite(sessionsToBuy) && sessionsToBuy > 0 ? sessionsToBuy : 0;
+    if (buyPriceEditMode === "unit") {
+      const u = buyUnitPrice === "" ? 0 : Number(buyUnitPrice);
+      return Number.isFinite(u) ? u * s : 0;
+    }
 
-      if (buyPriceEditMode === "unit") {
-        const u = buyUnitPrice === "" ? 0 : Number(buyUnitPrice);
-        return Number.isFinite(u) ? u * s : 0;
-      }
+    const t = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
+    return Number.isFinite(t) ? t : 0;
+  })();
 
-      const t = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
-      return Number.isFinite(t) ? t : 0;
-    })();
+  try {
+    setError(null);
 
-    try {
-      setError(null);
+    // 1) Reactivate enrollment
+    const upd = await supabase
+      .from("enrollments")
+      .update({ status: "active" })
+      .eq("id", existing.enrollment_id);
+    if (upd.error) throw upd.error;
 
-      // 1) Reactivate enrollment
-      const upd = await supabase
-        .from("enrollments")
-        .update({ status: "active" })
-        .eq("id", existing.enrollment_id);
-      if (upd.error) throw upd.error;
+    // 2) Re-open + UPDATE package price (so re-enroll can have a NEW price)
+    if (existing.package_id) {
+      const pkgUpd = await supabase
+        .from("course_packages")
+        .update({ status: "active", price_total: priceTotalNum })
+        .eq("id", existing.package_id);
+      if (pkgUpd.error) throw pkgUpd.error;
 
-      // 2) Re-open + UPDATE package price (so re-enroll can have a NEW price)
-      if (existing.package_id) {
-        const pkgUpd = await supabase
-          .from("course_packages")
-          .update({ status: "active", price_total: priceTotalNum })
-          .eq("id", existing.package_id);
-        if (pkgUpd.error) throw pkgUpd.error;
-
-        // Add sessions back to the package total (keeps sessions_used consistent)
-        if (sessionsToBuy > 0) {
-          const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
-            p_package_id: Number(existing.package_id),
-            p_delta: Number(sessionsToBuy),
-          });
-          if (rpcPkg.error) throw rpcPkg.error;
-        }
-      }
-
-      // 3) Allocate sessions for THIS run enrollment (so run balance matches)
+      // Add sessions back to the package total (keeps sessions_used consistent)
       if (sessionsToBuy > 0) {
-        await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
-        toast("Child re-enrolled successfully.", "ok");
-      } else {
-        toast("Enrollment re-activated. Add sessions then click Save.", "ok");
+        const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+          p_package_id: Number(existing.package_id),
+          p_delta: Number(sessionsToBuy),
+        });
+        if (rpcPkg.error) throw rpcPkg.error;
       }
-
-      setOpenEnroll(false);
-      await loadFixed();
-      setTab("participants");
-      return true;
-    } catch (e) {
-      setError(e);
-      toast("Failed to re-enroll child.", "danger");
-      return true;
     }
+
+    // 3) Allocate sessions for THIS run enrollment (so run balance matches)
+    if (sessionsToBuy > 0) {
+      await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
+      toast("Child re-enrolled successfully.", "ok");
+    } else {
+      toast("Enrollment re-activated. Add sessions then click Save.", "ok");
+    }
+
+    setOpenEnroll(false);
+    await loadFixed();
+    setTab("participants");
+    return true;
+  } catch (e) {
+    setError(e);
+    toast("Failed to re-enroll child.", "danger");
+    return true;
   }
+}
 
-  async function reactivateWithdrawnEnrollmentBulk(
-    childId,
-    sessionsToBuy,
-    priceTotalNum,
-  ) {
-    // Bulk-safe variant of reactivateWithdrawnEnrollment:
-    // uses explicit sessions/price (does NOT depend on the single-enroll modal state).
-    const existing = participants.find(
-      (p) =>
-        Number(p.child_id) === Number(childId) &&
-        p.enrollment_status === "withdrawn",
-    );
-    if (!existing) return false;
 
-    const sRaw = Number(sessionsToBuy);
-    const s = Number.isFinite(sRaw) ? sRaw : 0;
-    const priceRaw = Number(priceTotalNum);
-    const priceTotal = Number.isFinite(priceRaw) ? priceRaw : 0;
+async function reactivateWithdrawnEnrollmentBulk(childId, sessionsToBuy, priceTotalNum) {
+  // Bulk-safe variant of reactivateWithdrawnEnrollment:
+  // uses explicit sessions/price (does NOT depend on the single-enroll modal state).
+  const existing = participants.find(
+    (p) =>
+      Number(p.child_id) === Number(childId) &&
+      p.enrollment_status === "withdrawn",
+  );
+  if (!existing) return false;
 
-    try {
-      // 1) Reactivate enrollment row
-      const upd = await supabase
-        .from("enrollments")
-        .update({ status: "active" })
-        .eq("id", existing.enrollment_id);
-      if (upd.error) throw upd.error;
+  const sRaw = Number(sessionsToBuy);
+  const s = Number.isFinite(sRaw) ? sRaw : 0;
+  const priceRaw = Number(priceTotalNum);
+  const priceTotal = Number.isFinite(priceRaw) ? priceRaw : 0;
 
-      // 2) Reactivate + update package (optional)
-      if (existing.package_id) {
-        const pkgUpd = await supabase
-          .from("course_packages")
-          .update({ status: "active", price_total: priceTotal })
-          .eq("id", existing.package_id);
-        if (pkgUpd.error) throw pkgUpd.error;
+  try {
+    // 1) Reactivate enrollment row
+    const upd = await supabase
+      .from("enrollments")
+      .update({ status: "active" })
+      .eq("id", existing.enrollment_id);
+    if (upd.error) throw upd.error;
 
-        if (s > 0) {
-          const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
-            p_package_id: Number(existing.package_id),
-            p_delta: Number(s),
-          });
-          if (rpcPkg.error) throw rpcPkg.error;
-        }
-      }
+    // 2) Reactivate + update package (optional)
+    if (existing.package_id) {
+      const pkgUpd = await supabase
+        .from("course_packages")
+        .update({ status: "active", price_total: priceTotal })
+        .eq("id", existing.package_id);
+      if (pkgUpd.error) throw pkgUpd.error;
 
-      // 3) Allocate sessions on the enrollment
       if (s > 0) {
-        await bumpEnrollmentAllocated(existing.enrollment_id, s);
+        const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+          p_package_id: Number(existing.package_id),
+          p_delta: Number(s),
+        });
+        if (rpcPkg.error) throw rpcPkg.error;
       }
-
-      return true;
-    } catch (e) {
-      // Don't toast here (bulk flow will summarize). Bubble a boolean + let caller setError if needed.
-      console.error("Bulk reactivation failed:", e);
-      return false;
     }
-  }
 
-  async function purchaseAndEnrollSingle() {
+    // 3) Allocate sessions on the enrollment
+    if (s > 0) {
+      await bumpEnrollmentAllocated(existing.enrollment_id, s);
+    }
+
+    return true;
+  } catch (e) {
+    // Don't toast here (bulk flow will summarize). Bubble a boolean + let caller setError if needed.
+    console.error("Bulk reactivation failed:", e);
+    return false;
+  }
+}
+
+
+async function purchaseAndEnrollSingle() {
     if (!summary) return;
     if (!selectedChildId) {
       toast("Select a child.", "warn");
@@ -1060,14 +1056,14 @@ export default function RunDetails() {
   }
 
   function isDuplicateRunChildError(err) {
-    const code = String(err?.code ?? "");
-    const msg = String(err?.message ?? err ?? "");
-    // Postgres unique violation is 23505
-    if (code === "23505") return true;
-    return msg.includes("uq_run_child") || msg.includes("duplicate key");
-  }
+  const code = String(err?.code ?? "");
+  const msg = String(err?.message ?? err ?? "");
+  // Postgres unique violation is 23505
+  if (code === "23505") return true;
+  return msg.includes("uq_run_child") || msg.includes("duplicate key");
+}
 
-  async function bulkPurchaseAndEnroll() {
+async function bulkPurchaseAndEnroll() {
     if (!summary) return;
     if (bulkSelectedCount === 0) {
       toast("Select children first.", "warn");
@@ -1121,11 +1117,7 @@ export default function RunDetails() {
 
         // Withdrawn -> reactivate instead of inserting a new row
         if (existingStatus === "withdrawn") {
-          const ok = await reactivateWithdrawnEnrollmentBulk(
-            cid,
-            sessionsToBuy,
-            priceNum,
-          );
+          const ok = await reactivateWithdrawnEnrollmentBulk(cid, sessionsToBuy, priceNum);
           if (ok) {
             reactivated += 1;
           } else {
@@ -1146,11 +1138,7 @@ export default function RunDetails() {
           // If we raced with another request, handle duplicate gracefully
           if (isDuplicateRunChildError(rpc2.error)) {
             // Try to reactivate if it was withdrawn, otherwise skip
-            const ok = await reactivateWithdrawnEnrollmentBulk(
-              cid,
-              sessionsToBuy,
-              priceNum,
-            );
+            const ok = await reactivateWithdrawnEnrollmentBulk(cid, sessionsToBuy, priceNum);
             if (ok) reactivated += 1;
             else skipped += 1;
           } else {
@@ -1978,7 +1966,7 @@ export default function RunDetails() {
                       <div className="pMain">
                         <div className="pBig" title="Amount ">
                           <div className="pBigTop">
-                            <div className="pBigValue" dir="ltr">
+                            <div className="pBigValue" dir="ltr" style={{ overflow: "visible", textOverflow: "clip", whiteSpace: "nowrap" }} title={fmtILS(balance)}>
                               {fmtILS(balance)}
                             </div>
                             <div className="pBigLabel">
@@ -1991,11 +1979,17 @@ export default function RunDetails() {
                             <span style={{ width: `${pct}%` }} />
                           </div>
 
-                          <div className="muted" style={{ fontSize: 12 }}>
-                            <CreditCard size={14} className="ico" />{" "}
-                            <span dir="ltr">{fmtILS(paid)}</span>{" "}
-                            <span style={{ opacity: 0.6 }}> of </span>{" "}
-                            <span dir="ltr">{fmtILS(agreed)}</span>
+                          <div className="muted" style={{ fontSize: 12, display: "grid", gap: 4 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <CreditCard size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Paid</span>
+                              <b dir="ltr">{fmtILS(paid)}</b>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <Tag size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Agreed</span>
+                              <b dir="ltr">{fmtILS(agreed)}</b>
+                            </div>
                           </div>
                         </div>
 
@@ -2009,22 +2003,30 @@ export default function RunDetails() {
                               <span>Session balance</span>
                             </div>
                           </div>
-                          <div className="muted" style={{ fontSize: 12 }}>
-                            <CheckCircle2 size={14} className="ico" />{" "}
-                            <span style={{ opacity: 0.75 }}>Used</span>{" "}
-                            <b dir="ltr">{fmtNum(pkgUsed)}</b>{" "}
-                            <span style={{ opacity: 0.55 }}>
-                              Sessions in run
-                            </span>
-                            <b dir="ltr">{fmtNum(pkgTotal)}</b>
+                          <div className="muted" style={{ fontSize: 12, display: "grid", gap: 4 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <CheckCircle2 size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Used</span>
+                              <b dir="ltr">{fmtNum(pkgUsed)}</b>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <Ticket size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>In this run</span>
+                              <b dir="ltr">{fmtNum(pkgTotal)}</b>
+                            </div>
                           </div>
 
-                          <div className="muted" style={{ fontSize: 12 }}>
-                            <CalendarDays size={14} className="ico" />{" "}
-                            <b dir="ltr">{fmtNum(attended)}</b>
-                            <span style={{ opacity: 0.6 }}>Sessions</span>
-                            <b dir="ltr">{fmtNum(runSessions)}</b>{" "}
-                            <span style={{ opacity: 0.65 }}>Remaining</span>
+                          <div className="muted" style={{ fontSize: 12, display: "grid", gap: 4 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <CalendarDays size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Attended</span>
+                              <b dir="ltr">{fmtNum(attended)}</b>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <Hourglass size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Remaining</span>
+                              <b dir="ltr">{fmtNum(runSessions)}</b>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2337,7 +2339,7 @@ export default function RunDetails() {
 
         {/* ===================== MODALS ===================== */}
 
-        {/* ✅ Child */}
+                {/* ✅ Child */}
         <Modal
           open={openManage}
           title={manageP ? `Manage — ${manageP.child_name}` : "Manage"}
@@ -2351,11 +2353,7 @@ export default function RunDetails() {
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
-                  style={{
-                    justifyContent: "space-between",
-                    gap: 12,
-                    flexWrap: "wrap",
-                  }}
+                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
                 >
                   <div>
                     <div style={{ fontSize: 18, fontWeight: 900 }}>
@@ -2365,19 +2363,14 @@ export default function RunDetails() {
                       </span>
                     </div>
 
-                    <div
-                      className="row"
-                      style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}
-                    >
+                    <div className="row" style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}>
                       {badgePayment(manageP.payment_status)}
                       {manageP.enrollment_status === "active" ? (
                         <Badge variant="ok">Active</Badge>
                       ) : (
                         <Badge variant="warn">Inactive</Badge>
                       )}
-                      {manageP.is_free ? (
-                        <Badge variant="info">Free</Badge>
-                      ) : null}
+                      {manageP.is_free ? <Badge variant="info">Free</Badge> : null}
                     </div>
                   </div>
 
@@ -2409,17 +2402,13 @@ export default function RunDetails() {
                   <div className="row" style={{ gap: 8 }}>
                     <Ticket size={14} className="ico" />
                     <span className="muted">Total</span>
-                    <b dir="ltr">
-                      {fmtNum(manageP.package_sessions_total ?? 0)}
-                    </b>
+                    <b dir="ltr">{fmtNum(manageP.package_sessions_total ?? 0)}</b>
                   </div>
 
                   <div className="row" style={{ gap: 8 }}>
                     <Hourglass size={14} className="ico" />
                     <span className="muted">Remaining</span>
-                    <b dir="ltr">
-                      {fmtNum(manageP.package_sessions_remaining ?? 0)}
-                    </b>
+                    <b dir="ltr">{fmtNum(manageP.package_sessions_remaining ?? 0)}</b>
                   </div>
 
                   <div className="row" style={{ gap: 8 }}>
@@ -2439,9 +2428,7 @@ export default function RunDetails() {
                   <div className="row" style={{ gap: 8 }}>
                     <CalendarDays size={14} className="ico" />
                     <span className="muted">Attended in run</span>
-                    <b dir="ltr">
-                      {fmtNum(manageP.sessions_attended_in_run ?? 0)}
-                    </b>
+                    <b dir="ltr">{fmtNum(manageP.sessions_attended_in_run ?? 0)}</b>
                   </div>
                 </div>
               </div>
@@ -2450,11 +2437,7 @@ export default function RunDetails() {
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
-                  style={{
-                    justifyContent: "space-between",
-                    gap: 12,
-                    flexWrap: "wrap",
-                  }}
+                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
                 >
                   <div style={{ fontWeight: 900 }}>Contact</div>
 
@@ -2477,9 +2460,7 @@ export default function RunDetails() {
                 <div className="grid">
                   <div style={{ gridColumn: "span 6" }}>
                     <div className="muted">Mother name</div>
-                    <div style={{ fontWeight: 800 }}>
-                      {manageChild?.mother_name ?? "-"}
-                    </div>
+                    <div style={{ fontWeight: 800 }}>{manageChild?.mother_name ?? "-"}</div>
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
@@ -2494,10 +2475,7 @@ export default function RunDetails() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.mother_phone);
-                            toast(
-                              ok ? "Copied" : "Copy failed",
-                              ok ? "ok" : "danger",
-                            );
+                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
                           }}
                           title="Copy"
                         >
@@ -2509,9 +2487,7 @@ export default function RunDetails() {
 
                   <div style={{ gridColumn: "span 6" }}>
                     <div className="muted">Father name</div>
-                    <div style={{ fontWeight: 800 }}>
-                      {manageChild?.father_name ?? "-"}
-                    </div>
+                    <div style={{ fontWeight: 800 }}>{manageChild?.father_name ?? "-"}</div>
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
@@ -2526,10 +2502,7 @@ export default function RunDetails() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.father_phone);
-                            toast(
-                              ok ? "Copied" : "Copy failed",
-                              ok ? "ok" : "danger",
-                            );
+                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
                           }}
                           title="Copy"
                         >
@@ -2617,9 +2590,7 @@ export default function RunDetails() {
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                  Payments
-                </div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>Payments</div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   <button
                     type="button"
@@ -2672,9 +2643,7 @@ export default function RunDetails() {
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                  Enrollment
-                </div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>Enrollment</div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   {manageP.enrollment_status === "active" ? (
                     <button
@@ -2930,205 +2899,186 @@ export default function RunDetails() {
         </Modal>
 
         {/* New child (inline) */}
-        <Modal
-          open={openNewChild}
-          title={newChildEnrollNow ? "Create child & enroll" : "Add child"}
-          onClose={() => setOpenNewChild(false)}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Name *</div>
-              <input
-                className="input"
-                value={newChildForm.name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, name: e.target.value }))
-                }
-                placeholder=""
-              />
-            </div>
+<Modal
+  open={openNewChild}
+  title={newChildEnrollNow ? "Create child & enroll" : "Add child"}
+  onClose={() => setOpenNewChild(false)}
+>
+  <div className="grid">
+    <div style={{ gridColumn: "span 12" }}>
+      <div className="muted">Name *</div>
+      <input
+        className="input"
+        value={newChildForm.name}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, name: e.target.value }))
+        }
+        placeholder=""
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Birth date *</div>
-              <input
-                className="input"
-                type="date"
-                value={newChildForm.birth_date}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, birth_date: e.target.value }))
-                }
-              />
-            </div>
+    <div style={{ gridColumn: "span 4" }}>
+      <div className="muted">Birth date *</div>
+      <input
+        className="input"
+        type="date"
+        value={newChildForm.birth_date}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, birth_date: e.target.value }))
+        }
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Gender</div>
-              <select
-                className="input"
-                value={newChildForm.gender}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
-                }
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-            </div>
+    <div style={{ gridColumn: "span 4" }}>
+      <div className="muted">Gender</div>
+      <select
+        className="input"
+        value={newChildForm.gender}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, gender: e.target.value }))
+        }
+      >
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+    </div>
 
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Class</div>
-              <input
-                className="input"
-                value={newChildForm.class}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, class: e.target.value }))
-                }
-                placeholder=""
-              />
-            </div>
+    <div style={{ gridColumn: "span 4" }}>
+      <div className="muted">Class</div>
+      <input
+        className="input"
+        value={newChildForm.class}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, class: e.target.value }))
+        }
+        placeholder=""
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">City</div>
-              <select
-                className="input"
-                value={newChildForm.country_id ?? ""}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, country_id: e.target.value }))
-                }
-                disabled={countriesLoading}
-              >
-                <option value="">
-                  {countriesLoading ? "Loading..." : "Select a country..."}
-                </option>
-                {(countries ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">City</div>
+      <select
+        className="input"
+        value={newChildForm.country_id ?? ""}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, country_id: e.target.value }))
+        }
+        disabled={countriesLoading}
+      >
+        <option value="">{countriesLoading ? "Loading..." : "Select a country..."}</option>
+        {(countries ?? []).map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+    </div>
 
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">New country (optional)</div>
-              <input
-                className="input"
-                value={newChildForm.new_country_name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    new_country_name: e.target.value,
-                  }))
-                }
-                placeholder="e.g. Israel"
-              />
-            </div>
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">New country (optional)</div>
+      <input
+        className="input"
+        value={newChildForm.new_country_name}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, new_country_name: e.target.value }))
+        }
+        placeholder="e.g. Israel"
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Mother name</div>
-              <input
-                className="input"
-                value={newChildForm.mother_name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    mother_name: e.target.value,
-                  }))
-                }
-                placeholder="e.g. Sarah"
-              />
-            </div>
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">Mother name</div>
+      <input
+        className="input"
+        value={newChildForm.mother_name}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, mother_name: e.target.value }))
+        }
+        placeholder="e.g. Sarah"
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Mother phone</div>
-              <input
-                className="input"
-                value={newChildForm.mother_phone}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    mother_phone: e.target.value,
-                  }))
-                }
-                placeholder="e.g. 050-1234567"
-              />
-            </div>
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">Mother phone</div>
+      <input
+        className="input"
+        value={newChildForm.mother_phone}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, mother_phone: e.target.value }))
+        }
+        placeholder="e.g. 050-1234567"
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Father name</div>
-              <input
-                className="input"
-                value={newChildForm.father_name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    father_name: e.target.value,
-                  }))
-                }
-                placeholder="e.g. Ahmad"
-              />
-            </div>
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">Father name</div>
+      <input
+        className="input"
+        value={newChildForm.father_name}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, father_name: e.target.value }))
+        }
+        placeholder="e.g. Ahmad"
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Father phone</div>
-              <input
-                className="input"
-                value={newChildForm.father_phone}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    father_phone: e.target.value,
-                  }))
-                }
-                placeholder="e.g. 052-1234567"
-              />
-            </div>
+    <div style={{ gridColumn: "span 6" }}>
+      <div className="muted">Father phone</div>
+      <input
+        className="input"
+        value={newChildForm.father_phone}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, father_phone: e.target.value }))
+        }
+        placeholder="e.g. 052-1234567"
+      />
+    </div>
 
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Notes (optional)</div>
-              <textarea
-                className="input"
-                rows={4}
-                value={newChildForm.notes}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, notes: e.target.value }))
-                }
-                placeholder="Optional notes..."
-              />
-            </div>
+    <div style={{ gridColumn: "span 12" }}>
+      <div className="muted">Notes (optional)</div>
+      <textarea
+        className="input"
+        rows={4}
+        value={newChildForm.notes}
+        onChange={(e) =>
+          setNewChildForm((p) => ({ ...p, notes: e.target.value }))
+        }
+        placeholder="Optional notes..."
+      />
+    </div>
 
-            <div
-              style={{
-                gridColumn: "span 12",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-                paddingTop: 8,
-              }}
-            >
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setOpenNewChild(false)}
-                disabled={newChildSaving}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() =>
-                  createChildInline({ enrollNow: newChildEnrollNow })
-                }
-                disabled={newChildSaving}
-              >
-                {newChildSaving
-                  ? "Saving..."
-                  : newChildEnrollNow
-                    ? "Create & enroll"
-                    : "Save"}
-              </button>
-            </div>
-          </div>
-        </Modal>
+    <div
+      style={{
+        gridColumn: "span 12",
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        paddingTop: 8,
+      }}
+    >
+      <button
+        type="button"
+        className="btn"
+        onClick={() => setOpenNewChild(false)}
+        disabled={newChildSaving}
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => createChildInline({ enrollNow: newChildEnrollNow })}
+        disabled={newChildSaving}
+      >
+        {newChildSaving
+          ? "Saving..."
+          : newChildEnrollNow
+            ? "Create & enroll"
+            : "Save"}
+      </button>
+    </div>
+  </div>
+</Modal>
 
         {/* ✅ Bulk enroll */}
         <Modal
@@ -3207,9 +3157,7 @@ export default function RunDetails() {
                           <td className="muted">{c.age ?? "-"}</td>
                           <td className="muted">{c.gender ?? "-"}</td>
                           <td className="muted">
-                            <span
-                              style={{ direction: "ltr", unicodeBidi: "embed" }}
-                            >
+                            <span style={{ direction: "ltr", unicodeBidi: "embed" }}>
                               {c.mother_phone ?? "-"}
                             </span>
                           </td>
@@ -3274,9 +3222,7 @@ export default function RunDetails() {
 
             <div style={{ gridColumn: "span 4" }}>
               <div className="muted">
-                {bulkPriceMode === "unified"
-                  ? "Package price"
-                  : "Per-child prices"}
+                {bulkPriceMode === "unified" ? "Package price" : "Per-child prices"}
               </div>
               {bulkPriceMode === "unified" ? (
                 <input
