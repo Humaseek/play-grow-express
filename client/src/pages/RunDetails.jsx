@@ -2181,7 +2181,7 @@ async function bulkPurchaseAndEnroll() {
             </div>
 
             {/* RIGHT: list */}
-            <div className="card" style={{ gridColumn: "span 7" }}>
+            <div className="card" style={{ gridColumn: "span 7", overflow: "hidden" }}>
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
                 Manage sessions for this run. Edit times, mark done/cancelled, or delete.
@@ -2211,14 +2211,12 @@ async function bulkPurchaseAndEnroll() {
                           style={{
                             display: "grid",
                             gridTemplateColumns:
-"minmax(140px, 1fr) minmax(170px, 1fr) minmax(120px, 140px) minmax(260px, 1.2fr)",
-                            gap: 16,
+"minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
+                            gap: 12,
                             alignItems: "center",
-                            padding: 12,
-                            border: "1px solid rgba(0,0,0,0.06)",
-                            borderRadius: 14,
-                            background: "#fff",
-                            padding: "12px 14px",
+                            overflow: "hidden",
+                            maxWidth: "100%",
+                                                        padding: "12px 14px",
                             border: "1px solid rgba(0,0,0,0.08)",
                             borderRadius: 14,
                           }}
@@ -2243,10 +2241,6 @@ async function bulkPurchaseAndEnroll() {
                               style={{
                                 display: "inline-flex",
                                 alignItems: "center",
-                            padding: 12,
-                            border: "1px solid rgba(0,0,0,0.06)",
-                            borderRadius: 14,
-                            background: "#fff",
                                 padding: "6px 10px",
                                 borderRadius: 999,
                                 background:
@@ -2272,6 +2266,8 @@ async function bulkPurchaseAndEnroll() {
                               display: "grid",
                               gap: 8,
                               justifyItems: "end",
+                              minWidth: 96,
+                              justifySelf: "end",
                             }}
                           >
                             <div
@@ -2403,7 +2399,7 @@ async function bulkPurchaseAndEnroll() {
               </button>
             </div>
 
-            <div className="card" style={{ gridColumn: "span 7" }}>
+            <div className="card" style={{ gridColumn: "span 7", overflow: "hidden" }}>
               <div className="h1">Payments</div>
               <div className="muted" style={{ marginTop: 6 }}>
                 View and manage payments for this run.
