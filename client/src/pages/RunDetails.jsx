@@ -179,6 +179,12 @@ export default function RunDetails() {
   const [newChildSaving, setNewChildSaving] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
 
+  // Quick action: open 'Create Child' modal and auto-enroll into this run
+  const openCreateEnroll = () => {
+    setNewChildEnrollNow(true);
+    setOpenNewChild(true);
+  };
+
   // Package info + mode
   const [pkgInfo, setPkgInfo] = useState(null);
   const [pkgLoading, setPkgLoading] = useState(false);
