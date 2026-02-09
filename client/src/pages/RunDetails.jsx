@@ -2922,12 +2922,15 @@ async function purchaseAndEnrollSingle() {
                 <table className="table" style={{ margin: 0 }}>
                   <thead>
                     <tr>
-                      <th style={{ width: 60 }}>Method</th>
-                      <th>Name</th>
-                      <th>Date</th>
-                      <th>Note</th>
+                      <th style={{ width: 60 }}>Select</th>
                       <th>Name</th>
                       <th>Class</th>
+                      <th>Age</th>
+                      <th>Gender</th>
+                      <th>Phone</th>
+                      {bulkPriceMode === "perChild" && (
+                        <th style={{ width: 140 }}>Price</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -2946,7 +2949,31 @@ async function purchaseAndEnrollSingle() {
                           <td className="muted">{c.class ?? "-"}</td>
                           <td className="muted">{c.age ?? "-"}</td>
                           <td className="muted">{c.gender ?? "-"}</td>
-                          <td className="muted">{c.mother_phone ?? "-"}</td>
+                          <td className="muted">
+                            <span style={{ direction: "ltr", unicodeBidi: "embed" }}>
+                              {c.mother_phone ?? "-"}
+                            </span>
+                          </td>
+                          {bulkPriceMode === "perChild" && (
+                            <td>
+                              <input
+                                className="input"
+                                style={{ minWidth: 110 }}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={bulkPerChildPrice[c.id] ?? ""}
+                                onChange={(e) =>
+                                  setBulkPerChildPrice((prev) => ({
+                                    ...prev,
+                                    [c.id]: e.target.value,
+                                  }))
+                                }
+                                placeholder={String(defaultPrice)}
+                                disabled={!checked}
+                              />
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -2960,7 +2987,7 @@ async function purchaseAndEnrollSingle() {
 
           <div className="grid">
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted"> ( )</div>
+              <div className="muted">Total sessions (package)</div>
               <input
                 className="input"
                 type="number"
@@ -2971,20 +2998,25 @@ async function purchaseAndEnrollSingle() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Every how many days?</div>
+              <div className="muted">Pricing mode</div>
               <ModernSelect
                 value={bulkPriceMode}
-                onChange={setBulkPriceMode}
+                onChange={(v) => {
+                  setBulkPriceMode(v);
+                  if (v === "unified") setBulkPerChildPrice({});
+                }}
                 menuWidth="trigger"
                 options={[
-                  { value: "unified", label: " " },
-                  { value: "perChild", label: " " },
+                  { value: "unified", label: "Unified (same price for all)" },
+                  { value: "perChild", label: "Per child (set in table)" },
                 ]}
               />
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Session list</div>
+              <div className="muted">
+                {bulkPriceMode === "unified" ? "Package price" : "Per-child prices"}
+              </div>
               {bulkPriceMode === "unified" ? (
                 <input
                   className="input"
@@ -2997,7 +3029,7 @@ async function purchaseAndEnrollSingle() {
                 />
               ) : (
                 <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                  * ( ) .
+                  Enter a price for each selected child in the table above.
                 </div>
               )}
             </div>
