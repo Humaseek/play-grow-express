@@ -172,6 +172,7 @@ export default function RunDetails() {
     birth_date: "",
     class: "",
     gender: "male",
+    country_id: 1,
     mother_name: "",
     mother_phone: "",
     father_name: "",
@@ -179,6 +180,9 @@ export default function RunDetails() {
     notes: "",
   });
   const [newChildSaving, setNewChildSaving] = useState(false);
+
+  const [countries, setCountries] = useState([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
 
   // Quick action: open "Add child" modal and auto-enroll into this run
@@ -186,6 +190,27 @@ export default function RunDetails() {
     setNewChildEnrollNow(true);
     setOpenNewChild(true);
   };
+
+  async function loadCountriesSafe() {
+    setCountriesLoading(true);
+    try {
+      const res = await supabase
+        .from("countries")
+        .select("id,name")
+        .order("name", { ascending: true });
+      if (res.error) throw res.error;
+      setCountries(res.data ?? []);
+    } catch (e) {
+      // non-blocking: we can still create a child without country_id
+      setCountries([]);
+    } finally {
+      setCountriesLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (openNewChild) loadCountriesSafe();
+  }, [openNewChild]);
 
   // Package info + mode
   const [pkgInfo, setPkgInfo] = useState(null);
@@ -317,6 +342,7 @@ export default function RunDetails() {
         father_name: (newChildForm.father_name || "").trim() || null,
         father_phone: (newChildForm.father_phone || "").trim() || null,
         notes: (newChildForm.notes || "").trim() || null,
+        country_id: newChildForm.country_id ? Number(newChildForm.country_id) : null,
       };
 
       const ins = await supabase
@@ -348,7 +374,8 @@ export default function RunDetails() {
         name: "",
         birth_date: "",
         class: "",
-            gender: "male",
+        gender: "male",
+        country_id: 1,
         mother_name: "",
         mother_phone: "",
         father_name: "",
@@ -2885,119 +2912,22 @@ async function bulkPurchaseAndEnroll() {
 
             <div style={{ gridColumn: "span 6" }}>
               <div className="muted">City</div>
-              <input
+              <select
                 className="input"
-                value={newChildForm.city}
+                value={newChildForm.country_id ?? ""}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, city: e.target.value }))
+                  setNewChildForm((p) => ({ ...p, country_id: e.target.value }))
                 }
-                placeholder="e.g. Tayibe"
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Mother name</div>
-              <input
-                className="input"
-                value={newChildForm.mother_name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    mother_name: e.target.value,
-                  }))
-                }
-                placeholder="e.g. Sarah"
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Mother phone</div>
-              <input
-                className="input"
-                value={newChildForm.mother_phone}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    mother_phone: e.target.value,
-                  }))
-                }
-                placeholder=""
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Father name</div>
-              <input
-                className="input"
-                value={newChildForm.father_name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    father_name: e.target.value,
-                  }))
-                }
-                placeholder="e.g. Ahmad"
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Father phone</div>
-              <input
-                className="input"
-                value={newChildForm.father_phone}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    father_phone: e.target.value,
-                  }))
-                }
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Notes</div>
-              <textarea
-                className="input"
-                rows={3}
-                value={newChildForm.notes}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, notes: e.target.value }))
-                }
-              />
-            </div>
-
-            <div
-              style={{
-                gridColumn: "span 12",
-                display: "flex",
-                gap: 8,
-                justifyContent: "flex-end",
-              }}
-            >
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setOpenNewChild(false)}
-                disabled={newChildSaving}
+                disabled={countriesLoading}
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() =>
-                  createChildInline({ enrollNow: newChildEnrollNow })
-                }
-                disabled={newChildSaving}
-              >
-                {newChildSaving
-                  ? "Saving…"
-                  : newChildEnrollNow
-                    ? "Create & enroll"
-                    : "Create"}
-              </button>
+                <option value="">Select...</option>
+                {(countries ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
         </Modal>
 
         {/* ✅ Bulk enroll */}
