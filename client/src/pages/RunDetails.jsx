@@ -859,6 +859,60 @@ async function reactivateWithdrawnEnrollment(childId) {
 }
 
 
+async function reactivateWithdrawnEnrollmentBulk(childId, sessionsToBuy, priceTotalNum) {
+  // Bulk-safe variant of reactivateWithdrawnEnrollment:
+  // uses explicit sessions/price (does NOT depend on the single-enroll modal state).
+  const existing = participants.find(
+    (p) =>
+      Number(p.child_id) === Number(childId) &&
+      p.enrollment_status === "withdrawn",
+  );
+  if (!existing) return false;
+
+  const sRaw = Number(sessionsToBuy);
+  const s = Number.isFinite(sRaw) ? sRaw : 0;
+  const priceRaw = Number(priceTotalNum);
+  const priceTotal = Number.isFinite(priceRaw) ? priceRaw : 0;
+
+  try {
+    // 1) Reactivate enrollment row
+    const upd = await supabase
+      .from("enrollments")
+      .update({ status: "active" })
+      .eq("id", existing.enrollment_id);
+    if (upd.error) throw upd.error;
+
+    // 2) Reactivate + update package (optional)
+    if (existing.package_id) {
+      const pkgUpd = await supabase
+        .from("course_packages")
+        .update({ status: "active", price_total: priceTotal })
+        .eq("id", existing.package_id);
+      if (pkgUpd.error) throw pkgUpd.error;
+
+      if (s > 0) {
+        const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+          p_package_id: Number(existing.package_id),
+          p_delta: Number(s),
+        });
+        if (rpcPkg.error) throw rpcPkg.error;
+      }
+    }
+
+    // 3) Allocate sessions on the enrollment
+    if (s > 0) {
+      await bumpEnrollmentAllocated(existing.enrollment_id, s);
+    }
+
+    return true;
+  } catch (e) {
+    // Don't toast here (bulk flow will summarize). Bubble a boolean + let caller setError if needed.
+    console.error("Bulk reactivation failed:", e);
+    return false;
+  }
+}
+
+
 async function purchaseAndEnrollSingle() {
     if (!summary) return;
     if (!selectedChildId) {
@@ -946,7 +1000,15 @@ async function purchaseAndEnrollSingle() {
     }
   }
 
-  async function bulkPurchaseAndEnroll() {
+  function isDuplicateRunChildError(err) {
+  const code = String(err?.code ?? "");
+  const msg = String(err?.message ?? err ?? "");
+  // Postgres unique violation is 23505
+  if (code === "23505") return true;
+  return msg.includes("uq_run_child") || msg.includes("duplicate key");
+}
+
+async function bulkPurchaseAndEnroll() {
     if (!summary) return;
     if (bulkSelectedCount === 0) {
       toast("Select children first.", "warn");
@@ -963,26 +1025,97 @@ async function purchaseAndEnrollSingle() {
     setError(null);
 
     try {
+      // Build a quick lookup for existing run enrollment status per child
+      const statusByChild = new Map();
+      for (const p of participants || []) {
+        const cid = Number(p.child_id);
+        if (!Number.isFinite(cid)) continue;
+        statusByChild.set(cid, p.enrollment_status);
+      }
+
+      let added = 0;
+      let reactivated = 0;
+      let skipped = 0;
+      let failed = 0;
+
       for (const childId of bulkSelectedIds) {
+        const cid = Number(childId);
+        if (!Number.isFinite(cid)) continue;
+
+        // compute price per child
         let priceNum = 0;
         if (bulkPriceMode === "unified") {
           priceNum = bulkUnifiedPrice === "" ? 0 : Number(bulkUnifiedPrice);
         } else {
-          const v = bulkPerChildPrice[childId];
+          const v = bulkPerChildPrice[cid];
           priceNum = v === undefined || v === null || v === "" ? 0 : Number(v);
         }
+        priceNum = Number.isFinite(priceNum) ? priceNum : 0;
 
+        const existingStatus = statusByChild.get(cid);
+
+        // Already enrolled (active/pending/etc) -> skip silently (avoid uq_run_child)
+        if (existingStatus && existingStatus !== "withdrawn") {
+          skipped += 1;
+          continue;
+        }
+
+        // Withdrawn -> reactivate instead of inserting a new row
+        if (existingStatus === "withdrawn") {
+          const ok = await reactivateWithdrawnEnrollmentBulk(cid, sessionsToBuy, priceNum);
+          if (ok) {
+            reactivated += 1;
+          } else {
+            failed += 1;
+          }
+          continue;
+        }
+
+        // Not enrolled -> attempt normal purchase+enroll
         const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
           p_run_id: Number(runId),
-          p_child_id: Number(childId),
+          p_child_id: cid,
           p_sessions: sessionsToBuy,
-          p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
+          p_price_total: priceNum,
         });
 
-        if (rpc2.error) throw rpc2.error;
+        if (rpc2.error) {
+          // If we raced with another request, handle duplicate gracefully
+          if (isDuplicateRunChildError(rpc2.error)) {
+            // Try to reactivate if it was withdrawn, otherwise skip
+            const ok = await reactivateWithdrawnEnrollmentBulk(cid, sessionsToBuy, priceNum);
+            if (ok) reactivated += 1;
+            else skipped += 1;
+          } else {
+            failed += 1;
+            // Keep the first error for debugging
+            setError((prev) => prev || rpc2.error);
+          }
+          continue;
+        }
+
+        added += 1;
       }
 
-      toast(`Enrolled ${bulkSelectedCount} children.`, "ok");
+      // Refresh run state
+      await loadFixed();
+      setTab("participants");
+
+      // Toast summary
+      if (failed > 0) {
+        toast(
+          `Bulk enroll finished: added ${added}, reactivated ${reactivated}, skipped ${skipped}, failed ${failed}.`,
+          "danger",
+        );
+        // keep modal open so user can retry / adjust selections
+        return;
+      }
+
+      const level = skipped > 0 ? "warn" : "ok";
+      toast(
+        `Bulk enroll finished: added ${added}, reactivated ${reactivated}, skipped ${skipped}.`,
+        level,
+      );
 
       setOpenBulk(false);
       setBulkQ("");
@@ -991,9 +1124,6 @@ async function purchaseAndEnrollSingle() {
       setBulkPriceMode("unified");
       setBulkUnifiedPrice(String(defaultPrice));
       setBulkPerChildPrice({});
-
-      await loadFixed();
-      setTab("participants");
     } catch (e) {
       setError(e);
       toast("Bulk enroll failed.", "danger");
