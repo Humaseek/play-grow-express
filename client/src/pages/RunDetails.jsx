@@ -257,7 +257,7 @@ mother_name: "",
 
   // Sessions generator
   const [firstStart, setFirstStart] = useState("");
-  const [durationMinutes, setDurationMinutes] = useState(60);
+  const [durationMinutes, setDurationMinutesutes] = useState(60);
   const [count, setCount] = useState(8);
   const [intervalDays, setIntervalDays] = useState(7);
   const [genLoading, setGenLoading] = useState(false);
@@ -2126,8 +2126,8 @@ async function bulkPurchaseAndEnroll() {
                       className="input"
                       type="number"
                       min="1"
-                      value={durationMin}
-                      onChange={(e) => setDurationMin(e.target.value)}
+                      value={durationMinutes}
+                      onChange={(e) => setDurationMinutes(e.target.value)}
                     />
                   </div>
 
