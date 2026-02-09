@@ -147,9 +147,11 @@ export default function RunDetails() {
   const [error, setError] = useState(null);
 
   // Filters
+  const [q, setQ] = useState("");
+  // Child list search (header section)
   const [childSearch, setChildSearch] = useState("");
-  const [childStatusFilter, setChildStatusFilter] = useState("all"); // all | active | inactive
-  const [childSort, setChildSort] = useState("balance_desc"); // balance_desc | balance_asc | name_asc | name_desc
+  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("balance_desc");
 
   // Enroll modal (single)
   const [openEnroll, setOpenEnroll] = useState(false);
@@ -177,12 +179,6 @@ export default function RunDetails() {
   });
   const [newChildSaving, setNewChildSaving] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
-
-  // Quick action: open 'Create Child' modal and auto-enroll into this run
-  const openCreateEnroll = () => {
-    setNewChildEnrollNow(true);
-    setOpenNewChild(true);
-  };
 
   // Package info + mode
   const [pkgInfo, setPkgInfo] = useState(null);
@@ -521,44 +517,21 @@ export default function RunDetails() {
 
   const participantsFiltered = useMemo(() => {
     let list = [...participants];
+    const s = q.trim().toLowerCase();
+    if (s)
+      list = list.filter((p) => (p.child_name ?? "").toLowerCase().includes(s));
+    if (paymentFilter !== "all")
+      list = list.filter((p) => p.payment_status === paymentFilter);
 
-    const s = childSearch.trim().toLowerCase();
-    if (s) {
-      list = list.filter((p) =>
-        String(p.child_name ?? "")
-          .toLowerCase()
-          .includes(s),
-      );
-    }
-
-    if (childStatusFilter === "active") {
-      list = list.filter((p) => p.enrollment_status === "active");
-    } else if (childStatusFilter === "inactive") {
-      list = list.filter((p) => p.enrollment_status !== "active");
-    }
-
-    if (childSort === "balance_desc") {
+    if (sortBy === "balance_desc") {
       list.sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
-    } else if (childSort === "balance_asc") {
-      list.sort((a, b) => Number(a.balance || 0) - Number(b.balance || 0));
-    } else if (childSort === "name_asc") {
+    } else if (sortBy === "name_asc") {
       list.sort((a, b) =>
-        String(a.child_name ?? "").localeCompare(
-          String(b.child_name ?? ""),
-          "en",
-        ),
-      );
-    } else if (childSort === "name_desc") {
-      list.sort((a, b) =>
-        String(b.child_name ?? "").localeCompare(
-          String(a.child_name ?? ""),
-          "en",
-        ),
+        String(a.child_name).localeCompare(String(b.child_name), "en"),
       );
     }
-
     return list;
-  }, [participants, childSearch, childStatusFilter, childSort]);
+  }, [participants, q, paymentFilter, sortBy]);
 
   // ✅ Child: children
   const manageChild = useMemo(() => {
@@ -1436,73 +1409,117 @@ export default function RunDetails() {
                 className="pControls"
                 style={{
                   display: "flex",
+                  flexDirection: "column",
                   gap: 10,
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  flex: "1 1 720px",
+                  flex: "1 1 640px",
                   minWidth: 320,
                 }}
               >
-                {/* Search */}
                 <div
-                  className="inputWithIcon"
-                  style={{ flex: "1 1 320px", minWidth: 240 }}
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
                 >
-                  <Search size={16} />
-                  <input
+                  <div
+                    className="inputWithIcon"
+                    style={{ flex: "1 1 320px", minWidth: 240 }}
+                  >
+                    <Search size={16} />
+                    <input
+                      className="input"
+                      value={childSearch}
+                      onChange={(e) => setChildSearch(e.target.value)}
+                      placeholder="Search Child..."
+                      style={{ width: "100%" }}
+                    />
+                  </div>
+
+                  <select
                     className="input"
-                    value={childSearch}
-                    onChange={(e) => setChildSearch(e.target.value)}
-                    placeholder="Search Child..."
-                    style={{ width: "100%" }}
-                  />
+                    value={childStatusFilter}
+                    onChange={(e) => setChildStatusFilter(e.target.value)}
+                    style={{ flex: "0 0 170px" }}
+                  >
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+
+                  <select
+                    className="input"
+                    value={childSort}
+                    onChange={(e) => setChildSort(e.target.value)}
+                    style={{ flex: "0 0 210px" }}
+                  >
+                    <option value="balance_desc">Balance: high to low</option>
+                    <option value="balance_asc">Balance: low to high</option>
+                    <option value="name_asc">Name: A to Z</option>
+                    <option value="name_desc">Name: Z to A</option>
+                  </select>
                 </div>
 
-                {/* Status */}
-                <select
-                  className="input"
-                  value={childStatusFilter}
-                  onChange={(e) => setChildStatusFilter(e.target.value)}
-                  style={{ flex: "0 0 170px" }}
-                  aria-label="Status filter"
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-end",
+                  }}
                 >
-                  <option value="all">All</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setEnrollLocked(false);
+                      setEnrollLockedName("");
+                      setSelectedChildId("");
+                      setEnrollMode("buy_new");
+                      setBuySessions(8);
+                      setBuyPriceEditMode("total");
+                      setBuyUnitPrice("");
+                      setBuyPriceTotal(String(defaultPrice ?? ""));
+                      setOpenEnroll(true);
+                    }}
+                  >
+                    + Add child
+                  </button>
 
-                {/* Sort */}
-                <select
-                  className="input"
-                  value={childSort}
-                  onChange={(e) => setChildSort(e.target.value)}
-                  style={{ flex: "0 0 210px" }}
-                  aria-label="Sort"
-                >
-                  <option value="balance_desc">Balance: high to low</option>
-                  <option value="balance_asc">Balance: low to high</option>
-                  <option value="name_asc">Name: A to Z</option>
-                  <option value="name_desc">Name: Z to A</option>
-                </select>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={openBulkModal}
+                    disabled={availableChildren.length === 0}
+                    title={
+                      availableChildren.length === 0
+                        ? "No available children to enroll."
+                        : ""
+                    }
+                  >
+                    + Add multiple
+                  </button>
 
-                {/* Actions (push to the end when there's space) */}
-                <div style={{ flex: "1 1 120px" }} />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setNewChildEnrollNow(false);
+                      setOpenNewChild(true);
+                    }}
+                  >
+                    + Create child
+                  </button>
 
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => setCreateChildOpen(true)}
-                >
-                  + New child...
-                </button>
-
-                <button
-                  type="button"
-                  className="btn primary"
-                  onClick={openCreateEnroll}
-                >
-                  <Plus size={16} /> Create &amp; Enroll
-                </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={openCreateEnroll}
+                  >
+                    <Plus size={16} /> Create &amp; Enroll
+                  </button>
+                </div>
               </div>
             </div>
 
