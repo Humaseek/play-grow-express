@@ -529,8 +529,8 @@ export default function RunDetails() {
     // only treat ACTIVE enrollments as "enrolled".
     const enrolledActive = new Set(
       participants
-        .filter((p) => p.enrollment_status !== "withdrawn")
-        .map((p) => p.child_id),
+        .filter((p) => p.enrollment_status === "active")
+        .map((p) => Number(p.child_id)),
     );
     return children.filter((c) => !enrolledActive.has(c.id));
   }, [children, participants]);
@@ -749,11 +749,8 @@ async function reactivateWithdrawnEnrollment(childId) {
   );
   if (!existing) return false;
 
-  const sessionsToBuy = Number(buySessions);
-  if (!Number.isFinite(sessionsToBuy) || sessionsToBuy <= 0) {
-    toast("Sessions must be greater than 0.", "warn");
-    return true; // handled, but nothing to do
-  }
+  const sessionsToBuyRaw = Number(buySessions);
+  const sessionsToBuy = Number.isFinite(sessionsToBuyRaw) ? sessionsToBuyRaw : 0;
 
   try {
     setError(null);
@@ -765,28 +762,36 @@ async function reactivateWithdrawnEnrollment(childId) {
       .eq("id", existing.enrollment_id);
     if (upd.error) throw upd.error;
 
-    // 2) Re-open package (if exists) and add sessions back
+    // 2) Re-open package (if exists) and (optionally) add sessions back
     if (existing.package_id) {
       await supabase
         .from("course_packages")
         .update({ status: "active" })
         .eq("id", existing.package_id);
 
-      const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
-        p_package_id: Number(existing.package_id),
-        p_delta: Number(sessionsToBuy),
-      });
-      if (rpcPkg.error) throw rpcPkg.error;
+      if (sessionsToBuy > 0) {
+        const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+          p_package_id: Number(existing.package_id),
+          p_delta: Number(sessionsToBuy),
+        });
+        if (rpcPkg.error) throw rpcPkg.error;
+      }
     }
 
     // 3) Allocate sessions for this enrollment (so run balance matches)
-    const rpcEnroll = await supabase.rpc("adjust_enrollment_allocated_sessions", {
-      p_enrollment_id: Number(existing.enrollment_id),
-      p_delta: Number(sessionsToBuy),
-    });
-    if (rpcEnroll.error) throw rpcEnroll.error;
-
-    toast("Child re-enrolled successfully.", "ok");
+    if (sessionsToBuy > 0) {
+      const rpcEnroll = await supabase.rpc(
+        "adjust_enrollment_allocated_sessions",
+        {
+          p_enrollment_id: Number(existing.enrollment_id),
+          p_delta: Number(sessionsToBuy),
+        },
+      );
+      if (rpcEnroll.error) throw rpcEnroll.error;
+      toast("Child re-enrolled successfully.", "ok");
+    } else {
+      toast("Enrollment re-activated. Add sessions then click Save.", "ok");
+    }
     setOpenEnroll(false);
     await loadFixed();
     setTab("participants");
@@ -825,6 +830,14 @@ async function purchaseAndEnrollSingle() {
         });
 
         if (rpc.error) {
+          const msg = String(rpc.error?.message || rpc.error || "");
+          // If the child has a withdrawn enrollment, we can't insert a new row
+          // due to uq_run_child. Reactivate instead.
+          if (msg.includes("uq_run_child") || msg.includes("duplicate key")) {
+            await reactivateWithdrawnEnrollment(selectedChildId);
+            return;
+          }
+
           toast("No remaining sessions found for this child.", "warn");
           setError(rpc.error);
           return;
