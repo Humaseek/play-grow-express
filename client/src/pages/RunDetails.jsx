@@ -525,8 +525,14 @@ export default function RunDetails() {
   }, [participants]);
 
   const availableChildren = useMemo(() => {
-    const enrolled = new Set(participants.map((p) => p.child_id));
-    return children.filter((c) => !enrolled.has(c.id));
+    // Allow re-enrolling kids that were previously withdrawn from this run:
+    // only treat ACTIVE enrollments as "enrolled".
+    const enrolledActive = new Set(
+      participants
+        .filter((p) => p.enrollment_status !== "withdrawn")
+        .map((p) => p.child_id),
+    );
+    return children.filter((c) => !enrolledActive.has(c.id));
   }, [children, participants]);
 
   const participantsFiltered = useMemo(() => {
@@ -731,7 +737,68 @@ export default function RunDetails() {
     setBulkPerChildPrice({});
   }
 
-  async function purchaseAndEnrollSingle() {
+  
+async function reactivateWithdrawnEnrollment(childId) {
+  // If the child was previously removed (withdrawn) from this run,
+  // we "reactivate" the same enrollment + package (unique constraint),
+  // and add sessions again.
+  const existing = participants.find(
+    (p) =>
+      Number(p.child_id) === Number(childId) &&
+      p.enrollment_status === "withdrawn",
+  );
+  if (!existing) return false;
+
+  const sessionsToBuy = Number(buySessions);
+  if (!Number.isFinite(sessionsToBuy) || sessionsToBuy <= 0) {
+    toast("Sessions must be greater than 0.", "warn");
+    return true; // handled, but nothing to do
+  }
+
+  try {
+    setError(null);
+
+    // 1) Reactivate enrollment
+    const upd = await supabase
+      .from("enrollments")
+      .update({ status: "active" })
+      .eq("id", existing.enrollment_id);
+    if (upd.error) throw upd.error;
+
+    // 2) Re-open package (if exists) and add sessions back
+    if (existing.package_id) {
+      await supabase
+        .from("course_packages")
+        .update({ status: "active" })
+        .eq("id", existing.package_id);
+
+      const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+        p_package_id: Number(existing.package_id),
+        p_delta: Number(sessionsToBuy),
+      });
+      if (rpcPkg.error) throw rpcPkg.error;
+    }
+
+    // 3) Allocate sessions for this enrollment (so run balance matches)
+    const rpcEnroll = await supabase.rpc("adjust_enrollment_allocated_sessions", {
+      p_enrollment_id: Number(existing.enrollment_id),
+      p_delta: Number(sessionsToBuy),
+    });
+    if (rpcEnroll.error) throw rpcEnroll.error;
+
+    toast("Child re-enrolled successfully.", "ok");
+    setOpenEnroll(false);
+    await loadFixed();
+    setTab("participants");
+    return true;
+  } catch (e) {
+    setError(e);
+    toast("Failed to re-enroll child.", "danger");
+    return true;
+  }
+}
+
+async function purchaseAndEnrollSingle() {
     if (!summary) return;
     if (!selectedChildId) {
       toast("Select a child.", "warn");
@@ -770,23 +837,34 @@ export default function RunDetails() {
         }
       }
       // buy_new
+      // If previously removed (withdrawn), re-activate instead of inserting a new enrollment.
+      const handled = await reactivateWithdrawnEnrollment(selectedChildId);
+      if (handled) return;
+
       await purchaseAndEnrollSpecificChild(selectedChildId);
     } catch (e) {
       const msg = String(e?.message || e || "");
       // ✅
       if (msg.includes("uq_run_child") || msg.includes("duplicate key value")) {
-        toast("This child is already enrolled in this run.", "warn");
+  const existing = participants.find(
+    (x) => Number(x.child_id) === Number(selectedChildId),
+  );
 
-        // ( participants)
-        const existing = participants.find(
-          (x) => Number(x.child_id) === Number(selectedChildId),
-        );
-        if (existing) {
-          setOpenEnroll(false);
-          openManageFor(existing);
-          return;
-        }
-      }
+  // ✅ If the existing enrollment is withdrawn, allow re-enroll
+  if (existing?.enrollment_status === "withdrawn") {
+    // Re-open the same enrollment/package and add sessions
+    await reactivateWithdrawnEnrollment(selectedChildId);
+    return;
+  }
+
+  toast("This child is already enrolled in this run.", "warn");
+
+  if (existing) {
+    setOpenEnroll(false);
+    openManageFor(existing);
+    return;
+  }
+}
 
       setError(e);
       toast("Operation failed.", "danger");
