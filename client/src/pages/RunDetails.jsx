@@ -43,6 +43,13 @@ function fmtDT(dt) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function fmtDate(dt) {
+  if (!dt) return "-";
+  const d = new Date(dt);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 function fmtTimeHM(dt) {
   if (!dt) return "-";
   const d = new Date(dt);
@@ -2092,17 +2099,18 @@ async function bulkPurchaseAndEnroll() {
         {/* ===================== SESSIONS ===================== */}
         {tab === "sessions" && (
           <div className="grid">
+            {/* LEFT: generator + quick add */}
             <div className="card" style={{ gridColumn: "span 5" }}>
               <div className="h1">Sessions</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Weekly: every {intervalDays} days (editable).
+                Set the recurrence, then generate a session list. Times are in your local timezone.
               </div>
 
               <hr className="sep" />
 
-              <div style={{ display: "grid", gap: 10 }}>
-                <div>
-                  <div className="muted"> First session (date/time)</div>
+              <div style={{ display: "grid", gap: 12 }}>
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="muted">First session (date/time)</div>
                   <input
                     className="input"
                     type="datetime-local"
@@ -2111,18 +2119,19 @@ async function bulkPurchaseAndEnroll() {
                   />
                 </div>
 
-                <div className="row">
-                  <div style={{ flex: 1 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ display: "grid", gap: 6 }}>
                     <div className="muted">Duration (minutes)</div>
                     <input
                       className="input"
                       type="number"
-                      min="15"
-                      value={durationMinutes}
-                      onChange={(e) => setDurationMinutes(e.target.value)}
+                      min="1"
+                      value={durationMin}
+                      onChange={(e) => setDurationMin(e.target.value)}
                     />
                   </div>
-                  <div style={{ flex: 1 }}>
+
+                  <div style={{ display: "grid", gap: 6 }}>
                     <div className="muted">Number of sessions</div>
                     <input
                       className="input"
@@ -2134,8 +2143,8 @@ async function bulkPurchaseAndEnroll() {
                   </div>
                 </div>
 
-                <div>
-                  <div className="muted">Every how many days?</div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="muted">Repeat every (days)</div>
                   <input
                     className="input"
                     type="number"
@@ -2143,11 +2152,15 @@ async function bulkPurchaseAndEnroll() {
                     value={intervalDays}
                     onChange={(e) => setIntervalDays(e.target.value)}
                   />
+                  <div className="muted" style={{ marginTop: -2 }}>
+                    Current schedule: every <b>{intervalDays}</b> days
+                  </div>
                 </div>
 
                 <button
                   type="button"
                   className="btn primary"
+                  style={{ width: "100%" }}
                   disabled={genLoading || !firstStart}
                   onClick={generateSessions}
                 >
@@ -2159,88 +2172,120 @@ async function bulkPurchaseAndEnroll() {
                 <button
                   type="button"
                   className="btn"
-                  onClick={openCreateSession}
+                  style={{ width: "100%" }}
+                  onClick={openNewSession}
                 >
-                  + Add session
+                  <Plus size={16} className="ico" /> Add single session
                 </button>
               </div>
             </div>
 
+            {/* RIGHT: list */}
             <div className="card" style={{ gridColumn: "span 7" }}>
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Manage sessions for this run. Create, edit, or delete sessions
-                as needed.
+                Manage sessions for this run. Edit times, mark done/cancelled, or delete.
               </div>
 
               <hr className="sep" />
 
-              {sessions.length === 0 ? (
-                <div className="muted">No items found.</div>
+              {!sessions?.length ? (
+                <div className="muted">No sessions yet.</div>
               ) : (
                 <table className="table">
                   <thead>
                     <tr>
-                      <th style={{ width: 220 }}>Time</th>
-                      <th style={{ width: 120 }}>Status</th>
-                      <th style={{ width: 220 }}>Actions</th>
+                      <th style={{ width: 220 }}>Date</th>
+                      <th style={{ width: 180 }}>Time</th>
+                      <th style={{ width: 140 }}>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sessions.map((s) => (
-                      <tr key={s.id}>
-                        <td>
-                          {fmtDT(s.start_at)} → {fmtDT(s.end_at)}
-                        </td>
-                        <td className="muted">{s.status}</td>
-                        <td>
-                          <div className="topActions">
-                            <button
-                              type="button"
-                              className="btn primary"
-                              onClick={() =>
-                                navigate(`/sessions/${s.id}/attendance`)
-                              }
-                            ></button>
-                            <button
-                              type="button"
-                              className="btn"
-                              onClick={() => openEditSession(s)}
-                            >
-                              <Pencil size={16} className="ico" /> Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="btn"
-                              onClick={() => setSessionStatus(s.id, "done")}
-                            >
-                              <CheckCircle2 size={16} className="ico" />
-                            </button>
-                            <button
-                              type="button"
-                              className="btn danger"
-                              onClick={() => setSessionStatus(s.id, "canceled")}
-                            >
-                              <XCircle size={16} className="ico" /> Cancel
-                            </button>
-                            <button
-                              type="button"
-                              className="btn danger"
-                              onClick={() =>
-                                setConfirm({
-                                  open: true,
-                                  type: "deleteSession",
-                                  id: s.id,
-                                  text: "Delete session",
-                                })
-                              }
-                            >
-                              <Trash2 size={16} className="ico" /> Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {sessions.map((s) => {
+                      const isDone = s.status === "done";
+                      const isCancelled = s.status === "cancelled";
+                      return (
+                        <tr key={s.id}>
+                          <td>
+                            <div style={{ fontWeight: 600 }}>{fmtDate(s.start_at)}</div>
+                            <div className="muted">{fmtWeekday(s.start_at)}</div>
+                          </td>
+                          <td>
+                            <div>
+                              {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
+                            </div>
+                            <div className="muted">{fmtDT(s.start_at)}</div>
+                          </td>
+                          <td>
+                            <span style={{ display: "inline-flex", alignItems: "center", padding: "4px 10px", borderRadius: 999, border: "1px solid rgba(0,0,0,0.12)", fontSize: 12, textTransform: "capitalize" }}>{s.status}</span>
+                          </td>
+                          <td>
+                            <div className="topActions" style={{ flexWrap: "wrap", gap: 8 }}>
+                              <button
+                                type="button"
+                                className="btn primary"
+                                onClick={() => navigate(`/sessions/${s.id}/attendance`)}
+                              >
+                                <Settings2 size={16} className="ico" /> Manage
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={() => openEditSession(s)}
+                              >
+                                <Pencil size={16} className="ico" /> Edit
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={() =>
+                                  setSessionStatus(s.id, isDone ? "scheduled" : "done")
+                                }
+                              >
+                                {isDone ? (
+                                  <>
+                                    <XCircle size={16} className="ico" /> Reopen
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 size={16} className="ico" /> Mark done
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn danger"
+                                onClick={() =>
+                                  setSessionStatus(s.id, isCancelled ? "scheduled" : "cancelled")
+                                }
+                              >
+                                {isCancelled ? (
+                                  <>
+                                    <CheckCircle2 size={16} className="ico" /> Restore
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircle size={16} className="ico" /> Cancel
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn danger"
+                                onClick={() => deleteSession(s.id)}
+                              >
+                                <Trash2 size={16} className="ico" /> Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
