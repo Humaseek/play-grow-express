@@ -778,8 +778,8 @@ export default function RunDetails() {
   
 async function reactivateWithdrawnEnrollment(childId) {
   // If the child was previously removed (withdrawn) from this run,
-  // we "reactivate" the same enrollment + package (unique constraint),
-  // and add sessions again.
+  // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
+  // but we still allow setting a NEW price and "fresh" add-sessions inputs.
   const existing = participants.find(
     (p) =>
       Number(p.child_id) === Number(childId) &&
@@ -789,6 +789,20 @@ async function reactivateWithdrawnEnrollment(childId) {
 
   const sessionsToBuyRaw = Number(buySessions);
   const sessionsToBuy = Number.isFinite(sessionsToBuyRaw) ? sessionsToBuyRaw : 0;
+
+  const priceTotalNum = (() => {
+    const s = Number.isFinite(sessionsToBuy) && sessionsToBuy > 0
+      ? sessionsToBuy
+      : 0;
+
+    if (buyPriceEditMode === "unit") {
+      const u = buyUnitPrice === "" ? 0 : Number(buyUnitPrice);
+      return Number.isFinite(u) ? u * s : 0;
+    }
+
+    const t = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
+    return Number.isFinite(t) ? t : 0;
+  })();
 
   try {
     setError(null);
@@ -800,13 +814,15 @@ async function reactivateWithdrawnEnrollment(childId) {
       .eq("id", existing.enrollment_id);
     if (upd.error) throw upd.error;
 
-    // 2) Re-open package (if exists) and (optionally) add sessions back
+    // 2) Re-open + UPDATE package price (so re-enroll can have a NEW price)
     if (existing.package_id) {
-      await supabase
+      const pkgUpd = await supabase
         .from("course_packages")
-        .update({ status: "active" })
+        .update({ status: "active", price_total: priceTotalNum })
         .eq("id", existing.package_id);
+      if (pkgUpd.error) throw pkgUpd.error;
 
+      // Add sessions back to the package total (keeps sessions_used consistent)
       if (sessionsToBuy > 0) {
         const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
           p_package_id: Number(existing.package_id),
@@ -816,13 +832,14 @@ async function reactivateWithdrawnEnrollment(childId) {
       }
     }
 
-    // 3) Allocate sessions for this enrollment (so run balance matches)
+    // 3) Allocate sessions for THIS run enrollment (so run balance matches)
     if (sessionsToBuy > 0) {
       await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
       toast("Child re-enrolled successfully.", "ok");
     } else {
       toast("Enrollment re-activated. Add sessions then click Save.", "ok");
     }
+
     setOpenEnroll(false);
     await loadFixed();
     setTab("participants");
@@ -833,6 +850,7 @@ async function reactivateWithdrawnEnrollment(childId) {
     return true;
   }
 }
+
 
 async function purchaseAndEnrollSingle() {
     if (!summary) return;
