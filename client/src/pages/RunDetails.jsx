@@ -171,7 +171,6 @@ export default function RunDetails() {
     name: "",
     birth_date: "",
     class: "",
-    country: "",
     gender: "male",
     mother_name: "",
     mother_phone: "",
@@ -275,7 +274,7 @@ export default function RunDetails() {
     const tryView = await supabase
       .from("children_view")
       .select(
-        "id,name,age,class,gender,country,mother_name,mother_phone,father_name,father_phone,birth_date",
+        "id,name,age,class,gender,mother_name,mother_phone,father_name,father_phone,birth_date",
       )
       .order("name", { ascending: true });
 
@@ -284,7 +283,7 @@ export default function RunDetails() {
     const tryTable = await supabase
       .from("children")
       .select(
-        "id,name,birth_date,class,gender,country,mother_name,mother_phone,father_name,father_phone",
+        "id,name,birth_date,class,gender,mother_name,mother_phone,father_name,father_phone",
       )
       .order("name", { ascending: true });
 
@@ -312,7 +311,6 @@ export default function RunDetails() {
         name,
         birth_date: birth,
         class: (newChildForm.class || "").trim() || null,
-        country: (newChildForm.country || "").trim() || null,
         gender: newChildForm.gender || "male",
         mother_name: (newChildForm.mother_name || "").trim() || null,
         mother_phone: (newChildForm.mother_phone || "").trim() || null,
@@ -350,8 +348,7 @@ export default function RunDetails() {
         name: "",
         birth_date: "",
         class: "",
-        country: "",
-        gender: "male",
+            gender: "male",
         mother_name: "",
         mother_phone: "",
         father_name: "",
@@ -2890,9 +2887,9 @@ async function bulkPurchaseAndEnroll() {
               <div className="muted">City</div>
               <input
                 className="input"
-                value={newChildForm.country}
+                value={newChildForm.city}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, country: e.target.value }))
+                  setNewChildForm((p) => ({ ...p, city: e.target.value }))
                 }
                 placeholder="e.g. Tayibe"
               />
