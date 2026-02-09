@@ -374,7 +374,7 @@ export default function Today() {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={Sparkles}
-                label="Active Runs"
+                label="Active Courses"
                 value={activeStats.runsCount}
                 hint={
                   activeStats.next
@@ -390,7 +390,7 @@ export default function Today() {
                 icon={CalendarDays}
                 label="Upcoming Sessions"
                 value={activeStats.upcomingSum}
-                hint="Total number of future sessions across all active runs"
+                hint=""
                 variant={activeStats.upcomingSum === 0 ? "neutral" : "info"}
               />
             </div>
@@ -400,7 +400,7 @@ export default function Today() {
                 icon={ClipboardList}
                 label="Active Participants"
                 value={activeStats.participantsSum}
-                hint="Total participants across active runs"
+                hint=""
                 variant={activeStats.participantsSum === 0 ? "neutral" : "ok"}
               />
             </div>
@@ -412,7 +412,7 @@ export default function Today() {
             <EmptyState
               icon={Sparkles}
               title="No active courses"
-              description="To show courses here: create a Run and add future sessions. Runs are ordered automatically by the next session."
+              description=""
               actionLabel="Go to Courses"
               onAction={() => navigate("/courses")}
             />
