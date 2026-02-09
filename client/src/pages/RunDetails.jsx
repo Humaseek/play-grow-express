@@ -737,6 +737,44 @@ export default function RunDetails() {
     setBulkPerChildPrice({});
   }
 
+  // Some environments don't have the RPC `adjust_enrollment_allocated_sessions`.
+  // We try RPC first, and if it's missing we fall back to a direct update.
+  async function bumpEnrollmentAllocated(enrollmentId, delta) {
+    const id = Number(enrollmentId);
+    const d = Number(delta);
+    if (!Number.isFinite(id) || !Number.isFinite(d) || d === 0) return;
+
+    // 1) Try RPC (if exists)
+    const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
+      p_enrollment_id: id,
+      p_delta: d,
+    });
+
+    if (!rpc.error) return;
+
+    const msg = String(rpc.error?.message ?? "");
+    const missingFn = msg.includes("Could not find the function") ||
+      msg.includes("schema cache");
+    if (!missingFn) throw rpc.error;
+
+    // 2) Fallback: read + write sessions_allocated directly
+    const cur = await supabase
+      .from("enrollments")
+      .select("id,sessions_allocated")
+      .eq("id", id)
+      .single();
+    if (cur.error) throw cur.error;
+
+    const now = Number(cur.data?.sessions_allocated ?? 0);
+    const next = Math.max(0, now + d);
+
+    const upd = await supabase
+      .from("enrollments")
+      .update({ sessions_allocated: next })
+      .eq("id", id);
+    if (upd.error) throw upd.error;
+  }
+
   
 async function reactivateWithdrawnEnrollment(childId) {
   // If the child was previously removed (withdrawn) from this run,
@@ -780,14 +818,7 @@ async function reactivateWithdrawnEnrollment(childId) {
 
     // 3) Allocate sessions for this enrollment (so run balance matches)
     if (sessionsToBuy > 0) {
-      const rpcEnroll = await supabase.rpc(
-        "adjust_enrollment_allocated_sessions",
-        {
-          p_enrollment_id: Number(existing.enrollment_id),
-          p_delta: Number(sessionsToBuy),
-        },
-      );
-      if (rpcEnroll.error) throw rpcEnroll.error;
+      await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
       toast("Child re-enrolled successfully.", "ok");
     } else {
       toast("Enrollment re-activated. Add sessions then click Save.", "ok");
@@ -1307,11 +1338,8 @@ async function purchaseAndEnrollSingle() {
 
     try {
       if (Number(adjNewAllocated) !== Number(adjAllocatedNow)) {
-        const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
-          p_enrollment_id: Number(adjEnrollmentId),
-          p_new_allocated: Number(adjNewAllocated),
-        });
-        if (rpc.error) throw rpc.error;
+        const delta = Number(adjNewAllocated) - Number(adjAllocatedNow);
+        await bumpEnrollmentAllocated(adjEnrollmentId, delta);
       }
 
       if (adjPackageId && Number(adjPkgDelta) !== 0) {
