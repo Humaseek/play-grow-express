@@ -147,11 +147,10 @@ export default function RunDetails() {
   const [error, setError] = useState(null);
 
   // Filters
-  const [q, setQ] = useState("");
-  // Child list search (header section)
   const [childSearch, setChildSearch] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("balance_desc");
+  const [childStatusFilter, setChildStatusFilter] = useState("all"); // all | active | inactive
+  const [childSort, setChildSort] = useState("balance_desc"); // balance_desc | balance_asc | name_asc | name_desc
+
 
   // Enroll modal (single)
   const [openEnroll, setOpenEnroll] = useState(false);
@@ -517,21 +516,36 @@ export default function RunDetails() {
 
   const participantsFiltered = useMemo(() => {
     let list = [...participants];
-    const s = q.trim().toLowerCase();
-    if (s)
-      list = list.filter((p) => (p.child_name ?? "").toLowerCase().includes(s));
-    if (paymentFilter !== "all")
-      list = list.filter((p) => p.payment_status === paymentFilter);
 
-    if (sortBy === "balance_desc") {
-      list.sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
-    } else if (sortBy === "name_asc") {
-      list.sort((a, b) =>
-        String(a.child_name).localeCompare(String(b.child_name), "en"),
+    const s = childSearch.trim().toLowerCase();
+    if (s) {
+      list = list.filter((p) =>
+        String(p.child_name ?? "").toLowerCase().includes(s),
       );
     }
+
+    if (childStatusFilter === "active") {
+      list = list.filter((p) => p.enrollment_status === "active");
+    } else if (childStatusFilter === "inactive") {
+      list = list.filter((p) => p.enrollment_status !== "active");
+    }
+
+    if (childSort === "balance_desc") {
+      list.sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
+    } else if (childSort === "balance_asc") {
+      list.sort((a, b) => Number(a.balance || 0) - Number(b.balance || 0));
+    } else if (childSort === "name_asc") {
+      list.sort((a, b) =>
+        String(a.child_name ?? "").localeCompare(String(b.child_name ?? ""), "en"),
+      );
+    } else if (childSort === "name_desc") {
+      list.sort((a, b) =>
+        String(b.child_name ?? "").localeCompare(String(a.child_name ?? ""), "en"),
+      );
+    }
+
     return list;
-  }, [participants, q, paymentFilter, sortBy]);
+  }, [participants, childSearch, childStatusFilter, childSort]);
 
   // ✅ Child: children
   const manageChild = useMemo(() => {
