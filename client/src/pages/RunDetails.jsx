@@ -1992,76 +1992,152 @@ export default function RunDetails() {
         {/* ✅ Child */}
         <Modal
           open={openManage}
-          title={manageP ? ` — ${manageP.child_name}` : ""}
+          title={manageP ? `Manage — ${manageP.child_name}` : "Manage"}
           onClose={() => setOpenManage(false)}
         >
           {!manageP ? (
-            <div className="card">—</div>
+            <div className="muted">—</div>
           ) : (
             <div className="grid">
+              {/* Summary */}
               <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontSize: 18, fontWeight: 900 }}>
-                  {manageP.child_name}{" "}
-                  <span className="muted" style={{ fontWeight: 700 }}>
-                    — {manageP.class ?? "-"} — : {manageP.age ?? "-"}
-                  </span>
+                <div
+                  className="row"
+                  style={{
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 900 }}>
+                      {manageP.child_name}{" "}
+                      <span className="muted" style={{ fontWeight: 700 }}>
+                        — {manageP.class ?? "-"} — Age: {manageP.age ?? "-"}
+                      </span>
+                    </div>
+
+                    <div
+                      className="row"
+                      style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}
+                    >
+                      {badgePayment(manageP.payment_status)}
+                      {manageP.enrollment_status === "active" ? (
+                        <Badge variant="ok">Active</Badge>
+                      ) : (
+                        <Badge variant="warn">Inactive</Badge>
+                      )}
+                      {manageP.is_free ? (
+                        <Badge variant="info">Free</Badge>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="row" style={{ gap: 18, flexWrap: "wrap" }}>
+                    <div>
+                      <div className="muted">Agreed</div>
+                      <div style={{ fontWeight: 900 }} dir="ltr">
+                        {fmtILS(manageP.agreed_price || 0)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="muted">Paid</div>
+                      <div style={{ fontWeight: 900 }} dir="ltr">
+                        {fmtILS(manageP.paid_amount || 0)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="muted">Balance</div>
+                      <div style={{ fontWeight: 900 }} dir="ltr">
+                        {fmtILS(manageP.balance || 0)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="muted" style={{ marginTop: 8 }}>
-                  : {badgePayment(manageP.payment_status)} — :{" "}
-                  <b>{Number(manageP.agreed_price || 0).toFixed(2)}</b> — Paid:{" "}
-                  <b>{Number(manageP.paid_amount || 0).toFixed(2)}</b> — :{" "}
-                  <b>{Number(manageP.balance || 0).toFixed(2)}</b>
-                </div>
+                <hr className="sep" />
 
-                <div className="muted" style={{ marginTop: 8 }}>
-                  <Ticket size={14} className="ico" />{" "}
-                  <span style={{ opacity: 0.75 }}>Used</span>{" "}
-                  <b dir="ltr">
-                    {fmtNum(manageP.package_sessions_remaining ?? 0)}
-                  </b>{" "}
-                  <span style={{ opacity: 0.6 }}>Attend</span>
-                  <span style={{ opacity: 0.6 }}> — </span>
-                  <CheckCircle2 size={14} className="ico" />{" "}
-                  <span style={{ opacity: 0.75 }}> </span>{" "}
-                  <b dir="ltr">
-                    {fmtNum(
-                      Math.max(
-                        0,
-                        (manageP.package_sessions_total ?? 0) -
-                          (manageP.package_sessions_remaining ?? 0),
-                      ),
-                    )}
-                  </b>
-                  <span style={{ opacity: 0.6 }}> / </span>
-                  <b dir="ltr">{fmtNum(manageP.package_sessions_total ?? 0)}</b>
-                  <span style={{ opacity: 0.6 }}> — </span>
-                  <CalendarDays size={14} className="ico" />{" "}
-                  <span style={{ opacity: 0.75 }}></span>{" "}
-                  <b dir="ltr">
-                    {fmtNum(manageP.sessions_attended_in_run ?? 0)}
-                  </b>
+                <div className="row" style={{ gap: 14, flexWrap: "wrap" }}>
+                  <div className="row" style={{ gap: 8 }}>
+                    <Ticket size={14} className="ico" />
+                    <span className="muted">Total</span>
+                    <b dir="ltr">
+                      {fmtNum(manageP.package_sessions_total ?? 0)}
+                    </b>
+                  </div>
+
+                  <div className="row" style={{ gap: 8 }}>
+                    <Hourglass size={14} className="ico" />
+                    <span className="muted">Remaining</span>
+                    <b dir="ltr">
+                      {fmtNum(manageP.package_sessions_remaining ?? 0)}
+                    </b>
+                  </div>
+
+                  <div className="row" style={{ gap: 8 }}>
+                    <CheckCircle2 size={14} className="ico" />
+                    <span className="muted">Used</span>
+                    <b dir="ltr">
+                      {fmtNum(
+                        Math.max(
+                          0,
+                          (manageP.package_sessions_total ?? 0) -
+                            (manageP.package_sessions_remaining ?? 0),
+                        ),
+                      )}
+                    </b>
+                  </div>
+
+                  <div className="row" style={{ gap: 8 }}>
+                    <CalendarDays size={14} className="ico" />
+                    <span className="muted">Attended in run</span>
+                    <b dir="ltr">
+                      {fmtNum(manageP.sessions_attended_in_run ?? 0)}
+                    </b>
+                  </div>
                 </div>
               </div>
 
-              {/* Contact */}
+              {/* Contact + quick link */}
               <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontWeight: 900, marginBottom: 8 }}>
-                  Click the card to open Manage — use the buttons below for
-                  shortcuts.
+                <div
+                  className="row"
+                  style={{
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ fontWeight: 900 }}>Contact</div>
+
+                  <div className="row" style={{ gap: 10 }}>
+                    <IconButton
+                      icon={<ExternalLink size={16} className="ico" />}
+                      title="Open child profile"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/children/${manageP.child_id}`);
+                      }}
+                    />
+                  </div>
                 </div>
+
+                <hr className="sep" />
 
                 <div className="grid">
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">No results.</div>
+                    <div className="muted">Mother name</div>
                     <div style={{ fontWeight: 800 }}>
                       {manageChild?.mother_name ?? "-"}
                     </div>
                   </div>
+
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">More details inside "Manage"</div>
+                    <div className="muted">Mother phone</div>
                     <div className="row" style={{ gap: 10 }}>
-                      <div style={{ fontWeight: 800 }}>
+                      <div style={{ fontWeight: 800 }} dir="ltr">
                         {manageChild?.mother_phone ?? "-"}
                       </div>
                       {manageChild?.mother_phone ? (
@@ -2070,9 +2146,12 @@ export default function RunDetails() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.mother_phone);
-                            toast(ok ? " ." : " .", ok ? "ok" : "danger");
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
                           }}
-                          title=""
+                          title="Copy"
                         >
                           <Copy size={16} className="ico" />
                         </button>
@@ -2081,18 +2160,16 @@ export default function RunDetails() {
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">
-                      No sessions scheduled yet — open the "Sessions" tab and
-                      generate sessions.
-                    </div>
+                    <div className="muted">Father name</div>
                     <div style={{ fontWeight: 800 }}>
                       {manageChild?.father_name ?? "-"}
                     </div>
                   </div>
+
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Generate sessions</div>
+                    <div className="muted">Father phone</div>
                     <div className="row" style={{ gap: 10 }}>
-                      <div style={{ fontWeight: 800 }}>
+                      <div style={{ fontWeight: 800 }} dir="ltr">
                         {manageChild?.father_phone ?? "-"}
                       </div>
                       {manageChild?.father_phone ? (
@@ -2101,9 +2178,12 @@ export default function RunDetails() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.father_phone);
-                            toast(ok ? " ." : " .", ok ? "ok" : "danger");
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
                           }}
-                          title=""
+                          title="Copy"
                         >
                           <Copy size={16} className="ico" />
                         </button>
@@ -2111,27 +2191,11 @@ export default function RunDetails() {
                     </div>
                   </div>
                 </div>
-
-                <div style={{ marginTop: 10 }}>
-                  <IconButton
-                    icon={<ExternalLink size={16} className="ico" />}
-                    title=" Child "
-                    variant="ghost"
-                    size="sm"
-                    style={{ marginInlineStart: 8 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/children/${manageP.child_id}`);
-                    }}
-                  />
-                </div>
               </div>
 
               {/* Actions */}
               <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                  Weekly: every 7 days (editable).
-                </div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>Actions</div>
 
                 <div
                   className="row"
@@ -2143,28 +2207,7 @@ export default function RunDetails() {
                   }}
                 >
                   <div>
-                    <div className="muted">First session (date/time)</div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
-                      {fmtNum(manageP.package_sessions_total ?? 0)}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="muted">Duration (minutes)</div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
-                      {fmtNum(manageP.package_sessions_remaining ?? 0)}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="muted">Number of sessions</div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
-                      {fmtNum(manageP.sessions_attended_in_run ?? 0)}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="muted"> Unit price</div>
+                    <div className="muted">Unit price</div>
                     <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
                       {(() => {
                         const total = Number(manageP.agreed_price || 0);
@@ -2174,60 +2217,61 @@ export default function RunDetails() {
                     </div>
                   </div>
 
-                  <div className="row" style={{ gap: 10 }}>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        setOpenManage(false);
+                        setEnrollLocked(true);
+                        setEnrollLockedName(manageP.child_name);
+                        setSelectedChildId(String(manageP.child_id));
+                        setOpenEnroll(true);
+                      }}
+                      title="Add sessions"
+                    >
+                      <ShoppingCart size={16} className="ico" /> Add sessions
+                    </button>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 6,
+                        alignItems: "center",
+                        padding: 6,
+                        borderRadius: 12,
+                        border: "1px solid rgba(0,0,0,.08)",
+                        background: "rgba(0,0,0,.02)",
+                      }}
+                      title="Adjust remaining sessions"
+                    >
                       <button
                         type="button"
                         className="btn"
-                        onClick={() => {
-                          setOpenManage(false);
-                          setEnrollLocked(true);
-                          setEnrollLockedName(manageP.child_name);
-                          setSelectedChildId(String(manageP.child_id));
-                          setOpenEnroll(true);
-                        }}
+                        style={{ padding: "8px 12px" }}
+                        onClick={() => quickAdjustFromManage(-1)}
+                        title="Decrease"
                       >
-                        <ShoppingCart size={16} className="ico" />
+                        <Minus size={16} className="ico" />
                       </button>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 6,
-                          alignItems: "center",
-                          padding: 6,
-                          borderRadius: 12,
-                          border: "1px solid rgba(0,0,0,.08)",
-                          background: "rgba(0,0,0,.02)",
-                        }}
-                        title="Edit ( )"
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ padding: "8px 12px" }}
+                        onClick={() => quickAdjustFromManage(1)}
+                        title="Increase"
                       >
-                        <button
-                          type="button"
-                          className="btn"
-                          style={{ padding: "8px 12px" }}
-                          onClick={() => quickAdjustFromManage(-1)}
-                          title=" "
-                        >
-                          ➖
-                        </button>
-                        <button
-                          type="button"
-                          className="btn"
-                          style={{ padding: "8px 12px" }}
-                          onClick={() => quickAdjustFromManage(1)}
-                          title="Add "
-                        >
-                          ➕
-                        </button>
-                      </div>
+                        <Plus size={16} className="ico" />
+                      </button>
                     </div>
                   </div>
                 </div>
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Paid</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                  Payments
+                </div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   <button
                     type="button"
@@ -2237,7 +2281,9 @@ export default function RunDetails() {
                       setOpenManage(false);
                       openPaymentModalFor(manageP, "remaining");
                     }}
-                  ></button>
+                  >
+                    <CreditCard size={16} className="ico" /> Pay remaining
+                  </button>
 
                   <button
                     type="button"
@@ -2247,7 +2293,7 @@ export default function RunDetails() {
                       openPaymentModalFor(manageP, "custom");
                     }}
                   >
-                    Enroll
+                    <Receipt size={16} className="ico" /> Add payment
                   </button>
 
                   <button
@@ -2257,7 +2303,9 @@ export default function RunDetails() {
                       setOpenManage(false);
                       openPaymentHistory(manageP);
                     }}
-                  ></button>
+                  >
+                    <CalendarClock size={16} className="ico" /> History
+                  </button>
 
                   <button
                     type="button"
@@ -2270,13 +2318,15 @@ export default function RunDetails() {
                       setOpenPrice(true);
                     }}
                   >
-                    Edit
+                    <Pencil size={16} className="ico" /> Edit price
                   </button>
                 </div>
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Enroll</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                  Enrollment
+                </div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   {manageP.enrollment_status === "active" ? (
                     <button
@@ -2288,10 +2338,12 @@ export default function RunDetails() {
                           open: true,
                           type: "inactive",
                           id: manageP.enrollment_id,
-                          text: ` Enroll: ${manageP.child_name}`,
+                          text: `Deactivate enrollment: ${manageP.child_name}`,
                         });
                       }}
-                    ></button>
+                    >
+                      <XCircle size={16} className="ico" /> Deactivate
+                    </button>
                   ) : (
                     <button
                       type="button"
@@ -2302,10 +2354,12 @@ export default function RunDetails() {
                           open: true,
                           type: "active",
                           id: manageP.enrollment_id,
-                          text: ` : ${manageP.child_name}`,
+                          text: `Activate enrollment: ${manageP.child_name}`,
                         });
                       }}
-                    ></button>
+                    >
+                      <CheckCircle2 size={16} className="ico" /> Activate
+                    </button>
                   )}
 
                   <button
@@ -2317,11 +2371,11 @@ export default function RunDetails() {
                         open: true,
                         type: "deleteEnroll",
                         id: manageP.enrollment_id,
-                        text: `Delete Enroll : ${manageP.child_name}`,
+                        text: `Delete enrollment: ${manageP.child_name}`,
                       });
                     }}
                   >
-                    Delete Enroll
+                    <Trash2 size={16} className="ico" /> Delete enroll
                   </button>
 
                   <button
@@ -2697,7 +2751,7 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* ✅ Enroll */}
+        {/* ✅ Bulk enroll */}
         <Modal
           open={openBulk}
           title="Enroll children"
