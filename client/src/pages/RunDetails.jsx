@@ -534,9 +534,7 @@ export default function RunDetails() {
     const s = childSearch.trim().toLowerCase();
     if (s) {
       list = list.filter((p) =>
-        String(p.child_name ?? "")
-          .toLowerCase()
-          .includes(s),
+        String(p.child_name ?? "").toLowerCase().includes(s),
       );
     }
 
@@ -553,17 +551,11 @@ export default function RunDetails() {
       list.sort((a, b) => Number(a.balance || 0) - Number(b.balance || 0));
     } else if (childSort === "name_asc") {
       list.sort((a, b) =>
-        String(a.child_name ?? "").localeCompare(
-          String(b.child_name ?? ""),
-          "en",
-        ),
+        String(a.child_name ?? "").localeCompare(String(b.child_name ?? ""), "en"),
       );
     } else if (childSort === "name_desc") {
       list.sort((a, b) =>
-        String(b.child_name ?? "").localeCompare(
-          String(a.child_name ?? ""),
-          "en",
-        ),
+        String(b.child_name ?? "").localeCompare(String(a.child_name ?? ""), "en"),
       );
     }
     return list;
@@ -1462,17 +1454,24 @@ export default function RunDetails() {
                     overflowX: "auto",
                   }}
                 >
-                  <div
-                    className="inputWithIcon"
-                    style={{ flex: "1 1 0px", minWidth: 0 }}
-                  >
-                    <Search size={16} />
+                  <div style={{ position: "relative", flex: "1 1 0px", minWidth: 0 }}>
+                    <Search
+                      size={16}
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        pointerEvents: "none",
+                        opacity: 0.7,
+                      }}
+                    />
                     <input
                       className="input"
                       value={childSearch}
                       onChange={(e) => setChildSearch(e.target.value)}
                       placeholder="Search Child..."
-                      style={{ width: "100%" }}
+                      style={{ width: "100%", paddingLeft: 38 }}
                     />
                   </div>
 
@@ -2583,10 +2582,7 @@ export default function RunDetails() {
                 className="input"
                 value={newChildForm.mother_name}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    mother_name: e.target.value,
-                  }))
+                  setNewChildForm((p) => ({ ...p, mother_name: e.target.value }))
                 }
                 placeholder="e.g. Sarah"
               />
@@ -2613,10 +2609,7 @@ export default function RunDetails() {
                 className="input"
                 value={newChildForm.father_name}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    father_name: e.target.value,
-                  }))
+                  setNewChildForm((p) => ({ ...p, father_name: e.target.value }))
                 }
                 placeholder="e.g. Ahmad"
               />
