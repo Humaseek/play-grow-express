@@ -157,7 +157,7 @@ export default function RunDetails() {
         summary?.course_type ||
         summary?.course?.kind ||
         "",
-    ).toLowerCase() === "workshop";
+    ) === "Workshop";
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
