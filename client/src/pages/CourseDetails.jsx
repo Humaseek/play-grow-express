@@ -353,7 +353,14 @@ export default function CourseDetails() {
             <button className="btn" onClick={() => navigate("/courses")}>
               Back
             </button>
-            <button className="btn primary" onClick={() => { const t = (course?.type || "").toLowerCase(); setCreatesessions(t === "workshop" ? false : true); setOpen(true); }}>
+            <button
+              className="btn primary"
+              onClick={() => {
+                const t = (course?.type || "").toLowerCase();
+                setCreatesessions(t === "Workshop" ? false : true);
+                setOpen(true);
+              }}
+            >
               <Plus size={18} /> New run
             </button>
           </>
@@ -411,20 +418,6 @@ export default function CourseDetails() {
         </div>
       </div>
 
-      <div className="card" style={{ marginTop: 14 }}>
-        <div
-          className="row"
-          style={{ justifyContent: "space-between", alignItems: "center" }}
-        >
-          <div>
-            <div className="cardTitle">Runs</div>
-          </div>
-          <button className="btn primary" onClick={() => { const t = (course?.type || "").toLowerCase(); setCreatesessions(t === "workshop" ? false : true); setOpen(true); }}>
-            <Plus size={18} /> New run
-          </button>
-        </div>
-      </div>
-
       {sortedRuns.length === 0 ? (
         <div className="card" style={{ marginTop: 12 }}>
           <EmptyState
@@ -432,7 +425,14 @@ export default function CourseDetails() {
             description="Create the first run for this course."
             icon={Layers}
             actions={
-              <button className="btn primary" onClick={() => { const t = (course?.type || "").toLowerCase(); setCreatesessions(t === "workshop" ? false : true); setOpen(true); }}>
+              <button
+                className="btn primary"
+                onClick={() => {
+                  const t = (course?.type || "").toLowerCase();
+                  setCreatesessions(t === "Workshop" ? false : true);
+                  setOpen(true);
+                }}
+              >
                 <Plus size={18} /> New run
               </button>
             }
