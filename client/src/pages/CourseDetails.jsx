@@ -57,12 +57,12 @@ export default function CourseDetails() {
   });
 
   const isWorkshop = useMemo(() => {
-    return (course?.type || "").toLowerCase() === "workshop";
+    return (course?.kind || "").toLowerCase() === "workshop";
   }, [course]);
 
   function openCreateRunModal() {
     // For workshops, create exactly 1 session (no weekly repeat).
-    if ((course?.type || "").toLowerCase() === "workshop") {
+    if ((course?.kind || "").toLowerCase() === "workshop") {
       setCreatesessions(true);
       setCount(1);
       setIntervalDays(1);
@@ -73,7 +73,6 @@ export default function CourseDetails() {
     }
     setOpen(true);
   }
-
 
   async function load() {
     setLoading(true);
