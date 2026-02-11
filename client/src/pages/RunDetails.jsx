@@ -150,14 +150,25 @@ export default function RunDetails() {
   const [children, setChildren] = useState([]);
   const [payments, setPayments] = useState([]);
 
-  const isWorkshop =
-    String(
-      summary?.kind ||
-        summary?.type ||
-        summary?.course_type ||
-        summary?.course?.kind ||
-        "",
-    ) === "Workshop";
+  const isWorkshop = (() => {
+    const raw =
+      summary?.course_type ??
+      summary?.type ??
+      summary?.kind ??
+      summary?.course?.course_type ??
+      summary?.course?.type ??
+      summary?.course?.kind ??
+      "";
+    const v = String(raw).trim().toLowerCase();
+    return (
+      v === "workshop" ||
+      v === "ws" ||
+      v === "one_time" ||
+      v === "one-time" ||
+      v.includes("workshop") ||
+      v.includes("ورشة")
+    );
+  })();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -2183,7 +2194,7 @@ export default function RunDetails() {
         {tab === "sessions" && (
           <div className="grid">
             {/* LEFT: generator + quick add */}
-            <div className="card" style={{ gridColumn: "span 5" }}>
+            <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">Sessions</div>
               <div className="muted" style={{ marginTop: 6 }}>
                 Set the recurrence, then generate a session list. Times are in
@@ -2191,6 +2202,35 @@ export default function RunDetails() {
               </div>
 
               <hr className="sep" />
+
+
+              {isWorkshop ? (
+
+
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <div className="muted">
+                  Workshop runs usually have a single session. Create it once,
+                  then manage it from the list.
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: "100%" }}
+                  onClick={openCreateSession}
+                  disabled={(sessions || []).length > 0}
+                  title={
+                    (sessions || []).length > 0
+                      ? "Session already created"
+                      : "Create the workshop session"
+                  }
+                >
+                  {(sessions || []).length > 0 ? "Session created" : "+ Create session"}
+                </button>
+              </div>
+              ) : (
+
 
               <div style={{ display: "grid", gap: 12 }}>
                 <div style={{ display: "grid", gap: 6 }}>
@@ -2268,12 +2308,14 @@ export default function RunDetails() {
                   <Plus size={16} className="ico" /> Add single session
                 </button>
               </div>
+              )}
+
             </div>
 
             {/* RIGHT: list */}
             <div
               className="card"
-              style={{ gridColumn: "span 7", overflow: "hidden" }}
+              style={{ gridColumn: "span 8", overflow: "hidden" }}
             >
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
