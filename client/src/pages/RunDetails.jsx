@@ -2196,20 +2196,11 @@ export default function RunDetails() {
             {/* LEFT: generator + quick add */}
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">Sessions</div>
-              <div className="muted" style={{ marginTop: 6 }}>
-                Set the recurrence, then generate a session list. Times are in
-                your local timezone.
-              </div>
 
               <hr className="sep" />
 
               {isWorkshop ? (
                 <div style={{ display: "grid", gap: 12 }}>
-                  <div className="muted">
-                    Workshop runs usually have a single session. Create it once,
-                    then manage it from the list.
-                  </div>
-
                   <button
                     type="button"
                     className="btn btn-primary"
