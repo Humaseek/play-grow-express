@@ -6,7 +6,7 @@ import Badge from "../components/Badge";
 import PageHeader from "../components/PageHeader";
 import EmptyState from "../components/EmptyState";
 import IconButton from "../components/IconButton";
-import { Users, RefreshCw, Save, ArrowRight, CheckCircle2, XCircle, Eraser } from "lucide-react";
+import { Users, RefreshCw, Save, ArrowRight, CheckCircle2, XCircle, Eraser, CircleSlash2 } from "lucide-react";
 import { fmtDateTime24 } from "../utils/datetime";
 
 function fmtDT(dt) {
@@ -15,11 +15,11 @@ function fmtDT(dt) {
 
 const STATUS = ["present", "absent", "excused", "none"];
 
-function statusLabel(s) {
- if (s === "present") return "";
- if (s === "absent") return "";
- if (s === "excused") return "";
- return " ";
+function statusMeta(s) {
+  if (s === "present") return { label: "حاضر", Icon: CheckCircle2 };
+  if (s === "absent") return { label: "غائب", Icon: XCircle };
+  if (s === "excused") return { label: "معذور", Icon: CircleSlash2 };
+  return { label: "غير مسجل", Icon: Eraser };
 }
 
 function statusBadge(s) {
@@ -195,7 +195,7 @@ export default function Attendance() {
  return (
  <div className="container">
  <PageHeader
- title=""
+ title="الحضور"
  subtitle={
  session
  ? `${summary?.title ?? ""} — ${summary?.label ?? ""} • ${fmtDT(session.start_at)} → ${fmtDT(session.end_at)}`
@@ -228,17 +228,17 @@ export default function Attendance() {
  <Badge variant="info"> : {stats.none}</Badge>
  </div>
 
- <div className="toolbar" style={{ marginBottom: 10 }}>
- <button className="btn" onClick={() => setAll("present")}>
- <CheckCircle2 size={18} /> 
- </button>
- <button className="btn" onClick={() => setAll("absent")}>
- <XCircle size={18} /> 
- </button>
- <button className="btn" onClick={() => setAll("none")}>
- <Eraser size={18} /> 
- </button>
- </div>
+ <div className="toolbar" style={{ marginBottom: 10, gap: 8 }}>
+  <button className="btn" title="تعيين الجميع: حاضر" aria-label="تعيين الجميع: حاضر" onClick={() => setAll("present")}>
+    <CheckCircle2 size={18} />
+  </button>
+  <button className="btn" title="تعيين الجميع: غائب" aria-label="تعيين الجميع: غائب" onClick={() => setAll("absent")}>
+    <XCircle size={18} />
+  </button>
+  <button className="btn" title="مسح الجميع" aria-label="مسح الجميع" onClick={() => setAll("none")}>
+    <Eraser size={18} />
+  </button>
+</div>
 
  {rows.length === 0 ? (
  <EmptyState icon={Users} title="No attendance records" description="Select a run to view attendance." actionLabel="Go to courses" onAction={() => summary && navigate(`/runs/${summary.run_id}`)} />
@@ -260,20 +260,44 @@ export default function Attendance() {
  <td style={{ fontWeight: 800 }}>{r.child_name}</td>
  <td>{statusBadge(v)}</td>
  <td>
- <div className="row" style={{ flexWrap: "wrap" }}>
- {STATUS.map((s) => (
- <button
- key={s}
- className={`btn ${v === s ? "primary" : ""}`}
- onClick={() =>
- setAtt((p) => ({ ...p, [r.enrollment_id]: s }))
- }
- type="button"
- >
- {statusLabel(s)}
- </button>
- ))}
- </div>
+ <div
+  className="row"
+  style={{
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "flex-end",
+    alignItems: "center",
+  }}
+>
+  {STATUS.map((s) => {
+    const meta = statusMeta(s);
+    const ActiveIcon = meta.Icon;
+    const active = v === s;
+    return (
+      <button
+        key={s}
+        type="button"
+        title={meta.label}
+        aria-label={meta.label}
+        onClick={() => setAtt((p) => ({ ...p, [r.enrollment_id]: s }))}
+        className="btn"
+        style={{
+          width: 38,
+          height: 38,
+          padding: 0,
+          borderRadius: 12,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: active ? "1px solid rgba(0,0,0,0.2)" : "1px solid rgba(0,0,0,0.12)",
+          boxShadow: active ? "0 0 0 2px rgba(0,172,71,0.18)" : "none",
+        }}
+      >
+        <ActiveIcon size={18} />
+      </button>
+    );
+  })}
+</div>
  </td>
  </tr>
  );
