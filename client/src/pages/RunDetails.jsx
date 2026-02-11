@@ -1599,7 +1599,7 @@ export default function RunDetails() {
     return (
       <div className="page page--runs">
         <div className="container runDetails">
-          <div className="card">Name</div>
+          <div className="card">Loading...</div>
         </div>
       </div>
     );
@@ -1683,7 +1683,7 @@ export default function RunDetails() {
                 <Tag />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div className="runLabel">Loading...</div>
+                <div className="runLabel">Name</div>
                 <div className="runValue">{summary.label || "—"}</div>
               </div>
             </div>
