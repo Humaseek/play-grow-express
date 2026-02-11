@@ -150,9 +150,14 @@ export default function RunDetails() {
   const [children, setChildren] = useState([]);
   const [payments, setPayments] = useState([]);
 
-  const isWorkshop = String(
-    summary?.kind || summary?.type || summary?.course_type || summary?.course?.type || ""
-  ).toLowerCase() === "workshop";
+  const isWorkshop =
+    String(
+      summary?.kind ||
+        summary?.type ||
+        summary?.course_type ||
+        summary?.course?.kind ||
+        "",
+    ).toLowerCase() === "workshop";
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -185,7 +190,7 @@ export default function RunDetails() {
     gender: "male",
     country_id: 1,
     new_country_name: "",
-mother_name: "",
+    mother_name: "",
     mother_phone: "",
     father_name: "",
     father_phone: "",
@@ -344,7 +349,9 @@ mother_name: "",
     setError(null);
 
     try {
-      let countryId = newChildForm.country_id ? Number(newChildForm.country_id) : null;
+      let countryId = newChildForm.country_id
+        ? Number(newChildForm.country_id)
+        : null;
 
       // If user typed a new country/city name, create (or reuse) it and use its id.
       const newCountryName = (newChildForm.new_country_name || "").trim();
@@ -417,7 +424,7 @@ mother_name: "",
         class: "",
         gender: "male",
         country_id: 1,
-    new_country_name: "",
+        new_country_name: "",
         mother_name: "",
         mother_phone: "",
         father_name: "",
@@ -848,138 +855,140 @@ mother_name: "",
     if (upd.error) throw upd.error;
   }
 
+  async function reactivateWithdrawnEnrollment(childId) {
+    // If the child was previously removed (withdrawn) from this run,
+    // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
+    // but we still allow setting a NEW price and "fresh" add-sessions inputs.
+    const existing = participants.find(
+      (p) =>
+        Number(p.child_id) === Number(childId) &&
+        p.enrollment_status === "withdrawn",
+    );
+    if (!existing) return false;
 
-async function reactivateWithdrawnEnrollment(childId) {
-  // If the child was previously removed (withdrawn) from this run,
-  // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
-  // but we still allow setting a NEW price and "fresh" add-sessions inputs.
-  const existing = participants.find(
-    (p) =>
-      Number(p.child_id) === Number(childId) &&
-      p.enrollment_status === "withdrawn",
-  );
-  if (!existing) return false;
-
-  const sessionsToBuyRaw = Number(buySessions);
-  const sessionsToBuy = Number.isFinite(sessionsToBuyRaw) ? sessionsToBuyRaw : 0;
-
-  const priceTotalNum = (() => {
-    const s = Number.isFinite(sessionsToBuy) && sessionsToBuy > 0
-      ? sessionsToBuy
+    const sessionsToBuyRaw = Number(buySessions);
+    const sessionsToBuy = Number.isFinite(sessionsToBuyRaw)
+      ? sessionsToBuyRaw
       : 0;
 
-    if (buyPriceEditMode === "unit") {
-      const u = buyUnitPrice === "" ? 0 : Number(buyUnitPrice);
-      return Number.isFinite(u) ? u * s : 0;
-    }
+    const priceTotalNum = (() => {
+      const s =
+        Number.isFinite(sessionsToBuy) && sessionsToBuy > 0 ? sessionsToBuy : 0;
 
-    const t = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
-    return Number.isFinite(t) ? t : 0;
-  })();
+      if (buyPriceEditMode === "unit") {
+        const u = buyUnitPrice === "" ? 0 : Number(buyUnitPrice);
+        return Number.isFinite(u) ? u * s : 0;
+      }
 
-  try {
-    setError(null);
+      const t = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
+      return Number.isFinite(t) ? t : 0;
+    })();
 
-    // 1) Reactivate enrollment
-    const upd = await supabase
-      .from("enrollments")
-      .update({ status: "active" })
-      .eq("id", existing.enrollment_id);
-    if (upd.error) throw upd.error;
+    try {
+      setError(null);
 
-    // 2) Re-open + UPDATE package price (so re-enroll can have a NEW price)
-    if (existing.package_id) {
-      const pkgUpd = await supabase
-        .from("course_packages")
-        .update({ status: "active", price_total: priceTotalNum })
-        .eq("id", existing.package_id);
-      if (pkgUpd.error) throw pkgUpd.error;
+      // 1) Reactivate enrollment
+      const upd = await supabase
+        .from("enrollments")
+        .update({ status: "active" })
+        .eq("id", existing.enrollment_id);
+      if (upd.error) throw upd.error;
 
-      // Add sessions back to the package total (keeps sessions_used consistent)
+      // 2) Re-open + UPDATE package price (so re-enroll can have a NEW price)
+      if (existing.package_id) {
+        const pkgUpd = await supabase
+          .from("course_packages")
+          .update({ status: "active", price_total: priceTotalNum })
+          .eq("id", existing.package_id);
+        if (pkgUpd.error) throw pkgUpd.error;
+
+        // Add sessions back to the package total (keeps sessions_used consistent)
+        if (sessionsToBuy > 0) {
+          const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+            p_package_id: Number(existing.package_id),
+            p_delta: Number(sessionsToBuy),
+          });
+          if (rpcPkg.error) throw rpcPkg.error;
+        }
+      }
+
+      // 3) Allocate sessions for THIS run enrollment (so run balance matches)
       if (sessionsToBuy > 0) {
-        const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
-          p_package_id: Number(existing.package_id),
-          p_delta: Number(sessionsToBuy),
-        });
-        if (rpcPkg.error) throw rpcPkg.error;
+        await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
+        toast("Child re-enrolled successfully.", "ok");
+      } else {
+        toast("Enrollment re-activated. Add sessions then click Save.", "ok");
       }
-    }
 
-    // 3) Allocate sessions for THIS run enrollment (so run balance matches)
-    if (sessionsToBuy > 0) {
-      await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
-      toast("Child re-enrolled successfully.", "ok");
-    } else {
-      toast("Enrollment re-activated. Add sessions then click Save.", "ok");
+      setOpenEnroll(false);
+      await loadFixed();
+      setTab("participants");
+      return true;
+    } catch (e) {
+      setError(e);
+      toast("Failed to re-enroll child.", "danger");
+      return true;
     }
-
-    setOpenEnroll(false);
-    await loadFixed();
-    setTab("participants");
-    return true;
-  } catch (e) {
-    setError(e);
-    toast("Failed to re-enroll child.", "danger");
-    return true;
   }
-}
 
+  async function reactivateWithdrawnEnrollmentBulk(
+    childId,
+    sessionsToBuy,
+    priceTotalNum,
+  ) {
+    // Bulk-safe variant of reactivateWithdrawnEnrollment:
+    // uses explicit sessions/price (does NOT depend on the single-enroll modal state).
+    const existing = participants.find(
+      (p) =>
+        Number(p.child_id) === Number(childId) &&
+        p.enrollment_status === "withdrawn",
+    );
+    if (!existing) return false;
 
-async function reactivateWithdrawnEnrollmentBulk(childId, sessionsToBuy, priceTotalNum) {
-  // Bulk-safe variant of reactivateWithdrawnEnrollment:
-  // uses explicit sessions/price (does NOT depend on the single-enroll modal state).
-  const existing = participants.find(
-    (p) =>
-      Number(p.child_id) === Number(childId) &&
-      p.enrollment_status === "withdrawn",
-  );
-  if (!existing) return false;
+    const sRaw = Number(sessionsToBuy);
+    const s = Number.isFinite(sRaw) ? sRaw : 0;
+    const priceRaw = Number(priceTotalNum);
+    const priceTotal = Number.isFinite(priceRaw) ? priceRaw : 0;
 
-  const sRaw = Number(sessionsToBuy);
-  const s = Number.isFinite(sRaw) ? sRaw : 0;
-  const priceRaw = Number(priceTotalNum);
-  const priceTotal = Number.isFinite(priceRaw) ? priceRaw : 0;
+    try {
+      // 1) Reactivate enrollment row
+      const upd = await supabase
+        .from("enrollments")
+        .update({ status: "active" })
+        .eq("id", existing.enrollment_id);
+      if (upd.error) throw upd.error;
 
-  try {
-    // 1) Reactivate enrollment row
-    const upd = await supabase
-      .from("enrollments")
-      .update({ status: "active" })
-      .eq("id", existing.enrollment_id);
-    if (upd.error) throw upd.error;
+      // 2) Reactivate + update package (optional)
+      if (existing.package_id) {
+        const pkgUpd = await supabase
+          .from("course_packages")
+          .update({ status: "active", price_total: priceTotal })
+          .eq("id", existing.package_id);
+        if (pkgUpd.error) throw pkgUpd.error;
 
-    // 2) Reactivate + update package (optional)
-    if (existing.package_id) {
-      const pkgUpd = await supabase
-        .from("course_packages")
-        .update({ status: "active", price_total: priceTotal })
-        .eq("id", existing.package_id);
-      if (pkgUpd.error) throw pkgUpd.error;
+        if (s > 0) {
+          const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+            p_package_id: Number(existing.package_id),
+            p_delta: Number(s),
+          });
+          if (rpcPkg.error) throw rpcPkg.error;
+        }
+      }
 
+      // 3) Allocate sessions on the enrollment
       if (s > 0) {
-        const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
-          p_package_id: Number(existing.package_id),
-          p_delta: Number(s),
-        });
-        if (rpcPkg.error) throw rpcPkg.error;
+        await bumpEnrollmentAllocated(existing.enrollment_id, s);
       }
-    }
 
-    // 3) Allocate sessions on the enrollment
-    if (s > 0) {
-      await bumpEnrollmentAllocated(existing.enrollment_id, s);
+      return true;
+    } catch (e) {
+      // Don't toast here (bulk flow will summarize). Bubble a boolean + let caller setError if needed.
+      console.error("Bulk reactivation failed:", e);
+      return false;
     }
-
-    return true;
-  } catch (e) {
-    // Don't toast here (bulk flow will summarize). Bubble a boolean + let caller setError if needed.
-    console.error("Bulk reactivation failed:", e);
-    return false;
   }
-}
 
-
-async function purchaseAndEnrollSingle() {
+  async function purchaseAndEnrollSingle() {
     if (!summary) return;
     if (!selectedChildId) {
       toast("Select a child.", "warn");
@@ -1067,14 +1076,14 @@ async function purchaseAndEnrollSingle() {
   }
 
   function isDuplicateRunChildError(err) {
-  const code = String(err?.code ?? "");
-  const msg = String(err?.message ?? err ?? "");
-  // Postgres unique violation is 23505
-  if (code === "23505") return true;
-  return msg.includes("uq_run_child") || msg.includes("duplicate key");
-}
+    const code = String(err?.code ?? "");
+    const msg = String(err?.message ?? err ?? "");
+    // Postgres unique violation is 23505
+    if (code === "23505") return true;
+    return msg.includes("uq_run_child") || msg.includes("duplicate key");
+  }
 
-async function bulkPurchaseAndEnroll() {
+  async function bulkPurchaseAndEnroll() {
     if (!summary) return;
     if (bulkSelectedCount === 0) {
       toast("Select children first.", "warn");
@@ -1128,7 +1137,11 @@ async function bulkPurchaseAndEnroll() {
 
         // Withdrawn -> reactivate instead of inserting a new row
         if (existingStatus === "withdrawn") {
-          const ok = await reactivateWithdrawnEnrollmentBulk(cid, sessionsToBuy, priceNum);
+          const ok = await reactivateWithdrawnEnrollmentBulk(
+            cid,
+            sessionsToBuy,
+            priceNum,
+          );
           if (ok) {
             reactivated += 1;
           } else {
@@ -1149,7 +1162,11 @@ async function bulkPurchaseAndEnroll() {
           // If we raced with another request, handle duplicate gracefully
           if (isDuplicateRunChildError(rpc2.error)) {
             // Try to reactivate if it was withdrawn, otherwise skip
-            const ok = await reactivateWithdrawnEnrollmentBulk(cid, sessionsToBuy, priceNum);
+            const ok = await reactivateWithdrawnEnrollmentBulk(
+              cid,
+              sessionsToBuy,
+              priceNum,
+            );
             if (ok) reactivated += 1;
             else skipped += 1;
           } else {
@@ -1341,7 +1358,8 @@ async function bulkPurchaseAndEnroll() {
 
     const startLocal = new Date(sessionForm.start_at);
     // If date-only (YYYY-MM-DD), set local midnight.
-    if (String(sessionForm.start_at).length === 10) startLocal.setHours(0, 0, 0, 0);
+    if (String(sessionForm.start_at).length === 10)
+      startLocal.setHours(0, 0, 0, 0);
 
     const durationMin = Number(durationMinutes) || 60;
     const endLocal = new Date(startLocal.getTime() + durationMin * 60 * 1000);
@@ -1984,7 +2002,16 @@ async function bulkPurchaseAndEnroll() {
                       <div className="pMain">
                         <div className="pBig" title="Amount ">
                           <div className="pBigTop">
-                            <div className="pBigValue" dir="ltr" style={{ overflow: "visible", textOverflow: "clip", whiteSpace: "nowrap" }} title={fmtILS(balance)}>
+                            <div
+                              className="pBigValue"
+                              dir="ltr"
+                              style={{
+                                overflow: "visible",
+                                textOverflow: "clip",
+                                whiteSpace: "nowrap",
+                              }}
+                              title={fmtILS(balance)}
+                            >
                               {fmtILS(balance)}
                             </div>
                             <div className="pBigLabel">
@@ -1997,13 +2024,28 @@ async function bulkPurchaseAndEnroll() {
                             <span style={{ width: `${pct}%` }} />
                           </div>
 
-                          <div className="muted" style={{ fontSize: 12, display: "grid", gap: 4 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div
+                            className="muted"
+                            style={{ fontSize: 12, display: "grid", gap: 4 }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
                               <CreditCard size={14} className="ico" />
                               <span style={{ opacity: 0.75 }}>Paid</span>
                               <b dir="ltr">{fmtILS(paid)}</b>
                             </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
                               <Tag size={14} className="ico" />
                               <span style={{ opacity: 0.75 }}>Agreed</span>
                               <b dir="ltr">{fmtILS(agreed)}</b>
@@ -2021,26 +2063,56 @@ async function bulkPurchaseAndEnroll() {
                               <span>Session balance</span>
                             </div>
                           </div>
-                          <div className="muted" style={{ fontSize: 12, display: "grid", gap: 4 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div
+                            className="muted"
+                            style={{ fontSize: 12, display: "grid", gap: 4 }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
                               <CheckCircle2 size={14} className="ico" />
                               <span style={{ opacity: 0.75 }}>Used</span>
                               <b dir="ltr">{fmtNum(pkgUsed)}</b>
                             </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
                               <Ticket size={14} className="ico" />
                               <span style={{ opacity: 0.75 }}>In this run</span>
                               <b dir="ltr">{fmtNum(pkgTotal)}</b>
                             </div>
                           </div>
 
-                          <div className="muted" style={{ fontSize: 12, display: "grid", gap: 4 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div
+                            className="muted"
+                            style={{ fontSize: 12, display: "grid", gap: 4 }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
                               <CalendarDays size={14} className="ico" />
                               <span style={{ opacity: 0.75 }}>Attended</span>
                               <b dir="ltr">{fmtNum(attended)}</b>
                             </div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
                               <Hourglass size={14} className="ico" />
                               <span style={{ opacity: 0.75 }}>Remaining</span>
                               <b dir="ltr">{fmtNum(runSessions)}</b>
@@ -2114,7 +2186,8 @@ async function bulkPurchaseAndEnroll() {
             <div className="card" style={{ gridColumn: "span 5" }}>
               <div className="h1">Sessions</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Set the recurrence, then generate a session list. Times are in your local timezone.
+                Set the recurrence, then generate a session list. Times are in
+                your local timezone.
               </div>
 
               <hr className="sep" />
@@ -2130,7 +2203,13 @@ async function bulkPurchaseAndEnroll() {
                   />
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 10,
+                  }}
+                >
                   <div style={{ display: "grid", gap: 6 }}>
                     <div className="muted">Duration (minutes)</div>
                     <input
@@ -2192,10 +2271,14 @@ async function bulkPurchaseAndEnroll() {
             </div>
 
             {/* RIGHT: list */}
-            <div className="card" style={{ gridColumn: "span 7", overflow: "hidden" }}>
+            <div
+              className="card"
+              style={{ gridColumn: "span 7", overflow: "hidden" }}
+            >
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Manage sessions for this run. Edit times, mark done/cancelled, or delete.
+                Manage sessions for this run. Edit times, mark done/cancelled,
+                or delete.
               </div>
 
               <hr className="sep" />
@@ -2222,20 +2305,24 @@ async function bulkPurchaseAndEnroll() {
                           style={{
                             display: "grid",
                             gridTemplateColumns:
-"minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
+                              "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
                             gap: 12,
                             alignItems: "center",
                             overflow: "hidden",
                             maxWidth: "100%",
-                                                        padding: "12px 14px",
+                            padding: "12px 14px",
                             border: "1px solid rgba(0,0,0,0.08)",
                             borderRadius: 14,
                           }}
                         >
                           {/* Date */}
                           <div style={{ lineHeight: 1.15 }}>
-                            <div style={{ fontWeight: 700 }}>{fmtDate(s.start_at)}</div>
-                            <div className="muted">{fmtWeekday(s.start_at)}</div>
+                            <div style={{ fontWeight: 700 }}>
+                              {fmtDate(s.start_at)}
+                            </div>
+                            <div className="muted">
+                              {fmtWeekday(s.start_at)}
+                            </div>
                           </div>
 
                           {/* Time */}
@@ -2254,10 +2341,9 @@ async function bulkPurchaseAndEnroll() {
                                 alignItems: "center",
                                 padding: "6px 10px",
                                 borderRadius: 999,
-                                background:
-                                  isDone
-                                    ? "rgba(34,197,94,0.12)"
-                                    : isCancelled
+                                background: isDone
+                                  ? "rgba(34,197,94,0.12)"
+                                  : isCancelled
                                     ? "rgba(239,68,68,0.10)"
                                     : "rgba(0,0,0,0.06)",
                                 border: "1px solid rgba(0,0,0,0.08)",
@@ -2294,8 +2380,17 @@ async function bulkPurchaseAndEnroll() {
                                 className="btn primary"
                                 title="Manage"
                                 aria-label="Manage"
-                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-                                onClick={() => navigate(`/sessions/${s.id}/attendance`)}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onClick={() =>
+                                  navigate(`/sessions/${s.id}/attendance`)
+                                }
                               >
                                 <Settings2 size={16} className="ico" />
                               </button>
@@ -2305,7 +2400,14 @@ async function bulkPurchaseAndEnroll() {
                                 className="btn"
                                 title="Edit"
                                 aria-label="Edit"
-                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 onClick={() => openEditSession(s)}
                               >
                                 <Pencil size={16} className="ico" />
@@ -2325,11 +2427,18 @@ async function bulkPurchaseAndEnroll() {
                                 className="btn"
                                 title={isDone ? "Reopen" : "Mark done"}
                                 aria-label={isDone ? "Reopen" : "Mark done"}
-                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 onClick={() =>
                                   setSessionStatus(
                                     s.id,
-                                    isDone ? "scheduled" : "done"
+                                    isDone ? "scheduled" : "done",
                                   )
                                 }
                               >
@@ -2349,11 +2458,18 @@ async function bulkPurchaseAndEnroll() {
                                 className="btn danger"
                                 title={isCancelled ? "Restore" : "Cancel"}
                                 aria-label={isCancelled ? "Restore" : "Cancel"}
-                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 onClick={() =>
                                   setSessionStatus(
                                     s.id,
-                                    isCancelled ? "scheduled" : "cancelled"
+                                    isCancelled ? "scheduled" : "cancelled",
                                   )
                                 }
                               >
@@ -2373,7 +2489,14 @@ async function bulkPurchaseAndEnroll() {
                                 className="btn danger"
                                 title="Delete"
                                 aria-label="Delete"
-                                style={{ width: 36, height: 36, padding: 0, display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
                                 onClick={() => deleteSession(s.id)}
                               >
                                 <Trash2 size={16} className="ico" />
@@ -2410,7 +2533,10 @@ async function bulkPurchaseAndEnroll() {
               </button>
             </div>
 
-            <div className="card" style={{ gridColumn: "span 7", overflow: "hidden" }}>
+            <div
+              className="card"
+              style={{ gridColumn: "span 7", overflow: "hidden" }}
+            >
               <div className="h1">Payments</div>
               <div className="muted" style={{ marginTop: 6 }}>
                 View and manage payments for this run.
@@ -2481,7 +2607,7 @@ async function bulkPurchaseAndEnroll() {
 
         {/* ===================== MODALS ===================== */}
 
-                {/* ✅ Child */}
+        {/* ✅ Child */}
         <Modal
           open={openManage}
           title={manageP ? `Manage — ${manageP.child_name}` : "Manage"}
@@ -2495,7 +2621,11 @@ async function bulkPurchaseAndEnroll() {
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
-                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+                  style={{
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
                 >
                   <div>
                     <div style={{ fontSize: 18, fontWeight: 900 }}>
@@ -2505,14 +2635,19 @@ async function bulkPurchaseAndEnroll() {
                       </span>
                     </div>
 
-                    <div className="row" style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                    <div
+                      className="row"
+                      style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}
+                    >
                       {badgePayment(manageP.payment_status)}
                       {manageP.enrollment_status === "active" ? (
                         <Badge variant="ok">Active</Badge>
                       ) : (
                         <Badge variant="warn">Inactive</Badge>
                       )}
-                      {manageP.is_free ? <Badge variant="info">Free</Badge> : null}
+                      {manageP.is_free ? (
+                        <Badge variant="info">Free</Badge>
+                      ) : null}
                     </div>
                   </div>
 
@@ -2544,13 +2679,17 @@ async function bulkPurchaseAndEnroll() {
                   <div className="row" style={{ gap: 8 }}>
                     <Ticket size={14} className="ico" />
                     <span className="muted">Total</span>
-                    <b dir="ltr">{fmtNum(manageP.package_sessions_total ?? 0)}</b>
+                    <b dir="ltr">
+                      {fmtNum(manageP.package_sessions_total ?? 0)}
+                    </b>
                   </div>
 
                   <div className="row" style={{ gap: 8 }}>
                     <Hourglass size={14} className="ico" />
                     <span className="muted">Remaining</span>
-                    <b dir="ltr">{fmtNum(manageP.package_sessions_remaining ?? 0)}</b>
+                    <b dir="ltr">
+                      {fmtNum(manageP.package_sessions_remaining ?? 0)}
+                    </b>
                   </div>
 
                   <div className="row" style={{ gap: 8 }}>
@@ -2570,7 +2709,9 @@ async function bulkPurchaseAndEnroll() {
                   <div className="row" style={{ gap: 8 }}>
                     <CalendarDays size={14} className="ico" />
                     <span className="muted">Attended in run</span>
-                    <b dir="ltr">{fmtNum(manageP.sessions_attended_in_run ?? 0)}</b>
+                    <b dir="ltr">
+                      {fmtNum(manageP.sessions_attended_in_run ?? 0)}
+                    </b>
                   </div>
                 </div>
               </div>
@@ -2579,7 +2720,11 @@ async function bulkPurchaseAndEnroll() {
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
-                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+                  style={{
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
                 >
                   <div style={{ fontWeight: 900 }}>Contact</div>
 
@@ -2602,7 +2747,9 @@ async function bulkPurchaseAndEnroll() {
                 <div className="grid">
                   <div style={{ gridColumn: "span 6" }}>
                     <div className="muted">Mother name</div>
-                    <div style={{ fontWeight: 800 }}>{manageChild?.mother_name ?? "-"}</div>
+                    <div style={{ fontWeight: 800 }}>
+                      {manageChild?.mother_name ?? "-"}
+                    </div>
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
@@ -2617,7 +2764,10 @@ async function bulkPurchaseAndEnroll() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.mother_phone);
-                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
                           }}
                           title="Copy"
                         >
@@ -2629,7 +2779,9 @@ async function bulkPurchaseAndEnroll() {
 
                   <div style={{ gridColumn: "span 6" }}>
                     <div className="muted">Father name</div>
-                    <div style={{ fontWeight: 800 }}>{manageChild?.father_name ?? "-"}</div>
+                    <div style={{ fontWeight: 800 }}>
+                      {manageChild?.father_name ?? "-"}
+                    </div>
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
@@ -2644,7 +2796,10 @@ async function bulkPurchaseAndEnroll() {
                           className="iconBtn"
                           onClick={async () => {
                             const ok = await copyText(manageChild.father_phone);
-                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
                           }}
                           title="Copy"
                         >
@@ -2732,7 +2887,9 @@ async function bulkPurchaseAndEnroll() {
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Payments</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                  Payments
+                </div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   <button
                     type="button"
@@ -2785,7 +2942,9 @@ async function bulkPurchaseAndEnroll() {
 
                 <hr className="sep" />
 
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Enrollment</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                  Enrollment
+                </div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   {manageP.enrollment_status === "active" ? (
                     <button
@@ -3041,186 +3200,205 @@ async function bulkPurchaseAndEnroll() {
         </Modal>
 
         {/* New child (inline) */}
-<Modal
-  open={openNewChild}
-  title={newChildEnrollNow ? "Create child & enroll" : "Add child"}
-  onClose={() => setOpenNewChild(false)}
->
-  <div className="grid">
-    <div style={{ gridColumn: "span 12" }}>
-      <div className="muted">Name *</div>
-      <input
-        className="input"
-        value={newChildForm.name}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, name: e.target.value }))
-        }
-        placeholder=""
-      />
-    </div>
+        <Modal
+          open={openNewChild}
+          title={newChildEnrollNow ? "Create child & enroll" : "Add child"}
+          onClose={() => setOpenNewChild(false)}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">Name *</div>
+              <input
+                className="input"
+                value={newChildForm.name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, name: e.target.value }))
+                }
+                placeholder=""
+              />
+            </div>
 
-    <div style={{ gridColumn: "span 4" }}>
-      <div className="muted">Birth date *</div>
-      <input
-        className="input"
-        type="date"
-        value={newChildForm.birth_date}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, birth_date: e.target.value }))
-        }
-      />
-    </div>
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Birth date *</div>
+              <input
+                className="input"
+                type="date"
+                value={newChildForm.birth_date}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, birth_date: e.target.value }))
+                }
+              />
+            </div>
 
-    <div style={{ gridColumn: "span 4" }}>
-      <div className="muted">Gender</div>
-      <select
-        className="input"
-        value={newChildForm.gender}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, gender: e.target.value }))
-        }
-      >
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-      </select>
-    </div>
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Gender</div>
+              <select
+                className="input"
+                value={newChildForm.gender}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
+                }
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </div>
 
-    <div style={{ gridColumn: "span 4" }}>
-      <div className="muted">Class</div>
-      <input
-        className="input"
-        value={newChildForm.class}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, class: e.target.value }))
-        }
-        placeholder=""
-      />
-    </div>
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Class</div>
+              <input
+                className="input"
+                value={newChildForm.class}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, class: e.target.value }))
+                }
+                placeholder=""
+              />
+            </div>
 
-    <div style={{ gridColumn: "span 6" }}>
-      <div className="muted">City</div>
-      <select
-        className="input"
-        value={newChildForm.country_id ?? ""}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, country_id: e.target.value }))
-        }
-        disabled={countriesLoading}
-      >
-        <option value="">{countriesLoading ? "Loading..." : "Select a country..."}</option>
-        {(countries ?? []).map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-    </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">City</div>
+              <select
+                className="input"
+                value={newChildForm.country_id ?? ""}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, country_id: e.target.value }))
+                }
+                disabled={countriesLoading}
+              >
+                <option value="">
+                  {countriesLoading ? "Loading..." : "Select a country..."}
+                </option>
+                {(countries ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-    <div style={{ gridColumn: "span 6" }}>
-      <div className="muted">New country (optional)</div>
-      <input
-        className="input"
-        value={newChildForm.new_country_name}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, new_country_name: e.target.value }))
-        }
-        placeholder="e.g. Israel"
-      />
-    </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">New country (optional)</div>
+              <input
+                className="input"
+                value={newChildForm.new_country_name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    new_country_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Israel"
+              />
+            </div>
 
-    <div style={{ gridColumn: "span 6" }}>
-      <div className="muted">Mother name</div>
-      <input
-        className="input"
-        value={newChildForm.mother_name}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, mother_name: e.target.value }))
-        }
-        placeholder="e.g. Sarah"
-      />
-    </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Mother name</div>
+              <input
+                className="input"
+                value={newChildForm.mother_name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    mother_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Sarah"
+              />
+            </div>
 
-    <div style={{ gridColumn: "span 6" }}>
-      <div className="muted">Mother phone</div>
-      <input
-        className="input"
-        value={newChildForm.mother_phone}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, mother_phone: e.target.value }))
-        }
-        placeholder="e.g. 050-1234567"
-      />
-    </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Mother phone</div>
+              <input
+                className="input"
+                value={newChildForm.mother_phone}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    mother_phone: e.target.value,
+                  }))
+                }
+                placeholder="e.g. 050-1234567"
+              />
+            </div>
 
-    <div style={{ gridColumn: "span 6" }}>
-      <div className="muted">Father name</div>
-      <input
-        className="input"
-        value={newChildForm.father_name}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, father_name: e.target.value }))
-        }
-        placeholder="e.g. Ahmad"
-      />
-    </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Father name</div>
+              <input
+                className="input"
+                value={newChildForm.father_name}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    father_name: e.target.value,
+                  }))
+                }
+                placeholder="e.g. Ahmad"
+              />
+            </div>
 
-    <div style={{ gridColumn: "span 6" }}>
-      <div className="muted">Father phone</div>
-      <input
-        className="input"
-        value={newChildForm.father_phone}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, father_phone: e.target.value }))
-        }
-        placeholder="e.g. 052-1234567"
-      />
-    </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Father phone</div>
+              <input
+                className="input"
+                value={newChildForm.father_phone}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({
+                    ...p,
+                    father_phone: e.target.value,
+                  }))
+                }
+                placeholder="e.g. 052-1234567"
+              />
+            </div>
 
-    <div style={{ gridColumn: "span 12" }}>
-      <div className="muted">Notes (optional)</div>
-      <textarea
-        className="input"
-        rows={4}
-        value={newChildForm.notes}
-        onChange={(e) =>
-          setNewChildForm((p) => ({ ...p, notes: e.target.value }))
-        }
-        placeholder="Optional notes..."
-      />
-    </div>
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">Notes (optional)</div>
+              <textarea
+                className="input"
+                rows={4}
+                value={newChildForm.notes}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, notes: e.target.value }))
+                }
+                placeholder="Optional notes..."
+              />
+            </div>
 
-    <div
-      style={{
-        gridColumn: "span 12",
-        display: "flex",
-        justifyContent: "flex-end",
-        gap: 10,
-        paddingTop: 8,
-      }}
-    >
-      <button
-        type="button"
-        className="btn"
-        onClick={() => setOpenNewChild(false)}
-        disabled={newChildSaving}
-      >
-        Cancel
-      </button>
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={() => createChildInline({ enrollNow: newChildEnrollNow })}
-        disabled={newChildSaving}
-      >
-        {newChildSaving
-          ? "Saving..."
-          : newChildEnrollNow
-            ? "Create & enroll"
-            : "Save"}
-      </button>
-    </div>
-  </div>
-</Modal>
+            <div
+              style={{
+                gridColumn: "span 12",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                paddingTop: 8,
+              }}
+            >
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setOpenNewChild(false)}
+                disabled={newChildSaving}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() =>
+                  createChildInline({ enrollNow: newChildEnrollNow })
+                }
+                disabled={newChildSaving}
+              >
+                {newChildSaving
+                  ? "Saving..."
+                  : newChildEnrollNow
+                    ? "Create & enroll"
+                    : "Save"}
+              </button>
+            </div>
+          </div>
+        </Modal>
 
         {/* ✅ Bulk enroll */}
         <Modal
@@ -3299,7 +3477,9 @@ async function bulkPurchaseAndEnroll() {
                           <td className="muted">{c.age ?? "-"}</td>
                           <td className="muted">{c.gender ?? "-"}</td>
                           <td className="muted">
-                            <span style={{ direction: "ltr", unicodeBidi: "embed" }}>
+                            <span
+                              style={{ direction: "ltr", unicodeBidi: "embed" }}
+                            >
                               {c.mother_phone ?? "-"}
                             </span>
                           </td>
@@ -3364,7 +3544,9 @@ async function bulkPurchaseAndEnroll() {
 
             <div style={{ gridColumn: "span 4" }}>
               <div className="muted">
-                {bulkPriceMode === "unified" ? "Package price" : "Per-child prices"}
+                {bulkPriceMode === "unified"
+                  ? "Package price"
+                  : "Per-child prices"}
               </div>
               {bulkPriceMode === "unified" ? (
                 <input
@@ -3586,7 +3768,9 @@ async function bulkPurchaseAndEnroll() {
         >
           <div className="grid">
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">{isWorkshop ? "Session date" : "Session date/time"}</div>
+              <div className="muted">
+                {isWorkshop ? "Session date" : "Session date/time"}
+              </div>
               <input
                 className="input"
                 type="datetime-local"
