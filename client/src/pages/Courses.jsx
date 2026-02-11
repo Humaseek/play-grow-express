@@ -503,18 +503,20 @@ export default function Courses() {
             />
           </div>
 
-          <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">Status</div>
-            <ModernSelect
-              value={form.is_active ? "1" : "0"}
-              onChange={(v) => setForm((p) => ({ ...p, is_active: v === "1" }))}
-              menuWidth="trigger"
-              options={[
-                { value: "1", label: "Active" },
-                { value: "0", label: "Inactive" },
-              ]}
-            />
-          </div>
+          {form.id ? (
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Status</div>
+              <ModernSelect
+                value={form.is_active ? "1" : "0"}
+                onChange={(v) => setForm((p) => ({ ...p, is_active: v === "1" }))}
+                menuWidth="trigger"
+                options={[
+                  { value: "1", label: "Active" },
+                  { value: "0", label: "Inactive" },
+                ]}
+              />
+            </div>
+          ) : null}
 
           <div style={{ gridColumn: "span 12" }}>
             <div className="muted">Notes</div>
