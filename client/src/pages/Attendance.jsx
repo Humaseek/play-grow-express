@@ -38,7 +38,8 @@ export default function Attendance() {
  const [summary, setSummary] = useState(null);
 
  const [rows, setRows] = useState([]); // participants
- const [att, setAtt] = useState({}); // enrollment_id -> status
+ const [att, setAtt] = useState({});
+ const [initialAtt, setInitialAtt] = useState({}); // enrollment_id -> status
  const [loading, setLoading] = useState(true);
  const [saving, setSaving] = useState(false);
 
@@ -117,6 +118,7 @@ export default function Attendance() {
  final[r.enrollment_id] = map[r.enrollment_id] ?? "none";
  });
  setAtt(final);
+ setInitialAtt(final);
 
  setLoading(false);
  }
@@ -134,6 +136,14 @@ export default function Attendance() {
  const none = list.filter((x) => x === "none").length;
  return { expected, present, absent, excused, none };
  }, [att]);
+
+ const dirty = useMemo(() => {
+  try {
+   return JSON.stringify(att) !== JSON.stringify(initialAtt);
+  } catch {
+   return true;
+  }
+ }, [att, initialAtt]);
 
  function setAll(value) {
  const next = {};
@@ -208,11 +218,11 @@ export default function Attendance() {
  <ArrowRight size={18} /> 
  </button>
  )}
- <button className="btn" onClick={load}>
- <RefreshCw size={18} /> Refresh
+ <button className="btn" onClick={load} aria-label="تحديث" title="تحديث">
+ <RefreshCw size={18} /> تحديث
  </button>
- <button className="btn primary" disabled={saving} onClick={saveAll}>
- <Save size={18} /> {saving ? " Save..." : "Save"}
+ <button className="btn primary" disabled={saving || !dirty} onClick={saveAll} title={dirty ? "حفظ" : "لا توجد تغييرات"} aria-label="حفظ">
+ <Save size={18} /> {saving ? "جاري الحفظ..." : dirty ? "حفظ" : "محفوظ"}
  </button>
  </div>
  }
@@ -220,13 +230,13 @@ export default function Attendance() {
 
 <ErrorBanner error={error} />
 
- <div className="row" style={{ flexWrap: "wrap", marginBottom: 10 }}>
- <Badge variant="info">: {stats.expected}</Badge>
- <Badge variant="ok">: {stats.present}</Badge>
- <Badge variant="danger">: {stats.absent}</Badge>
- <Badge variant="warn">: {stats.excused}</Badge>
- <Badge variant="info"> : {stats.none}</Badge>
- </div>
+ <div className="row" style={{ flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+ <Badge variant="info">المتوقع: {stats.expected}</Badge>
+ <Badge variant="ok">حاضر: {stats.present}</Badge>
+ <Badge variant="danger">غائب: {stats.absent}</Badge>
+ <Badge variant="warn">معذور: {stats.excused}</Badge>
+ <Badge variant="info">غير مسجل: {stats.none}</Badge>
+</div>
 
  <div className="toolbar" style={{ marginBottom: 10, gap: 8 }}>
   <button className="btn" title="تعيين الجميع: حاضر" aria-label="تعيين الجميع: حاضر" onClick={() => setAll("present")}>
