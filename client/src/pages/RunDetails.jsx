@@ -150,6 +150,10 @@ export default function RunDetails() {
   const [children, setChildren] = useState([]);
   const [payments, setPayments] = useState([]);
 
+  const isWorkshop = String(
+    summary?.kind || summary?.type || summary?.course_type || summary?.course?.type || ""
+  ).toLowerCase() === "workshop";
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
