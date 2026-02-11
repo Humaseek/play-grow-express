@@ -155,7 +155,7 @@ export default function RunDetails() {
       summary?.kind ||
         summary?.type ||
         summary?.course_type ||
-        summary?.course?.kind ||
+        course?.kind ||
         "",
     ) === "Workshop";
 
