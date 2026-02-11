@@ -2196,106 +2196,120 @@ export default function RunDetails() {
             {/* LEFT: generator + quick add */}
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">Sessions</div>
+              <div className="muted" style={{ marginTop: 6 }}>
+                Set the recurrence, then generate a session list. Times are in
+                your local timezone.
+              </div>
 
               <hr className="sep" />
 
+
               {isWorkshop ? (
-                <div style={{ display: "grid", gap: 12 }}>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ width: "100%" }}
-                    onClick={openCreateSession}
-                    disabled={(sessions || []).length > 0}
-                    title={
-                      (sessions || []).length > 0
-                        ? "Session already created"
-                        : "Create the workshop session"
-                    }
-                  >
-                    {(sessions || []).length > 0
-                      ? "Session created"
-                      : "+ Create session"}
-                  </button>
+
+
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <div className="muted">
+                  Workshop runs usually have a single session. Create it once,
+                  then manage it from the list.
                 </div>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: "100%" }}
+                  onClick={openCreateSession}
+                  disabled={(sessions || []).length > 0}
+                  title={
+                    (sessions || []).length > 0
+                      ? "Session already created"
+                      : "Create the workshop session"
+                  }
+                >
+                  {(sessions || []).length > 0 ? "Session created" : "+ Create session"}
+                </button>
+              </div>
               ) : (
-                <div style={{ display: "grid", gap: 12 }}>
+
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="muted">First session (date/time)</div>
+                  <input
+                    className="input"
+                    type={isWorkshop ? "date" : "datetime-local"}
+                    value={firstStart}
+                    onChange={(e) => setFirstStart(e.target.value)}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 10,
+                  }}
+                >
                   <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">First session (date/time)</div>
-                    <input
-                      className="input"
-                      type={isWorkshop ? "date" : "datetime-local"}
-                      value={firstStart}
-                      onChange={(e) => setFirstStart(e.target.value)}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 10,
-                    }}
-                  >
-                    <div style={{ display: "grid", gap: 6 }}>
-                      <div className="muted">Duration (minutes)</div>
-                      <input
-                        className="input"
-                        type="number"
-                        min="1"
-                        value={durationMinutes}
-                        onChange={(e) => setDurationMinutes(e.target.value)}
-                      />
-                    </div>
-
-                    <div style={{ display: "grid", gap: 6 }}>
-                      <div className="muted">Number of sessions</div>
-                      <input
-                        className="input"
-                        type="number"
-                        min="1"
-                        value={count}
-                        onChange={(e) => setCount(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">Repeat every (days)</div>
+                    <div className="muted">Duration (minutes)</div>
                     <input
                       className="input"
                       type="number"
                       min="1"
-                      value={intervalDays}
-                      onChange={(e) => setIntervalDays(e.target.value)}
+                      value={durationMinutes}
+                      onChange={(e) => setDurationMinutes(e.target.value)}
                     />
-                    <div className="muted" style={{ marginTop: -2 }}>
-                      Current schedule: every <b>{intervalDays}</b> days
-                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    className="btn primary"
-                    style={{ width: "100%" }}
-                    disabled={genLoading || !firstStart}
-                    onClick={generateSessions}
-                  >
-                    {genLoading ? "Generating..." : "Generate sessions"}
-                  </button>
-
-                  <hr className="sep" />
-
-                  <button
-                    type="button"
-                    className="btn"
-                    style={{ width: "100%" }}
-                    onClick={openCreateSession}
-                  >
-                    <Plus size={16} className="ico" /> Add single session
-                  </button>
+                  <div style={{ display: "grid", gap: 6 }}>
+                    <div className="muted">Number of sessions</div>
+                    <input
+                      className="input"
+                      type="number"
+                      min="1"
+                      value={count}
+                      onChange={(e) => setCount(e.target.value)}
+                    />
+                  </div>
                 </div>
+
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="muted">Repeat every (days)</div>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    value={intervalDays}
+                    onChange={(e) => setIntervalDays(e.target.value)}
+                  />
+                  <div className="muted" style={{ marginTop: -2 }}>
+                    Current schedule: every <b>{intervalDays}</b> days
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn primary"
+                  style={{ width: "100%" }}
+                  disabled={genLoading || !firstStart}
+                  onClick={generateSessions}
+                >
+                  {genLoading ? "Generating..." : "Generate sessions"}
+                </button>
+
+                <hr className="sep" />
+
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ width: "100%" }}
+                  onClick={openCreateSession}
+                >
+                  <Plus size={16} className="ico" /> Add single session
+                </button>
+              </div>
               )}
+
             </div>
 
             {/* RIGHT: list */}
@@ -2305,7 +2319,7 @@ export default function RunDetails() {
             >
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Manage sessions for this run. Edit times, mark done/cancelled,
+                Manage sessions for this run. Edit times, mark done/canceled,
                 or delete.
               </div>
 
@@ -2325,7 +2339,7 @@ export default function RunDetails() {
                   >
                     {sessions.map((s) => {
                       const isDone = s.status === "done";
-                      const isCancelled = s.status === "cancelled";
+                      const isCanceled = s.status === "canceled";
                       return (
                         <div
                           key={s.id}
@@ -2371,7 +2385,7 @@ export default function RunDetails() {
                                 borderRadius: 999,
                                 background: isDone
                                   ? "rgba(34,197,94,0.12)"
-                                  : isCancelled
+                                  : isCanceled
                                     ? "rgba(239,68,68,0.10)"
                                     : "rgba(0,0,0,0.06)",
                                 border: "1px solid rgba(0,0,0,0.08)",
@@ -2484,8 +2498,8 @@ export default function RunDetails() {
                               <button
                                 type="button"
                                 className="btn danger"
-                                title={isCancelled ? "Restore" : "Cancel"}
-                                aria-label={isCancelled ? "Restore" : "Cancel"}
+                                title={isCanceled ? "Restore" : "Cancel"}
+                                aria-label={isCanceled ? "Restore" : "Cancel"}
                                 style={{
                                   width: 36,
                                   height: 36,
@@ -2497,11 +2511,11 @@ export default function RunDetails() {
                                 onClick={() =>
                                   setSessionStatus(
                                     s.id,
-                                    isCancelled ? "scheduled" : "cancelled",
+                                    isCanceled ? "scheduled" : "canceled",
                                   )
                                 }
                               >
-                                {isCancelled ? (
+                                {isCanceled ? (
                                   <>
                                     <CheckCircle2 size={16} className="ico" />
                                   </>
