@@ -56,6 +56,25 @@ export default function CourseDetails() {
     text: "",
   });
 
+  const isWorkshop = useMemo(() => {
+    return (course?.type || "").toLowerCase() === "workshop";
+  }, [course]);
+
+  function openCreateRunModal() {
+    // For workshops, create exactly 1 session (no weekly repeat).
+    if ((course?.type || "").toLowerCase() === "workshop") {
+      setCreatesessions(true);
+      setCount(1);
+      setIntervalDays(1);
+    } else {
+      setCreatesessions(true);
+      setCount(isWorkshop ? 1 : 8);
+      setIntervalDays(isWorkshop ? 1 : 7);
+    }
+    setOpen(true);
+  }
+
+
   async function load() {
     setLoading(true);
     setError(null);
@@ -282,8 +301,8 @@ export default function CourseDetails() {
       setLabel("");
       setFirstStart("");
       setDurationMinutes(60);
-      setCount(8);
-      setIntervalDays(7);
+      setCount(isWorkshop ? 1 : 8);
+      setIntervalDays(isWorkshop ? 1 : 7);
       setCreatesessions(true);
 
       await load();
@@ -353,14 +372,7 @@ export default function CourseDetails() {
             <button className="btn" onClick={() => navigate("/courses")}>
               Back
             </button>
-            <button
-              className="btn primary"
-              onClick={() => {
-                const t = (course?.kind || "").toLowerCase();
-                setCreatesessions(t === "workshop" ? false : true);
-                setOpen(true);
-              }}
-            >
+            <button className="btn primary" onClick={openCreateRunModal}>
               <Plus size={18} /> New run
             </button>
           </>
@@ -418,6 +430,20 @@ export default function CourseDetails() {
         </div>
       </div>
 
+      <div className="card" style={{ marginTop: 14 }}>
+        <div
+          className="row"
+          style={{ justifyContent: "space-between", alignItems: "center" }}
+        >
+          <div>
+            <div className="cardTitle">Runs</div>
+          </div>
+          <button className="btn primary" onClick={openCreateRunModal}>
+            <Plus size={18} /> New run
+          </button>
+        </div>
+      </div>
+
       {sortedRuns.length === 0 ? (
         <div className="card" style={{ marginTop: 12 }}>
           <EmptyState
@@ -425,14 +451,7 @@ export default function CourseDetails() {
             description="Create the first run for this course."
             icon={Layers}
             actions={
-              <button
-                className="btn primary"
-                onClick={() => {
-                  const t = (course?.kind || "").toLowerCase();
-                  setCreatesessions(t === "workshop" ? false : true);
-                  setOpen(true);
-                }}
-              >
+              <button className="btn primary" onClick={openCreateRunModal}>
                 <Plus size={18} /> New run
               </button>
             }
@@ -614,20 +633,45 @@ export default function CourseDetails() {
             />
           </div>
 
-          <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">Generate sessions automatically?</div>
-            <ModernSelect
-              value={createsessions ? "1" : "0"}
-              onChange={(v) => setCreatesessions(v === "1")}
-              menuWidth="trigger"
-              options={[
-                { value: "1", label: "Yes" },
-                { value: "0", label: "No" },
-              ]}
-            />
-          </div>
+          {!isWorkshop && (
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">Generate sessions automatically?</div>
+              <ModernSelect
+                value={createsessions ? "1" : "0"}
+                onChange={(v) => setCreatesessions(v === "1")}
+                menuWidth="trigger"
+                options={[
+                  { value: "1", label: "Yes" },
+                  { value: "0", label: "No" },
+                ]}
+              />
+            </div>
+          )}
 
-          {createsessions && (
+          {isWorkshop && (
+            <>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted">Session duration (minutes)</div>
+                <input
+                  className="input"
+                  type="number"
+                  min="15"
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(e.target.value)}
+                />
+              </div>
+
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted">Number of sessions</div>
+                <input className="input" type="number" value={1} disabled />
+                <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                  Workshops are one-time (single session).
+                </div>
+              </div>
+            </>
+          )}
+
+          {!isWorkshop && createsessions && (
             <>
               <div style={{ gridColumn: "span 4" }}>
                 <div className="muted">Session duration (minutes)</div>
