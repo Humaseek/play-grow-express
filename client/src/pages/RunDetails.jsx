@@ -288,6 +288,8 @@ export default function RunDetails() {
     id: null,
     start_at: "",
     end_at: "",
+    // For workshop: duration can be set per session in the modal.
+    duration_min: 60,
     status: "scheduled",
   });
   const [sessionSaving, setSessionSaving] = useState(false);
@@ -1336,7 +1338,13 @@ export default function RunDetails() {
   }
 
   function openCreateSession() {
-    setSessionForm({ id: null, start_at: "", end_at: "", status: "scheduled" });
+    setSessionForm({
+      id: null,
+      start_at: "",
+      end_at: "",
+      duration_min: Number(durationMinutes) || 60,
+      status: "scheduled",
+    });
     setOpenSession(true);
   }
 
@@ -1355,6 +1363,9 @@ export default function RunDetails() {
       id: s.id,
       start_at: toLocalInput(startLocal),
       end_at: toLocalInput(endLocal),
+      duration_min:
+        Math.max(1, Math.round((endLocal.getTime() - startLocal.getTime()) / 60000)) ||
+        (Number(durationMinutes) || 60),
       status: s.status,
     });
     setOpenSession(true);
@@ -1372,7 +1383,9 @@ export default function RunDetails() {
     if (String(sessionForm.start_at).length === 10)
       startLocal.setHours(0, 0, 0, 0);
 
-    const durationMin = Number(durationMinutes) || 60;
+    const durationMin = isWorkshop
+      ? (Number(sessionForm.duration_min) || Number(durationMinutes) || 60)
+      : (Number(durationMinutes) || 60);
     const endLocal = new Date(startLocal.getTime() + durationMin * 60 * 1000);
 
     setSessionSaving(true);
@@ -3822,6 +3835,25 @@ export default function RunDetails() {
                 }
               />
             </div>
+            {isWorkshop && (
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted">Duration (minutes)</div>
+                <input
+                  className="input"
+                  type="number"
+                  min={1}
+                  step={5}
+                  value={sessionForm.duration_min ?? 60}
+                  onChange={(e) =>
+                    setSessionForm((p) => ({
+                      ...p,
+                      duration_min: Number(e.target.value),
+                    }))
+                  }
+                />
+              </div>
+            )}
+
             <div style={{ gridColumn: "span 12" }}>
               <div className="muted">Status</div>
               <ModernSelect
