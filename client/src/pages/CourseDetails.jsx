@@ -57,12 +57,12 @@ export default function CourseDetails() {
   });
 
   const isWorkshop = useMemo(() => {
-    return (course?.kind || "").toLowerCase() === "workshop";
+    return (course?.type || "").toLowerCase() === "workshop";
   }, [course]);
 
   function openCreateRunModal() {
     // For workshops, create exactly 1 session (no weekly repeat).
-    if ((course?.kind || "").toLowerCase() === "workshop") {
+    if ((course?.type || "").toLowerCase() === "workshop") {
       setCreatesessions(true);
       setCount(1);
       setIntervalDays(1);
@@ -73,6 +73,7 @@ export default function CourseDetails() {
     }
     setOpen(true);
   }
+
 
   async function load() {
     setLoading(true);
@@ -658,14 +659,6 @@ export default function CourseDetails() {
                   value={durationMinutes}
                   onChange={(e) => setDurationMinutes(e.target.value)}
                 />
-              </div>
-
-              <div style={{ gridColumn: "span 6" }}>
-                <div className="muted">Number of sessions</div>
-                <input className="input" type="number" value={1} disabled />
-                <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                  Workshops are one-time (single session).
-                </div>
               </div>
             </>
           )}
