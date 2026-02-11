@@ -356,8 +356,8 @@ export default function CourseDetails() {
             <button
               className="btn primary"
               onClick={() => {
-                const t = (course?.type || "").toLowerCase();
-                setCreatesessions(t === "Workshop" ? false : true);
+                const t = (course?.kind || "").toLowerCase();
+                setCreatesessions(t === "workshop" ? false : true);
                 setOpen(true);
               }}
             >
@@ -428,8 +428,8 @@ export default function CourseDetails() {
               <button
                 className="btn primary"
                 onClick={() => {
-                  const t = (course?.type || "").toLowerCase();
-                  setCreatesessions(t === "Workshop" ? false : true);
+                  const t = (course?.kind || "").toLowerCase();
+                  setCreatesessions(t === "workshop" ? false : true);
                   setOpen(true);
                 }}
               >
