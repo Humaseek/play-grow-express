@@ -43,6 +43,13 @@ function fmtDT(dt) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function fmtDate(dt) {
+  if (!dt) return "-";
+  const d = new Date(dt);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 function fmtTimeHM(dt) {
   if (!dt) return "-";
   const d = new Date(dt);
@@ -143,6 +150,26 @@ export default function RunDetails() {
   const [children, setChildren] = useState([]);
   const [payments, setPayments] = useState([]);
 
+  const isWorkshop = (() => {
+    const raw =
+      summary?.course_type ??
+      summary?.type ??
+      summary?.kind ??
+      summary?.course?.course_type ??
+      summary?.course?.type ??
+      summary?.course?.kind ??
+      "";
+    const v = String(raw).trim().toLowerCase();
+    return (
+      v === "workshop" ||
+      v === "ws" ||
+      v === "one_time" ||
+      v === "one-time" ||
+      v.includes("workshop") ||
+      v.includes("ورشة")
+    );
+  })();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -158,7 +185,7 @@ export default function RunDetails() {
   const [enrollLocked, setEnrollLocked] = useState(false);
   const [enrollLockedName, setEnrollLockedName] = useState("");
 
-  const [buySessions, setBuySessions] = useState("");
+  const [buySessions, setBuySessions] = useState(8);
   const [buyPriceTotal, setBuyPriceTotal] = useState("");
   const [buyUnitPrice, setBuyUnitPrice] = useState("");
   const [buyPriceEditMode, setBuyPriceEditMode] = useState("total"); // total | unit
@@ -171,8 +198,9 @@ export default function RunDetails() {
     name: "",
     birth_date: "",
     class: "",
-    country: "",
     gender: "male",
+    country_id: 1,
+    new_country_name: "",
     mother_name: "",
     mother_phone: "",
     father_name: "",
@@ -180,6 +208,9 @@ export default function RunDetails() {
     notes: "",
   });
   const [newChildSaving, setNewChildSaving] = useState(false);
+
+  const [countries, setCountries] = useState([]);
+  const [countriesLoading, setCountriesLoading] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
 
   // Quick action: open "Add child" modal and auto-enroll into this run
@@ -187,6 +218,27 @@ export default function RunDetails() {
     setNewChildEnrollNow(true);
     setOpenNewChild(true);
   };
+
+  async function loadCountriesSafe() {
+    setCountriesLoading(true);
+    try {
+      const res = await supabase
+        .from("countries")
+        .select("id,name")
+        .order("name", { ascending: true });
+      if (res.error) throw res.error;
+      setCountries(res.data ?? []);
+    } catch (e) {
+      // non-blocking: we can still create a child without country_id
+      setCountries([]);
+    } finally {
+      setCountriesLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (openNewChild) loadCountriesSafe();
+  }, [openNewChild]);
 
   // Package info + mode
   const [pkgInfo, setPkgInfo] = useState(null);
@@ -197,7 +249,7 @@ export default function RunDetails() {
   const [openBulk, setOpenBulk] = useState(false);
   const [bulkQ, setBulkQ] = useState("");
   const [bulkSelected, setBulkSelected] = useState({});
-  const [bulkSessions, setBulkSessions] = useState("");
+  const [bulkSessions, setBulkSessions] = useState(8);
 
   const [bulkPriceMode, setBulkPriceMode] = useState("unified"); // unified | perChild
   const [bulkUnifiedPrice, setBulkUnifiedPrice] = useState("");
@@ -225,7 +277,7 @@ export default function RunDetails() {
 
   // Sessions generator
   const [firstStart, setFirstStart] = useState("");
-  const [durationMinutes, setDurationMinutes] = useState(60);
+  const [durationMinutes, setDurationMinutesutes] = useState(60);
   const [count, setCount] = useState(8);
   const [intervalDays, setIntervalDays] = useState(7);
   const [genLoading, setGenLoading] = useState(false);
@@ -236,6 +288,8 @@ export default function RunDetails() {
     id: null,
     start_at: "",
     end_at: "",
+    // For workshop: duration can be set per session in the modal.
+    duration_min: 60,
     status: "scheduled",
   });
   const [sessionSaving, setSessionSaving] = useState(false);
@@ -271,108 +325,11 @@ export default function RunDetails() {
     [summary],
   );
 
-  // Defaults for enrolling a child into this run (sessions + total price).
-  // We prefer values that were selected when building the Run; if missing/null, we fall back safely.
-  const runDefaultSessions = useMemo(() => {
-    // Prefer the configured "sessions total" for this run; otherwise fall back to how many sessions exist.
-    const futureScheduled = (() => {
-      const now = new Date();
-      return (sessions || []).filter(
-        (s) => s.status === "scheduled" && new Date(s.start_at) >= now,
-      ).length;
-    })();
-
-    const candidates = [
-      summary?.package_sessions_total,
-      summary?.sessions_total,
-      summary?.planned_sessions,
-      summary?.sessions_count,
-      summary?.run_sessions_total,
-      sessions?.length,
-      futureScheduled,
-    ];
-
-    for (const c of candidates) {
-      const n = Number(c);
-      if (Number.isFinite(n) && n > 0) return Math.round(n);
-    }
-    return 8;
-  }, [summary, sessions]);
-
-  const runDefaultTotalPrice = useMemo(() => {
-    const candidates = [
-      summary?.price_total,
-      summary?.package_price_total,
-      summary?.agreed_price_total,
-      summary?.run_price_total,
-      summary?.default_price,
-    ];
-    for (const c of candidates) {
-      const n = Number(c);
-      if (Number.isFinite(n) && n > 0) return n;
-    }
-    return Number(defaultPrice || 0);
-  }, [summary, defaultPrice]);
-
-
-  
-  // Initialize enroll / bulk defaults from the run configuration (editable by the user).
-  useEffect(() => {
-    if (!openEnroll) return;
-
-    // Only apply defaults when buying new sessions (or when enrollment is locked to that flow).
-    if (enrollMode !== "buy_new" && !enrollLocked) return;
-
-    // Sessions default: what was planned for this run (fallbacks handled by runDefaultSessions).
-    setBuySessions((prev) => {
-      const n = Number(prev);
-      if (!Number.isFinite(n) || n <= 0) return runDefaultSessions;
-      // If it's still the generic fallback (8), prefer the run default.
-      if (n === 8 && runDefaultSessions !== 8) return runDefaultSessions;
-      return prev;
-    });
-
-    // Price defaults: prefer runDefaultTotalPrice (if any).
-    setBuyPriceTotal((prev) => {
-      const hasPrev = prev !== null && prev !== undefined && String(prev).trim() !== "";
-      if (hasPrev) return prev;
-      return runDefaultTotalPrice > 0 ? String(runDefaultTotalPrice) : "";
-    });
-
-    // Keep unit price consistent with the chosen total/sessions.
-    setBuyUnitPrice((prev) => {
-      const s = Number(runDefaultSessions);
-      const t = Number(runDefaultTotalPrice);
-      if (!Number.isFinite(s) || s <= 0) return prev;
-      if (!Number.isFinite(t) || t <= 0) return prev;
-      return (t / s).toFixed(2);
-    });
-
-    // Default editing mode: total price.
-    setBuyPriceEditMode((prev) => (prev ? prev : "total"));
-  }, [openEnroll, enrollMode, enrollLocked, runDefaultSessions, runDefaultTotalPrice]);
-
-  useEffect(() => {
-    if (!openBulk) return;
-
-    setBulkSessions((prev) => {
-      const n = Number(prev);
-      if (!Number.isFinite(n) || n <= 0) return runDefaultSessions;
-      if (n === 8 && runDefaultSessions !== 8) return runDefaultSessions;
-      return prev;
-    });
-
-    setBulkUnifiedPrice((prev) => {
-      const hasPrev = prev !== null && prev !== undefined && String(prev).trim() !== "";
-      if (hasPrev) return prev;
-      return runDefaultTotalPrice > 0 ? String(runDefaultTotalPrice) : "";
-    });
-  }, [openBulk, runDefaultSessions, runDefaultTotalPrice]);
-async function loadChildrenSafe() {
+  async function loadChildrenSafe() {
     const tryView = await supabase
       .from("children_view")
       .select(
-        "id,name,age,class,gender,country,mother_name,mother_phone,father_name,father_phone,birth_date",
+        "id,name,age,class,gender,mother_name,mother_phone,father_name,father_phone,birth_date",
       )
       .order("name", { ascending: true });
 
@@ -381,7 +338,7 @@ async function loadChildrenSafe() {
     const tryTable = await supabase
       .from("children")
       .select(
-        "id,name,birth_date,class,gender,country,mother_name,mother_phone,father_name,father_phone",
+        "id,name,birth_date,class,gender,mother_name,mother_phone,father_name,father_phone",
       )
       .order("name", { ascending: true });
 
@@ -405,17 +362,48 @@ async function loadChildrenSafe() {
     setError(null);
 
     try {
+      let countryId = newChildForm.country_id
+        ? Number(newChildForm.country_id)
+        : null;
+
+      // If user typed a new country/city name, create (or reuse) it and use its id.
+      const newCountryName = (newChildForm.new_country_name || "").trim();
+      if (newCountryName) {
+        // Try find existing
+        const existing = await supabase
+          .from("countries")
+          .select("id")
+          .eq("name", newCountryName)
+          .maybeSingle();
+        if (existing.error && existing.status !== 406) throw existing.error;
+
+        if (existing.data?.id) {
+          countryId = existing.data.id;
+        } else {
+          const created = await supabase
+            .from("countries")
+            .insert([{ name: newCountryName }])
+            .select("id")
+            .single();
+          if (created.error) throw created.error;
+          countryId = created.data?.id ?? countryId;
+        }
+
+        // refresh dropdown list (best-effort)
+        loadCountriesSafe();
+      }
+
       const payload = {
         name,
         birth_date: birth,
         class: (newChildForm.class || "").trim() || null,
-        country: (newChildForm.country || "").trim() || null,
         gender: newChildForm.gender || "male",
         mother_name: (newChildForm.mother_name || "").trim() || null,
         mother_phone: (newChildForm.mother_phone || "").trim() || null,
         father_name: (newChildForm.father_name || "").trim() || null,
         father_phone: (newChildForm.father_phone || "").trim() || null,
         notes: (newChildForm.notes || "").trim() || null,
+        country_id: countryId,
       };
 
       const ins = await supabase
@@ -435,18 +423,9 @@ async function loadChildrenSafe() {
 
       // If user wants immediate enroll, keep the enroll modal open.
       if (enrollNow && newId) {
-        // Default to what was configured when creating this Run (editable by the user).
-        const s0 = runDefaultSessions;
-        const t0 = runDefaultTotalPrice;
-        setBuySessions(s0);
-        setBuyPriceTotal(Number.isFinite(t0) ? t0.toFixed(2) : "0.00");
-        setBuyUnitPrice(s0 > 0 && Number.isFinite(t0) ? (t0 / s0).toFixed(2) : "");
-        setBuyPriceEditMode("total");
-
         setOpenEnroll(true);
         setEnrollMode("buy_new");
         toast("Child created. Set sessions and click Save to enroll.", "ok");
-
       } else {
         toast("Child created.", "ok");
       }
@@ -456,8 +435,9 @@ async function loadChildrenSafe() {
         name: "",
         birth_date: "",
         class: "",
-        country: "",
         gender: "male",
+        country_id: 1,
+        new_country_name: "",
         mother_name: "",
         mother_phone: "",
         father_name: "",
@@ -760,16 +740,13 @@ async function loadChildrenSafe() {
     setEnrollLocked(false);
     setEnrollLockedName("");
     setSelectedChildId("");
-
-    // Default to what was configured when creating this Run (editable by the user).
-    const s0 = runDefaultSessions;
-    const t0 = runDefaultTotalPrice;
-
+    const s0 = 8;
     setBuySessions(s0);
-    setBuyPriceTotal(Number.isFinite(t0) ? t0.toFixed(2) : "0.00");
-    setBuyUnitPrice(s0 > 0 && Number.isFinite(t0) ? (t0 / s0).toFixed(2) : "");
+    setBuyPriceTotal(String(defaultPrice));
+    setBuyUnitPrice(s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "");
     setBuyPriceEditMode("total");
     setPkgInfo(null);
+    // setEnrollMode("auto");
     setOpenEnroll(true);
   }
 
@@ -853,115 +830,178 @@ async function loadChildrenSafe() {
     const d = Number(delta);
     if (!Number.isFinite(id) || !Number.isFinite(d) || d === 0) return;
 
+    // Read once so we can pass the correct RPC parameter (p_new_allocated)
+    const cur = await supabase
+      .from("enrollments")
+      .select("sessions_allocated")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (cur.error) throw cur.error;
+
+    const current = Number(cur.data?.sessions_allocated ?? 0);
+    const next = Math.max(0, current + d);
+
     // 1) Try RPC (if exists)
     const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
       p_enrollment_id: id,
-      p_delta: d,
+      p_new_allocated: next,
     });
 
     if (!rpc.error) return;
 
+    // If RPC is missing / signature mismatch, fall back to direct update.
     const msg = String(rpc.error?.message ?? "");
-    const missingFn = msg.includes("Could not find the function") ||
-      msg.includes("schema cache");
-    if (!missingFn) throw rpc.error;
+    const shouldFallback =
+      msg.includes("Could not find the function") ||
+      msg.includes("schema cache") ||
+      msg.includes("No function matches") ||
+      msg.includes("does not exist");
 
-    // 2) Fallback: read + write sessions_allocated directly
-    const cur = await supabase
-      .from("enrollments")
-      .select("id,sessions_allocated")
-      .eq("id", id)
-      .single();
-    if (cur.error) throw cur.error;
-
-    const now = Number(cur.data?.sessions_allocated ?? 0);
-    const next = Math.max(0, now + d);
+    if (!shouldFallback) throw rpc.error;
 
     const upd = await supabase
       .from("enrollments")
       .update({ sessions_allocated: next })
       .eq("id", id);
+
     if (upd.error) throw upd.error;
   }
 
-  
-async function reactivateWithdrawnEnrollment(childId) {
-  // If the child was previously removed (withdrawn) from this run,
-  // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
-  // but we still allow setting a NEW price and "fresh" add-sessions inputs.
-  const existing = participants.find(
-    (p) =>
-      Number(p.child_id) === Number(childId) &&
-      p.enrollment_status === "withdrawn",
-  );
-  if (!existing) return false;
+  async function reactivateWithdrawnEnrollment(childId) {
+    // If the child was previously removed (withdrawn) from this run,
+    // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
+    // but we still allow setting a NEW price and "fresh" add-sessions inputs.
+    const existing = participants.find(
+      (p) =>
+        Number(p.child_id) === Number(childId) &&
+        p.enrollment_status === "withdrawn",
+    );
+    if (!existing) return false;
 
-  const sessionsToBuyRaw = Number(buySessions);
-  const sessionsToBuy = Number.isFinite(sessionsToBuyRaw) ? sessionsToBuyRaw : 0;
-
-  const priceTotalNum = (() => {
-    const s = Number.isFinite(sessionsToBuy) && sessionsToBuy > 0
-      ? sessionsToBuy
+    const sessionsToBuyRaw = Number(buySessions);
+    const sessionsToBuy = Number.isFinite(sessionsToBuyRaw)
+      ? sessionsToBuyRaw
       : 0;
 
-    if (buyPriceEditMode === "unit") {
-      const u = buyUnitPrice === "" ? 0 : Number(buyUnitPrice);
-      return Number.isFinite(u) ? u * s : 0;
-    }
+    const priceTotalNum = (() => {
+      const s =
+        Number.isFinite(sessionsToBuy) && sessionsToBuy > 0 ? sessionsToBuy : 0;
 
-    const t = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
-    return Number.isFinite(t) ? t : 0;
-  })();
-
-  try {
-    setError(null);
-
-    // 1) Reactivate enrollment
-    const upd = await supabase
-      .from("enrollments")
-      .update({ status: "active" })
-      .eq("id", existing.enrollment_id);
-    if (upd.error) throw upd.error;
-
-    // 2) Re-open + UPDATE package price (so re-enroll can have a NEW price)
-    if (existing.package_id) {
-      const pkgUpd = await supabase
-        .from("course_packages")
-        .update({ status: "active", price_total: priceTotalNum })
-        .eq("id", existing.package_id);
-      if (pkgUpd.error) throw pkgUpd.error;
-
-      // Add sessions back to the package total (keeps sessions_used consistent)
-      if (sessionsToBuy > 0) {
-        const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
-          p_package_id: Number(existing.package_id),
-          p_delta: Number(sessionsToBuy),
-        });
-        if (rpcPkg.error) throw rpcPkg.error;
+      if (buyPriceEditMode === "unit") {
+        const u = buyUnitPrice === "" ? 0 : Number(buyUnitPrice);
+        return Number.isFinite(u) ? u * s : 0;
       }
-    }
 
-    // 3) Allocate sessions for THIS run enrollment (so run balance matches)
-    if (sessionsToBuy > 0) {
-      await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
-      toast("Child re-enrolled successfully.", "ok");
-    } else {
-      toast("Enrollment re-activated. Add sessions then click Save.", "ok");
-    }
+      const t = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
+      return Number.isFinite(t) ? t : 0;
+    })();
 
-    setOpenEnroll(false);
-    await loadFixed();
-    setTab("participants");
-    return true;
-  } catch (e) {
-    setError(e);
-    toast("Failed to re-enroll child.", "danger");
-    return true;
+    try {
+      setError(null);
+
+      // 1) Reactivate enrollment
+      const upd = await supabase
+        .from("enrollments")
+        .update({ status: "active" })
+        .eq("id", existing.enrollment_id);
+      if (upd.error) throw upd.error;
+
+      // 2) Re-open + UPDATE package price (so re-enroll can have a NEW price)
+      if (existing.package_id) {
+        const pkgUpd = await supabase
+          .from("course_packages")
+          .update({ status: "active", price_total: priceTotalNum })
+          .eq("id", existing.package_id);
+        if (pkgUpd.error) throw pkgUpd.error;
+
+        // Add sessions back to the package total (keeps sessions_used consistent)
+        if (sessionsToBuy > 0) {
+          const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+            p_package_id: Number(existing.package_id),
+            p_delta: Number(sessionsToBuy),
+          });
+          if (rpcPkg.error) throw rpcPkg.error;
+        }
+      }
+
+      // 3) Allocate sessions for THIS run enrollment (so run balance matches)
+      if (sessionsToBuy > 0) {
+        await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
+        toast("Child re-enrolled successfully.", "ok");
+      } else {
+        toast("Enrollment re-activated. Add sessions then click Save.", "ok");
+      }
+
+      setOpenEnroll(false);
+      await loadFixed();
+      setTab("participants");
+      return true;
+    } catch (e) {
+      setError(e);
+      toast("Failed to re-enroll child.", "danger");
+      return true;
+    }
   }
-}
 
+  async function reactivateWithdrawnEnrollmentBulk(
+    childId,
+    sessionsToBuy,
+    priceTotalNum,
+  ) {
+    // Bulk-safe variant of reactivateWithdrawnEnrollment:
+    // uses explicit sessions/price (does NOT depend on the single-enroll modal state).
+    const existing = participants.find(
+      (p) =>
+        Number(p.child_id) === Number(childId) &&
+        p.enrollment_status === "withdrawn",
+    );
+    if (!existing) return false;
 
-async function purchaseAndEnrollSingle() {
+    const sRaw = Number(sessionsToBuy);
+    const s = Number.isFinite(sRaw) ? sRaw : 0;
+    const priceRaw = Number(priceTotalNum);
+    const priceTotal = Number.isFinite(priceRaw) ? priceRaw : 0;
+
+    try {
+      // 1) Reactivate enrollment row
+      const upd = await supabase
+        .from("enrollments")
+        .update({ status: "active" })
+        .eq("id", existing.enrollment_id);
+      if (upd.error) throw upd.error;
+
+      // 2) Reactivate + update package (optional)
+      if (existing.package_id) {
+        const pkgUpd = await supabase
+          .from("course_packages")
+          .update({ status: "active", price_total: priceTotal })
+          .eq("id", existing.package_id);
+        if (pkgUpd.error) throw pkgUpd.error;
+
+        if (s > 0) {
+          const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+            p_package_id: Number(existing.package_id),
+            p_delta: Number(s),
+          });
+          if (rpcPkg.error) throw rpcPkg.error;
+        }
+      }
+
+      // 3) Allocate sessions on the enrollment
+      if (s > 0) {
+        await bumpEnrollmentAllocated(existing.enrollment_id, s);
+      }
+
+      return true;
+    } catch (e) {
+      // Don't toast here (bulk flow will summarize). Bubble a boolean + let caller setError if needed.
+      console.error("Bulk reactivation failed:", e);
+      return false;
+    }
+  }
+
+  async function purchaseAndEnrollSingle() {
     if (!summary) return;
     if (!selectedChildId) {
       toast("Select a child.", "warn");
@@ -1017,31 +1057,43 @@ async function purchaseAndEnrollSingle() {
       const msg = String(e?.message || e || "");
       // ✅
       if (msg.includes("uq_run_child") || msg.includes("duplicate key value")) {
-  const existing = participants.find(
-    (x) => Number(x.child_id) === Number(selectedChildId),
-  );
+        const existing = participants.find(
+          (x) => Number(x.child_id) === Number(selectedChildId),
+        );
 
-  // ✅ If the existing enrollment is withdrawn, allow re-enroll
-  if (existing?.enrollment_status === "withdrawn") {
-    // Re-open the same enrollment/package and add sessions
-    await reactivateWithdrawnEnrollment(selectedChildId);
-    return;
-  }
+        // If the existing enrollment is withdrawn, allow re-enroll
+        if (existing?.enrollment_status === "withdrawn") {
+          await reactivateWithdrawnEnrollment(selectedChildId);
+          return;
+        }
 
-  toast("This child is already enrolled in this run.", "warn");
+        toast("This child is already enrolled in this run.", "warn");
 
-  if (existing) {
-    setOpenEnroll(false);
-    openManageFor(existing);
-    return;
-  }
-}
+        if (existing) {
+          setOpenEnroll(false);
+          openManageFor(existing);
+          return;
+        }
+
+        // Local list may be stale; refresh and stop here (avoid generic failure toast)
+        setOpenEnroll(false);
+        await loadFixed();
+        return;
+      }
 
       setError(e);
       toast("Operation failed.", "danger");
     } finally {
       setEnrollSaving(false);
     }
+  }
+
+  function isDuplicateRunChildError(err) {
+    const code = String(err?.code ?? "");
+    const msg = String(err?.message ?? err ?? "");
+    // Postgres unique violation is 23505
+    if (code === "23505") return true;
+    return msg.includes("uq_run_child") || msg.includes("duplicate key");
   }
 
   async function bulkPurchaseAndEnroll() {
@@ -1061,26 +1113,105 @@ async function purchaseAndEnrollSingle() {
     setError(null);
 
     try {
+      // Build a quick lookup for existing run enrollment status per child
+      const statusByChild = new Map();
+      for (const p of participants || []) {
+        const cid = Number(p.child_id);
+        if (!Number.isFinite(cid)) continue;
+        statusByChild.set(cid, p.enrollment_status);
+      }
+
+      let added = 0;
+      let reactivated = 0;
+      let skipped = 0;
+      let failed = 0;
+
       for (const childId of bulkSelectedIds) {
+        const cid = Number(childId);
+        if (!Number.isFinite(cid)) continue;
+
+        // compute price per child
         let priceNum = 0;
         if (bulkPriceMode === "unified") {
           priceNum = bulkUnifiedPrice === "" ? 0 : Number(bulkUnifiedPrice);
         } else {
-          const v = bulkPerChildPrice[childId];
+          const v = bulkPerChildPrice[cid];
           priceNum = v === undefined || v === null || v === "" ? 0 : Number(v);
         }
+        priceNum = Number.isFinite(priceNum) ? priceNum : 0;
 
+        const existingStatus = statusByChild.get(cid);
+
+        // Already enrolled (active/pending/etc) -> skip silently (avoid uq_run_child)
+        if (existingStatus && existingStatus !== "withdrawn") {
+          skipped += 1;
+          continue;
+        }
+
+        // Withdrawn -> reactivate instead of inserting a new row
+        if (existingStatus === "withdrawn") {
+          const ok = await reactivateWithdrawnEnrollmentBulk(
+            cid,
+            sessionsToBuy,
+            priceNum,
+          );
+          if (ok) {
+            reactivated += 1;
+          } else {
+            failed += 1;
+          }
+          continue;
+        }
+
+        // Not enrolled -> attempt normal purchase+enroll
         const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
           p_run_id: Number(runId),
-          p_child_id: Number(childId),
+          p_child_id: cid,
           p_sessions: sessionsToBuy,
-          p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
+          p_price_total: priceNum,
         });
 
-        if (rpc2.error) throw rpc2.error;
+        if (rpc2.error) {
+          // If we raced with another request, handle duplicate gracefully
+          if (isDuplicateRunChildError(rpc2.error)) {
+            // Try to reactivate if it was withdrawn, otherwise skip
+            const ok = await reactivateWithdrawnEnrollmentBulk(
+              cid,
+              sessionsToBuy,
+              priceNum,
+            );
+            if (ok) reactivated += 1;
+            else skipped += 1;
+          } else {
+            failed += 1;
+            // Keep the first error for debugging
+            setError((prev) => prev || rpc2.error);
+          }
+          continue;
+        }
+
+        added += 1;
       }
 
-      toast(`Enrolled ${bulkSelectedCount} children.`, "ok");
+      // Refresh run state
+      await loadFixed();
+      setTab("participants");
+
+      // Toast summary
+      if (failed > 0) {
+        toast(
+          `Bulk enroll finished: added ${added}, reactivated ${reactivated}, skipped ${skipped}, failed ${failed}.`,
+          "danger",
+        );
+        // keep modal open so user can retry / adjust selections
+        return;
+      }
+
+      const level = skipped > 0 ? "warn" : "ok";
+      toast(
+        `Bulk enroll finished: added ${added}, reactivated ${reactivated}, skipped ${skipped}.`,
+        level,
+      );
 
       setOpenBulk(false);
       setBulkQ("");
@@ -1089,9 +1220,6 @@ async function purchaseAndEnrollSingle() {
       setBulkPriceMode("unified");
       setBulkUnifiedPrice(String(defaultPrice));
       setBulkPerChildPrice({});
-
-      await loadFixed();
-      setTab("participants");
     } catch (e) {
       setError(e);
       toast("Bulk enroll failed.", "danger");
@@ -1210,7 +1338,13 @@ async function purchaseAndEnrollSingle() {
   }
 
   function openCreateSession() {
-    setSessionForm({ id: null, start_at: "", end_at: "", status: "scheduled" });
+    setSessionForm({
+      id: null,
+      start_at: "",
+      end_at: "",
+      duration_min: Number(durationMinutes) || 60,
+      status: "scheduled",
+    });
     setOpenSession(true);
   }
 
@@ -1229,6 +1363,9 @@ async function purchaseAndEnrollSingle() {
       id: s.id,
       start_at: toLocalInput(startLocal),
       end_at: toLocalInput(endLocal),
+      duration_min:
+        Math.max(1, Math.round((endLocal.getTime() - startLocal.getTime()) / 60000)) ||
+        (Number(durationMinutes) || 60),
       status: s.status,
     });
     setOpenSession(true);
@@ -1236,10 +1373,20 @@ async function purchaseAndEnrollSingle() {
 
   async function saveSession() {
     if (!summary) return;
-    if (!sessionForm.start_at || !sessionForm.end_at) {
-      toast("Please choose a first session date/time.", "warn");
+    if (!sessionForm.start_at) {
+      toast("Please choose a session date/time.", "warn");
       return;
     }
+
+    const startLocal = new Date(sessionForm.start_at);
+    // If date-only (YYYY-MM-DD), set local midnight.
+    if (String(sessionForm.start_at).length === 10)
+      startLocal.setHours(0, 0, 0, 0);
+
+    const durationMin = isWorkshop
+      ? (Number(sessionForm.duration_min) || Number(durationMinutes) || 60)
+      : (Number(durationMinutes) || 60);
+    const endLocal = new Date(startLocal.getTime() + durationMin * 60 * 1000);
 
     setSessionSaving(true);
     setError(null);
@@ -1247,8 +1394,8 @@ async function purchaseAndEnrollSingle() {
       const payload = {
         run_id: Number(runId),
         course_id: Number(summary.template_id),
-        start_at: new Date(sessionForm.start_at).toISOString(),
-        end_at: new Date(sessionForm.end_at).toISOString(),
+        start_at: startLocal.toISOString(),
+        end_at: endLocal.toISOString(),
         status: sessionForm.status,
       };
 
@@ -1695,7 +1842,7 @@ async function purchaseAndEnrollSingle() {
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 10,
+                  gap: 8,
                   flex: "1 1 640px",
                   minWidth: 320,
                 }}
@@ -1879,7 +2026,16 @@ async function purchaseAndEnrollSingle() {
                       <div className="pMain">
                         <div className="pBig" title="Amount ">
                           <div className="pBigTop">
-                            <div className="pBigValue" dir="ltr">
+                            <div
+                              className="pBigValue"
+                              dir="ltr"
+                              style={{
+                                overflow: "visible",
+                                textOverflow: "clip",
+                                whiteSpace: "nowrap",
+                              }}
+                              title={fmtILS(balance)}
+                            >
                               {fmtILS(balance)}
                             </div>
                             <div className="pBigLabel">
@@ -1892,11 +2048,32 @@ async function purchaseAndEnrollSingle() {
                             <span style={{ width: `${pct}%` }} />
                           </div>
 
-                          <div className="muted" style={{ fontSize: 12 }}>
-                            <CreditCard size={14} className="ico" />{" "}
-                            <span dir="ltr">{fmtILS(paid)}</span>{" "}
-                            <span style={{ opacity: 0.6 }}> of </span>{" "}
-                            <span dir="ltr">{fmtILS(agreed)}</span>
+                          <div
+                            className="muted"
+                            style={{ fontSize: 12, display: "grid", gap: 4 }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <CreditCard size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Paid</span>
+                              <b dir="ltr">{fmtILS(paid)}</b>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <Tag size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Agreed</span>
+                              <b dir="ltr">{fmtILS(agreed)}</b>
+                            </div>
                           </div>
                         </div>
 
@@ -1910,22 +2087,60 @@ async function purchaseAndEnrollSingle() {
                               <span>Session balance</span>
                             </div>
                           </div>
-                          <div className="muted" style={{ fontSize: 12 }}>
-                            <CheckCircle2 size={14} className="ico" />{" "}
-                            <span style={{ opacity: 0.75 }}>Used</span>{" "}
-                            <b dir="ltr">{fmtNum(pkgUsed)}</b>{" "}
-                            <span style={{ opacity: 0.55 }}>
-                              Sessions in run
-                            </span>
-                            <b dir="ltr">{fmtNum(pkgTotal)}</b>
+                          <div
+                            className="muted"
+                            style={{ fontSize: 12, display: "grid", gap: 4 }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <CheckCircle2 size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Used</span>
+                              <b dir="ltr">{fmtNum(pkgUsed)}</b>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <Ticket size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>In this run</span>
+                              <b dir="ltr">{fmtNum(pkgTotal)}</b>
+                            </div>
                           </div>
 
-                          <div className="muted" style={{ fontSize: 12 }}>
-                            <CalendarDays size={14} className="ico" />{" "}
-                            <b dir="ltr">{fmtNum(attended)}</b>
-                            <span style={{ opacity: 0.6 }}>Sessions</span>
-                            <b dir="ltr">{fmtNum(runSessions)}</b>{" "}
-                            <span style={{ opacity: 0.65 }}>Remaining</span>
+                          <div
+                            className="muted"
+                            style={{ fontSize: 12, display: "grid", gap: 4 }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <CalendarDays size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Attended</span>
+                              <b dir="ltr">{fmtNum(attended)}</b>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                              }}
+                            >
+                              <Hourglass size={14} className="ico" />
+                              <span style={{ opacity: 0.75 }}>Remaining</span>
+                              <b dir="ltr">{fmtNum(runSessions)}</b>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1991,37 +2206,75 @@ async function purchaseAndEnrollSingle() {
         {/* ===================== SESSIONS ===================== */}
         {tab === "sessions" && (
           <div className="grid">
-            <div className="card" style={{ gridColumn: "span 5" }}>
+            {/* LEFT: generator + quick add */}
+            <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">Sessions</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Weekly: every {intervalDays} days (editable).
+                Set the recurrence, then generate a session list. Times are in
+                your local timezone.
               </div>
 
               <hr className="sep" />
 
-              <div style={{ display: "grid", gap: 10 }}>
-                <div>
-                  <div className="muted"> First session (date/time)</div>
+
+              {isWorkshop ? (
+
+
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <div className="muted">
+                  Workshop runs usually have a single session. Create it once,
+                  then manage it from the list.
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: "100%" }}
+                  onClick={openCreateSession}
+                  disabled={(sessions || []).length > 0}
+                  title={
+                    (sessions || []).length > 0
+                      ? "Session already created"
+                      : "Create the workshop session"
+                  }
+                >
+                  {(sessions || []).length > 0 ? "Session created" : "+ Create session"}
+                </button>
+              </div>
+              ) : (
+
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="muted">First session (date/time)</div>
                   <input
                     className="input"
-                    type="datetime-local"
+                    type={isWorkshop ? "date" : "datetime-local"}
                     value={firstStart}
                     onChange={(e) => setFirstStart(e.target.value)}
                   />
                 </div>
 
-                <div className="row">
-                  <div style={{ flex: 1 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ display: "grid", gap: 6 }}>
                     <div className="muted">Duration (minutes)</div>
                     <input
                       className="input"
                       type="number"
-                      min="15"
+                      min="1"
                       value={durationMinutes}
                       onChange={(e) => setDurationMinutes(e.target.value)}
                     />
                   </div>
-                  <div style={{ flex: 1 }}>
+
+                  <div style={{ display: "grid", gap: 6 }}>
                     <div className="muted">Number of sessions</div>
                     <input
                       className="input"
@@ -2033,8 +2286,8 @@ async function purchaseAndEnrollSingle() {
                   </div>
                 </div>
 
-                <div>
-                  <div className="muted">Every how many days?</div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="muted">Repeat every (days)</div>
                   <input
                     className="input"
                     type="number"
@@ -2042,11 +2295,15 @@ async function purchaseAndEnrollSingle() {
                     value={intervalDays}
                     onChange={(e) => setIntervalDays(e.target.value)}
                   />
+                  <div className="muted" style={{ marginTop: -2 }}>
+                    Current schedule: every <b>{intervalDays}</b> days
+                  </div>
                 </div>
 
                 <button
                   type="button"
                   className="btn primary"
+                  style={{ width: "100%" }}
                   disabled={genLoading || !firstStart}
                   onClick={generateSessions}
                 >
@@ -2058,90 +2315,254 @@ async function purchaseAndEnrollSingle() {
                 <button
                   type="button"
                   className="btn"
+                  style={{ width: "100%" }}
                   onClick={openCreateSession}
                 >
-                  + Add session
+                  <Plus size={16} className="ico" /> Add single session
                 </button>
               </div>
+              )}
+
             </div>
 
-            <div className="card" style={{ gridColumn: "span 7" }}>
+            {/* RIGHT: list */}
+            <div
+              className="card"
+              style={{ gridColumn: "span 8", overflow: "hidden" }}
+            >
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Manage sessions for this run. Create, edit, or delete sessions
-                as needed.
+                Manage sessions for this run. Edit times, mark done/canceled,
+                or delete.
               </div>
 
               <hr className="sep" />
 
-              {sessions.length === 0 ? (
-                <div className="muted">No items found.</div>
+              {!sessions?.length ? (
+                <div className="muted">No sessions yet.</div>
               ) : (
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 220 }}>Time</th>
-                      <th style={{ width: 120 }}>Status</th>
-                      <th style={{ width: 220 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sessions.map((s) => (
-                      <tr key={s.id}>
-                        <td>
-                          {fmtDT(s.start_at)} → {fmtDT(s.end_at)}
-                        </td>
-                        <td className="muted">{s.status}</td>
-                        <td>
-                          <div className="topActions">
-                            <button
-                              type="button"
-                              className="btn primary"
-                              onClick={() =>
-                                navigate(`/sessions/${s.id}/attendance`)
-                              }
-                            ></button>
-                            <button
-                              type="button"
-                              className="btn"
-                              onClick={() => openEditSession(s)}
-                            >
-                              <Pencil size={16} className="ico" /> Edit
-                            </button>
-                            <button
-                              type="button"
-                              className="btn"
-                              onClick={() => setSessionStatus(s.id, "done")}
-                            >
-                              <CheckCircle2 size={16} className="ico" />
-                            </button>
-                            <button
-                              type="button"
-                              className="btn danger"
-                              onClick={() => setSessionStatus(s.id, "canceled")}
-                            >
-                              <XCircle size={16} className="ico" /> Cancel
-                            </button>
-                            <button
-                              type="button"
-                              className="btn danger"
-                              onClick={() =>
-                                setConfirm({
-                                  open: true,
-                                  type: "deleteSession",
-                                  id: s.id,
-                                  text: "Delete session",
-                                })
-                              }
-                            >
-                              <Trash2 size={16} className="ico" /> Delete
-                            </button>
+                <div style={{ width: "100%" }}>
+                  <div
+                    className="sessionList"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 12,
+                    }}
+                  >
+                    {sessions.map((s) => {
+                      const isDone = s.status === "done";
+                      const isCanceled = s.status === "canceled";
+                      return (
+                        <div
+                          key={s.id}
+                          className="sessionRow"
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
+                            gap: 12,
+                            alignItems: "center",
+                            overflow: "hidden",
+                            maxWidth: "100%",
+                            padding: "12px 14px",
+                            border: "1px solid rgba(0,0,0,0.08)",
+                            borderRadius: 14,
+                          }}
+                        >
+                          {/* Date */}
+                          <div style={{ lineHeight: 1.15 }}>
+                            <div style={{ fontWeight: 700 }}>
+                              {fmtDate(s.start_at)}
+                            </div>
+                            <div className="muted">
+                              {fmtWeekday(s.start_at)}
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+                          {/* Time */}
+                          <div style={{ lineHeight: 1.15 }}>
+                            <div style={{ fontWeight: 600 }}>
+                              {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
+                            </div>
+                            <div className="muted">{fmtDT(s.start_at)}</div>
+                          </div>
+
+                          {/* Status */}
+                          <div>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                padding: "6px 10px",
+                                borderRadius: 999,
+                                background: isDone
+                                  ? "rgba(34,197,94,0.12)"
+                                  : isCanceled
+                                    ? "rgba(239,68,68,0.10)"
+                                    : "rgba(0,0,0,0.06)",
+                                border: "1px solid rgba(0,0,0,0.08)",
+                                fontSize: 12,
+                                textTransform: "capitalize",
+                                fontWeight: 600,
+                              }}
+                            >
+                              {s.status}
+                            </span>
+                          </div>
+
+                          {/* Actions */}
+                          <div
+                            className="sessionActions"
+                            style={{
+                              display: "grid",
+                              gap: 8,
+                              justifyItems: "end",
+                              minWidth: 96,
+                              justifySelf: "end",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                flexWrap: "wrap",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <button
+                                type="button"
+                                className="btn primary"
+                                title="Manage"
+                                aria-label="Manage"
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onClick={() =>
+                                  navigate(`/sessions/${s.id}/attendance`)
+                                }
+                              >
+                                <Settings2 size={16} className="ico" />
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn"
+                                title="Edit"
+                                aria-label="Edit"
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onClick={() => openEditSession(s)}
+                              >
+                                <Pencil size={16} className="ico" />
+                              </button>
+                            </div>
+
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                flexWrap: "wrap",
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <button
+                                type="button"
+                                className="btn"
+                                title={isDone ? "Reopen" : "Mark done"}
+                                aria-label={isDone ? "Reopen" : "Mark done"}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onClick={() =>
+                                  setSessionStatus(
+                                    s.id,
+                                    isDone ? "scheduled" : "done",
+                                  )
+                                }
+                              >
+                                {isDone ? (
+                                  <>
+                                    <CheckCircle2 size={16} className="ico" />
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle2 size={16} className="ico" />
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn danger"
+                                title={isCanceled ? "Restore" : "Cancel"}
+                                aria-label={isCanceled ? "Restore" : "Cancel"}
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onClick={() =>
+                                  setSessionStatus(
+                                    s.id,
+                                    isCanceled ? "scheduled" : "canceled",
+                                  )
+                                }
+                              >
+                                {isCanceled ? (
+                                  <>
+                                    <CheckCircle2 size={16} className="ico" />
+                                  </>
+                                ) : (
+                                  <>
+                                    <XCircle size={16} className="ico" />
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn danger"
+                                title="Delete"
+                                aria-label="Delete"
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  padding: 0,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                }}
+                                onClick={() => deleteSession(s.id)}
+                              >
+                                <Trash2 size={16} className="ico" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -2167,7 +2588,10 @@ async function purchaseAndEnrollSingle() {
               </button>
             </div>
 
-            <div className="card" style={{ gridColumn: "span 7" }}>
+            <div
+              className="card"
+              style={{ gridColumn: "span 7", overflow: "hidden" }}
+            >
               <div className="h1">Payments</div>
               <div className="muted" style={{ marginTop: 6 }}>
                 View and manage payments for this run.
@@ -2238,7 +2662,7 @@ async function purchaseAndEnrollSingle() {
 
         {/* ===================== MODALS ===================== */}
 
-                {/* ✅ Child */}
+        {/* ✅ Child */}
         <Modal
           open={openManage}
           title={manageP ? `Manage — ${manageP.child_name}` : "Manage"}
@@ -2252,7 +2676,11 @@ async function purchaseAndEnrollSingle() {
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
-                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+                  style={{
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
                 >
                   <div>
                     <div style={{ fontSize: 18, fontWeight: 900 }}>
@@ -2262,14 +2690,19 @@ async function purchaseAndEnrollSingle() {
                       </span>
                     </div>
 
-                    <div className="row" style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                    <div
+                      className="row"
+                      style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}
+                    >
                       {badgePayment(manageP.payment_status)}
                       {manageP.enrollment_status === "active" ? (
                         <Badge variant="ok">Active</Badge>
                       ) : (
                         <Badge variant="warn">Inactive</Badge>
                       )}
-                      {manageP.is_free ? <Badge variant="info">Free</Badge> : null}
+                      {manageP.is_free ? (
+                        <Badge variant="info">Free</Badge>
+                      ) : null}
                     </div>
                   </div>
 
@@ -2301,13 +2734,17 @@ async function purchaseAndEnrollSingle() {
                   <div className="row" style={{ gap: 8 }}>
                     <Ticket size={14} className="ico" />
                     <span className="muted">Total</span>
-                    <b dir="ltr">{fmtNum(manageP.package_sessions_total ?? 0)}</b>
+                    <b dir="ltr">
+                      {fmtNum(manageP.package_sessions_total ?? 0)}
+                    </b>
                   </div>
 
                   <div className="row" style={{ gap: 8 }}>
                     <Hourglass size={14} className="ico" />
                     <span className="muted">Remaining</span>
-                    <b dir="ltr">{fmtNum(manageP.package_sessions_remaining ?? 0)}</b>
+                    <b dir="ltr">
+                      {fmtNum(manageP.package_sessions_remaining ?? 0)}
+                    </b>
                   </div>
 
                   <div className="row" style={{ gap: 8 }}>
@@ -2327,7 +2764,9 @@ async function purchaseAndEnrollSingle() {
                   <div className="row" style={{ gap: 8 }}>
                     <CalendarDays size={14} className="ico" />
                     <span className="muted">Attended in run</span>
-                    <b dir="ltr">{fmtNum(manageP.sessions_attended_in_run ?? 0)}</b>
+                    <b dir="ltr">
+                      {fmtNum(manageP.sessions_attended_in_run ?? 0)}
+                    </b>
                   </div>
                 </div>
               </div>
@@ -2336,7 +2775,11 @@ async function purchaseAndEnrollSingle() {
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
-                  style={{ justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}
+                  style={{
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
                 >
                   <div style={{ fontWeight: 900 }}>Contact</div>
 
@@ -2356,51 +2799,442 @@ async function purchaseAndEnrollSingle() {
 
                 <hr className="sep" />
 
+                <div className="grid">
+                  <div style={{ gridColumn: "span 6" }}>
+                    <div className="muted">Mother name</div>
+                    <div style={{ fontWeight: 800 }}>
+                      {manageChild?.mother_name ?? "-"}
+                    </div>
+                  </div>
+
+                  <div style={{ gridColumn: "span 6" }}>
+                    <div className="muted">Mother phone</div>
+                    <div className="row" style={{ gap: 10 }}>
+                      <div style={{ fontWeight: 800 }} dir="ltr">
+                        {manageChild?.mother_phone ?? "-"}
+                      </div>
+                      {manageChild?.mother_phone ? (
+                        <button
+                          type="button"
+                          className="iconBtn"
+                          onClick={async () => {
+                            const ok = await copyText(manageChild.mother_phone);
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
+                          }}
+                          title="Copy"
+                        >
+                          <Copy size={16} className="ico" />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div style={{ gridColumn: "span 6" }}>
+                    <div className="muted">Father name</div>
+                    <div style={{ fontWeight: 800 }}>
+                      {manageChild?.father_name ?? "-"}
+                    </div>
+                  </div>
+
+                  <div style={{ gridColumn: "span 6" }}>
+                    <div className="muted">Father phone</div>
+                    <div className="row" style={{ gap: 10 }}>
+                      <div style={{ fontWeight: 800 }} dir="ltr">
+                        {manageChild?.father_phone ?? "-"}
+                      </div>
+                      {manageChild?.father_phone ? (
+                        <button
+                          type="button"
+                          className="iconBtn"
+                          onClick={async () => {
+                            const ok = await copyText(manageChild.father_phone);
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
+                          }}
+                          title="Copy"
+                        >
+                          <Copy size={16} className="ico" />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ gridColumn: "span 12" }} className="card">
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>Actions</div>
+
+                <div
+                  className="row"
+                  style={{
+                    justifyContent: "space-between",
+                    gap: 14,
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div>
+                    <div className="muted">Unit price</div>
+                    <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
+                      {(() => {
+                        const total = Number(manageP.agreed_price || 0);
+                        const s = Number(manageP.package_sessions_total || 0);
+                        return fmtILS(s > 0 ? total / s : 0);
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        setOpenManage(false);
+                        setEnrollLocked(true);
+                        setEnrollLockedName(manageP.child_name);
+                        setSelectedChildId(String(manageP.child_id));
+                        setOpenEnroll(true);
+                      }}
+                      title="Add sessions"
+                    >
+                      <ShoppingCart size={16} className="ico" /> Add sessions
+                    </button>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 6,
+                        alignItems: "center",
+                        padding: 6,
+                        borderRadius: 12,
+                        border: "1px solid rgba(0,0,0,.08)",
+                        background: "rgba(0,0,0,.02)",
+                      }}
+                      title="Adjust remaining sessions"
+                    >
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ padding: "8px 12px" }}
+                        onClick={() => quickAdjustFromManage(-1)}
+                        title="Decrease"
+                      >
+                        <Minus size={16} className="ico" />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        style={{ padding: "8px 12px" }}
+                        onClick={() => quickAdjustFromManage(1)}
+                        title="Increase"
+                      >
+                        <Plus size={16} className="ico" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <hr className="sep" />
+
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                  Payments
+                </div>
+                <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={Number(manageP.balance || 0) <= 0}
+                    onClick={() => {
+                      setOpenManage(false);
+                      openPaymentModalFor(manageP, "remaining");
+                    }}
+                  >
+                    <CreditCard size={16} className="ico" /> Pay remaining
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setOpenManage(false);
+                      openPaymentModalFor(manageP, "custom");
+                    }}
+                  >
+                    <Receipt size={16} className="ico" /> Add payment
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setOpenManage(false);
+                      openPaymentHistory(manageP);
+                    }}
+                  >
+                    <CalendarClock size={16} className="ico" /> History
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={!manageP.package_id}
+                    onClick={() => {
+                      setOpenManage(false);
+                      setPricePackageId(manageP.package_id);
+                      setPriceValue(String(Number(manageP.agreed_price || 0)));
+                      setOpenPrice(true);
+                    }}
+                  >
+                    <Pencil size={16} className="ico" /> Edit price
+                  </button>
+                </div>
+
+                <hr className="sep" />
+
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>
+                  Enrollment
+                </div>
+                <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
+                  {manageP.enrollment_status === "active" ? (
+                    <button
+                      type="button"
+                      className="btn danger"
+                      onClick={() => {
+                        setOpenManage(false);
+                        setConfirm({
+                          open: true,
+                          type: "inactive",
+                          id: manageP.enrollment_id,
+                          text: `Deactivate enrollment: ${manageP.child_name}`,
+                        });
+                      }}
+                    >
+                      <XCircle size={16} className="ico" /> Deactivate
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn primary"
+                      onClick={() => {
+                        setOpenManage(false);
+                        setConfirm({
+                          open: true,
+                          type: "active",
+                          id: manageP.enrollment_id,
+                          text: `Activate enrollment: ${manageP.child_name}`,
+                        });
+                      }}
+                    >
+                      <CheckCircle2 size={16} className="ico" /> Activate
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="btn danger"
+                    onClick={() => {
+                      setOpenManage(false);
+                      setConfirm({
+                        open: true,
+                        type: "deleteEnroll",
+                        id: {
+                          enrollmentId: manageP.enrollment_id,
+                          packageId: manageP.package_id,
+                          childName: manageP.child_name,
+                        },
+                        text: `Delete enrollment: ${manageP.child_name}`,
+                      });
+                    }}
+                  >
+                    <Trash2 size={16} className="ico" /> Delete enroll
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setOpenManage(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        {/* ✅ Enroll */}
+        <Modal
+          open={openEnroll}
+          title={
+            enrollLocked ? `Add sessions — ${enrollLockedName}` : "Enroll child"
+          }
+          onClose={() => setOpenEnroll(false)}
+        >
+          <div className="muted">
+            If the child has an existing balance, you can choose “Use existing
+            balance”.
+          </div>
+
+          <hr className="sep" />
+
           <div className="grid">
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Sessions to add</div>
-              <input
-                className="input"
-                type="number"
-                min="1"
-                value={bulkSessions}
-                onChange={(e) => setBulkSessions(e.target.value)}
-                placeholder={String(runDefaultSessions)}
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">Child</div>
+              <ModernSelect
+                value={selectedChildId}
+                onChange={setSelectedChildId}
+                menuWidth="trigger"
+                disabled={enrollLocked}
+                placeholder="— Select child —"
+                options={[
+                  { value: "", label: "— Select child —" },
+                  ...((enrollLocked ? children : availableChildren) || []).map(
+                    (c) => ({
+                      value: c.id,
+                      label: `${c.name} — ${c.class ?? "-"} — Age: ${c.age ?? "-"}`,
+                    }),
+                  ),
+                ]}
               />
             </div>
 
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Pricing mode</div>
-              <select
-                className="input"
-                value={bulkPriceMode}
-                onChange={(e) => setBulkPriceMode(e.target.value)}
-              >
-                <option value="unified">Unified (same price for all)</option>
-                <option value="perChild">Per child (override)</option>
-              </select>
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Package price</div>
-              {bulkPriceMode === "unified" ? (
-                <input
-                  className="input"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={bulkUnifiedPrice}
-                  onChange={(e) => setBulkUnifiedPrice(e.target.value)}
-                  placeholder={runDefaultTotalPrice > 0 ? String(runDefaultTotalPrice) : "0.00"}
-                />
+            <div style={{ gridColumn: "span 12" }} className="card">
+              {pkgLoading ? (
+                <div>Checking existing balance...</div>
+              ) : pkgInfo ? (
+                <div className="muted">
+                  Existing sessions balance:{" "}
+                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — Remaining
+                  to pay:{" "}
+                  <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
+                </div>
               ) : (
-                <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                  You can override the total price per child after selection.
+                <div className="muted">
+                  No existing balance found (or not checked yet).
                 </div>
               )}
-            </div>
-          </div>
 
+              <div className="muted" style={{ marginTop: 8 }}>
+                Upcoming sessions in this run: <b>{singlePreview.runFuture}</b>{" "}
+                — Allocated now: <b>{singlePreview.allocNow}</b> — Carry:{" "}
+                <b>{singlePreview.carry}</b>
+              </div>
+            </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">Enrollment method</div>
+              <ModernSelect
+                value={enrollMode}
+                onChange={setEnrollMode}
+                menuWidth="trigger"
+                disabled={enrollLocked}
+                options={[
+                  { value: "use_existing", label: "Use existing balance" },
+                  { value: "buy_new", label: "Add sessions (new)" },
+                ]}
+              />
+            </div>
+            {enrollMode === "use_existing" && (
+              <div style={{ gridColumn: "span 12" }} className="card">
+                <div className="muted">
+                  <b>Use existing balance</b> / No . “Enrollment method”{" "}
+                  <b>Buy new sessions</b>.
+                </div>
+              </div>
+            )}
+
+            {(enrollMode === "buy_new" || enrollLocked) && (
+              <>
+                <div style={{ gridColumn: "span 4" }}>
+                  <div className="muted">Sessions to add</div>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    value={buySessions}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setBuySessions(v);
+
+                      const s = Number(v);
+                      if (!Number.isFinite(s) || s <= 0) return;
+
+                      if (buyPriceEditMode === "unit") {
+                        const u = Number(buyUnitPrice || 0);
+                        if (Number.isFinite(u))
+                          setBuyPriceTotal((s * u).toFixed(2));
+                      } else {
+                        const t =
+                          buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
+                        if (Number.isFinite(t))
+                          setBuyUnitPrice((t / s).toFixed(2));
+                      }
+                    }}
+                  />
+                </div>
+
+                <div style={{ gridColumn: "span 4" }}>
+                  <div className="muted">Unit price</div>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={buyUnitPrice}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setBuyUnitPrice(v);
+                      setBuyPriceEditMode("unit");
+
+                      const s = Number(buySessions || 0);
+                      const u = v === "" ? 0 : Number(v);
+                      if (Number.isFinite(s) && s > 0 && Number.isFinite(u))
+                        setBuyPriceTotal((s * u).toFixed(2));
+                    }}
+                    placeholder={
+                      Number(buySessions || 0) > 0
+                        ? (
+                            Number(defaultPrice || 0) / Number(buySessions || 1)
+                          ).toFixed(2)
+                        : "0.00"
+                    }
+                  />
+                </div>
+
+                <div style={{ gridColumn: "span 4" }}>
+                  <div className="muted">Total price</div>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={buyPriceTotal}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setBuyPriceTotal(v);
+                      setBuyPriceEditMode("total");
+
+                      const s = Number(buySessions || 0);
+                      const t = v === "" ? 0 : Number(v);
+                      if (Number.isFinite(s) && s > 0 && Number.isFinite(t))
+                        setBuyUnitPrice((t / s).toFixed(2));
+                    }}
+                    placeholder={String(defaultPrice)}
+                  />
+                  <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
+                    Unit price — .
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="row" style={{ gridColumn: "span 12" }}>
               <button
                 type="button"
                 className="btn primary"
@@ -2423,7 +3257,7 @@ async function purchaseAndEnrollSingle() {
         {/* New child (inline) */}
         <Modal
           open={openNewChild}
-          title={newChildEnrollNow ? "Create child & enroll" : "Create child"}
+          title={newChildEnrollNow ? "Create child & enroll" : "Add child"}
           onClose={() => setOpenNewChild(false)}
         >
           <div className="grid">
@@ -2435,7 +3269,7 @@ async function purchaseAndEnrollSingle() {
                 onChange={(e) =>
                   setNewChildForm((p) => ({ ...p, name: e.target.value }))
                 }
-                placeholder="Child name"
+                placeholder=""
               />
             </div>
 
@@ -2473,19 +3307,43 @@ async function purchaseAndEnrollSingle() {
                 onChange={(e) =>
                   setNewChildForm((p) => ({ ...p, class: e.target.value }))
                 }
-                placeholder="e.g. A1"
+                placeholder=""
               />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
               <div className="muted">City</div>
+              <select
+                className="input"
+                value={newChildForm.country_id ?? ""}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, country_id: e.target.value }))
+                }
+                disabled={countriesLoading}
+              >
+                <option value="">
+                  {countriesLoading ? "Loading..." : "Select a country..."}
+                </option>
+                {(countries ?? []).map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">New country (optional)</div>
               <input
                 className="input"
-                value={newChildForm.country}
+                value={newChildForm.new_country_name}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, country: e.target.value }))
+                  setNewChildForm((p) => ({
+                    ...p,
+                    new_country_name: e.target.value,
+                  }))
                 }
-                placeholder="e.g. Tayibe"
+                placeholder="e.g. Israel"
               />
             </div>
 
@@ -2515,7 +3373,7 @@ async function purchaseAndEnrollSingle() {
                     mother_phone: e.target.value,
                   }))
                 }
-                placeholder=""
+                placeholder="e.g. 050-1234567"
               />
             </div>
 
@@ -2545,18 +3403,20 @@ async function purchaseAndEnrollSingle() {
                     father_phone: e.target.value,
                   }))
                 }
+                placeholder="e.g. 052-1234567"
               />
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Notes</div>
+              <div className="muted">Notes (optional)</div>
               <textarea
                 className="input"
-                rows={3}
+                rows={4}
                 value={newChildForm.notes}
                 onChange={(e) =>
                   setNewChildForm((p) => ({ ...p, notes: e.target.value }))
                 }
+                placeholder="Optional notes..."
               />
             </div>
 
@@ -2564,8 +3424,9 @@ async function purchaseAndEnrollSingle() {
               style={{
                 gridColumn: "span 12",
                 display: "flex",
-                gap: 8,
                 justifyContent: "flex-end",
+                gap: 10,
+                paddingTop: 8,
               }}
             >
               <button
@@ -2578,17 +3439,17 @@ async function purchaseAndEnrollSingle() {
               </button>
               <button
                 type="button"
-                className="btn primary"
+                className="btn btn-primary"
                 onClick={() =>
                   createChildInline({ enrollNow: newChildEnrollNow })
                 }
                 disabled={newChildSaving}
               >
                 {newChildSaving
-                  ? "Saving…"
+                  ? "Saving..."
                   : newChildEnrollNow
                     ? "Create & enroll"
-                    : "Create"}
+                    : "Save"}
               </button>
             </div>
           </div>
@@ -2649,6 +3510,9 @@ async function purchaseAndEnrollSingle() {
                       <th>Age</th>
                       <th>Gender</th>
                       <th>Phone</th>
+                      {bulkPriceMode === "perChild" && (
+                        <th style={{ width: 140 }}>Price</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -2667,7 +3531,33 @@ async function purchaseAndEnrollSingle() {
                           <td className="muted">{c.class ?? "-"}</td>
                           <td className="muted">{c.age ?? "-"}</td>
                           <td className="muted">{c.gender ?? "-"}</td>
-                          <td className="muted">{c.mother_phone ?? "-"}</td>
+                          <td className="muted">
+                            <span
+                              style={{ direction: "ltr", unicodeBidi: "embed" }}
+                            >
+                              {c.mother_phone ?? "-"}
+                            </span>
+                          </td>
+                          {bulkPriceMode === "perChild" && (
+                            <td>
+                              <input
+                                className="input"
+                                style={{ minWidth: 110 }}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={bulkPerChildPrice[c.id] ?? ""}
+                                onChange={(e) =>
+                                  setBulkPerChildPrice((prev) => ({
+                                    ...prev,
+                                    [c.id]: e.target.value,
+                                  }))
+                                }
+                                placeholder={String(defaultPrice)}
+                                disabled={!checked}
+                              />
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -2681,7 +3571,7 @@ async function purchaseAndEnrollSingle() {
 
           <div className="grid">
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted"> ( )</div>
+              <div className="muted">Total sessions (package)</div>
               <input
                 className="input"
                 type="number"
@@ -2692,20 +3582,27 @@ async function purchaseAndEnrollSingle() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Every how many days?</div>
+              <div className="muted">Pricing mode</div>
               <ModernSelect
                 value={bulkPriceMode}
-                onChange={setBulkPriceMode}
+                onChange={(v) => {
+                  setBulkPriceMode(v);
+                  if (v === "unified") setBulkPerChildPrice({});
+                }}
                 menuWidth="trigger"
                 options={[
-                  { value: "unified", label: " " },
-                  { value: "perChild", label: " " },
+                  { value: "unified", label: "Unified (same price for all)" },
+                  { value: "perChild", label: "Per child (set in table)" },
                 ]}
               />
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Session list</div>
+              <div className="muted">
+                {bulkPriceMode === "unified"
+                  ? "Package price"
+                  : "Per-child prices"}
+              </div>
               {bulkPriceMode === "unified" ? (
                 <input
                   className="input"
@@ -2718,7 +3615,7 @@ async function purchaseAndEnrollSingle() {
                 />
               ) : (
                 <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                  * ( ) .
+                  Enter a price for each selected child in the table above.
                 </div>
               )}
             </div>
@@ -2926,7 +3823,9 @@ async function purchaseAndEnrollSingle() {
         >
           <div className="grid">
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">No sessions.</div>
+              <div className="muted">
+                {isWorkshop ? "Session date" : "Session date/time"}
+              </div>
               <input
                 className="input"
                 type="datetime-local"
@@ -2936,18 +3835,24 @@ async function purchaseAndEnrollSingle() {
                 }
               />
             </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Record payment</div>
-              <input
-                className="input"
-                type="datetime-local"
-                value={sessionForm.end_at}
-                onChange={(e) =>
-                  setSessionForm((p) => ({ ...p, end_at: e.target.value }))
-                }
-              />
-            </div>
+            {isWorkshop && (
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted">Duration (minutes)</div>
+                <input
+                  className="input"
+                  type="number"
+                  min={1}
+                  step={5}
+                  value={sessionForm.duration_min ?? 60}
+                  onChange={(e) =>
+                    setSessionForm((p) => ({
+                      ...p,
+                      duration_min: Number(e.target.value),
+                    }))
+                  }
+                />
+              </div>
+            )}
 
             <div style={{ gridColumn: "span 12" }}>
               <div className="muted">Status</div>
