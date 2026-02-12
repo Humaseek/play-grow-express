@@ -158,7 +158,7 @@ export default function RunDetails() {
   const [enrollLocked, setEnrollLocked] = useState(false);
   const [enrollLockedName, setEnrollLockedName] = useState("");
 
-  const [buySessions, setBuySessions] = useState(8);
+  const [buySessions, setBuySessions] = useState("");
   const [buyPriceTotal, setBuyPriceTotal] = useState("");
   const [buyUnitPrice, setBuyUnitPrice] = useState("");
   const [buyPriceEditMode, setBuyPriceEditMode] = useState("total"); // total | unit
@@ -197,7 +197,7 @@ export default function RunDetails() {
   const [openBulk, setOpenBulk] = useState(false);
   const [bulkQ, setBulkQ] = useState("");
   const [bulkSelected, setBulkSelected] = useState({});
-  const [bulkSessions, setBulkSessions] = useState(8);
+  const [bulkSessions, setBulkSessions] = useState("");
 
   const [bulkPriceMode, setBulkPriceMode] = useState("unified"); // unified | perChild
   const [bulkUnifiedPrice, setBulkUnifiedPrice] = useState("");
@@ -288,8 +288,8 @@ export default function RunDetails() {
       summary?.planned_sessions,
       summary?.sessions_count,
       summary?.run_sessions_total,
-      futureScheduled,
       sessions?.length,
+      futureScheduled,
     ];
 
     for (const c of candidates) {
@@ -315,7 +315,60 @@ export default function RunDetails() {
   }, [summary, defaultPrice]);
 
 
-  async function loadChildrenSafe() {
+  
+  // Initialize enroll / bulk defaults from the run configuration (editable by the user).
+  useEffect(() => {
+    if (!openEnroll) return;
+
+    // Only apply defaults when buying new sessions (or when enrollment is locked to that flow).
+    if (enrollMode !== "buy_new" && !enrollLocked) return;
+
+    // Sessions default: what was planned for this run (fallbacks handled by runDefaultSessions).
+    setBuySessions((prev) => {
+      const n = Number(prev);
+      if (!Number.isFinite(n) || n <= 0) return runDefaultSessions;
+      // If it's still the generic fallback (8), prefer the run default.
+      if (n === 8 && runDefaultSessions !== 8) return runDefaultSessions;
+      return prev;
+    });
+
+    // Price defaults: prefer runDefaultTotalPrice (if any).
+    setBuyPriceTotal((prev) => {
+      const hasPrev = prev !== null && prev !== undefined && String(prev).trim() !== "";
+      if (hasPrev) return prev;
+      return runDefaultTotalPrice > 0 ? String(runDefaultTotalPrice) : "";
+    });
+
+    // Keep unit price consistent with the chosen total/sessions.
+    setBuyUnitPrice((prev) => {
+      const s = Number(runDefaultSessions);
+      const t = Number(runDefaultTotalPrice);
+      if (!Number.isFinite(s) || s <= 0) return prev;
+      if (!Number.isFinite(t) || t <= 0) return prev;
+      return (t / s).toFixed(2);
+    });
+
+    // Default editing mode: total price.
+    setBuyPriceEditMode((prev) => (prev ? prev : "total"));
+  }, [openEnroll, enrollMode, enrollLocked, runDefaultSessions, runDefaultTotalPrice]);
+
+  useEffect(() => {
+    if (!openBulk) return;
+
+    setBulkSessions((prev) => {
+      const n = Number(prev);
+      if (!Number.isFinite(n) || n <= 0) return runDefaultSessions;
+      if (n === 8 && runDefaultSessions !== 8) return runDefaultSessions;
+      return prev;
+    });
+
+    setBulkUnifiedPrice((prev) => {
+      const hasPrev = prev !== null && prev !== undefined && String(prev).trim() !== "";
+      if (hasPrev) return prev;
+      return runDefaultTotalPrice > 0 ? String(runDefaultTotalPrice) : "";
+    });
+  }, [openBulk, runDefaultSessions, runDefaultTotalPrice]);
+async function loadChildrenSafe() {
     const tryView = await supabase
       .from("children_view")
       .select(
@@ -2303,428 +2356,51 @@ async function purchaseAndEnrollSingle() {
 
                 <hr className="sep" />
 
-                <div className="grid">
-                  <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Mother name</div>
-                    <div style={{ fontWeight: 800 }}>{manageChild?.mother_name ?? "-"}</div>
-                  </div>
-
-                  <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Mother phone</div>
-                    <div className="row" style={{ gap: 10 }}>
-                      <div style={{ fontWeight: 800 }} dir="ltr">
-                        {manageChild?.mother_phone ?? "-"}
-                      </div>
-                      {manageChild?.mother_phone ? (
-                        <button
-                          type="button"
-                          className="iconBtn"
-                          onClick={async () => {
-                            const ok = await copyText(manageChild.mother_phone);
-                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
-                          }}
-                          title="Copy"
-                        >
-                          <Copy size={16} className="ico" />
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Father name</div>
-                    <div style={{ fontWeight: 800 }}>{manageChild?.father_name ?? "-"}</div>
-                  </div>
-
-                  <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Father phone</div>
-                    <div className="row" style={{ gap: 10 }}>
-                      <div style={{ fontWeight: 800 }} dir="ltr">
-                        {manageChild?.father_phone ?? "-"}
-                      </div>
-                      {manageChild?.father_phone ? (
-                        <button
-                          type="button"
-                          className="iconBtn"
-                          onClick={async () => {
-                            const ok = await copyText(manageChild.father_phone);
-                            toast(ok ? "Copied" : "Copy failed", ok ? "ok" : "danger");
-                          }}
-                          title="Copy"
-                        >
-                          <Copy size={16} className="ico" />
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Actions</div>
-
-                <div
-                  className="row"
-                  style={{
-                    justifyContent: "space-between",
-                    gap: 14,
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div>
-                    <div className="muted">Unit price</div>
-                    <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
-                      {(() => {
-                        const total = Number(manageP.agreed_price || 0);
-                        const s = Number(manageP.package_sessions_total || 0);
-                        return fmtILS(s > 0 ? total / s : 0);
-                      })()}
-                    </div>
-                  </div>
-
-                  <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
-                    <button
-                      type="button"
-                      className="btn"
-                      onClick={() => {
-                        setOpenManage(false);
-                        setEnrollLocked(true);
-                        setEnrollLockedName(manageP.child_name);
-                        setSelectedChildId(String(manageP.child_id));
-                        setOpenEnroll(true);
-                      }}
-                      title="Add sessions"
-                    >
-                      <ShoppingCart size={16} className="ico" /> Add sessions
-                    </button>
-
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 6,
-                        alignItems: "center",
-                        padding: 6,
-                        borderRadius: 12,
-                        border: "1px solid rgba(0,0,0,.08)",
-                        background: "rgba(0,0,0,.02)",
-                      }}
-                      title="Adjust remaining sessions"
-                    >
-                      <button
-                        type="button"
-                        className="btn"
-                        style={{ padding: "8px 12px" }}
-                        onClick={() => quickAdjustFromManage(-1)}
-                        title="Decrease"
-                      >
-                        <Minus size={16} className="ico" />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn"
-                        style={{ padding: "8px 12px" }}
-                        onClick={() => quickAdjustFromManage(1)}
-                        title="Increase"
-                      >
-                        <Plus size={16} className="ico" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <hr className="sep" />
-
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Payments</div>
-                <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
-                  <button
-                    type="button"
-                    className="btn primary"
-                    disabled={Number(manageP.balance || 0) <= 0}
-                    onClick={() => {
-                      setOpenManage(false);
-                      openPaymentModalFor(manageP, "remaining");
-                    }}
-                  >
-                    <CreditCard size={16} className="ico" /> Pay remaining
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setOpenManage(false);
-                      openPaymentModalFor(manageP, "custom");
-                    }}
-                  >
-                    <Receipt size={16} className="ico" /> Add payment
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setOpenManage(false);
-                      openPaymentHistory(manageP);
-                    }}
-                  >
-                    <CalendarClock size={16} className="ico" /> History
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn"
-                    disabled={!manageP.package_id}
-                    onClick={() => {
-                      setOpenManage(false);
-                      setPricePackageId(manageP.package_id);
-                      setPriceValue(String(Number(manageP.agreed_price || 0)));
-                      setOpenPrice(true);
-                    }}
-                  >
-                    <Pencil size={16} className="ico" /> Edit price
-                  </button>
-                </div>
-
-                <hr className="sep" />
-
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Enrollment</div>
-                <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
-                  {manageP.enrollment_status === "active" ? (
-                    <button
-                      type="button"
-                      className="btn danger"
-                      onClick={() => {
-                        setOpenManage(false);
-                        setConfirm({
-                          open: true,
-                          type: "inactive",
-                          id: manageP.enrollment_id,
-                          text: `Deactivate enrollment: ${manageP.child_name}`,
-                        });
-                      }}
-                    >
-                      <XCircle size={16} className="ico" /> Deactivate
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn primary"
-                      onClick={() => {
-                        setOpenManage(false);
-                        setConfirm({
-                          open: true,
-                          type: "active",
-                          id: manageP.enrollment_id,
-                          text: `Activate enrollment: ${manageP.child_name}`,
-                        });
-                      }}
-                    >
-                      <CheckCircle2 size={16} className="ico" /> Activate
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    className="btn danger"
-                    onClick={() => {
-                      setOpenManage(false);
-                      setConfirm({
-                        open: true,
-                        type: "deleteEnroll",
-                        id: {
-                          enrollmentId: manageP.enrollment_id,
-                          packageId: manageP.package_id,
-                          childName: manageP.child_name,
-                        },
-                        text: `Delete enrollment: ${manageP.child_name}`,
-                      });
-                    }}
-                  >
-                    <Trash2 size={16} className="ico" /> Delete enroll
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => setOpenManage(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </Modal>
-
-        {/* ✅ Enroll */}
-        <Modal
-          open={openEnroll}
-          title={
-            enrollLocked ? `Add sessions — ${enrollLockedName}` : "Enroll child"
-          }
-          onClose={() => setOpenEnroll(false)}
-        >
-          <div className="muted">
-            If the child has an existing balance, you can choose “Use existing
-            balance”.
-          </div>
-
-          <hr className="sep" />
-
           <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Child</div>
-              <ModernSelect
-                value={selectedChildId}
-                onChange={setSelectedChildId}
-                menuWidth="trigger"
-                disabled={enrollLocked}
-                placeholder="— Select child —"
-                options={[
-                  { value: "", label: "— Select child —" },
-                  ...((enrollLocked ? children : availableChildren) || []).map(
-                    (c) => ({
-                      value: c.id,
-                      label: `${c.name} — ${c.class ?? "-"} — Age: ${c.age ?? "-"}`,
-                    }),
-                  ),
-                ]}
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Sessions to add</div>
+              <input
+                className="input"
+                type="number"
+                min="1"
+                value={bulkSessions}
+                onChange={(e) => setBulkSessions(e.target.value)}
+                placeholder={String(runDefaultSessions)}
               />
             </div>
 
-            <div style={{ gridColumn: "span 12" }} className="card">
-              {pkgLoading ? (
-                <div>Checking existing balance...</div>
-              ) : pkgInfo ? (
-                <div className="muted">
-                  Existing sessions balance:{" "}
-                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — Remaining
-                  to pay:{" "}
-                  <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
-                </div>
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Pricing mode</div>
+              <select
+                className="input"
+                value={bulkPriceMode}
+                onChange={(e) => setBulkPriceMode(e.target.value)}
+              >
+                <option value="unified">Unified (same price for all)</option>
+                <option value="perChild">Per child (override)</option>
+              </select>
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">Package price</div>
+              {bulkPriceMode === "unified" ? (
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={bulkUnifiedPrice}
+                  onChange={(e) => setBulkUnifiedPrice(e.target.value)}
+                  placeholder={runDefaultTotalPrice > 0 ? String(runDefaultTotalPrice) : "0.00"}
+                />
               ) : (
-                <div className="muted">
-                  No existing balance found (or not checked yet).
+                <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+                  You can override the total price per child after selection.
                 </div>
               )}
-
-              <div className="muted" style={{ marginTop: 8 }}>
-                Upcoming sessions in this run: <b>{singlePreview.runFuture}</b>{" "}
-                — Allocated now: <b>{singlePreview.allocNow}</b> — Carry:{" "}
-                <b>{singlePreview.carry}</b>
-              </div>
             </div>
+          </div>
 
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Enrollment method</div>
-              <ModernSelect
-                value={enrollMode}
-                onChange={setEnrollMode}
-                menuWidth="trigger"
-                disabled={enrollLocked}
-                options={[
-                  { value: "use_existing", label: "Use existing balance" },
-                  { value: "buy_new", label: "Add sessions (new)" },
-                ]}
-              />
-            </div>
-            {enrollMode === "use_existing" && (
-              <div style={{ gridColumn: "span 12" }} className="card">
-                <div className="muted">
-                  <b>Use existing balance</b> / No . “Enrollment method”{" "}
-                  <b>Buy new sessions</b>.
-                </div>
-              </div>
-            )}
-
-            {(enrollMode === "buy_new" || enrollLocked) && (
-              <>
-                <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted">Sessions to add</div>
-                  <input
-                    className="input"
-                    type="number"
-                    min="1"
-                    value={buySessions}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setBuySessions(v);
-
-                      const s = Number(v);
-                      if (!Number.isFinite(s) || s <= 0) return;
-
-                      if (buyPriceEditMode === "unit") {
-                        const u = Number(buyUnitPrice || 0);
-                        if (Number.isFinite(u))
-                          setBuyPriceTotal((s * u).toFixed(2));
-                      } else {
-                        const t =
-                          buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
-                        if (Number.isFinite(t))
-                          setBuyUnitPrice((t / s).toFixed(2));
-                      }
-                    }}
-                  />
-                </div>
-
-                <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted">Unit price</div>
-                  <input
-                    className="input"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={buyUnitPrice}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setBuyUnitPrice(v);
-                      setBuyPriceEditMode("unit");
-
-                      const s = Number(buySessions || 0);
-                      const u = v === "" ? 0 : Number(v);
-                      if (Number.isFinite(s) && s > 0 && Number.isFinite(u))
-                        setBuyPriceTotal((s * u).toFixed(2));
-                    }}
-                    placeholder={
-                      Number(buySessions || 0) > 0
-                        ? (
-                            Number(defaultPrice || 0) / Number(buySessions || 1)
-                          ).toFixed(2)
-                        : "0.00"
-                    }
-                  />
-                </div>
-
-                <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted">Total price</div>
-                  <input
-                    className="input"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={buyPriceTotal}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setBuyPriceTotal(v);
-                      setBuyPriceEditMode("total");
-
-                      const s = Number(buySessions || 0);
-                      const t = v === "" ? 0 : Number(v);
-                      if (Number.isFinite(s) && s > 0 && Number.isFinite(t))
-                        setBuyUnitPrice((t / s).toFixed(2));
-                    }}
-                    placeholder={String(defaultPrice)}
-                  />
-                  <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                    Unit price — .
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="row" style={{ gridColumn: "span 12" }}>
               <button
                 type="button"
                 className="btn primary"
@@ -2967,12 +2643,12 @@ async function purchaseAndEnrollSingle() {
                 <table className="table" style={{ margin: 0 }}>
                   <thead>
                     <tr>
-                      <th style={{ width: 60 }}>Method</th>
-                      <th>Name</th>
-                      <th>Date</th>
-                      <th>Note</th>
+                      <th style={{ width: 60 }}>Select</th>
                       <th>Name</th>
                       <th>Class</th>
+                      <th>Age</th>
+                      <th>Gender</th>
+                      <th>Phone</th>
                     </tr>
                   </thead>
                   <tbody>
