@@ -100,6 +100,16 @@ function fmtILS(n, digits = 2) {
   }).format(x);
 }
 
+function fmtPaymentMethod(method) {
+  const v = String(method ?? "").trim().toLowerCase();
+  if (!v) return "-";
+  if (v === "cash") return "Cash";
+  if (v === "card") return "Card";
+  if (v === "transfer") return "Bank transfer";
+  if (v === "other") return "Other";
+  return method;
+}
+
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
@@ -325,17 +335,6 @@ export default function RunDetails() {
     [summary],
   );
 
-  const runDefaultSessions = useMemo(() => {
-    const ds = Number(summary?.default_sessions_total ?? 0);
-    if (Number.isFinite(ds) && ds > 0) return ds;
-
-    const sc = Number(summary?.sessions_count ?? 0);
-    if (Number.isFinite(sc) && sc > 0) return sc;
-
-    return isWorkshop ? 1 : 8;
-  }, [summary, isWorkshop]);
-
-
   async function loadChildrenSafe() {
     const tryView = await supabase
       .from("children_view")
@@ -434,21 +433,8 @@ export default function RunDetails() {
 
       // If user wants immediate enroll, keep the enroll modal open.
       if (enrollNow && newId) {
-        const s0 = Number(runDefaultSessions || 0) > 0 ? Number(runDefaultSessions) : isWorkshop ? 1 : 8;
-
-        setEnrollLocked(false);
-        setEnrollLockedName("");
-        setEnrollMode("buy_new");
-        setPkgInfo(null);
-
-        setBuySessions(s0);
-        setBuyPriceTotal(String(defaultPrice));
-        setBuyUnitPrice(
-          s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
-        );
-        setBuyPriceEditMode("total");
-
         setOpenEnroll(true);
+        setEnrollMode("buy_new");
         toast("Child created. Set sessions and click Save to enroll.", "ok");
       } else {
         toast("Child created.", "ok");
@@ -760,56 +746,36 @@ export default function RunDetails() {
     return { runFuture, allocNow, carry, mode: "buy" };
   }, [enrollMode, pkgInfo, buySessions, runFutureSessionsCount]);
 
-
   function openSingleEnrollNew() {
-    const s0 =
-      Number(runDefaultSessions || 0) > 0
-        ? Number(runDefaultSessions)
-        : isWorkshop
-          ? 1
-          : 8;
-
     setEnrollLocked(false);
     setEnrollLockedName("");
     setSelectedChildId("");
-
+    const s0 = 8;
     setBuySessions(s0);
     setBuyPriceTotal(String(defaultPrice));
-    setBuyUnitPrice(
-      s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
-    );
+    setBuyUnitPrice(s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "");
     setBuyPriceEditMode("total");
-
     setPkgInfo(null);
-    setEnrollMode("buy_new");
+    // setEnrollMode("auto");
     setOpenEnroll(true);
   }
-
-
-  // + sessions: always buy new for same child
 
   // + sessions: always buy new for same child
   function openSingleTopup(participantRow) {
     setEnrollLocked(true);
     setEnrollLockedName(participantRow.child_name);
     setSelectedChildId(String(participantRow.child_id));
-
     const s1 = 1;
     const alloc = Number(participantRow.sessions_allocated || 0);
     const agreed = Number(participantRow.agreed_price || 0);
-
-    const denom = Math.max(1, Number(runDefaultSessions || 8));
-    const u = alloc > 0 ? agreed / alloc : Number(defaultPrice || 0) / denom;
-
+    const u = alloc > 0 ? agreed / alloc : Number(defaultPrice || 0) / 8;
     setBuySessions(s1);
     setBuyUnitPrice(Number.isFinite(u) && u > 0 ? u.toFixed(2) : "");
     setBuyPriceTotal(Number.isFinite(u) && u > 0 ? (s1 * u).toFixed(2) : "");
     setBuyPriceEditMode("unit");
-
     setEnrollMode("buy_new");
     setOpenEnroll(true);
   }
-
 
   const bulkCandidates = useMemo(() => {
     const s = bulkQ.trim().toLowerCase();
@@ -827,17 +793,15 @@ export default function RunDetails() {
 
   const bulkSelectedCount = bulkSelectedIds.length;
 
-
   function openBulkModal() {
     setOpenBulk(true);
     setBulkQ("");
     setBulkSelected({});
-    setBulkSessions(Number(runDefaultSessions || 8));
+    setBulkSessions(8);
     setBulkPriceMode("unified");
     setBulkUnifiedPrice(String(defaultPrice));
     setBulkPerChildPrice({});
   }
-
 
   function toggleBulkChild(childId) {
     setBulkSelected((prev) => {
@@ -1967,7 +1931,10 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={openSingleEnrollNew}
+                    onClick={() => {
+                      setEnrollLocked(false);
+                      setOpenEnroll(true);
+                    }}
                   >
                     + Add child to course
                   </button>
@@ -1975,7 +1942,7 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={openBulkModal}
+                    onClick={() => setOpenBulk(true)}
                   >
                     + Add multiple
                   </button>
@@ -2212,7 +2179,12 @@ export default function RunDetails() {
                             title="Add "
                             variant="soft"
                             size="sm"
-                            onClick={() => openSingleTopup(p)}
+                            onClick={() => {
+                              setEnrollLocked(true);
+                              setEnrollLockedName(p.child_name);
+                              setSelectedChildId(String(p.child_id));
+                              setOpenEnroll(true);
+                            }}
                           />
                           <IconButton
                             icon={<Settings2 size={16} className="ico" />}
@@ -2934,7 +2906,10 @@ export default function RunDetails() {
                       className="btn"
                       onClick={() => {
                         setOpenManage(false);
-                        openSingleTopup(manageP);
+                        setEnrollLocked(true);
+                        setEnrollLockedName(manageP.child_name);
+                        setSelectedChildId(String(manageP.child_id));
+                        setOpenEnroll(true);
                       }}
                       title="Add sessions"
                     >
@@ -3178,8 +3153,8 @@ export default function RunDetails() {
             {enrollMode === "use_existing" && (
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div className="muted">
-                  <b>Use existing balance</b> / No . “Enrollment method”{" "}
-                  <b>Buy new sessions</b>.
+                  Use this when the child already has remaining sessions.
+                  Otherwise choose <b>Add sessions (new)</b>.
                 </div>
               </div>
             )}
@@ -3710,15 +3685,15 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* Enroll */}
+        {/* Add payment */}
         <Modal
           open={openPay}
-          title="Enroll children"
+          title="Add payment"
           onClose={() => setOpenPay(false)}
         >
           <div className="grid">
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted"> Child ( )</div>
+              <div className="muted">Child</div>
               <ModernSelect
                 value={payEnrollmentId}
                 onChange={setPayEnrollmentId}
@@ -3748,22 +3723,22 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Click “Attend” for quick check-in.</div>
+              <div className="muted">Payment method</div>
               <ModernSelect
                 value={payMethod}
                 onChange={setPayMethod}
                 menuWidth="trigger"
                 options={[
-                  { value: "cash", label: "" },
-                  { value: "card", label: "" },
-                  { value: "transfer", label: "" },
-                  { value: "other", label: "" },
+                  { value: "cash", label: "Cash" },
+                  { value: "card", label: "Card" },
+                  { value: "transfer", label: "Bank transfer" },
+                  { value: "other", label: "Other" },
                 ]}
               />
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">No</div>
+              <div className="muted">Note</div>
               <input
                 className="input"
                 value={payNote}
@@ -3794,28 +3769,28 @@ export default function RunDetails() {
         {/* */}
         <Modal
           open={openHistory}
-          title=" "
+          title="Payment history"
           onClose={() => setOpenHistory(false)}
         >
           <div className="muted" style={{ marginBottom: 10 }}>
             {historyEnrollment
-              ? `${historyEnrollment.child_name} — : ${Number(historyEnrollment.balance).toFixed(2)}`
+              ? `${historyEnrollment.child_name} — Balance: ${Number(historyEnrollment.balance).toFixed(2)}`
               : ""}
           </div>
 
           {historyLoading ? (
             <div className="card">Loading...</div>
           ) : historyRows.length === 0 ? (
-            <div className="card">No children found.</div>
+            <div className="card">No payments found.</div>
           ) : (
             <table className="table">
               <thead>
                 <tr>
                   <th>Amount</th>
-                  <th>Age</th>
+                  <th>Method</th>
                   <th>Date</th>
-                  <th>No</th>
-                  <th>Gender</th>
+                  <th>Note</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -3824,7 +3799,7 @@ export default function RunDetails() {
                     <td style={{ fontWeight: 800 }}>
                       {Number(x.amount).toFixed(2)}
                     </td>
-                    <td className="muted">{x.method}</td>
+                    <td className="muted">{fmtPaymentMethod(x.method)}</td>
                     <td className="muted">{fmtDT(x.created_at)}</td>
                     <td className="muted">{x.note ?? "-"}</td>
                     <td>
