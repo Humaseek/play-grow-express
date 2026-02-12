@@ -325,15 +325,16 @@ export default function RunDetails() {
     [summary],
   );
 
-  // When enrolling a new child, default sessions-to-add should follow the run setting
-  // (fallback order: course_runs.default_sessions_total -> sessions_count -> workshop?1:8)
   const runDefaultSessions = useMemo(() => {
-    const explicit = Number(summary?.default_sessions_total ?? 0);
-    const fromSessions = Number(summary?.sessions_count ?? 0);
-    const fallback = isWorkshop ? 1 : 8;
-    const v = explicit > 0 ? explicit : fromSessions > 0 ? fromSessions : fallback;
-    return Number.isFinite(v) && v > 0 ? v : fallback;
+    const ds = Number(summary?.default_sessions_total ?? 0);
+    if (Number.isFinite(ds) && ds > 0) return ds;
+
+    const sc = Number(summary?.sessions_count ?? 0);
+    if (Number.isFinite(sc) && sc > 0) return sc;
+
+    return isWorkshop ? 1 : 8;
   }, [summary, isWorkshop]);
+
 
   async function loadChildrenSafe() {
     const tryView = await supabase
@@ -433,8 +434,21 @@ export default function RunDetails() {
 
       // If user wants immediate enroll, keep the enroll modal open.
       if (enrollNow && newId) {
-        setOpenEnroll(true);
+        const s0 = Number(runDefaultSessions || 0) > 0 ? Number(runDefaultSessions) : isWorkshop ? 1 : 8;
+
+        setEnrollLocked(false);
+        setEnrollLockedName("");
         setEnrollMode("buy_new");
+        setPkgInfo(null);
+
+        setBuySessions(s0);
+        setBuyPriceTotal(String(defaultPrice));
+        setBuyUnitPrice(
+          s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
+        );
+        setBuyPriceEditMode("total");
+
+        setOpenEnroll(true);
         toast("Child created. Set sessions and click Save to enroll.", "ok");
       } else {
         toast("Child created.", "ok");
@@ -746,39 +760,56 @@ export default function RunDetails() {
     return { runFuture, allocNow, carry, mode: "buy" };
   }, [enrollMode, pkgInfo, buySessions, runFutureSessionsCount]);
 
+
   function openSingleEnrollNew() {
+    const s0 =
+      Number(runDefaultSessions || 0) > 0
+        ? Number(runDefaultSessions)
+        : isWorkshop
+          ? 1
+          : 8;
+
     setEnrollLocked(false);
     setEnrollLockedName("");
     setSelectedChildId("");
-    const s0 = runDefaultSessions;
+
     setBuySessions(s0);
     setBuyPriceTotal(String(defaultPrice));
-    setBuyUnitPrice(s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "");
+    setBuyUnitPrice(
+      s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
+    );
     setBuyPriceEditMode("total");
+
     setPkgInfo(null);
-    // setEnrollMode("auto");
+    setEnrollMode("buy_new");
     setOpenEnroll(true);
   }
+
+
+  // + sessions: always buy new for same child
 
   // + sessions: always buy new for same child
   function openSingleTopup(participantRow) {
     setEnrollLocked(true);
     setEnrollLockedName(participantRow.child_name);
     setSelectedChildId(String(participantRow.child_id));
+
     const s1 = 1;
     const alloc = Number(participantRow.sessions_allocated || 0);
     const agreed = Number(participantRow.agreed_price || 0);
-    const u =
-      alloc > 0
-        ? agreed / alloc
-        : Number(defaultPrice || 0) / Math.max(1, Number(runDefaultSessions || 8));
+
+    const denom = Math.max(1, Number(runDefaultSessions || 8));
+    const u = alloc > 0 ? agreed / alloc : Number(defaultPrice || 0) / denom;
+
     setBuySessions(s1);
     setBuyUnitPrice(Number.isFinite(u) && u > 0 ? u.toFixed(2) : "");
     setBuyPriceTotal(Number.isFinite(u) && u > 0 ? (s1 * u).toFixed(2) : "");
     setBuyPriceEditMode("unit");
+
     setEnrollMode("buy_new");
     setOpenEnroll(true);
   }
+
 
   const bulkCandidates = useMemo(() => {
     const s = bulkQ.trim().toLowerCase();
@@ -796,15 +827,17 @@ export default function RunDetails() {
 
   const bulkSelectedCount = bulkSelectedIds.length;
 
+
   function openBulkModal() {
     setOpenBulk(true);
     setBulkQ("");
     setBulkSelected({});
-    setBulkSessions(runDefaultSessions);
+    setBulkSessions(Number(runDefaultSessions || 8));
     setBulkPriceMode("unified");
     setBulkUnifiedPrice(String(defaultPrice));
     setBulkPerChildPrice({});
   }
+
 
   function toggleBulkChild(childId) {
     setBulkSelected((prev) => {
@@ -1229,7 +1262,7 @@ export default function RunDetails() {
       setOpenBulk(false);
       setBulkQ("");
       setBulkSelected({});
-      setBulkSessions(runDefaultSessions);
+      setBulkSessions(8);
       setBulkPriceMode("unified");
       setBulkUnifiedPrice(String(defaultPrice));
       setBulkPerChildPrice({});
@@ -1934,10 +1967,7 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => {
-                      setEnrollLocked(false);
-                      setOpenEnroll(true);
-                    }}
+                    onClick={openSingleEnrollNew}
                   >
                     + Add child to course
                   </button>
@@ -1945,7 +1975,7 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => setOpenBulk(true)}
+                    onClick={openBulkModal}
                   >
                     + Add multiple
                   </button>
@@ -2182,12 +2212,7 @@ export default function RunDetails() {
                             title="Add "
                             variant="soft"
                             size="sm"
-                            onClick={() => {
-                              setEnrollLocked(true);
-                              setEnrollLockedName(p.child_name);
-                              setSelectedChildId(String(p.child_id));
-                              setOpenEnroll(true);
-                            }}
+                            onClick={() => openSingleTopup(p)}
                           />
                           <IconButton
                             icon={<Settings2 size={16} className="ico" />}
@@ -2909,10 +2934,7 @@ export default function RunDetails() {
                       className="btn"
                       onClick={() => {
                         setOpenManage(false);
-                        setEnrollLocked(true);
-                        setEnrollLockedName(manageP.child_name);
-                        setSelectedChildId(String(manageP.child_id));
-                        setOpenEnroll(true);
+                        openSingleTopup(manageP);
                       }}
                       title="Add sessions"
                     >
