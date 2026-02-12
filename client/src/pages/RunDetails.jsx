@@ -335,6 +335,16 @@ export default function RunDetails() {
     [summary],
   );
 
+  const runDefaultSessions = useMemo(() => {
+    const v1 = Number(summary?.default_sessions_total ?? 0);
+    if (Number.isFinite(v1) && v1 > 0) return v1;
+
+    const v2 = Number(summary?.sessions_count ?? 0);
+    if (Number.isFinite(v2) && v2 > 0) return v2;
+
+    return isWorkshop ? 1 : 8;
+  }, [summary, isWorkshop]);
+
   async function loadChildrenSafe() {
     const tryView = await supabase
       .from("children_view")
@@ -433,8 +443,18 @@ export default function RunDetails() {
 
       // If user wants immediate enroll, keep the enroll modal open.
       if (enrollNow && newId) {
-        setOpenEnroll(true);
+        setEnrollLocked(false);
+        setEnrollLockedName("");
         setEnrollMode("buy_new");
+        const s0 = Number(runDefaultSessions || 8);
+        setBuySessions(s0);
+        setBuyPriceTotal(String(defaultPrice));
+        setBuyUnitPrice(
+          s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
+        );
+        setBuyPriceEditMode("total");
+        setPkgInfo(null);
+        setOpenEnroll(true);
         toast("Child created. Set sessions and click Save to enroll.", "ok");
       } else {
         toast("Child created.", "ok");
@@ -750,13 +770,15 @@ export default function RunDetails() {
     setEnrollLocked(false);
     setEnrollLockedName("");
     setSelectedChildId("");
-    const s0 = 8;
+    setEnrollMode("buy_new");
+    const s0 = Number(runDefaultSessions || 8);
     setBuySessions(s0);
     setBuyPriceTotal(String(defaultPrice));
-    setBuyUnitPrice(s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "");
+    setBuyUnitPrice(
+      s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
+    );
     setBuyPriceEditMode("total");
     setPkgInfo(null);
-    // setEnrollMode("auto");
     setOpenEnroll(true);
   }
 
@@ -768,7 +790,7 @@ export default function RunDetails() {
     const s1 = 1;
     const alloc = Number(participantRow.sessions_allocated || 0);
     const agreed = Number(participantRow.agreed_price || 0);
-    const u = alloc > 0 ? agreed / alloc : Number(defaultPrice || 0) / 8;
+    const u = alloc > 0 ? agreed / alloc : Number(defaultPrice || 0) / Number(runDefaultSessions || 8);
     setBuySessions(s1);
     setBuyUnitPrice(Number.isFinite(u) && u > 0 ? u.toFixed(2) : "");
     setBuyPriceTotal(Number.isFinite(u) && u > 0 ? (s1 * u).toFixed(2) : "");
@@ -797,7 +819,7 @@ export default function RunDetails() {
     setOpenBulk(true);
     setBulkQ("");
     setBulkSelected({});
-    setBulkSessions(8);
+    setBulkSessions(Number(runDefaultSessions || 8));
     setBulkPriceMode("unified");
     setBulkUnifiedPrice(String(defaultPrice));
     setBulkPerChildPrice({});
@@ -1226,7 +1248,7 @@ export default function RunDetails() {
       setOpenBulk(false);
       setBulkQ("");
       setBulkSelected({});
-      setBulkSessions(8);
+      setBulkSessions(Number(runDefaultSessions || 8));
       setBulkPriceMode("unified");
       setBulkUnifiedPrice(String(defaultPrice));
       setBulkPerChildPrice({});
