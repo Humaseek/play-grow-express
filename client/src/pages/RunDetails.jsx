@@ -3048,7 +3048,6 @@ async function purchaseAndEnrollSingle() {
                 Cancel
               </button>
             </div>
-          </div>
         </Modal>
 
         {/* Edit */}
