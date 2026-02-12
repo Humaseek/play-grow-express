@@ -2692,17 +2692,19 @@ export default function RunDetails() {
                         <td>
                           <button
                             type="button"
-                            className="btn danger"
+                            className="btn danger icon-only"
+                            aria-label="Delete payment"
+                            title="Delete payment"
                             onClick={() =>
                               setConfirm({
                                 open: true,
                                 type: "deletePayment",
                                 id: p.id,
-                                text: "FF",
+                                text: "Delete payment",
                               })
                             }
                           >
-                            <Trash2 size={16} className="ico" /> Delete
+                            <Trash2 size={16} className="ico" />
                           </button>
                         </td>
                       </tr>
