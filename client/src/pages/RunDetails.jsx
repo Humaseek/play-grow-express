@@ -100,16 +100,6 @@ function fmtILS(n, digits = 2) {
   }).format(x);
 }
 
-function fmtPaymentMethod(method) {
-  const v = String(method ?? "").trim().toLowerCase();
-  if (!v) return "-";
-  if (v === "cash") return "Cash";
-  if (v === "card") return "Card";
-  if (v === "transfer") return "Bank transfer";
-  if (v === "other") return "Other";
-  return method;
-}
-
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
@@ -196,9 +186,41 @@ export default function RunDetails() {
   const [enrollLockedName, setEnrollLockedName] = useState("");
 
   const [buySessions, setBuySessions] = useState(8);
+  const [buySessionsDirty, setBuySessionsDirty] = useState(false);
   const [buyPriceTotal, setBuyPriceTotal] = useState("");
   const [buyUnitPrice, setBuyUnitPrice] = useState("");
   const [buyPriceEditMode, setBuyPriceEditMode] = useState("total"); // total | unit
+
+
+  // When opening the enroll modal, default sessions should match the run configuration
+  // (but don't override if the user already edited the value).
+  useEffect(() => {
+    if (!openEnroll) return;
+    if (enrollLocked) return;
+    if (buySessionsDirty) return;
+
+    const s0 = runDefaultSessions;
+    if (!Number.isFinite(s0) || s0 <= 0) return;
+
+    const current = Number(buySessions || 0);
+    // If empty / invalid / still the old hardcoded default, replace with run default.
+    if (!Number.isFinite(current) || current <= 0 || current === 8) {
+      setBuySessions(String(s0));
+      setBuyPriceTotal(String(defaultPrice));
+      setBuyUnitPrice(
+        s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
+      );
+      setBuyPriceEditMode("total");
+    }
+  }, [
+    openEnroll,
+    enrollLocked,
+    buySessionsDirty,
+    runDefaultSessions,
+    buySessions,
+    defaultPrice,
+  ]);
+
 
   const [enrollSaving, setEnrollSaving] = useState(false);
 
@@ -336,14 +358,15 @@ export default function RunDetails() {
   );
 
   const runDefaultSessions = useMemo(() => {
-    const v1 = Number(summary?.default_sessions_total ?? 0);
-    if (Number.isFinite(v1) && v1 > 0) return v1;
+    const d = Number(summary?.default_sessions_total || 0);
+    if (Number.isFinite(d) && d > 0) return d;
 
-    const v2 = Number(summary?.sessions_count ?? 0);
-    if (Number.isFinite(v2) && v2 > 0) return v2;
+    const sc = Number(summary?.sessions_count || 0);
+    if (Number.isFinite(sc) && sc > 0) return sc;
 
     return isWorkshop ? 1 : 8;
-  }, [summary, isWorkshop]);
+  }, [summary?.default_sessions_total, summary?.sessions_count, isWorkshop]);
+
 
   async function loadChildrenSafe() {
     const tryView = await supabase
@@ -443,17 +466,19 @@ export default function RunDetails() {
 
       // If user wants immediate enroll, keep the enroll modal open.
       if (enrollNow && newId) {
+        // Open enroll modal with correct defaults for THIS run
         setEnrollLocked(false);
         setEnrollLockedName("");
-        setEnrollMode("buy_new");
-        const s0 = Number(runDefaultSessions || 8);
-        setBuySessions(s0);
+        setBuySessionsDirty(false);
+        const s0 = runDefaultSessions;
+        setBuySessions(String(s0));
         setBuyPriceTotal(String(defaultPrice));
         setBuyUnitPrice(
           s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
         );
         setBuyPriceEditMode("total");
         setPkgInfo(null);
+        setEnrollMode("buy_new");
         setOpenEnroll(true);
         toast("Child created. Set sessions and click Save to enroll.", "ok");
       } else {
@@ -770,18 +795,18 @@ export default function RunDetails() {
     setEnrollLocked(false);
     setEnrollLockedName("");
     setSelectedChildId("");
-    setEnrollMode("buy_new");
-    const s0 = Number(runDefaultSessions || 8);
-    setBuySessions(s0);
+    const s0 = runDefaultSessions;
+    setBuySessionsDirty(false);
+    setBuySessions(String(s0));
     setBuyPriceTotal(String(defaultPrice));
     setBuyUnitPrice(
       s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
     );
     setBuyPriceEditMode("total");
     setPkgInfo(null);
+    setEnrollMode("buy_new");
     setOpenEnroll(true);
   }
-
   // + sessions: always buy new for same child
   function openSingleTopup(participantRow) {
     setEnrollLocked(true);
@@ -790,8 +815,9 @@ export default function RunDetails() {
     const s1 = 1;
     const alloc = Number(participantRow.sessions_allocated || 0);
     const agreed = Number(participantRow.agreed_price || 0);
-    const u = alloc > 0 ? agreed / alloc : Number(defaultPrice || 0) / Number(runDefaultSessions || 8);
-    setBuySessions(s1);
+    const u = alloc > 0 ? agreed / alloc : Number(defaultPrice || 0) / Math.max(runDefaultSessions, 1);
+    setBuySessionsDirty(false);
+    setBuySessions(String(s1));
     setBuyUnitPrice(Number.isFinite(u) && u > 0 ? u.toFixed(2) : "");
     setBuyPriceTotal(Number.isFinite(u) && u > 0 ? (s1 * u).toFixed(2) : "");
     setBuyPriceEditMode("unit");
@@ -819,7 +845,7 @@ export default function RunDetails() {
     setOpenBulk(true);
     setBulkQ("");
     setBulkSelected({});
-    setBulkSessions(Number(runDefaultSessions || 8));
+    setBulkSessions(String(runDefaultSessions));
     setBulkPriceMode("unified");
     setBulkUnifiedPrice(String(defaultPrice));
     setBulkPerChildPrice({});
@@ -1248,7 +1274,7 @@ export default function RunDetails() {
       setOpenBulk(false);
       setBulkQ("");
       setBulkSelected({});
-      setBulkSessions(Number(runDefaultSessions || 8));
+      setBulkSessions(8);
       setBulkPriceMode("unified");
       setBulkUnifiedPrice(String(defaultPrice));
       setBulkPerChildPrice({});
@@ -1953,10 +1979,7 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => {
-                      setEnrollLocked(false);
-                      setOpenEnroll(true);
-                    }}
+                    onClick={openSingleEnrollNew}
                   >
                     + Add child to course
                   </button>
@@ -1964,7 +1987,7 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => setOpenBulk(true)}
+                    onClick={openBulkModal}
                   >
                     + Add multiple
                   </button>
@@ -2201,12 +2224,7 @@ export default function RunDetails() {
                             title="Add "
                             variant="soft"
                             size="sm"
-                            onClick={() => {
-                              setEnrollLocked(true);
-                              setEnrollLockedName(p.child_name);
-                              setSelectedChildId(String(p.child_id));
-                              setOpenEnroll(true);
-                            }}
+                            onClick={() => openSingleTopup(p)}
                           />
                           <IconButton
                             icon={<Settings2 size={16} className="ico" />}
@@ -2928,10 +2946,7 @@ export default function RunDetails() {
                       className="btn"
                       onClick={() => {
                         setOpenManage(false);
-                        setEnrollLocked(true);
-                        setEnrollLockedName(manageP.child_name);
-                        setSelectedChildId(String(manageP.child_id));
-                        setOpenEnroll(true);
+                        openSingleTopup(manageP);
                       }}
                       title="Add sessions"
                     >
@@ -3175,8 +3190,8 @@ export default function RunDetails() {
             {enrollMode === "use_existing" && (
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div className="muted">
-                  Use this when the child already has remaining sessions.
-                  Otherwise choose <b>Add sessions (new)</b>.
+                  <b>Use existing balance</b> / No . “Enrollment method”{" "}
+                  <b>Buy new sessions</b>.
                 </div>
               </div>
             )}
@@ -3193,6 +3208,7 @@ export default function RunDetails() {
                     onChange={(e) => {
                       const v = e.target.value;
                       setBuySessions(v);
+                      setBuySessionsDirty(true);
 
                       const s = Number(v);
                       if (!Number.isFinite(s) || s <= 0) return;
@@ -3707,15 +3723,15 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* Add payment */}
+        {/* Enroll */}
         <Modal
           open={openPay}
-          title="Add payment"
+          title="Enroll children"
           onClose={() => setOpenPay(false)}
         >
           <div className="grid">
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Child</div>
+              <div className="muted"> Child ( )</div>
               <ModernSelect
                 value={payEnrollmentId}
                 onChange={setPayEnrollmentId}
@@ -3745,22 +3761,22 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Payment method</div>
+              <div className="muted">Click “Attend” for quick check-in.</div>
               <ModernSelect
                 value={payMethod}
                 onChange={setPayMethod}
                 menuWidth="trigger"
                 options={[
-                  { value: "cash", label: "Cash" },
-                  { value: "card", label: "Card" },
-                  { value: "transfer", label: "Bank transfer" },
-                  { value: "other", label: "Other" },
+                  { value: "cash", label: "" },
+                  { value: "card", label: "" },
+                  { value: "transfer", label: "" },
+                  { value: "other", label: "" },
                 ]}
               />
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Note</div>
+              <div className="muted">No</div>
               <input
                 className="input"
                 value={payNote}
@@ -3791,28 +3807,28 @@ export default function RunDetails() {
         {/* */}
         <Modal
           open={openHistory}
-          title="Payment history"
+          title=" "
           onClose={() => setOpenHistory(false)}
         >
           <div className="muted" style={{ marginBottom: 10 }}>
             {historyEnrollment
-              ? `${historyEnrollment.child_name} — Balance: ${Number(historyEnrollment.balance).toFixed(2)}`
+              ? `${historyEnrollment.child_name} — : ${Number(historyEnrollment.balance).toFixed(2)}`
               : ""}
           </div>
 
           {historyLoading ? (
             <div className="card">Loading...</div>
           ) : historyRows.length === 0 ? (
-            <div className="card">No payments found.</div>
+            <div className="card">No children found.</div>
           ) : (
             <table className="table">
               <thead>
                 <tr>
                   <th>Amount</th>
-                  <th>Method</th>
+                  <th>Age</th>
                   <th>Date</th>
-                  <th>Note</th>
-                  <th>Actions</th>
+                  <th>No</th>
+                  <th>Gender</th>
                 </tr>
               </thead>
               <tbody>
@@ -3821,7 +3837,7 @@ export default function RunDetails() {
                     <td style={{ fontWeight: 800 }}>
                       {Number(x.amount).toFixed(2)}
                     </td>
-                    <td className="muted">{fmtPaymentMethod(x.method)}</td>
+                    <td className="muted">{x.method}</td>
                     <td className="muted">{fmtDT(x.created_at)}</td>
                     <td className="muted">{x.note ?? "-"}</td>
                     <td>
