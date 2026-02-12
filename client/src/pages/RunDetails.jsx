@@ -199,27 +199,39 @@ export default function RunDetails() {
     if (enrollLocked) return;
     if (buySessionsDirty) return;
 
-    const s0 = runDefaultSessions;
+    const dp = Number(summary?.default_price ?? 0);
+
+    const s0 = (() => {
+      const d = Number(summary?.default_sessions_total || 0);
+      if (Number.isFinite(d) && d > 0) return d;
+
+      const sc = Number(summary?.sessions_count || 0);
+      if (Number.isFinite(sc) && sc > 0) return sc;
+
+      return isWorkshop ? 1 : 8;
+    })();
+
     if (!Number.isFinite(s0) || s0 <= 0) return;
 
     const current = Number(buySessions || 0);
     // If empty / invalid / still the old hardcoded default, replace with run default.
     if (!Number.isFinite(current) || current <= 0 || current === 8) {
       setBuySessions(String(s0));
-      setBuyPriceTotal(String(defaultPrice));
-      setBuyUnitPrice(
-        s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "",
-      );
+      setBuyPriceTotal(String(dp));
+      setBuyUnitPrice(s0 > 0 ? (dp / s0).toFixed(2) : "");
       setBuyPriceEditMode("total");
     }
   }, [
     openEnroll,
     enrollLocked,
     buySessionsDirty,
-    runDefaultSessions,
     buySessions,
-    defaultPrice,
+    summary?.default_sessions_total,
+    summary?.sessions_count,
+    summary?.default_price,
+    isWorkshop,
   ]);
+
 
 
   const [enrollSaving, setEnrollSaving] = useState(false);
@@ -3506,7 +3518,7 @@ export default function RunDetails() {
         {/* ✅ Bulk enroll */}
         <Modal
           open={openBulk}
-          title="Enroll children"
+          title="Add payment"
           onClose={() => setOpenBulk(false)}
         >
           <div className="muted">
@@ -3731,7 +3743,7 @@ export default function RunDetails() {
         >
           <div className="grid">
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted"> Child ( )</div>
+              <div className="muted">Child</div>
               <ModernSelect
                 value={payEnrollmentId}
                 onChange={setPayEnrollmentId}
@@ -3761,22 +3773,22 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Click “Attend” for quick check-in.</div>
+              <div className="muted">Payment method</div>
               <ModernSelect
                 value={payMethod}
                 onChange={setPayMethod}
                 menuWidth="trigger"
                 options={[
-                  { value: "cash", label: "" },
-                  { value: "card", label: "" },
-                  { value: "transfer", label: "" },
-                  { value: "other", label: "" },
+                  { value: "cash", label: "Cash" },
+                  { value: "card", label: "Card" },
+                  { value: "transfer", label: "Bank transfer" },
+                  { value: "other", label: "Other" },
                 ]}
               />
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">No</div>
+              <div className="muted">Note</div>
               <input
                 className="input"
                 value={payNote}
@@ -3807,7 +3819,7 @@ export default function RunDetails() {
         {/* */}
         <Modal
           open={openHistory}
-          title=" "
+          title="Payment history"
           onClose={() => setOpenHistory(false)}
         >
           <div className="muted" style={{ marginBottom: 10 }}>
@@ -3825,10 +3837,10 @@ export default function RunDetails() {
               <thead>
                 <tr>
                   <th>Amount</th>
-                  <th>Age</th>
+                  <th>Method</th>
                   <th>Date</th>
-                  <th>No</th>
-                  <th>Gender</th>
+                  <th>Note</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
