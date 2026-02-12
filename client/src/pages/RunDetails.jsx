@@ -2698,11 +2698,11 @@ export default function RunDetails() {
                                 open: true,
                                 type: "deletePayment",
                                 id: p.id,
-                                text: "Delete payment",
+                                text: "FF",
                               })
                             }
                           >
-                            <Trash2 size={16} className="ico" />
+                            <Trash2 size={16} className="ico" /> Delete
                           </button>
                         </td>
                       </tr>
