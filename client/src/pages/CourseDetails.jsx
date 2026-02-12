@@ -262,6 +262,7 @@ export default function CourseDetails() {
             template_id: Number(courseId),
             label: finalLabel,
             status: "active",
+            default_sessions_total: Number(count),
           },
         ])
         .select("id")

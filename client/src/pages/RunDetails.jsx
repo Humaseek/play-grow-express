@@ -325,6 +325,16 @@ export default function RunDetails() {
     [summary],
   );
 
+  // When enrolling a new child, default sessions-to-add should follow the run setting
+  // (fallback order: course_runs.default_sessions_total -> sessions_count -> workshop?1:8)
+  const runDefaultSessions = useMemo(() => {
+    const explicit = Number(summary?.default_sessions_total ?? 0);
+    const fromSessions = Number(summary?.sessions_count ?? 0);
+    const fallback = isWorkshop ? 1 : 8;
+    const v = explicit > 0 ? explicit : fromSessions > 0 ? fromSessions : fallback;
+    return Number.isFinite(v) && v > 0 ? v : fallback;
+  }, [summary, isWorkshop]);
+
   async function loadChildrenSafe() {
     const tryView = await supabase
       .from("children_view")
@@ -740,7 +750,7 @@ export default function RunDetails() {
     setEnrollLocked(false);
     setEnrollLockedName("");
     setSelectedChildId("");
-    const s0 = 8;
+    const s0 = runDefaultSessions;
     setBuySessions(s0);
     setBuyPriceTotal(String(defaultPrice));
     setBuyUnitPrice(s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "");
@@ -758,7 +768,10 @@ export default function RunDetails() {
     const s1 = 1;
     const alloc = Number(participantRow.sessions_allocated || 0);
     const agreed = Number(participantRow.agreed_price || 0);
-    const u = alloc > 0 ? agreed / alloc : Number(defaultPrice || 0) / 8;
+    const u =
+      alloc > 0
+        ? agreed / alloc
+        : Number(defaultPrice || 0) / Math.max(1, Number(runDefaultSessions || 8));
     setBuySessions(s1);
     setBuyUnitPrice(Number.isFinite(u) && u > 0 ? u.toFixed(2) : "");
     setBuyPriceTotal(Number.isFinite(u) && u > 0 ? (s1 * u).toFixed(2) : "");
@@ -787,7 +800,7 @@ export default function RunDetails() {
     setOpenBulk(true);
     setBulkQ("");
     setBulkSelected({});
-    setBulkSessions(8);
+    setBulkSessions(runDefaultSessions);
     setBulkPriceMode("unified");
     setBulkUnifiedPrice(String(defaultPrice));
     setBulkPerChildPrice({});
@@ -1216,7 +1229,7 @@ export default function RunDetails() {
       setOpenBulk(false);
       setBulkQ("");
       setBulkSelected({});
-      setBulkSessions(8);
+      setBulkSessions(runDefaultSessions);
       setBulkPriceMode("unified");
       setBulkUnifiedPrice(String(defaultPrice));
       setBulkPerChildPrice({});
