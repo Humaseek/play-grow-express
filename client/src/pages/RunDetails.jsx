@@ -267,7 +267,8 @@ export default function RunDetails() {
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
   const [payNote, setPayNote] = useState("");
-  const [paySaving, setPaySaving] = useState(false);
+  const \[paySaving, setPaySaving\] = useState\(false\);
+  const [payEditId, setPayEditId] = useState(null);
 
   // Payment history modal
   const [openHistory, setOpenHistory] = useState(false);
@@ -1364,12 +1365,8 @@ export default function RunDetails() {
       start_at: toLocalInput(startLocal),
       end_at: toLocalInput(endLocal),
       duration_min:
-        Math.max(
-          1,
-          Math.round((endLocal.getTime() - startLocal.getTime()) / 60000),
-        ) ||
-        Number(durationMinutes) ||
-        60,
+        Math.max(1, Math.round((endLocal.getTime() - startLocal.getTime()) / 60000)) ||
+        (Number(durationMinutes) || 60),
       status: s.status,
     });
     setOpenSession(true);
@@ -1388,8 +1385,8 @@ export default function RunDetails() {
       startLocal.setHours(0, 0, 0, 0);
 
     const durationMin = isWorkshop
-      ? Number(sessionForm.duration_min) || Number(durationMinutes) || 60
-      : Number(durationMinutes) || 60;
+      ? (Number(sessionForm.duration_min) || Number(durationMinutes) || 60)
+      : (Number(durationMinutes) || 60);
     const endLocal = new Date(startLocal.getTime() + durationMin * 60 * 1000);
 
     setSessionSaving(true);
@@ -1457,6 +1454,7 @@ export default function RunDetails() {
 
   function openPaymentModalFor(participantRow, mode = "remaining") {
     setPayEnrollmentId(String(participantRow.enrollment_id));
+    setPayEditId(null);
     const remaining = Number(participantRow.balance || 0);
     if (mode === "remaining")
       setPayAmount(remaining > 0 ? String(remaining.toFixed(2)) : "");
@@ -1466,34 +1464,84 @@ export default function RunDetails() {
     setOpenPay(true);
   }
 
+
+  function openNewPaymentModal() {
+    setPayEditId(null);
+    setPayEnrollmentId("");
+    setPayAmount("");
+    setPayMethod("cash");
+    setPayNote("");
+    setOpenPay(true);
+  }
+
+  function openEditPayment(paymentRow) {
+    setPayEditId(paymentRow.id);
+    setPayEnrollmentId(String(paymentRow.enrollment_id ?? ""));
+    const amt = paymentRow.amount != null ? Number(paymentRow.amount) : 0;
+    setPayAmount(amt ? String(amt.toFixed(2)) : "");
+    setPayMethod(paymentRow.method || "cash");
+    setPayNote(paymentRow.note || "");
+    setOpenPay(true);
+  }
+
+  function paymentMethodLabel(v) {
+    switch (v) {
+      case "cash":
+        return "Cash";
+      case "card":
+        return "Card";
+      case "transfer":
+        return "Bank transfer";
+      case "other":
+        return "Other";
+      default:
+        return v || "-";
+    }
+  }
+
   async function addPayment() {
     if (!payEnrollmentId || !payAmount) return;
 
     setPaySaving(true);
     setError(null);
     try {
-      const ins = await supabase.from("payments").insert([
-        {
-          enrollment_id: Number(payEnrollmentId),
-          amount: Number(payAmount),
-          method: payMethod,
-          note: payNote.trim() || null,
-        },
-      ]);
+      if (payEditId) {
+        const upd = await supabase
+          .from("payments")
+          .update({
+            amount: Number(payAmount),
+            method: payMethod,
+            note: payNote.trim() || null,
+          })
+          .eq("id", payEditId);
 
-      if (ins.error) throw ins.error;
+        if (upd.error) throw upd.error;
+        toast("Payment updated.", "ok");
+      } else {
+        const ins = await supabase.from("payments").insert([
+          {
+            enrollment_id: Number(payEnrollmentId),
+            amount: Number(payAmount),
+            method: payMethod,
+            note: payNote.trim() || null,
+          },
+        ]);
 
-      toast("Payment added.", "ok");
+        if (ins.error) throw ins.error;
+        toast("Payment added.", "ok");
+      }
+
       setOpenPay(false);
+      setPayEditId(null);
       setPayEnrollmentId("");
       setPayAmount("");
       setPayMethod("cash");
       setPayNote("");
       await loadFixed();
-      setTab("participants");
+      setTab("payments");
     } catch (e) {
       setError(e);
-      toast("Failed to add payment.", "danger");
+      toast(payEditId ? "Failed to update payment." : "Failed to add payment.", "danger");
     } finally {
       setPaySaving(false);
     }
@@ -2220,108 +2268,113 @@ export default function RunDetails() {
 
               <hr className="sep" />
 
+
               {isWorkshop ? (
-                <div style={{ display: "grid", gap: 12 }}>
-                  <div className="muted">
-                    Workshop runs usually have a single session. Create it once,
-                    then manage it from the list.
-                  </div>
 
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ width: "100%" }}
-                    onClick={openCreateSession}
-                    disabled={(sessions || []).length > 0}
-                    title={
-                      (sessions || []).length > 0
-                        ? "Session already created"
-                        : "Create the workshop session"
-                    }
-                  >
-                    {(sessions || []).length > 0
-                      ? "Session created"
-                      : "+ Create session"}
-                  </button>
+
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <div className="muted">
+                  Workshop runs usually have a single session. Create it once,
+                  then manage it from the list.
                 </div>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{ width: "100%" }}
+                  onClick={openCreateSession}
+                  disabled={(sessions || []).length > 0}
+                  title={
+                    (sessions || []).length > 0
+                      ? "Session already created"
+                      : "Create the workshop session"
+                  }
+                >
+                  {(sessions || []).length > 0 ? "Session created" : "+ Create session"}
+                </button>
+              </div>
               ) : (
-                <div style={{ display: "grid", gap: 12 }}>
+
+
+              <div style={{ display: "grid", gap: 12 }}>
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="muted">First session (date/time)</div>
+                  <input
+                    className="input"
+                    type={isWorkshop ? "date" : "datetime-local"}
+                    value={firstStart}
+                    onChange={(e) => setFirstStart(e.target.value)}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 10,
+                  }}
+                >
                   <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">First session (date/time)</div>
-                    <input
-                      className="input"
-                      type={isWorkshop ? "date" : "datetime-local"}
-                      value={firstStart}
-                      onChange={(e) => setFirstStart(e.target.value)}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 10,
-                    }}
-                  >
-                    <div style={{ display: "grid", gap: 6 }}>
-                      <div className="muted">Duration (minutes)</div>
-                      <input
-                        className="input"
-                        type="number"
-                        min="1"
-                        value={durationMinutes}
-                        onChange={(e) => setDurationMinutes(e.target.value)}
-                      />
-                    </div>
-
-                    <div style={{ display: "grid", gap: 6 }}>
-                      <div className="muted">Number of sessions</div>
-                      <input
-                        className="input"
-                        type="number"
-                        min="1"
-                        value={count}
-                        onChange={(e) => setCount(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">Repeat every (days)</div>
+                    <div className="muted">Duration (minutes)</div>
                     <input
                       className="input"
                       type="number"
                       min="1"
-                      value={intervalDays}
-                      onChange={(e) => setIntervalDays(e.target.value)}
+                      value={durationMinutes}
+                      onChange={(e) => setDurationMinutes(e.target.value)}
                     />
-                    <div className="muted" style={{ marginTop: -2 }}>
-                      Current schedule: every <b>{intervalDays}</b> days
-                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    className="btn primary"
-                    style={{ width: "100%" }}
-                    disabled={genLoading || !firstStart}
-                    onClick={generateSessions}
-                  >
-                    {genLoading ? "Generating..." : "Generate sessions"}
-                  </button>
-
-                  <hr className="sep" />
-
-                  <button
-                    type="button"
-                    className="btn"
-                    style={{ width: "100%" }}
-                    onClick={openCreateSession}
-                  >
-                    <Plus size={16} className="ico" /> Add single session
-                  </button>
+                  <div style={{ display: "grid", gap: 6 }}>
+                    <div className="muted">Number of sessions</div>
+                    <input
+                      className="input"
+                      type="number"
+                      min="1"
+                      value={count}
+                      onChange={(e) => setCount(e.target.value)}
+                    />
+                  </div>
                 </div>
+
+                <div style={{ display: "grid", gap: 6 }}>
+                  <div className="muted">Repeat every (days)</div>
+                  <input
+                    className="input"
+                    type="number"
+                    min="1"
+                    value={intervalDays}
+                    onChange={(e) => setIntervalDays(e.target.value)}
+                  />
+                  <div className="muted" style={{ marginTop: -2 }}>
+                    Current schedule: every <b>{intervalDays}</b> days
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn primary"
+                  style={{ width: "100%" }}
+                  disabled={genLoading || !firstStart}
+                  onClick={generateSessions}
+                >
+                  {genLoading ? "Generating..." : "Generate sessions"}
+                </button>
+
+                <hr className="sep" />
+
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ width: "100%" }}
+                  onClick={openCreateSession}
+                >
+                  <Plus size={16} className="ico" /> Add single session
+                </button>
+              </div>
               )}
+
             </div>
 
             {/* RIGHT: list */}
@@ -2331,8 +2384,8 @@ export default function RunDetails() {
             >
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Manage sessions for this run. Edit times, mark done/canceled, or
-                delete.
+                Manage sessions for this run. Edit times, mark done/canceled,
+                or delete.
               </div>
 
               <hr className="sep" />
@@ -2567,33 +2620,26 @@ export default function RunDetails() {
           </div>
         )}
 
+        {
         {/* ===================== PAYMENTS TAB ===================== */}
         {tab === "payments" && (
           <div className="grid">
-            <div className="card" style={{ gridColumn: "span 4" }}>
-              <div className="h1">Record payment</div>
-              <div className="muted" style={{ marginTop: 6 }}>
-                Add and track payments for children in this run.
-              </div>
+            <div className="card" style={{ gridColumn: "span 12" }}>
+              <div className="row space" style={{ alignItems: "flex-start" }}>
+                <div>
+                  <div className="h1">Payments</div>
+                  <div className="muted" style={{ marginTop: 6 }}>
+                    View and manage payments for this run.
+                  </div>
+                </div>
 
-              <hr className="sep" />
-
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => setOpenPay(true)}
-              >
-                + Add payment
-              </button>
-            </div>
-
-            <div
-              className="card"
-              style={{ gridColumn: "span 8", overflow: "hidden" }}
-            >
-              <div className="h1">Payments</div>
-              <div className="muted" style={{ marginTop: 6 }}>
-                View and manage payments for this run.
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={openNewPaymentModal}
+                >
+                  + Add payment
+                </button>
               </div>
 
               <hr className="sep" />
@@ -2601,75 +2647,82 @@ export default function RunDetails() {
               {payments.length === 0 ? (
                 <div className="muted">No items found.</div>
               ) : (
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Child</th>
-                      <th>Amount (₪)</th>
-                      <th style={{ width: 120 }}>Method</th>
-                      <th style={{ width: 170 }}>Date</th>
-                      <th>Note</th>
-                      <th style={{ width: 56 }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {payments.map((p) => (
-                      <tr key={p.id}>
-                        <td style={{ fontWeight: 800 }}>
-                          {p.child_id ? (
-                            <button
-                              type="button"
-                              className="linkBtn"
-                              onClick={() =>
-                                navigate(`/children/${p.child_id}`)
-                              }
-                            >
-                              {p.child_name}
-                            </button>
-                          ) : (
-                            p.child_name
-                          )}
-                        </td>
-                        <td>{Number(p.amount).toFixed(2)}</td>
-                        <td className="muted">{p.method}</td>
-                        <td className="muted">{fmtDT(p.created_at)}</td>
-                        <td className="muted">{p.note ?? "-"}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn danger"
-                            title="Delete payment"
-                            aria-label="Delete payment"
-                            style={{
-                              width: 36,
-                              height: 36,
-                              padding: 0,
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                            onClick={() =>
-                              setConfirm({
-                                open: true,
-                                type: "deletePayment",
-                                id: p.id,
-                                text: "Delete payment",
-                              })
-                            }
-                          >
-                            <Trash2 size={16} className="ico" />
-                          </button>
-                        </td>
+                <div className="tableWrap inCard">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Child</th>
+                        <th>Amount (₪)</th>
+                        <th style={{ width: 140 }}>Method</th>
+                        <th style={{ width: 170 }}>Date</th>
+                        <th>Note</th>
+                        <th style={{ width: 92, textAlign: "center" }}></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+
+                    <tbody>
+                      {payments.map((p) => (
+                        <tr key={p.id}>
+                          <td style={{ fontWeight: 800 }}>
+                            {p.child_id ? (
+                              <button
+                                type="button"
+                                className="linkBtn"
+                                onClick={() => navigate(`/children/${p.child_id}`)}
+                              >
+                                {p.child_name}
+                              </button>
+                            ) : (
+                              p.child_name
+                            )}
+                          </td>
+
+                          <td>{Number(p.amount).toFixed(2)}</td>
+                          <td className="muted">{paymentMethodLabel(p.method)}</td>
+                          <td className="muted">{fmtDT(p.created_at)}</td>
+                          <td className="muted">{p.note ?? "-"}</td>
+
+                          <td style={{ textAlign: "center" }}>
+                            <div className="tableActions">
+                              <button
+                                type="button"
+                                className="btn iconOnly"
+                                title="Edit payment"
+                                aria-label="Edit payment"
+                                onClick={() => openEditPayment(p)}
+                              >
+                                <Pencil size={16} className="ico" />
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn danger iconOnly"
+                                title="Delete payment"
+                                aria-label="Delete payment"
+                                onClick={() =>
+                                  setConfirm({
+                                    open: true,
+                                    type: "deletePayment",
+                                    id: p.id,
+                                    text: "Delete payment",
+                                  })
+                                }
+                              >
+                                <Trash2 size={16} className="ico" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </div>
         )}
 
-        {/* ===================== MODALS ===================== */}
+/* ===================== MODALS ===================== */}
 
         {/* ✅ Child */}
         <Modal
@@ -3684,62 +3737,71 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* Enroll */}
+
+        {/* Payment */}
         <Modal
           open={openPay}
-          title="Enroll children"
-          onClose={() => setOpenPay(false)}
+          title={payEditId ? "Edit payment" : "Record payment"}
+          onClose={() => {
+            setOpenPay(false);
+            setPayEditId(null);
+          }}
         >
           <div className="grid">
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted"> Child ( )</div>
+              <div className="muted">Child</div>
               <ModernSelect
                 value={payEnrollmentId}
                 onChange={setPayEnrollmentId}
                 menuWidth="trigger"
+                disabled={paySaving || !!payEditId}
+                placeholder="— Select child —"
                 options={[
-                  { value: "", label: "—" },
+                  { value: "", label: "— Select child —" },
                   ...participants
                     .filter((p) => p.enrollment_status === "active")
                     .map((p) => ({
                       value: p.enrollment_id,
-                      label: `${p.child_name} — ${Number(p.balance).toFixed(2)}`,
+                      label: `${p.child_name} — balance: ₪${Number(p.balance).toFixed(2)}`,
                     })),
                 ]}
               />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Amount</div>
+              <div className="muted">Amount (₪)</div>
               <input
                 className="input"
                 type="number"
                 min="0.01"
                 step="0.01"
+                placeholder="0.00"
                 value={payAmount}
                 onChange={(e) => setPayAmount(e.target.value)}
               />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Click “Attend” for quick check-in.</div>
+              <div className="muted">Payment method</div>
               <ModernSelect
                 value={payMethod}
                 onChange={setPayMethod}
                 menuWidth="trigger"
+                placeholder="— Select method —"
                 options={[
-                  { value: "cash", label: "" },
-                  { value: "card", label: "" },
-                  { value: "transfer", label: "" },
-                  { value: "other", label: "" },
+                  { value: "cash", label: "Cash" },
+                  { value: "card", label: "Card" },
+                  { value: "transfer", label: "Bank transfer" },
+                  { value: "other", label: "Other" },
                 ]}
               />
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">No</div>
+              <div className="muted">Note</div>
               <input
                 className="input"
+                placeholder="Optional"
                 value={payNote}
                 onChange={(e) => setPayNote(e.target.value)}
               />
@@ -3752,12 +3814,15 @@ export default function RunDetails() {
                 disabled={paySaving || !payEnrollmentId || !payAmount}
                 onClick={addPayment}
               >
-                {paySaving ? " Save..." : "Save"}
+                {paySaving ? "Saving..." : payEditId ? "Update" : "Save"}
               </button>
               <button
                 type="button"
                 className="btn"
-                onClick={() => setOpenPay(false)}
+                onClick={() => {
+                  setOpenPay(false);
+                  setPayEditId(null);
+                }}
               >
                 Cancel
               </button>
