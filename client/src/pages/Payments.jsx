@@ -6,13 +6,12 @@ import PageHeader from "../components/PageHeader";
 import ErrorBanner from "../components/ErrorBanner";
 import KpiCard from "../components/KpiCard";
 import EmptyState from "../components/EmptyState";
-import Badge from "../components/Badge";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import IconButton from "../components/IconButton";
 import Control from "../components/Control";
 import ModernSelect from "../components/ModernSelect";
-import { fmtDateTime24, fmtTime24, fmtWeekdayAr } from "../utils/datetime";
+import { fmtDateTime24 } from "../utils/datetime";
 
 import {
   CreditCard,
@@ -23,8 +22,6 @@ import {
   Trash2,
   Search,
   Filter,
-  Link as LinkIcon,
-  AlertTriangle,
 } from "lucide-react";
 
 function fmtMoney(n) {
@@ -37,46 +34,12 @@ function fmtDT(dt) {
   return fmtDateTime24(dt);
 }
 
-function fmtSessionLabel(startAt, endAt) {
-  if (!startAt) return "—";
-  const day = fmtWeekdayAr(startAt);
-  const time = fmtTime24(startAt);
-  const time2 = endAt ? fmtTime24(endAt) : null;
-  return time2 ? `${day} ${time}–${time2}` : `${day} ${time}`;
-}
-
 function methodLabel(m) {
-  if (m === "cash") return "";
-  if (m === "card") return "";
-  if (m === "transfer") return "";
-  return "";
-}
-
-function statusFromEnrollment(enr) {
-  const agreed = Number(enr?.agreed_price || 0);
-  const paid = Number(enr?.paid_amount || 0);
-  const bal = Number(enr?.balance || 0);
-
-  if (agreed <= 0) {
-    return { key: "free", label: "Free", variant: "info", rowClass: "" };
-  }
-  if (bal <= 0) {
-    return { key: "paid", label: "Paid", variant: "ok", rowClass: "rowPaid" };
-  }
-  if (paid > 0) {
-    return {
-      key: "partial",
-      label: "Partial",
-      variant: "warn",
-      rowClass: "rowPartial",
-    };
-  }
-  return {
-    key: "unpaid",
-    label: " Paid",
-    variant: "danger",
-    rowClass: "rowUnpaid",
-  };
+  if (m === "cash") return "Cash";
+  if (m === "card") return "Card";
+  if (m === "transfer") return "Bank transfer";
+  if (m === "other") return "Other";
+  return "—";
 }
 
 function toInputDatetimeLocal(dt) {
@@ -113,15 +76,11 @@ function rangeFromPreset(preset) {
   const end = endOfDay(now);
 
   if (preset === "30d") {
-    const start = startOfDay(
-      new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
-    );
+    const start = startOfDay(new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000));
     return { start, end };
   }
   if (preset === "90d") {
-    const start = startOfDay(
-      new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000),
-    );
+    const start = startOfDay(new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000));
     return { start, end };
   }
   if (preset === "this_month") {
@@ -139,26 +98,21 @@ export default function Payments() {
   const [error, setError] = useState(null);
 
   const [payments, setPayments] = useState([]);
-  const [enrollMap, setEnrollMap] = useState(new Map());
 
   const [search, setSearch] = useState("");
   const [method, setMethod] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
 
   const [rangePreset, setRangePreset] = useState("90d");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  const [supportsDetailsView, setSupportsDetailsView] = useState(true);
-  const [supportsSessionId, setSupportsSessionId] = useState(true);
-
   const [openAdd, setOpenAdd] = useState(false);
   const [pickerLoading, setPickerLoading] = useState(false);
   const [enrollments, setEnrollments] = useState([]);
-  const [sessions, setSessions] = useState([]);
 
+  // Add payment form
+  const [payChildId, setPayChildId] = useState("");
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
-  const [paySessionId, setPaySessionId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
   const [payAt, setPayAt] = useState(toInputDatetimeLocal());
@@ -182,44 +136,38 @@ export default function Payments() {
     try {
       let rows = [];
 
-      // Try rich view (new)
+      // Prefer rich view if exists
       const baseSelect =
-        "id,enrollment_id,package_id,session_id,amount,method,paid_at,note,created_at,run_id,child_id,child_name,course_id,course_title,course_kind,run_label,session_start_at,session_end_at,session_status";
+        "id,enrollment_id,amount,method,paid_at,note,created_at,run_id,child_id,child_name,course_id,course_title,run_label";
 
       let q = supabase
         .from("payments_details_view")
         .select(baseSelect)
         .order("paid_at", { ascending: false });
 
-      if (activeRange.start)
-        q = q.gte("paid_at", activeRange.start.toISOString());
+      if (activeRange.start) q = q.gte("paid_at", activeRange.start.toISOString());
       if (activeRange.end) q = q.lte("paid_at", activeRange.end.toISOString());
 
       const r = await q;
 
       if (r.error) {
         // Fallback to old view
-        setSupportsDetailsView(false);
-
         const legacySelect =
           "id,enrollment_id,amount,method,paid_at,note,created_at,run_id,child_id,child_name";
+
         let q2 = supabase
           .from("payments_view")
           .select(legacySelect)
           .order("paid_at", { ascending: false });
 
-        if (activeRange.start)
-          q2 = q2.gte("paid_at", activeRange.start.toISOString());
-        if (activeRange.end)
-          q2 = q2.lte("paid_at", activeRange.end.toISOString());
+        if (activeRange.start) q2 = q2.gte("paid_at", activeRange.start.toISOString());
+        if (activeRange.end) q2 = q2.lte("paid_at", activeRange.end.toISOString());
 
         const r2 = await q2;
         if (r2.error) throw r2.error;
 
-        // Enrich with run -> course info
-        const runIds = Array.from(
-          new Set((r2.data ?? []).map((x) => x.run_id).filter(Boolean)),
-        );
+        // Enrich with run -> course info (for nice table)
+        const runIds = Array.from(new Set((r2.data ?? []).map((x) => x.run_id).filter(Boolean)));
         const runMap = new Map();
         if (runIds.length) {
           const rs = await supabase
@@ -237,55 +185,14 @@ export default function Payments() {
             ...x,
             course_id: run?.template_id ?? null,
             course_title: run?.title ?? "—",
-            course_kind: run?.kind ?? null,
             run_label: run?.label ?? "—",
-            session_id: null,
-            session_start_at: null,
-            session_end_at: null,
-            session_status: null,
           };
         });
       } else {
         rows = r.data ?? [];
-        setSupportsDetailsView(true);
-
-        // If the view exists but session_id is null for all rows, still supported.
-        // Detect column support by trying a lightweight select from payments.
-        const test = await supabase
-          .from("payments")
-          .select("session_id")
-          .limit(1);
-        setSupportsSessionId(!test.error);
       }
 
       setPayments(rows);
-
-      // Load enrollments summary for status
-      const enrollmentIds = Array.from(
-        new Set(rows.map((x) => x.enrollment_id).filter(Boolean)),
-      );
-      const map = new Map();
-
-      if (enrollmentIds.length) {
-        const e1 = await supabase
-          .from("enrollments_finance_view")
-          .select("enrollment_id,agreed_price,paid_amount,balance")
-          .in("enrollment_id", enrollmentIds);
-
-        if (!e1.error) {
-          for (const x of e1.data ?? []) map.set(x.enrollment_id, x);
-        } else {
-          const e2 = await supabase
-            .from("child_enrollments_view")
-            .select("enrollment_id,agreed_price,paid_amount,balance")
-            .in("enrollment_id", enrollmentIds);
-          if (!e2.error) {
-            for (const x of e2.data ?? []) map.set(x.enrollment_id, x);
-          }
-        }
-      }
-
-      setEnrollMap(map);
       setLoading(false);
     } catch (e) {
       setError(e);
@@ -302,7 +209,7 @@ export default function Payments() {
           "enrollment_id,child_id,child_name,run_id,course_id,course_title,run_label,enrollment_status,agreed_price,paid_amount,balance",
         )
         .order("child_name", { ascending: true })
-        .limit(1000);
+        .limit(2000);
 
       if (r.error) {
         // Fallback: try child_enrollments_view + children_view
@@ -312,18 +219,13 @@ export default function Payments() {
             "enrollment_id,child_id,run_id,enrollment_status,agreed_price,paid_amount,balance,title,label",
           )
           .order("enrollment_id", { ascending: false })
-          .limit(1000);
+          .limit(2000);
         if (ce.error) throw r.error;
 
-        const childIds = Array.from(
-          new Set((ce.data ?? []).map((x) => x.child_id).filter(Boolean)),
-        );
+        const childIds = Array.from(new Set((ce.data ?? []).map((x) => x.child_id).filter(Boolean)));
         const cm = new Map();
         if (childIds.length) {
-          const ch = await supabase
-            .from("children_view")
-            .select("id,name")
-            .in("id", childIds);
+          const ch = await supabase.from("children_view").select("id,name").in("id", childIds);
           if (!ch.error) for (const c of ch.data ?? []) cm.set(c.id, c.name);
         }
 
@@ -353,31 +255,6 @@ export default function Payments() {
     }
   }
 
-  async function loadSessionsForEnrollment(enrollmentId) {
-    const enr = enrollments.find(
-      (x) => String(x.enrollment_id) === String(enrollmentId),
-    );
-    if (!enr?.run_id) {
-      setSessions([]);
-      return;
-    }
-
-    const r = await supabase
-      .from("course_sessions")
-      .select("id,start_at,end_at,status")
-      .eq("run_id", enr.run_id)
-      .order("start_at", { ascending: false })
-      .limit(200);
-
-    if (r.error) {
-      setSessions([]);
-      return;
-    }
-
-    const list = (r.data ?? []).filter((s) => s.status !== "canceled");
-    setSessions(list);
-  }
-
   useEffect(() => {
     loadPayments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -391,22 +268,16 @@ export default function Payments() {
       list = list.filter((p) => {
         const child = String(p.child_name ?? "").toLowerCase();
         const course = String(p.course_title ?? "").toLowerCase();
+        const run = String(p.run_label ?? "").toLowerCase();
         const note = String(p.note ?? "").toLowerCase();
-        return child.includes(s) || course.includes(s) || note.includes(s);
+        return child.includes(s) || course.includes(s) || run.includes(s) || note.includes(s);
       });
     }
 
     if (method !== "all") list = list.filter((p) => p.method === method);
 
-    if (statusFilter !== "all") {
-      list = list.filter((p) => {
-        const st = statusFromEnrollment(enrollMap.get(p.enrollment_id));
-        return st.key === statusFilter;
-      });
-    }
-
     return list;
-  }, [payments, search, method, statusFilter, enrollMap]);
+  }, [payments, search, method]);
 
   const kpis = useMemo(() => {
     const total = filtered.reduce((acc, x) => acc + Number(x.amount || 0), 0);
@@ -414,43 +285,78 @@ export default function Payments() {
     const cash = filtered
       .filter((x) => x.method === "cash")
       .reduce((acc, x) => acc + Number(x.amount || 0), 0);
-    const uniqChildren = new Set(
-      filtered.map((x) => x.child_id).filter(Boolean),
-    ).size;
+    const uniqChildren = new Set(filtered.map((x) => x.child_id).filter(Boolean)).size;
     const avg = count === 0 ? 0 : total / count;
 
     return { total, count, cash, uniqChildren, avg };
   }, [filtered]);
 
-  const pickerFiltered = useMemo(() => {
-    // Keep the picker simple: show active first
-    const list = [...enrollments];
-    list.sort((a, b) => {
-      const ax = a.enrollment_status === "active" ? 0 : 1;
-      const bx = b.enrollment_status === "active" ? 0 : 1;
-      if (ax !== bx) return ax - bx;
-      return String(a.child_name).localeCompare(String(b.child_name), "en");
-    });
-    return list;
+  const rangeHint = useMemo(() => {
+    if (rangePreset === "custom") {
+      const a = fromDate ? new Date(fromDate).toLocaleDateString("en") : "—";
+      const b = toDate ? new Date(toDate).toLocaleDateString("en") : "—";
+      return `${a} → ${b}`;
+    }
+    if (rangePreset === "30d") return "Last 30 days";
+    if (rangePreset === "90d") return "Last 90 days";
+    if (rangePreset === "this_month") return "This month";
+    return "All time";
+  }, [rangePreset, fromDate, toDate]);
+
+  const childOptions = useMemo(() => {
+    const byId = new Map();
+    for (const e of enrollments) {
+      if (!e?.child_id) continue;
+      if (!byId.has(e.child_id)) byId.set(e.child_id, e.child_name ?? "—");
+    }
+
+    const list = Array.from(byId.entries()).map(([id, name]) => ({ value: String(id), label: name }));
+    list.sort((a, b) => String(a.label).localeCompare(String(b.label), "en"));
+    return [{ value: "", label: "Select child..." }, ...list];
   }, [enrollments]);
 
-  const selectedEnrollment = useMemo(
-    () =>
-      enrollments.find(
-        (x) => String(x.enrollment_id) === String(payEnrollmentId),
-      ) ?? null,
-    [enrollments, payEnrollmentId],
-  );
+  const enrollmentsForChild = useMemo(() => {
+    if (!payChildId) return [];
+    return enrollments
+      .filter((e) => String(e.child_id) === String(payChildId))
+      .sort((a, b) => String(a.course_title).localeCompare(String(b.course_title), "en"));
+  }, [enrollments, payChildId]);
+
+  const enrollmentOptions = useMemo(() => {
+    if (!payChildId) {
+      return [{ value: "", label: "Select child first" }];
+    }
+
+    const list = enrollmentsForChild.map((x) => {
+      const agreed = Number(x.agreed_price || 0);
+      const bal = Number(x.balance || 0);
+      const hint = agreed > 0 ? ` (Balance: ${fmtMoney(bal)}₪)` : " (Free)";
+      const label = `${x.course_title} — ${x.run_label}${hint}`;
+      return {
+        value: String(x.enrollment_id),
+        label,
+        disabled: x.enrollment_status !== "active",
+      };
+    });
+
+    return [{ value: "", label: "Select enrollment..." }, ...list];
+  }, [payChildId, enrollmentsForChild]);
+
+  const selectedEnrollment = useMemo(() => {
+    return (
+      enrollments.find((x) => String(x.enrollment_id) === String(payEnrollmentId)) ?? null
+    );
+  }, [enrollments, payEnrollmentId]);
 
   async function openAddModal() {
     setOpenAdd(true);
+
+    setPayChildId("");
     setPayEnrollmentId("");
-    setPaySessionId("");
     setPayAmount("");
     setPayMethod("cash");
     setPayAt(toInputDatetimeLocal());
     setPayNote("");
-    setSessions([]);
 
     if (enrollments.length === 0) await loadEnrollmentsPicker();
   }
@@ -467,8 +373,7 @@ export default function Payments() {
       return;
     }
 
-    const paidAtIso =
-      parseInputDatetimeLocal(payAt) ?? new Date().toISOString();
+    const paidAtIso = parseInputDatetimeLocal(payAt) ?? new Date().toISOString();
 
     const payload = {
       enrollment_id: Number(payEnrollmentId),
@@ -478,23 +383,7 @@ export default function Payments() {
       paid_at: paidAtIso,
     };
 
-    const sessionId = paySessionId ? Number(paySessionId) : null;
-    if (sessionId) payload.session_id = sessionId;
-
-    // 1) Try insert with session_id
-    let ins = await supabase.from("payments").insert([payload]);
-
-    // 2) Fallback if DB not upgraded
-    if (
-      ins.error &&
-      String(ins.error.message || "")
-        .toLowerCase()
-        .includes("session_id")
-    ) {
-      setSupportsSessionId(false);
-      const { session_id, ...payload2 } = payload;
-      ins = await supabase.from("payments").insert([payload2]);
-    }
+    const ins = await supabase.from("payments").insert([payload]);
 
     if (ins.error) {
       setError(ins.error);
@@ -502,13 +391,7 @@ export default function Payments() {
       return;
     }
 
-    toast(
-      supportsSessionId || !sessionId
-        ? "Payment saved."
-        : "Payment saved (session link not stored).",
-      "ok",
-    );
-
+    toast("Payment saved.", "ok");
     setOpenAdd(false);
     await loadPayments();
   }
@@ -523,18 +406,6 @@ export default function Payments() {
     toast("Payment deleted.", "ok");
     await loadPayments();
   }
-
-  const rangeHint = useMemo(() => {
-    if (rangePreset === "custom") {
-      const a = fromDate ? new Date(fromDate).toLocaleDateString("en") : "—";
-      const b = toDate ? new Date(toDate).toLocaleDateString("en") : "—";
-      return `${a} → ${b}`;
-    }
-    if (rangePreset === "30d") return "Last 30 days";
-    if (rangePreset === "90d") return "Last 90 days";
-    if (rangePreset === "this_month") return "This month";
-    return "All time";
-  }, [rangePreset, fromDate, toDate]);
 
   return (
     <div className="container page page--payments">
@@ -596,14 +467,8 @@ export default function Payments() {
 
       {/* Filters */}
       <div className="card" style={{ marginBottom: 12 }}>
-        <div
-          className="toolbar"
-          style={{ justifyContent: "flex-start", gap: 10 }}
-        >
-          <div
-            className="filtersBar filtersBar--oneLine"
-            style={{ width: "100%" }}
-          >
+        <div className="toolbar" style={{ justifyContent: "flex-start", gap: 10 }}>
+          <div className="filtersBar filtersBar--oneLine" style={{ width: "100%" }}>
             <Control
               icon={Search}
               className="filtersBar__search"
@@ -632,26 +497,6 @@ export default function Payments() {
                   { value: "card", label: "Card" },
                   { value: "transfer", label: "Bank transfer" },
                   { value: "other", label: "Other" },
-                ]}
-              />
-            </Control>
-
-            <Control
-              icon={Filter}
-              className="filtersBar__select"
-              style={{ minWidth: 170, width: "auto" }}
-            >
-              <ModernSelect
-                bare
-                value={statusFilter}
-                onChange={setStatusFilter}
-                placeholder="All statuses"
-                options={[
-                  { value: "all", label: "All statuses" },
-                  { value: "paid", label: "Paid" },
-                  { value: "partial", label: "Partial" },
-                  { value: "unpaid", label: "Unpaid" },
-                  { value: "free", label: "Free" },
                 ]}
               />
             </Control>
@@ -715,7 +560,6 @@ export default function Payments() {
           onSecondary={() => {
             setSearch("");
             setMethod("all");
-            setStatusFilter("all");
             setRangePreset("90d");
             setFromDate("");
             setToDate("");
@@ -730,128 +574,89 @@ export default function Payments() {
                 <th>Child</th>
                 <th>Course</th>
                 <th>Run</th>
-                <th>Session</th>
                 <th>Amount</th>
                 <th>Method</th>
-                <th>Status</th>
                 <th>Note</th>
-                <th></th>
+                <th style={{ width: 1 }}></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((p) => {
-                const enr = enrollMap.get(p.enrollment_id);
-                const st = statusFromEnrollment(enr);
+              {filtered.map((p) => (
+                <tr key={p.id}>
+                  <td>{fmtDT(p.paid_at)}</td>
 
-                return (
-                  <tr key={p.id} className={st.rowClass}>
-                    <td>{fmtDT(p.paid_at)}</td>
-
-                    <td>
-                      {p.child_id ? (
-                        <button
-                          className="linkBtn"
-                          onClick={() => navigate(`/children/${p.child_id}`)}
-                        >
-                          {p.child_name}
-                        </button>
-                      ) : (
-                        <span>{p.child_name ?? "—"}</span>
-                      )}
-                    </td>
-
-                    <td>
-                      {p.course_id ? (
-                        <button
-                          className="linkBtn"
-                          onClick={() => navigate(`/courses/${p.course_id}`)}
-                        >
-                          {p.course_title}
-                        </button>
-                      ) : (
-                        <span>{p.course_title ?? "—"}</span>
-                      )}
-                    </td>
-
-                    <td>
-                      {p.run_id ? (
-                        <button
-                          className="linkBtn"
-                          onClick={() => navigate(`/runs/${p.run_id}`)}
-                        >
-                          {p.run_label ?? ` #${p.run_id}`}
-                        </button>
-                      ) : (
-                        <span>{p.run_label ?? "—"}</span>
-                      )}
-                    </td>
-
-                    <td>
-                      {p.session_id ? (
-                        <button
-                          className="linkBtn"
-                          onClick={() =>
-                            navigate(`/sessions/${p.session_id}/attendance`)
-                          }
-                          title="Open session attendance"
-                        >
-                          <span className="row" style={{ gap: 6 }}>
-                            <LinkIcon size={16} />
-                            {fmtSessionLabel(
-                              p.session_start_at,
-                              p.session_end_at,
-                            )}
-                          </span>
-                        </button>
-                      ) : (
-                        <span className="muted">—</span>
-                      )}
-                    </td>
-
-                    <td style={{ fontWeight: 950 }}>{fmtMoney(p.amount)}₪</td>
-                    <td>{methodLabel(p.method)}</td>
-
-                    <td>
-                      <Badge variant={st.variant}>{st.label}</Badge>
-                    </td>
-
-                    <td style={{ maxWidth: 260 }}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          maxWidth: 260,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
+                  <td>
+                    {p.child_id ? (
+                      <button
+                        className="linkBtn"
+                        onClick={() => navigate(`/children/${p.child_id}`)}
                       >
-                        {p.note ?? "—"}
-                      </span>
-                    </td>
+                        {p.child_name}
+                      </button>
+                    ) : (
+                      <span>{p.child_name ?? "—"}</span>
+                    )}
+                  </td>
 
-                    <td style={{ width: 1 }}>
-                      <IconButton
-                        icon={Trash2}
-                        label=""
-                        title="Delete"
-                        iconOnly
-                        onClick={() => setConfirm({ open: true, id: p.id })}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
+                  <td>
+                    {p.course_id ? (
+                      <button
+                        className="linkBtn"
+                        onClick={() => navigate(`/courses/${p.course_id}`)}
+                      >
+                        {p.course_title}
+                      </button>
+                    ) : (
+                      <span>{p.course_title ?? "—"}</span>
+                    )}
+                  </td>
+
+                  <td>
+                    {p.run_id ? (
+                      <button className="linkBtn" onClick={() => navigate(`/runs/${p.run_id}`)}>
+                        {p.run_label ?? `Run #${p.run_id}`}
+                      </button>
+                    ) : (
+                      <span>{p.run_label ?? "—"}</span>
+                    )}
+                  </td>
+
+                  <td style={{ fontWeight: 950 }}>{fmtMoney(p.amount)}₪</td>
+                  <td>{methodLabel(p.method)}</td>
+
+                  <td style={{ maxWidth: 320 }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        maxWidth: 320,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                      title={p.note ?? ""}
+                    >
+                      {p.note ?? "—"}
+                    </span>
+                  </td>
+
+                  <td style={{ width: 1 }}>
+                    <IconButton
+                      icon={Trash2}
+                      label=""
+                      title="Delete"
+                      iconOnly
+                      onClick={() => setConfirm({ open: true, id: p.id })}
+                    />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       )}
 
       {/* Add Payment Modal */}
-      <Modal
-        open={openAdd}
-        title="Add payment"
-        onClose={() => setOpenAdd(false)}
-      >
+      <Modal open={openAdd} title="Add payment" onClose={() => setOpenAdd(false)}>
         <div style={{ padding: 16 }}>
           {pickerLoading ? (
             <div className="card">Loading...</div>
@@ -859,74 +664,45 @@ export default function Payments() {
             <>
               <div className="grid" style={{ marginBottom: 12 }}>
                 <div style={{ gridColumn: "span 6" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
-                    Enrollment
+                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                    Child
                   </div>
                   <ModernSelect
-                    value={payEnrollmentId}
-                    onChange={async (v) => {
-                      setPayEnrollmentId(v);
-                      setPaySessionId("");
-                      await loadSessionsForEnrollment(v);
+                    value={payChildId}
+                    onChange={(v) => {
+                      setPayChildId(v);
+                      setPayEnrollmentId("");
+
+                      // Auto-select if only one active enrollment
+                      const opts = enrollments
+                        .filter((e) => String(e.child_id) === String(v))
+                        .filter((e) => e.enrollment_status === "active");
+                      if (opts.length === 1) setPayEnrollmentId(String(opts[0].enrollment_id));
                     }}
                     menuWidth="trigger"
-                    placeholder="Select enrollment..."
-                    options={[
-                      { value: "", label: "Select enrollment..." },
-                      ...pickerFiltered.map((x) => {
-                        const st = statusFromEnrollment(x);
-                        const label = `${x.child_name} — ${x.course_title} — ${x.run_label}`;
-                        const hint =
-                          Number(x.agreed_price || 0) > 0
-                            ? ` (Balance: ${fmtMoney(x.balance)}₪)`
-                            : " (Free)";
-                        return {
-                          value: x.enrollment_id,
-                          label: `${label}${hint}`,
-                          disabled: st !== "active",
-                        };
-                      }),
-                    ]}
+                    placeholder="Select child..."
+                    options={childOptions}
                   />
                 </div>
 
                 <div style={{ gridColumn: "span 6" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
-                    Session (optional)
+                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                    Enrollment
                   </div>
                   <ModernSelect
-                    value={paySessionId}
-                    onChange={setPaySessionId}
+                    value={payEnrollmentId}
+                    onChange={setPayEnrollmentId}
                     menuWidth="trigger"
-                    disabled={!supportsSessionId}
-                    placeholder={
-                      supportsSessionId
-                        ? "No session"
-                        : "Session linking not supported"
-                    }
-                    options={[
-                      { value: "", label: "No session" },
-                      ...(sessions || []).map((s) => ({
-                        value: s.id,
-                        label: `${fmtDateTime24(s.start_at)} — ${s.status}`,
-                      })),
-                    ]}
+                    disabled={!payChildId}
+                    placeholder={payChildId ? "Select enrollment..." : "Select child first"}
+                    options={enrollmentOptions}
                   />
                 </div>
               </div>
 
               <div className="grid" style={{ marginBottom: 12 }}>
                 <div style={{ gridColumn: "span 4" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
+                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
                     Amount
                   </div>
                   <Control>
@@ -940,24 +716,15 @@ export default function Payments() {
                       ₪
                     </span>
                   </Control>
+
                   {selectedEnrollment ? (
-                    <div
-                      className="muted"
-                      style={{ marginTop: 6, fontWeight: 850 }}
-                    >
-                      Balance:{" "}
-                      <span style={{ fontWeight: 950 }}>
-                        {fmtMoney(selectedEnrollment.balance)}₪
-                      </span>
+                    <div className="muted" style={{ marginTop: 6, fontWeight: 850 }}>
+                      Balance: <span style={{ fontWeight: 950 }}>{fmtMoney(selectedEnrollment.balance)}₪</span>
                       {Number(selectedEnrollment.balance || 0) > 0 ? (
                         <button
                           className="linkBtn"
                           style={{ marginInlineStart: 10 }}
-                          onClick={() =>
-                            setPayAmount(
-                              String(Number(selectedEnrollment.balance || 0)),
-                            )
-                          }
+                          onClick={() => setPayAmount(String(Number(selectedEnrollment.balance || 0)))}
                           type="button"
                         >
                           Use balance
@@ -968,10 +735,7 @@ export default function Payments() {
                 </div>
 
                 <div style={{ gridColumn: "span 4" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
+                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
                     Payment method
                   </div>
                   <ModernSelect
@@ -988,10 +752,7 @@ export default function Payments() {
                 </div>
 
                 <div style={{ gridColumn: "span 4" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
+                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
                     Paid at
                   </div>
                   <Control>
@@ -1005,18 +766,11 @@ export default function Payments() {
               </div>
 
               <div style={{ marginBottom: 12 }}>
-                <div
-                  className="muted"
-                  style={{ fontWeight: 900, marginBottom: 6 }}
-                >
+                <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
                   Note (optional)
                 </div>
                 <Control>
-                  <input
-                    value={payNote}
-                    onChange={(e) => setPayNote(e.target.value)}
-                    placeholder=""
-                  />
+                  <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="" />
                 </Control>
               </div>
 
