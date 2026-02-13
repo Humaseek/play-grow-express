@@ -358,7 +358,7 @@ export default function RunDetails() {
     }
   }, [openEnroll, enrollMode, runDefaultSessions, buySessions, defaultPrice]);
 
-async function loadChildrenSafe() {
+  async function loadChildrenSafe() {
     const tryView = await supabase
       .from("children_view")
       .select(
@@ -456,7 +456,11 @@ async function loadChildrenSafe() {
 
       // If user wants immediate enroll, keep the enroll modal open.
       if (enrollNow && newId) {
-        openEnrollBuyNew({ lockChild: true, childId: newId, childName: newChildForm?.name || "" });
+        openEnrollBuyNew({
+          lockChild: true,
+          childId: newId,
+          childName: newChildForm?.name || "",
+        });
         toast("Child created. Set sessions and click Save to enroll.", "ok");
       } else {
         toast("Child created.", "ok");
@@ -768,7 +772,6 @@ async function loadChildrenSafe() {
     return { runFuture, allocNow, carry, mode: "buy" };
   }, [enrollMode, pkgInfo, buySessions, runFutureSessionsCount]);
 
-
   function openEnrollBuyNew(opts = {}) {
     const { lockChild = false, childId = "", childName = "" } = opts || {};
     setEnrollLocked(Boolean(lockChild));
@@ -787,7 +790,6 @@ async function loadChildrenSafe() {
   function openSingleEnrollNew() {
     openEnrollBuyNew({ lockChild: false });
   }
-
 
   // + sessions: always buy new for same child
 
@@ -813,7 +815,6 @@ async function loadChildrenSafe() {
     setOpenEnroll(true);
   }
 
-
   const bulkCandidates = useMemo(() => {
     const s = bulkQ.trim().toLowerCase();
     if (!s) return availableChildren;
@@ -830,7 +831,6 @@ async function loadChildrenSafe() {
 
   const bulkSelectedCount = bulkSelectedIds.length;
 
-
   function openBulkModal() {
     setOpenBulk(true);
     setBulkQ("");
@@ -840,7 +840,6 @@ async function loadChildrenSafe() {
     setBulkUnifiedPrice(String(defaultPrice));
     setBulkPerChildPrice({});
   }
-
 
   function toggleBulkChild(childId) {
     setBulkSelected((prev) => {
@@ -1413,8 +1412,12 @@ async function loadChildrenSafe() {
       start_at: toLocalInput(startLocal),
       end_at: toLocalInput(endLocal),
       duration_min:
-        Math.max(1, Math.round((endLocal.getTime() - startLocal.getTime()) / 60000)) ||
-        (Number(durationMinutes) || 60),
+        Math.max(
+          1,
+          Math.round((endLocal.getTime() - startLocal.getTime()) / 60000),
+        ) ||
+        Number(durationMinutes) ||
+        60,
       status: s.status,
     });
     setOpenSession(true);
@@ -1433,8 +1436,8 @@ async function loadChildrenSafe() {
       startLocal.setHours(0, 0, 0, 0);
 
     const durationMin = isWorkshop
-      ? (Number(sessionForm.duration_min) || Number(durationMinutes) || 60)
-      : (Number(durationMinutes) || 60);
+      ? Number(sessionForm.duration_min) || Number(durationMinutes) || 60
+      : Number(durationMinutes) || 60;
     const endLocal = new Date(startLocal.getTime() + durationMin * 60 * 1000);
 
     setSessionSaving(true);
@@ -1975,11 +1978,7 @@ async function loadChildrenSafe() {
                     + Add child to course
                   </button>
 
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={openBulkModal}
-                  >
+                  <button type="button" className="btn" onClick={openBulkModal}>
                     + Add multiple
                   </button>
 
@@ -2257,113 +2256,108 @@ async function loadChildrenSafe() {
 
               <hr className="sep" />
 
-
               {isWorkshop ? (
+                <div style={{ display: "grid", gap: 12 }}>
+                  <div className="muted">
+                    Workshop runs usually have a single session. Create it once,
+                    then manage it from the list.
+                  </div>
 
-
-
-              <div style={{ display: "grid", gap: 12 }}>
-                <div className="muted">
-                  Workshop runs usually have a single session. Create it once,
-                  then manage it from the list.
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ width: "100%" }}
+                    onClick={openCreateSession}
+                    disabled={(sessions || []).length > 0}
+                    title={
+                      (sessions || []).length > 0
+                        ? "Session already created"
+                        : "Create the workshop session"
+                    }
+                  >
+                    {(sessions || []).length > 0
+                      ? "Session created"
+                      : "+ Create session"}
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  style={{ width: "100%" }}
-                  onClick={openCreateSession}
-                  disabled={(sessions || []).length > 0}
-                  title={
-                    (sessions || []).length > 0
-                      ? "Session already created"
-                      : "Create the workshop session"
-                  }
-                >
-                  {(sessions || []).length > 0 ? "Session created" : "+ Create session"}
-                </button>
-              </div>
               ) : (
-
-
-              <div style={{ display: "grid", gap: 12 }}>
-                <div style={{ display: "grid", gap: 6 }}>
-                  <div className="muted">First session (date/time)</div>
-                  <input
-                    className="input"
-                    type={isWorkshop ? "date" : "datetime-local"}
-                    value={firstStart}
-                    onChange={(e) => setFirstStart(e.target.value)}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 10,
-                  }}
-                >
+                <div style={{ display: "grid", gap: 12 }}>
                   <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">Duration (minutes)</div>
+                    <div className="muted">First session (date/time)</div>
+                    <input
+                      className="input"
+                      type={isWorkshop ? "date" : "datetime-local"}
+                      value={firstStart}
+                      onChange={(e) => setFirstStart(e.target.value)}
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ display: "grid", gap: 6 }}>
+                      <div className="muted">Duration (minutes)</div>
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        value={durationMinutes}
+                        onChange={(e) => setDurationMinutes(e.target.value)}
+                      />
+                    </div>
+
+                    <div style={{ display: "grid", gap: 6 }}>
+                      <div className="muted">Number of sessions</div>
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        value={count}
+                        onChange={(e) => setCount(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 6 }}>
+                    <div className="muted">Repeat every (days)</div>
                     <input
                       className="input"
                       type="number"
                       min="1"
-                      value={durationMinutes}
-                      onChange={(e) => setDurationMinutes(e.target.value)}
+                      value={intervalDays}
+                      onChange={(e) => setIntervalDays(e.target.value)}
                     />
+                    <div className="muted" style={{ marginTop: -2 }}>
+                      Current schedule: every <b>{intervalDays}</b> days
+                    </div>
                   </div>
 
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">Number of sessions</div>
-                    <input
-                      className="input"
-                      type="number"
-                      min="1"
-                      value={count}
-                      onChange={(e) => setCount(e.target.value)}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    style={{ width: "100%" }}
+                    disabled={genLoading || !firstStart}
+                    onClick={generateSessions}
+                  >
+                    {genLoading ? "Generating..." : "Generate sessions"}
+                  </button>
+
+                  <hr className="sep" />
+
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ width: "100%" }}
+                    onClick={openCreateSession}
+                  >
+                    <Plus size={16} className="ico" /> Add single session
+                  </button>
                 </div>
-
-                <div style={{ display: "grid", gap: 6 }}>
-                  <div className="muted">Repeat every (days)</div>
-                  <input
-                    className="input"
-                    type="number"
-                    min="1"
-                    value={intervalDays}
-                    onChange={(e) => setIntervalDays(e.target.value)}
-                  />
-                  <div className="muted" style={{ marginTop: -2 }}>
-                    Current schedule: every <b>{intervalDays}</b> days
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="btn primary"
-                  style={{ width: "100%" }}
-                  disabled={genLoading || !firstStart}
-                  onClick={generateSessions}
-                >
-                  {genLoading ? "Generating..." : "Generate sessions"}
-                </button>
-
-                <hr className="sep" />
-
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ width: "100%" }}
-                  onClick={openCreateSession}
-                >
-                  <Plus size={16} className="ico" /> Add single session
-                </button>
-              </div>
               )}
-
             </div>
 
             {/* RIGHT: list */}
@@ -2373,8 +2367,8 @@ async function loadChildrenSafe() {
             >
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Manage sessions for this run. Edit times, mark done/canceled,
-                or delete.
+                Manage sessions for this run. Edit times, mark done/canceled, or
+                delete.
               </div>
 
               <hr className="sep" />
@@ -2611,94 +2605,96 @@ async function loadChildrenSafe() {
 
         {/* ===================== PAYMENTS TAB ===================== */}
         {tab === "payments" && (
-          <div className="grid">
-            <div className="card" style={{ gridColumn: "span 5" }}>
-              <div className="h1">Record payment</div>
-              <div className="muted" style={{ marginTop: 6 }}>
-                Add and track payments for children in this run.
+          <Modal
+            open={openPay}
+            title={payEditId ? "Edit payment" : "Record payment"}
+            onClose={() => {
+              setOpenPay(false);
+              setPayEditId(null);
+            }}
+          >
+            <div className="grid">
+              <div style={{ gridColumn: "span 12" }}>
+                <div className="muted">Child</div>
+                <ModernSelect
+                  value={payEnrollmentId}
+                  onChange={setPayEnrollmentId}
+                  menuWidth="trigger"
+                  disabled={paySaving || !!payEditId}
+                  placeholder="— Select child —"
+                  options={[
+                    { value: "", label: "— Select child —" },
+                    ...participants
+                      .filter((p) => p.enrollment_status === "active")
+                      .map((p) => ({
+                        value: p.enrollment_id,
+                        label: `${p.child_name} — balance: ₪${Number(p.balance).toFixed(2)}`,
+                      })),
+                  ]}
+                />
               </div>
 
-              <hr className="sep" />
-
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => setOpenPay(true)}
-              >
-                + Add payment
-              </button>
-            </div>
-
-            <div
-              className="card"
-              style={{ gridColumn: "span 7", overflow: "hidden" }}
-            >
-              <div className="h1">Payments</div>
-              <div className="muted" style={{ marginTop: 6 }}>
-                View and manage payments for this run.
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted">Amount (₪)</div>
+                <input
+                  className="input"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                />
               </div>
 
-              <hr className="sep" />
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted">Payment method</div>
+                <ModernSelect
+                  value={payMethod}
+                  onChange={setPayMethod}
+                  menuWidth="trigger"
+                  placeholder="— Select method —"
+                  options={[
+                    { value: "cash", label: "Cash" },
+                    { value: "card", label: "Card" },
+                    { value: "transfer", label: "Bank transfer" },
+                    { value: "other", label: "Other" },
+                  ]}
+                />
+              </div>
 
-              {payments.length === 0 ? (
-                <div className="muted">No items found.</div>
-              ) : (
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Child</th>
-                      <th>Amount (₪)</th>
-                      <th style={{ width: 120 }}>Method</th>
-                      <th style={{ width: 170 }}>Date</th>
-                      <th>Note</th>
-                      <th style={{ width: 90 }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {payments.map((p) => (
-                      <tr key={p.id}>
-                        <td style={{ fontWeight: 800 }}>
-                          {p.child_id ? (
-                            <button
-                              type="button"
-                              className="linkBtn"
-                              onClick={() =>
-                                navigate(`/children/${p.child_id}`)
-                              }
-                            >
-                              {p.child_name}
-                            </button>
-                          ) : (
-                            p.child_name
-                          )}
-                        </td>
-                        <td>{Number(p.amount).toFixed(2)}</td>
-                        <td className="muted">{p.method}</td>
-                        <td className="muted">{fmtDT(p.created_at)}</td>
-                        <td className="muted">{p.note ?? "-"}</td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn danger"
-                            onClick={() =>
-                              setConfirm({
-                                open: true,
-                                type: "deletePayment",
-                                id: p.id,
-                                text: "Delete payment",
-                              })
-                            }
-                          >
-                            <Trash2 size={16} className="ico" /> Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              <div style={{ gridColumn: "span 12" }}>
+                <div className="muted">Note</div>
+                <input
+                  className="input"
+                  placeholder="Optional"
+                  value={payNote}
+                  onChange={(e) => setPayNote(e.target.value)}
+                />
+              </div>
+
+              <div className="row" style={{ gridColumn: "span 12" }}>
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={paySaving || !payEnrollmentId || !payAmount}
+                  onClick={addPayment}
+                >
+                  {paySaving ? "Saving..." : payEditId ? "Update" : "Save"}
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setOpenPay(false);
+                    setPayEditId(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
+          </Modal>
         )}
 
         {/* ===================== MODALS ===================== */}
