@@ -267,7 +267,7 @@ export default function RunDetails() {
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
   const [payNote, setPayNote] = useState("");
-  const \[paySaving, setPaySaving\] = useState\(false\);
+  const [paySaving, setPaySaving] = useState(false);
   const [payEditId, setPayEditId] = useState(null);
 
   // Payment history modal
