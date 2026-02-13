@@ -354,9 +354,11 @@ export default function Courses() {
                   }
                 }}
               >
+                <div className="cardTitle cardTitle--top">{r.title}</div>
+
                 <div
                   className="metaRow"
-                  style={{ justifyContent: "space-between" }}
+                  style={{ justifyContent: "space-between", marginTop: 8 }}
                 >
                   <div className="metaRow">
                     <span className="badge badge--page">
@@ -379,12 +381,9 @@ export default function Courses() {
                   </span>
                 </div>
 
-                <div style={{ marginTop: 10 }}>
-                  <div className="cardTitle">{r.title}</div>
-                  <div className="muted" style={{ marginTop: 6 }}>
-                    Active runs: <b>{Number(m.activeRuns ?? 0)}</b> · Next
-                    session: <b>{fmtDT(m.nextSessionAt)}</b>
-                  </div>
+                <div className="muted" style={{ marginTop: 8 }}>
+                  Active runs: <b>{Number(m.activeRuns ?? 0)}</b> · Next session:{" "}
+                  <b>{fmtDT(m.nextSessionAt)}</b>
                 </div>
 
                 <div className="statsRow">
