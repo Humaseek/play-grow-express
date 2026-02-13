@@ -1169,3 +1169,33 @@ textarea{resize:vertical}
 .modernSelectMenu__item.is-disabled:hover{
   background: transparent;
 }
+
+/* ============================ Payments UI tweaks ============================ */
+
+/* Compact icon-only buttons (used in tables) */
+.btn.iconOnly{
+  padding:0;
+  width:36px;
+  height:36px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+}
+.btn.iconOnly .ico{margin:0}
+.btn.iconOnly svg{margin:0}
+
+/* Row actions container (edit/delete) */
+.tableActions{
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+}
+
+/* When a tableWrap sits inside a .card, remove double borders */
+.tableWrap.inCard{
+  border:none;
+  box-shadow:none;
+  border-radius:0;
+  background:transparent;
+}
