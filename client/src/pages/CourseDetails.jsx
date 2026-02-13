@@ -22,6 +22,7 @@ import {
   Plus,
   RefreshCw,
   RotateCcw,
+  Pencil,
 } from "lucide-react";
 
 function fmtDT(dt) {
@@ -49,6 +50,12 @@ export default function CourseDetails() {
   const [createsessions, setCreatesessions] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Edit Run modal
+  const [editOpen, setEditOpen] = useState(false);
+  const [editRunId, setEditRunId] = useState(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editDefaultSessionsTotal, setEditDefaultSessionsTotal] = useState("0");
+
   const [confirm, setConfirm] = useState({
     open: false,
     type: null,
@@ -73,6 +80,44 @@ export default function CourseDetails() {
     }
     setOpen(true);
   }
+
+  function openEditRunModal(r) {
+    setEditRunId(r.run_id);
+    setEditLabel(r.label ?? "");
+    setEditDefaultSessionsTotal(String(r.default_sessions_total ?? 0));
+    setEditOpen(true);
+  }
+
+  async function updateRun() {
+    if (!editRunId) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const nextDefault = Math.max(0, parseInt(editDefaultSessionsTotal, 10) || 0);
+
+      const u = await supabase
+        .from("course_runs")
+        .update({
+          label: (editLabel ?? "").trim(),
+          default_sessions_total: nextDefault,
+        })
+        .eq("id", editRunId);
+
+      if (u.error) throw u.error;
+
+      toast("Run updated successfully.", "ok");
+      setEditOpen(false);
+      await load();
+    } catch (e) {
+      setError(e);
+      toast("Failed to update run.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  }
+
 
   async function load() {
     setLoading(true);
@@ -530,7 +575,15 @@ export default function CourseDetails() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <IconButton
-                    icon={RefreshCw}
+                    icon={Pencil}
+                    title="Edit run"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openEditRunModal(r)}
+                  />
+
+                  <IconButton
+                     icon={RefreshCw}
                     title="Sync enrollments from packages"
                     variant="soft"
                     size="sm"
@@ -715,6 +768,69 @@ export default function CourseDetails() {
               Cancel
             </button>
           </div>
+        </div>
+      </Modal>
+
+      <Modal open={editOpen} title="Edit run" onClose={() => setEditOpen(false)}>
+        <div className="muted">
+          Update the run label and the default sessions used when enrolling a new
+          child.
+        </div>
+
+        <hr className="sep" />
+
+        <div className="grid">
+          <div style={{ gridColumn: "span 12" }}>
+            <div className="muted">Run label</div>
+            <input
+              className="input"
+              value={editLabel}
+              onChange={(e) => setEditLabel(e.target.value)}
+              placeholder="e.g. Sunday Club - Feb 2026"
+            />
+          </div>
+
+          <div style={{ gridColumn: "span 6" }}>
+            <div className="muted">Default sessions to add</div>
+            <input
+              className="input"
+              type="number"
+              min="0"
+              step="1"
+              value={editDefaultSessionsTotal}
+              onChange={(e) => setEditDefaultSessionsTotal(e.target.value)}
+            />
+          </div>
+
+          <div style={{ gridColumn: "span 6" }}>
+            <div className="muted">Note</div>
+            <div style={{ fontSize: 12 }} className="muted">
+              This only changes the default "Sessions to add" for new enrollments.
+              It does not change existing enrollments.
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="row"
+          style={{ justifyContent: "flex-end", gap: 10, marginTop: 14 }}
+        >
+          <button
+            className="btn"
+            type="button"
+            onClick={() => setEditOpen(false)}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+          <button
+            className="btn primary"
+            type="button"
+            onClick={updateRun}
+            disabled={saving || !editRunId}
+          >
+            Save changes
+          </button>
         </div>
       </Modal>
 
