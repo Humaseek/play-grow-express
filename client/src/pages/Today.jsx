@@ -183,25 +183,12 @@ export default function Today() {
     const runIds = Array.from(
       new Set(baseRows.map((r) => r.run_id).filter(Boolean)),
     );
+    const courseIds = Array.from(
+      new Set(baseRows.map((r) => r.course_id).filter(Boolean)),
+    );
 
-    // Map run_id -> run label (so we can show Run name instead of Course title)
-    const runLabelByRun = new Map(); // run_id(string) -> label(string)
-    if (runIds.length) {
-      const { data: meta, error: metaErr } = await supabase
-        .from("course_runs_summary_view")
-        .select("run_id,label")
-        .in("run_id", runIds);
 
-      if (!metaErr) {
-        for (const m of meta ?? []) {
-          const rid = String(m.run_id ?? "");
-          if (!rid) continue;
-          runLabelByRun.set(rid, m.label ?? "");
-        }
-      }
-    }
-
-    const paidByRun = new Map(); // run_id(string) -> ratio(0..1) // run_id(string) -> ratio(0..1)
+    const paidByRun = new Map(); // run_id(string) -> ratio(0..1)
     if (runIds.length) {
       const { data: parts, error: partErr } = await supabase
         .from("run_participants_view")
@@ -230,23 +217,52 @@ export default function Today() {
       }
     }
 
-    const normalized = baseRows.map((r) => {
+    
+    const runLabelById = new Map(); // run_id(string) -> label
+    if (runIds.length) {
+      const { data: metaRuns, error: metaRunsErr } = await supabase
+        .from("course_runs")
+        .select("id,label")
+        .in("id", runIds);
+
+      if (!metaRunsErr) {
+        for (const x of metaRuns ?? []) {
+          const id = String(x.id ?? "");
+          if (!id) continue;
+          runLabelById.set(id, x.label ?? "");
+        }
+      }
+    }
+
+    const courseTitleById = new Map(); // course_id(string) -> title
+    if (courseIds.length) {
+      const { data: metaCourses, error: metaCoursesErr } = await supabase
+        .from("courses")
+        .select("id,title")
+        .in("id", courseIds);
+
+      if (!metaCoursesErr) {
+        for (const c of metaCourses ?? []) {
+          const id = String(c.id ?? "");
+          if (!id) continue;
+          courseTitleById.set(id, c.title ?? "");
+        }
+      }
+    }
+
+const normalized = baseRows.map((r) => {
       const rid = String(r.run_id ?? "");
-      const runLabel = runLabelByRun.get(rid) || null;
-
-      const viewPaid = normalizeRatio(r.paid_ratio);
-      const fallbackPaid = normalizeRatio(paidByRun.get(rid) ?? 0);
-
-      // If the DB view returns 0 due to missing denominator (legacy agreed_price),
-      // but we can compute a real ratio from run_participants_view, prefer the fallback.
-      const paid_ratio =
-        viewPaid === 0 && fallbackPaid > 0 ? fallbackPaid : viewPaid;
+      const fallbackPaid = paidByRun.get(rid) ?? 0;
 
       return {
         ...r,
-        title: runLabel || r.title,
-        run_label: runLabel,
-        paid_ratio,
+        run_label: runLabelById.get(rid) ?? r.run_label ?? r.label ?? r.title ?? "",
+        course_title:
+          courseTitleById.get(String(r.course_id ?? "")) ?? r.course_title ?? "",
+        paid_ratio:
+          normalizeRatio(r.paid_ratio) > 0
+            ? normalizeRatio(r.paid_ratio)
+            : fallbackPaid,
       };
     });
 
@@ -463,7 +479,7 @@ export default function Today() {
                     >
                       <div>
                         <div className="titleRow">
-                          <div className="titleMain">{r.label || r.title}</div>
+                          <div className="titleMain">{r.title}</div>
                           <Badge
                             variant={r.kind === "workshop" ? "info" : "neutral"}
                           >
@@ -471,7 +487,7 @@ export default function Today() {
                           </Badge>
                         </div>
                         <div className="muted" style={{ marginTop: 6 }}>
-                          Participants:{" "}
+                          {r.label} • Participants:{" "}
                           <b>{r.participants_count ?? 0}</b>
                         </div>
                       </div>
@@ -614,7 +630,7 @@ export default function Today() {
                       >
                         <div>
                           <div className="titleRow">
-                            <div className="titleMain">{r.run_label || r.title}</div>
+                            <div className="titleMain">{r.run_label ?? r.title}</div>
                             <Badge
                               variant={
                                 r.kind === "workshop" ? "info" : "neutral"
@@ -623,7 +639,15 @@ export default function Today() {
                               {r.kind === "workshop" ? "Workshop" : "Course"}
                             </Badge>
                           </div>
-                          <div className="muted" style={{ marginTop: 6 }}>
+                          {r.course_title ? (
+                            <div className="muted" style={{ marginTop: 6 }}>
+                              {r.course_title}
+                            </div>
+                          ) : null}
+                          <div
+                            className="muted"
+                            style={{ marginTop: r.course_title ? 2 : 6 }}
+                          >
                             {formatTimeRange(r.start_at, r.end_at)}
                           </div>
                         </div>
