@@ -76,11 +76,15 @@ function rangeFromPreset(preset) {
   const end = endOfDay(now);
 
   if (preset === "30d") {
-    const start = startOfDay(new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000));
+    const start = startOfDay(
+      new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
+    );
     return { start, end };
   }
   if (preset === "90d") {
-    const start = startOfDay(new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000));
+    const start = startOfDay(
+      new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000),
+    );
     return { start, end };
   }
   if (preset === "this_month") {
@@ -145,7 +149,8 @@ export default function Payments() {
         .select(baseSelect)
         .order("paid_at", { ascending: false });
 
-      if (activeRange.start) q = q.gte("paid_at", activeRange.start.toISOString());
+      if (activeRange.start)
+        q = q.gte("paid_at", activeRange.start.toISOString());
       if (activeRange.end) q = q.lte("paid_at", activeRange.end.toISOString());
 
       const r = await q;
@@ -160,14 +165,18 @@ export default function Payments() {
           .select(legacySelect)
           .order("paid_at", { ascending: false });
 
-        if (activeRange.start) q2 = q2.gte("paid_at", activeRange.start.toISOString());
-        if (activeRange.end) q2 = q2.lte("paid_at", activeRange.end.toISOString());
+        if (activeRange.start)
+          q2 = q2.gte("paid_at", activeRange.start.toISOString());
+        if (activeRange.end)
+          q2 = q2.lte("paid_at", activeRange.end.toISOString());
 
         const r2 = await q2;
         if (r2.error) throw r2.error;
 
         // Enrich with run -> course info (for nice table)
-        const runIds = Array.from(new Set((r2.data ?? []).map((x) => x.run_id).filter(Boolean)));
+        const runIds = Array.from(
+          new Set((r2.data ?? []).map((x) => x.run_id).filter(Boolean)),
+        );
         const runMap = new Map();
         if (runIds.length) {
           const rs = await supabase
@@ -222,10 +231,15 @@ export default function Payments() {
           .limit(2000);
         if (ce.error) throw r.error;
 
-        const childIds = Array.from(new Set((ce.data ?? []).map((x) => x.child_id).filter(Boolean)));
+        const childIds = Array.from(
+          new Set((ce.data ?? []).map((x) => x.child_id).filter(Boolean)),
+        );
         const cm = new Map();
         if (childIds.length) {
-          const ch = await supabase.from("children_view").select("id,name").in("id", childIds);
+          const ch = await supabase
+            .from("children_view")
+            .select("id,name")
+            .in("id", childIds);
           if (!ch.error) for (const c of ch.data ?? []) cm.set(c.id, c.name);
         }
 
@@ -270,7 +284,12 @@ export default function Payments() {
         const course = String(p.course_title ?? "").toLowerCase();
         const run = String(p.run_label ?? "").toLowerCase();
         const note = String(p.note ?? "").toLowerCase();
-        return child.includes(s) || course.includes(s) || run.includes(s) || note.includes(s);
+        return (
+          child.includes(s) ||
+          course.includes(s) ||
+          run.includes(s) ||
+          note.includes(s)
+        );
       });
     }
 
@@ -285,7 +304,9 @@ export default function Payments() {
     const cash = filtered
       .filter((x) => x.method === "cash")
       .reduce((acc, x) => acc + Number(x.amount || 0), 0);
-    const uniqChildren = new Set(filtered.map((x) => x.child_id).filter(Boolean)).size;
+    const uniqChildren = new Set(
+      filtered.map((x) => x.child_id).filter(Boolean),
+    ).size;
     const avg = count === 0 ? 0 : total / count;
 
     return { total, count, cash, uniqChildren, avg };
@@ -310,7 +331,10 @@ export default function Payments() {
       if (!byId.has(e.child_id)) byId.set(e.child_id, e.child_name ?? "—");
     }
 
-    const list = Array.from(byId.entries()).map(([id, name]) => ({ value: String(id), label: name }));
+    const list = Array.from(byId.entries()).map(([id, name]) => ({
+      value: String(id),
+      label: name,
+    }));
     list.sort((a, b) => String(a.label).localeCompare(String(b.label), "en"));
     return [{ value: "", label: "Select child..." }, ...list];
   }, [enrollments]);
@@ -319,7 +343,9 @@ export default function Payments() {
     if (!payChildId) return [];
     return enrollments
       .filter((e) => String(e.child_id) === String(payChildId))
-      .sort((a, b) => String(a.course_title).localeCompare(String(b.course_title), "en"));
+      .sort((a, b) =>
+        String(a.course_title).localeCompare(String(b.course_title), "en"),
+      );
   }, [enrollments, payChildId]);
 
   const enrollmentOptions = useMemo(() => {
@@ -330,7 +356,7 @@ export default function Payments() {
     const list = enrollmentsForChild.map((x) => {
       const agreed = Number(x.agreed_price || 0);
       const bal = Number(x.balance || 0);
-      const hint = agreed > 0 ? ` (Balance: ${fmtMoney(bal)}₪)` : " (Free)";
+      const hint = agreed > 0 ? ` (Balance: ${fmtMoney(bal)}₪)` : "";
       const label = `${x.course_title} — ${x.run_label}${hint}`;
       return {
         value: String(x.enrollment_id),
@@ -344,7 +370,9 @@ export default function Payments() {
 
   const selectedEnrollment = useMemo(() => {
     return (
-      enrollments.find((x) => String(x.enrollment_id) === String(payEnrollmentId)) ?? null
+      enrollments.find(
+        (x) => String(x.enrollment_id) === String(payEnrollmentId),
+      ) ?? null
     );
   }, [enrollments, payEnrollmentId]);
 
@@ -373,7 +401,8 @@ export default function Payments() {
       return;
     }
 
-    const paidAtIso = parseInputDatetimeLocal(payAt) ?? new Date().toISOString();
+    const paidAtIso =
+      parseInputDatetimeLocal(payAt) ?? new Date().toISOString();
 
     const payload = {
       enrollment_id: Number(payEnrollmentId),
@@ -467,8 +496,14 @@ export default function Payments() {
 
       {/* Filters */}
       <div className="card" style={{ marginBottom: 12 }}>
-        <div className="toolbar" style={{ justifyContent: "flex-start", gap: 10 }}>
-          <div className="filtersBar filtersBar--oneLine" style={{ width: "100%" }}>
+        <div
+          className="toolbar"
+          style={{ justifyContent: "flex-start", gap: 10 }}
+        >
+          <div
+            className="filtersBar filtersBar--oneLine"
+            style={{ width: "100%" }}
+          >
             <Control
               icon={Search}
               className="filtersBar__search"
@@ -613,7 +648,10 @@ export default function Payments() {
 
                   <td>
                     {p.run_id ? (
-                      <button className="linkBtn" onClick={() => navigate(`/runs/${p.run_id}`)}>
+                      <button
+                        className="linkBtn"
+                        onClick={() => navigate(`/runs/${p.run_id}`)}
+                      >
                         {p.run_label ?? `Run #${p.run_id}`}
                       </button>
                     ) : (
@@ -656,7 +694,11 @@ export default function Payments() {
       )}
 
       {/* Add Payment Modal */}
-      <Modal open={openAdd} title="Add payment" onClose={() => setOpenAdd(false)}>
+      <Modal
+        open={openAdd}
+        title="Add payment"
+        onClose={() => setOpenAdd(false)}
+      >
         <div style={{ padding: 16 }}>
           {pickerLoading ? (
             <div className="card">Loading...</div>
@@ -664,7 +706,10 @@ export default function Payments() {
             <>
               <div className="grid" style={{ marginBottom: 12 }}>
                 <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     Child
                   </div>
                   <ModernSelect
@@ -677,7 +722,8 @@ export default function Payments() {
                       const opts = enrollments
                         .filter((e) => String(e.child_id) === String(v))
                         .filter((e) => e.enrollment_status === "active");
-                      if (opts.length === 1) setPayEnrollmentId(String(opts[0].enrollment_id));
+                      if (opts.length === 1)
+                        setPayEnrollmentId(String(opts[0].enrollment_id));
                     }}
                     menuWidth="trigger"
                     placeholder="Select child..."
@@ -686,7 +732,10 @@ export default function Payments() {
                 </div>
 
                 <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     Enrollment
                   </div>
                   <ModernSelect
@@ -694,7 +743,9 @@ export default function Payments() {
                     onChange={setPayEnrollmentId}
                     menuWidth="trigger"
                     disabled={!payChildId}
-                    placeholder={payChildId ? "Select enrollment..." : "Select child first"}
+                    placeholder={
+                      payChildId ? "Select enrollment..." : "Select child first"
+                    }
                     options={enrollmentOptions}
                   />
                 </div>
@@ -702,7 +753,10 @@ export default function Payments() {
 
               <div className="grid" style={{ marginBottom: 12 }}>
                 <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     Amount
                   </div>
                   <Control>
@@ -718,13 +772,23 @@ export default function Payments() {
                   </Control>
 
                   {selectedEnrollment ? (
-                    <div className="muted" style={{ marginTop: 6, fontWeight: 850 }}>
-                      Balance: <span style={{ fontWeight: 950 }}>{fmtMoney(selectedEnrollment.balance)}₪</span>
+                    <div
+                      className="muted"
+                      style={{ marginTop: 6, fontWeight: 850 }}
+                    >
+                      Balance:{" "}
+                      <span style={{ fontWeight: 950 }}>
+                        {fmtMoney(selectedEnrollment.balance)}₪
+                      </span>
                       {Number(selectedEnrollment.balance || 0) > 0 ? (
                         <button
                           className="linkBtn"
                           style={{ marginInlineStart: 10 }}
-                          onClick={() => setPayAmount(String(Number(selectedEnrollment.balance || 0)))}
+                          onClick={() =>
+                            setPayAmount(
+                              String(Number(selectedEnrollment.balance || 0)),
+                            )
+                          }
                           type="button"
                         >
                           Use balance
@@ -735,7 +799,10 @@ export default function Payments() {
                 </div>
 
                 <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     Payment method
                   </div>
                   <ModernSelect
@@ -752,7 +819,10 @@ export default function Payments() {
                 </div>
 
                 <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                  <div
+                    className="muted"
+                    style={{ fontWeight: 900, marginBottom: 6 }}
+                  >
                     Paid at
                   </div>
                   <Control>
@@ -766,11 +836,18 @@ export default function Payments() {
               </div>
 
               <div style={{ marginBottom: 12 }}>
-                <div className="muted" style={{ fontWeight: 900, marginBottom: 6 }}>
+                <div
+                  className="muted"
+                  style={{ fontWeight: 900, marginBottom: 6 }}
+                >
                   Note (optional)
                 </div>
                 <Control>
-                  <input value={payNote} onChange={(e) => setPayNote(e.target.value)} placeholder="" />
+                  <input
+                    value={payNote}
+                    onChange={(e) => setPayNote(e.target.value)}
+                    placeholder=""
+                  />
                 </Control>
               </div>
 
