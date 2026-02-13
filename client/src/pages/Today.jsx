@@ -184,7 +184,24 @@ export default function Today() {
       new Set(baseRows.map((r) => r.run_id).filter(Boolean)),
     );
 
-    const paidByRun = new Map(); // run_id(string) -> ratio(0..1)
+    // Map run_id -> run label (so we can show Run name instead of Course title)
+    const runLabelByRun = new Map(); // run_id(string) -> label(string)
+    if (runIds.length) {
+      const { data: meta, error: metaErr } = await supabase
+        .from("course_runs_summary_view")
+        .select("run_id,label")
+        .in("run_id", runIds);
+
+      if (!metaErr) {
+        for (const m of meta ?? []) {
+          const rid = String(m.run_id ?? "");
+          if (!rid) continue;
+          runLabelByRun.set(rid, m.label ?? "");
+        }
+      }
+    }
+
+    const paidByRun = new Map(); // run_id(string) -> ratio(0..1) // run_id(string) -> ratio(0..1)
     if (runIds.length) {
       const { data: parts, error: partErr } = await supabase
         .from("run_participants_view")
@@ -215,11 +232,21 @@ export default function Today() {
 
     const normalized = baseRows.map((r) => {
       const rid = String(r.run_id ?? "");
-      const fallbackPaid = paidByRun.get(rid) ?? 0;
+      const runLabel = runLabelByRun.get(rid) || null;
+
+      const viewPaid = normalizeRatio(r.paid_ratio);
+      const fallbackPaid = normalizeRatio(paidByRun.get(rid) ?? 0);
+
+      // If the DB view returns 0 due to missing denominator (legacy agreed_price),
+      // but we can compute a real ratio from run_participants_view, prefer the fallback.
+      const paid_ratio =
+        viewPaid === 0 && fallbackPaid > 0 ? fallbackPaid : viewPaid;
 
       return {
         ...r,
-        paid_ratio: normalizeRatio(r.paid_ratio ?? fallbackPaid),
+        title: runLabel || r.title,
+        run_label: runLabel,
+        paid_ratio,
       };
     });
 
@@ -436,7 +463,7 @@ export default function Today() {
                     >
                       <div>
                         <div className="titleRow">
-                          <div className="titleMain">{r.title}</div>
+                          <div className="titleMain">{r.label || r.title}</div>
                           <Badge
                             variant={r.kind === "workshop" ? "info" : "neutral"}
                           >
@@ -444,7 +471,7 @@ export default function Today() {
                           </Badge>
                         </div>
                         <div className="muted" style={{ marginTop: 6 }}>
-                          {r.label} • Participants:{" "}
+                          Participants:{" "}
                           <b>{r.participants_count ?? 0}</b>
                         </div>
                       </div>
@@ -587,7 +614,7 @@ export default function Today() {
                       >
                         <div>
                           <div className="titleRow">
-                            <div className="titleMain">{r.title}</div>
+                            <div className="titleMain">{r.run_label || r.title}</div>
                             <Badge
                               variant={
                                 r.kind === "workshop" ? "info" : "neutral"
