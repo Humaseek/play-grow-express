@@ -1364,8 +1364,12 @@ export default function RunDetails() {
       start_at: toLocalInput(startLocal),
       end_at: toLocalInput(endLocal),
       duration_min:
-        Math.max(1, Math.round((endLocal.getTime() - startLocal.getTime()) / 60000)) ||
-        (Number(durationMinutes) || 60),
+        Math.max(
+          1,
+          Math.round((endLocal.getTime() - startLocal.getTime()) / 60000),
+        ) ||
+        Number(durationMinutes) ||
+        60,
       status: s.status,
     });
     setOpenSession(true);
@@ -1384,8 +1388,8 @@ export default function RunDetails() {
       startLocal.setHours(0, 0, 0, 0);
 
     const durationMin = isWorkshop
-      ? (Number(sessionForm.duration_min) || Number(durationMinutes) || 60)
-      : (Number(durationMinutes) || 60);
+      ? Number(sessionForm.duration_min) || Number(durationMinutes) || 60
+      : Number(durationMinutes) || 60;
     const endLocal = new Date(startLocal.getTime() + durationMin * 60 * 1000);
 
     setSessionSaving(true);
@@ -2216,113 +2220,108 @@ export default function RunDetails() {
 
               <hr className="sep" />
 
-
               {isWorkshop ? (
+                <div style={{ display: "grid", gap: 12 }}>
+                  <div className="muted">
+                    Workshop runs usually have a single session. Create it once,
+                    then manage it from the list.
+                  </div>
 
-
-
-              <div style={{ display: "grid", gap: 12 }}>
-                <div className="muted">
-                  Workshop runs usually have a single session. Create it once,
-                  then manage it from the list.
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ width: "100%" }}
+                    onClick={openCreateSession}
+                    disabled={(sessions || []).length > 0}
+                    title={
+                      (sessions || []).length > 0
+                        ? "Session already created"
+                        : "Create the workshop session"
+                    }
+                  >
+                    {(sessions || []).length > 0
+                      ? "Session created"
+                      : "+ Create session"}
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  style={{ width: "100%" }}
-                  onClick={openCreateSession}
-                  disabled={(sessions || []).length > 0}
-                  title={
-                    (sessions || []).length > 0
-                      ? "Session already created"
-                      : "Create the workshop session"
-                  }
-                >
-                  {(sessions || []).length > 0 ? "Session created" : "+ Create session"}
-                </button>
-              </div>
               ) : (
-
-
-              <div style={{ display: "grid", gap: 12 }}>
-                <div style={{ display: "grid", gap: 6 }}>
-                  <div className="muted">First session (date/time)</div>
-                  <input
-                    className="input"
-                    type={isWorkshop ? "date" : "datetime-local"}
-                    value={firstStart}
-                    onChange={(e) => setFirstStart(e.target.value)}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 10,
-                  }}
-                >
+                <div style={{ display: "grid", gap: 12 }}>
                   <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">Duration (minutes)</div>
+                    <div className="muted">First session (date/time)</div>
+                    <input
+                      className="input"
+                      type={isWorkshop ? "date" : "datetime-local"}
+                      value={firstStart}
+                      onChange={(e) => setFirstStart(e.target.value)}
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 10,
+                    }}
+                  >
+                    <div style={{ display: "grid", gap: 6 }}>
+                      <div className="muted">Duration (minutes)</div>
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        value={durationMinutes}
+                        onChange={(e) => setDurationMinutes(e.target.value)}
+                      />
+                    </div>
+
+                    <div style={{ display: "grid", gap: 6 }}>
+                      <div className="muted">Number of sessions</div>
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        value={count}
+                        onChange={(e) => setCount(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gap: 6 }}>
+                    <div className="muted">Repeat every (days)</div>
                     <input
                       className="input"
                       type="number"
                       min="1"
-                      value={durationMinutes}
-                      onChange={(e) => setDurationMinutes(e.target.value)}
+                      value={intervalDays}
+                      onChange={(e) => setIntervalDays(e.target.value)}
                     />
+                    <div className="muted" style={{ marginTop: -2 }}>
+                      Current schedule: every <b>{intervalDays}</b> days
+                    </div>
                   </div>
 
-                  <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">Number of sessions</div>
-                    <input
-                      className="input"
-                      type="number"
-                      min="1"
-                      value={count}
-                      onChange={(e) => setCount(e.target.value)}
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    style={{ width: "100%" }}
+                    disabled={genLoading || !firstStart}
+                    onClick={generateSessions}
+                  >
+                    {genLoading ? "Generating..." : "Generate sessions"}
+                  </button>
+
+                  <hr className="sep" />
+
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{ width: "100%" }}
+                    onClick={openCreateSession}
+                  >
+                    <Plus size={16} className="ico" /> Add single session
+                  </button>
                 </div>
-
-                <div style={{ display: "grid", gap: 6 }}>
-                  <div className="muted">Repeat every (days)</div>
-                  <input
-                    className="input"
-                    type="number"
-                    min="1"
-                    value={intervalDays}
-                    onChange={(e) => setIntervalDays(e.target.value)}
-                  />
-                  <div className="muted" style={{ marginTop: -2 }}>
-                    Current schedule: every <b>{intervalDays}</b> days
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="btn primary"
-                  style={{ width: "100%" }}
-                  disabled={genLoading || !firstStart}
-                  onClick={generateSessions}
-                >
-                  {genLoading ? "Generating..." : "Generate sessions"}
-                </button>
-
-                <hr className="sep" />
-
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ width: "100%" }}
-                  onClick={openCreateSession}
-                >
-                  <Plus size={16} className="ico" /> Add single session
-                </button>
-              </div>
               )}
-
             </div>
 
             {/* RIGHT: list */}
@@ -2332,8 +2331,8 @@ export default function RunDetails() {
             >
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Manage sessions for this run. Edit times, mark done/canceled,
-                or delete.
+                Manage sessions for this run. Edit times, mark done/canceled, or
+                delete.
               </div>
 
               <hr className="sep" />
@@ -2571,7 +2570,7 @@ export default function RunDetails() {
         {/* ===================== PAYMENTS TAB ===================== */}
         {tab === "payments" && (
           <div className="grid">
-            <div className="card" style={{ gridColumn: "span 5" }}>
+            <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">Record payment</div>
               <div className="muted" style={{ marginTop: 6 }}>
                 Add and track payments for children in this run.
@@ -2590,7 +2589,7 @@ export default function RunDetails() {
 
             <div
               className="card"
-              style={{ gridColumn: "span 7", overflow: "hidden" }}
+              style={{ gridColumn: "span 8", overflow: "hidden" }}
             >
               <div className="h1">Payments</div>
               <div className="muted" style={{ marginTop: 6 }}>
