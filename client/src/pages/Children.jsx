@@ -31,6 +31,7 @@ export default function Children() {
 
   const [rows, setRows] = useState([]);
   const [countries, setCountries] = useState([]);
+  const [classOptions, setClassOptions] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,17 +42,36 @@ export default function Children() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
 
+  // Add new Class (persistent)
+  const [newClassName, setNewClassName] = useState("");
+  const [addingClass, setAddingClass] = useState(false);
+
   const [confirmDel, setConfirmDel] = useState({
     open: false,
     id: null,
     name: "",
   });
 
+  async function loadClassesOnly() {
+    const clsRes = await supabase
+      .from("child_classes")
+      .select("id,name")
+      .order("name", { ascending: true });
+
+    if (clsRes.error) {
+      // إذا الجدول مش موجود (لسه ما شغّلت الـ SQL)
+      setClassOptions([]);
+      return;
+    }
+
+    setClassOptions(clsRes.data ?? []);
+  }
+
   async function loadAll() {
     setLoading(true);
     setError(null);
     try {
-      const [cRes, chRes] = await Promise.all([
+      const [cRes, chRes, clsRes] = await Promise.all([
         supabase
           .from("countries")
           .select("id,name")
@@ -60,6 +80,10 @@ export default function Children() {
           .from("children_view")
           .select("*")
           .order("id", { ascending: false }),
+        supabase
+          .from("child_classes")
+          .select("id,name")
+          .order("name", { ascending: true }),
       ]);
 
       if (cRes.error) throw cRes.error;
@@ -67,6 +91,10 @@ export default function Children() {
 
       setCountries(cRes.data ?? []);
       setRows(chRes.data ?? []);
+
+      // classes table is optional until you run the SQL migration
+      if (!clsRes.error) setClassOptions(clsRes.data ?? []);
+      else setClassOptions([]);
     } catch (e) {
       setError(e);
     } finally {
@@ -89,8 +117,23 @@ export default function Children() {
     );
   }, [rows, q]);
 
+  const classSelectOptions = useMemo(() => {
+    const base = (classOptions || []).map((c) => ({
+      value: c.name,
+      label: c.name,
+    }));
+
+    const current = (form.class ?? "").trim();
+    if (current && !base.some((o) => o.value === current)) {
+      base.unshift({ value: current, label: current });
+    }
+
+    return base;
+  }, [classOptions, form.class]);
+
   function openCreate() {
     setForm(emptyForm);
+    setNewClassName("");
     setOpenForm(true);
   }
 
@@ -110,6 +153,7 @@ export default function Children() {
       father_phone: r.father_phone ?? "",
       notes: r.notes ?? "",
     });
+    setNewClassName("");
     setOpenForm(true);
   }
 
@@ -130,6 +174,40 @@ export default function Children() {
     return data?.id ?? null;
   }
 
+  async function addNewClass() {
+    const name = (newClassName ?? "").trim();
+    if (!name) {
+      toast("اكتب اسم الصف أولاً", "warn");
+      return;
+    }
+
+    setAddingClass(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase
+        .from("child_classes")
+        .upsert([{ name }], { onConflict: "name" });
+
+      if (error) throw error;
+
+      setNewClassName("");
+      await loadClassesOnly();
+      setForm((p) => ({ ...p, class: name }));
+      toast("تم إضافة الصف وحفظه للدروب داون", "ok");
+    } catch (e) {
+      // إذا الجدول مش موجود، غالبًا لازم تشغيل SQL
+      if (String(e?.code) === "42P01") {
+        toast("لازم أولاً تشغّل ملف SQL اللي بضيف جدول child_classes", "warn");
+      } else {
+        toast("فشل إضافة الصف", "danger");
+      }
+      setError(e);
+    } finally {
+      setAddingClass(false);
+    }
+  }
+
   async function saveChild(e) {
     e.preventDefault();
     setSaving(true);
@@ -141,7 +219,7 @@ export default function Children() {
       const payload = {
         name: form.name.trim(),
         age: form.age === "" ? null : Math.floor(Number(form.age)),
-        class: form.class.trim() || null,
+        class: (form.class ?? "").trim() || null,
         gender: form.gender,
         country_id: countryId,
 
@@ -152,7 +230,12 @@ export default function Children() {
         notes: form.notes.trim() || null,
       };
 
-      if (!payload.name || payload.age === null || !Number.isFinite(payload.age) || payload.age < 0) {
+      if (
+        !payload.name ||
+        payload.age === null ||
+        !Number.isFinite(payload.age) ||
+        payload.age < 0
+      ) {
         toast("Name and age are required.", "warn");
         setSaving(false);
         return;
@@ -164,15 +247,16 @@ export default function Children() {
           .update(payload)
           .eq("id", form.id);
         if (error) throw error;
-        toast(" Edit .", "ok");
+        toast("Edit.", "ok");
       } else {
         const { error } = await supabase.from("children").insert([payload]);
         if (error) throw error;
-        toast(" Add .", "ok");
+        toast("Add.", "ok");
       }
 
       setOpenForm(false);
       setForm(emptyForm);
+      setNewClassName("");
       await loadAll();
     } catch (e2) {
       setError(e2);
@@ -247,7 +331,6 @@ export default function Children() {
                 <tr key={r.id}>
                   <td className="muted">{r.id}</td>
 
-                  {/* ✅ Name */}
                   <td style={{ fontWeight: 800 }}>
                     <button
                       className="linkBtn"
@@ -301,6 +384,7 @@ export default function Children() {
         onClose={() => {
           setOpenForm(false);
           setForm(emptyForm);
+          setNewClassName("");
         }}
       >
         <form onSubmit={saveChild} className="grid">
@@ -309,7 +393,9 @@ export default function Children() {
             <input
               className="input"
               value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, name: e.target.value }))
+              }
             />
           </div>
 
@@ -321,9 +407,7 @@ export default function Children() {
               min={0}
               step={1}
               value={form.age}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, age: e.target.value }))
-              }
+              onChange={(e) => setForm((p) => ({ ...p, age: e.target.value }))}
               placeholder="e.g. 6"
             />
           </div>
@@ -343,13 +427,37 @@ export default function Children() {
 
           <div style={{ gridColumn: "span 4" }}>
             <div className="muted">Class</div>
-            <input
-              className="input"
+            <ModernSelect
               value={form.class}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, class: e.target.value }))
+              onChange={(v) => setForm((p) => ({ ...p, class: v }))}
+              menuWidth="trigger"
+              options={classSelectOptions}
+              placeholder={
+                classSelectOptions.length
+                  ? "Select a class…"
+                  : "No classes yet…"
               }
             />
+
+            <div className="row" style={{ gap: 8, marginTop: 8 }}>
+              <input
+                className="input"
+                placeholder="Add new class…"
+                value={newClassName}
+                onChange={(e) => setNewClassName(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn"
+                onClick={addNewClass}
+                disabled={addingClass}
+              >
+                {addingClass ? "Adding..." : "Add"}
+              </button>
+            </div>
+            <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+              * أي Class بتضيفه هون بينحفظ وبيطلعلك بكل المرات الجاي.
+            </div>
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
@@ -431,9 +539,7 @@ export default function Children() {
               rows={3}
               placeholder="Optional notes..."
               value={form.notes}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, notes: e.target.value }))
-              }
+              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
             />
           </div>
 
@@ -447,6 +553,7 @@ export default function Children() {
               onClick={() => {
                 setOpenForm(false);
                 setForm(emptyForm);
+                setNewClassName("");
               }}
             >
               Cancel
