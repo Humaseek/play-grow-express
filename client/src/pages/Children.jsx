@@ -13,7 +13,7 @@ import { Pencil, Trash2, UserRound, Plus } from "lucide-react";
 const emptyForm = {
   id: null,
   name: "",
-  birth_date: "",
+  age: "",
   class: "",
   gender: "male",
   country_id: "",
@@ -99,7 +99,7 @@ export default function Children() {
     setForm({
       id: r.id,
       name: r.name ?? "",
-      birth_date: r.birth_date ?? "",
+      age: r.age ?? "",
       class: r.class ?? "",
       gender: r.gender ?? "male",
       country_id: match ? String(match.id) : "",
@@ -140,7 +140,7 @@ export default function Children() {
 
       const payload = {
         name: form.name.trim(),
-        birth_date: form.birth_date,
+        age: form.age === "" ? null : Math.floor(Number(form.age)),
         class: form.class.trim() || null,
         gender: form.gender,
         country_id: countryId,
@@ -152,8 +152,8 @@ export default function Children() {
         notes: form.notes.trim() || null,
       };
 
-      if (!payload.name || !payload.birth_date) {
-        toast("Name and birth date are required.", "warn");
+      if (!payload.name || payload.age === null || !Number.isFinite(payload.age) || payload.age < 0) {
+        toast("Name and age are required.", "warn");
         setSaving(false);
         return;
       }
@@ -314,14 +314,17 @@ export default function Children() {
           </div>
 
           <div style={{ gridColumn: "span 3" }}>
-            <div className="muted">Birth date *</div>
+            <div className="muted">Age *</div>
             <input
               className="input"
-              type="date"
-              value={form.birth_date}
+              type="number"
+              min={0}
+              step={1}
+              value={form.age}
               onChange={(e) =>
-                setForm((p) => ({ ...p, birth_date: e.target.value }))
+                setForm((p) => ({ ...p, age: e.target.value }))
               }
+              placeholder="e.g. 6"
             />
           </div>
 
