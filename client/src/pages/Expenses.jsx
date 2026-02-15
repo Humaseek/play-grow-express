@@ -62,6 +62,15 @@ function addDays(d, n) {
   return x;
 }
 
+function uniqSorted(list) {
+  const s = new Set();
+  for (const v of list) {
+    const x = String(v || "").trim();
+    if (x) s.add(x);
+  }
+  return Array.from(s).sort((a, b) => a.localeCompare(b, "en"));
+}
+
 export default function Expenses() {
   const { toast } = useOutletContext();
 
@@ -70,18 +79,31 @@ export default function Expenses() {
   const [error, setError] = useState(null);
   const [hasTable, setHasTable] = useState(true);
 
+  // Filters
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("all");
+  const [partyFilter, setPartyFilter] = useState("all");
+
   const [rangePreset, setRangePreset] = useState("this_month");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
+  // Picklists (dropdown options saved in DB)
+  const [catOptions, setCatOptions] = useState([]);
+  const [partyOptions, setPartyOptions] = useState([]);
+  const [hasPicklists, setHasPicklists] = useState(true);
+
+  // Modal/form
   const [openAdd, setOpenAdd] = useState(false);
   const [editId, setEditId] = useState(null);
   const [expDate, setExpDate] = useState(isoDate(new Date()));
   const [expAmount, setExpAmount] = useState("");
   const [expCategory, setExpCategory] = useState("");
+  const [expParty, setExpParty] = useState("");
   const [expDesc, setExpDesc] = useState("");
+
+  const [newCatName, setNewCatName] = useState("");
+  const [newPartyName, setNewPartyName] = useState("");
 
   const [confirm, setConfirm] = useState({ open: false, id: null });
 
@@ -110,6 +132,37 @@ export default function Expenses() {
     return { from: null, to: null };
   }
 
+  async function loadPicklists() {
+    // These tables are created by: 20260215_expenses_add_party_and_picklists.sql
+    // If they don't exist, we'll fallback to deriving options from rows.
+    setHasPicklists(true);
+
+    const [catsRes, partiesRes] = await Promise.all([
+      supabase.from("expense_categories").select("name").order("name", { ascending: true }),
+      supabase.from("expense_parties").select("name").order("name", { ascending: true }),
+    ]);
+
+    const anyErr = catsRes.error || partiesRes.error;
+    if (anyErr) {
+      const msg = String(anyErr.message || "").toLowerCase();
+      if (msg.includes("does not exist")) {
+        setHasPicklists(false);
+        setCatOptions([]);
+        setPartyOptions([]);
+        return;
+      }
+      // For other errors (RLS), show error but keep working
+      setError(anyErr);
+      setHasPicklists(false);
+      setCatOptions([]);
+      setPartyOptions([]);
+      return;
+    }
+
+    setCatOptions((catsRes.data || []).map((x) => x.name).filter(Boolean));
+    setPartyOptions((partiesRes.data || []).map((x) => x.name).filter(Boolean));
+  }
+
   async function load() {
     setLoading(true);
     setError(null);
@@ -118,7 +171,7 @@ export default function Expenses() {
 
     let query = supabase
       .from("expenses")
-      .select("id,spent_on,amount,category,description,created_at")
+      .select("id,spent_on,amount,category,party,description,created_at")
       .order("spent_on", { ascending: false })
       .order("id", { ascending: false });
 
@@ -128,7 +181,6 @@ export default function Expenses() {
     const res = await query;
 
     if (res.error) {
-      // table missing?
       const msg = String(res.error.message || "");
       if (msg.toLowerCase().includes("does not exist")) {
         setHasTable(false);
@@ -149,30 +201,40 @@ export default function Expenses() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rangePreset]);
 
+  useEffect(() => {
+    loadPicklists();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fallback: derive from rows if picklist tables missing
   const categories = useMemo(() => {
-    const s = new Set();
-    for (const r of rows) {
-      const c = (r.category || "").trim();
-      if (c) s.add(c);
-    }
-    return Array.from(s).sort((a, b) => a.localeCompare(b, "en"));
-  }, [rows]);
+    if (hasPicklists && catOptions.length) return uniqSorted(catOptions);
+    return uniqSorted(rows.map((r) => r.category));
+  }, [hasPicklists, catOptions, rows]);
+
+  const parties = useMemo(() => {
+    if (hasPicklists && partyOptions.length) return uniqSorted(partyOptions);
+    return uniqSorted(rows.map((r) => r.party));
+  }, [hasPicklists, partyOptions, rows]);
 
   const filtered = useMemo(() => {
     let list = [...rows];
+
     const s = q.trim().toLowerCase();
     if (s) {
       list = list.filter((r) => {
         const a = String(r.category || "").toLowerCase();
-        const b = String(r.description || "").toLowerCase();
-        return a.includes(s) || b.includes(s);
+        const b = String(r.party || "").toLowerCase();
+        const c = String(r.description || "").toLowerCase();
+        return a.includes(s) || b.includes(s) || c.includes(s);
       });
     }
-    if (cat !== "all") {
-      list = list.filter((r) => String(r.category || "") === cat);
-    }
+
+    if (cat !== "all") list = list.filter((r) => String(r.category || "") === cat);
+    if (partyFilter !== "all") list = list.filter((r) => String(r.party || "") === partyFilter);
+
     return list;
-  }, [rows, q, cat]);
+  }, [rows, q, cat, partyFilter]);
 
   const rangeHint = useMemo(() => {
     if (rangePreset === "custom") {
@@ -190,10 +252,7 @@ export default function Expenses() {
     const total = filtered.reduce((acc, r) => acc + Number(r.amount || 0), 0);
     const count = filtered.length;
     const avg = count === 0 ? 0 : total / count;
-    const max = filtered.reduce(
-      (m, r) => Math.max(m, Number(r.amount || 0)),
-      0,
-    );
+    const max = filtered.reduce((m, r) => Math.max(m, Number(r.amount || 0)), 0);
 
     const byCat = new Map();
     for (const r of filtered) {
@@ -216,7 +275,10 @@ export default function Expenses() {
     setExpDate(isoDate(new Date()));
     setExpAmount("");
     setExpCategory("");
+    setExpParty("");
     setExpDesc("");
+    setNewCatName("");
+    setNewPartyName("");
     setEditId(null);
   }
 
@@ -230,8 +292,59 @@ export default function Expenses() {
     setExpDate(row.spent_on ? String(row.spent_on) : isoDate(new Date()));
     setExpAmount(String(row.amount ?? ""));
     setExpCategory(String(row.category ?? ""));
+    setExpParty(String(row.party ?? ""));
     setExpDesc(String(row.description ?? ""));
     setOpenAdd(true);
+  }
+
+  async function safeInsertPicklist(tableName, rawName) {
+    const name = String(rawName || "").trim();
+    if (!name) return { ok: false };
+
+    const ins = await supabase.from(tableName).insert([{ name }]);
+
+    if (ins.error) {
+      const msg = String(ins.error.message || "").toLowerCase();
+      // ignore duplicates
+      if (ins.error.code === "23505" || msg.includes("duplicate")) {
+        return { ok: true };
+      }
+      setError(ins.error);
+      return { ok: false };
+    }
+    return { ok: true };
+  }
+
+  async function addNewCategory() {
+    const name = newCatName.trim();
+    if (!name) return;
+
+    const r = await safeInsertPicklist("expense_categories", name);
+    if (!r.ok) {
+      toast("Failed to add category.", "danger");
+      return;
+    }
+
+    await loadPicklists();
+    setExpCategory(name);
+    setNewCatName("");
+    toast("Category added.", "ok");
+  }
+
+  async function addNewParty() {
+    const name = newPartyName.trim();
+    if (!name) return;
+
+    const r = await safeInsertPicklist("expense_parties", name);
+    if (!r.ok) {
+      toast("Failed to add person.", "danger");
+      return;
+    }
+
+    await loadPicklists();
+    setExpParty(name);
+    setNewPartyName("");
+    toast("Person added.", "ok");
   }
 
   async function saveExpense() {
@@ -249,14 +362,12 @@ export default function Expenses() {
       spent_on: expDate,
       amount,
       category: expCategory?.trim() || null,
+      party: expParty?.trim() || null,
       description: expDesc?.trim() || null,
     };
 
     if (editId) {
-      const up = await supabase
-        .from("expenses")
-        .update(payload)
-        .eq("id", editId);
+      const up = await supabase.from("expenses").update(payload).eq("id", editId);
       if (up.error) {
         setError(up.error);
         toast("Failed Edit .", "danger");
@@ -275,6 +386,7 @@ export default function Expenses() {
 
     setOpenAdd(false);
     await load();
+    await loadPicklists();
   }
 
   async function deleteExpense(id) {
@@ -335,9 +447,7 @@ export default function Expenses() {
               icon={Layers}
               label="Top category"
               value={stats.topCat}
-              hint={
-                stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"
-              }
+              hint={stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"}
               variant={stats.topCat !== "—" ? "info" : "neutral"}
               className="kpi--accent"
             />
@@ -362,10 +472,7 @@ export default function Expenses() {
           </div>
 
           <div className="card" style={{ marginBottom: 12 }}>
-            <div
-              className="toolbar"
-              style={{ justifyContent: "space-between" }}
-            >
+            <div className="toolbar" style={{ justifyContent: "space-between" }}>
               <div className="filtersBar">
                 <Control
                   icon={Search}
@@ -379,10 +486,7 @@ export default function Expenses() {
                   />
                 </Control>
 
-                <Control
-                  icon={Filter}
-                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
-                >
+                <Control icon={Filter} style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}>
                   <ModernSelect
                     bare
                     value={cat}
@@ -391,6 +495,19 @@ export default function Expenses() {
                     options={[
                       { value: "all", label: "All categories" },
                       ...categories.map((c) => ({ value: c, label: c })),
+                    ]}
+                  />
+                </Control>
+
+                <Control icon={Filter} style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}>
+                  <ModernSelect
+                    bare
+                    value={partyFilter}
+                    onChange={setPartyFilter}
+                    placeholder="All people"
+                    options={[
+                      { value: "all", label: "All people" },
+                      ...parties.map((p) => ({ value: p, label: p })),
                     ]}
                   />
                 </Control>
@@ -414,10 +531,7 @@ export default function Expenses() {
                 </Control>
 
                 {rangePreset === "custom" ? (
-                  <div
-                    className="filtersBar"
-                    style={{ justifyContent: "flex-start" }}
-                  >
+                  <div className="filtersBar" style={{ justifyContent: "flex-start" }}>
                     <div className="input">
                       <input
                         type="date"
@@ -462,6 +576,7 @@ export default function Expenses() {
                   <tr>
                     <th>Date</th>
                     <th>Category</th>
+                    <th>Person</th>
                     <th>Description</th>
                     <th>Amount</th>
                     <th></th>
@@ -470,10 +585,9 @@ export default function Expenses() {
                 <tbody>
                   {filtered.map((r) => (
                     <tr key={r.id}>
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        {fmtDate(r.spent_on)}
-                      </td>
+                      <td style={{ whiteSpace: "nowrap" }}>{fmtDate(r.spent_on)}</td>
                       <td>{r.category || <span className="muted">—</span>}</td>
+                      <td>{r.party || <span className="muted">—</span>}</td>
                       <td style={{ minWidth: 260 }}>
                         {r.description || <span className="muted">—</span>}
                       </td>
@@ -481,10 +595,7 @@ export default function Expenses() {
                         {fmtMoney(r.amount)} ₪
                       </td>
                       <td style={{ whiteSpace: "nowrap" }}>
-                        <div
-                          className="row"
-                          style={{ justifyContent: "flex-end" }}
-                        >
+                        <div className="row" style={{ justifyContent: "flex-end" }}>
                           <IconButton
                             title="Edit"
                             onClick={() => openEdit(r)}
@@ -514,6 +625,13 @@ export default function Expenses() {
         onClose={() => setOpenAdd(false)}
       >
         <div className="card" style={{ border: "none", boxShadow: "none" }}>
+          {!hasPicklists ? (
+            <div className="muted" style={{ marginBottom: 10, lineHeight: 1.4 }}>
+              ملاحظة: جداول الدروب داون غير موجودة (expense_categories / expense_parties). <br />
+              شغّل ملف الـ SQL الخاص بالدروب داون وبعدها اعمل Refresh.
+            </div>
+          ) : null}
+
           <div className="grid" style={{ marginBottom: 12 }}>
             <div style={{ gridColumn: "span 4" }}>
               <div className="label">Date</div>
@@ -555,21 +673,74 @@ export default function Expenses() {
             <div style={{ gridColumn: "span 4" }}>
               <div className="label">Category</div>
               <div className="input">
-                <input
-                  style={{
-                    width: "100%",
-                    border: "none",
-                    background: "transparent",
-                    outline: "none",
-                  }}
-                  value={expCategory}
-                  onChange={(e) => setExpCategory(e.target.value)}
-                  placeholder="e.g. Transport"
+                <ModernSelect
+                  bare
+                  value={expCategory || ""}
+                  onChange={setExpCategory}
+                  placeholder="Select category..."
+                  options={[
+                    { value: "", label: "—" },
+                    ...categories.map((c) => ({ value: c, label: c })),
+                  ]}
                 />
+              </div>
+
+              <div className="row" style={{ gap: 10, marginTop: 10 }}>
+                <div className="input" style={{ flex: 1 }}>
+                  <input
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      background: "transparent",
+                      outline: "none",
+                    }}
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="Add new category..."
+                  />
+                </div>
+                <button className="btn" onClick={addNewCategory} disabled={!newCatName.trim()}>
+                  Add
+                </button>
               </div>
             </div>
 
-            <div style={{ gridColumn: "span 12" }}>
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="label">Person</div>
+              <div className="input">
+                <ModernSelect
+                  bare
+                  value={expParty || ""}
+                  onChange={setExpParty}
+                  placeholder="Select person..."
+                  options={[
+                    { value: "", label: "—" },
+                    ...parties.map((p) => ({ value: p, label: p })),
+                  ]}
+                />
+              </div>
+
+              <div className="row" style={{ gap: 10, marginTop: 10 }}>
+                <div className="input" style={{ flex: 1 }}>
+                  <input
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      background: "transparent",
+                      outline: "none",
+                    }}
+                    value={newPartyName}
+                    onChange={(e) => setNewPartyName(e.target.value)}
+                    placeholder="Add new person..."
+                  />
+                </div>
+                <button className="btn" onClick={addNewParty} disabled={!newPartyName.trim()}>
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <div style={{ gridColumn: "span 8" }}>
               <div className="label">Description</div>
               <div className="input">
                 <input
