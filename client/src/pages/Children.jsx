@@ -17,7 +17,7 @@ const emptyForm = {
   class: "",
   gender: "male",
   country_id: "",
-  new_country: "",
+  new_city: "",
   mother_name: "",
   mother_phone: "",
   father_name: "",
@@ -46,6 +46,9 @@ export default function Children() {
   const [newClassName, setNewClassName] = useState("");
   const [addingClass, setAddingClass] = useState(false);
 
+  // Add new City (persistent)
+  const [addingCity, setAddingCity] = useState(false);
+
   const [confirmDel, setConfirmDel] = useState({
     open: false,
     id: null,
@@ -66,6 +69,21 @@ export default function Children() {
 
     setClassOptions(clsRes.data ?? []);
   }
+
+async function loadCitiesOnly() {
+  const cRes = await supabase
+    .from("countries")
+    .select("id,name")
+    .order("name", { ascending: true });
+
+  if (cRes.error) {
+    setError(cRes.error);
+    return;
+  }
+
+  setCountries(cRes.data ?? []);
+}
+
 
   async function loadAll() {
     setLoading(true);
@@ -146,7 +164,7 @@ export default function Children() {
       class: r.class ?? "",
       gender: r.gender ?? "male",
       country_id: match ? String(match.id) : "",
-      new_country: "",
+      new_city: "",
       mother_name: r.mother_name ?? "",
       mother_phone: r.mother_phone ?? "",
       father_name: r.father_name ?? "",
@@ -157,11 +175,11 @@ export default function Children() {
     setOpenForm(true);
   }
 
-  async function upsertCountryIfNeeded() {
+  async function upsertCityIfNeeded() {
     const hasSelected = !!form.country_id;
     if (hasSelected) return Number(form.country_id);
 
-    const name = (form.new_country ?? "").trim();
+    const name = (form.new_city ?? "").trim();
     if (!name) return null;
 
     const { data, error } = await supabase
@@ -208,13 +226,55 @@ export default function Children() {
     }
   }
 
+async function addNewCity() {
+  const name = (form.new_city ?? "").trim();
+  if (!name) {
+    toast("اكتب اسم المدينة أولاً", "warn");
+    return;
+  }
+
+  setAddingCity(true);
+  setError(null);
+
+  try {
+    const { data, error } = await supabase
+      .from("countries")
+      .upsert([{ name }], { onConflict: "name" })
+      .select("id,name")
+      .single();
+
+    if (error) throw error;
+
+    await loadCitiesOnly();
+    setForm((p) => ({
+      ...p,
+      country_id: data?.id ? String(data.id) : p.country_id,
+      new_city: "",
+    }));
+    toast("تم إضافة المدينة وحفظها للدروب داون", "ok");
+  } catch (e) {
+    if (String(e?.code) === "42P01") {
+      toast("جدول المدن غير موجود. تأكد إن جدول countries موجود.", "warn");
+    } else if (String(e?.code) === "23505") {
+      toast("المدينة موجودة مسبقًا", "warn");
+    } else {
+      toast("فشل إضافة المدينة", "danger");
+    }
+    setError(e);
+  } finally {
+    setAddingCity(false);
+  }
+}
+
+
+
   async function saveChild(e) {
     e.preventDefault();
     setSaving(true);
     setError(null);
 
     try {
-      const countryId = await upsertCountryIfNeeded();
+      const countryId = await upsertCityIfNeeded();
 
       const payload = {
         name: form.name.trim(),
@@ -460,33 +520,43 @@ export default function Children() {
             </div>
           </div>
 
-          <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">City</div>
-            <ModernSelect
-              value={form.country_id}
-              onChange={(v) => setForm((p) => ({ ...p, country_id: v }))}
-              menuWidth="trigger"
-              options={(countries || []).map((c) => ({
-                value: c.id,
-                label: c.name,
-              }))}
-              placeholder="Select a country…"
-            />
-          </div>
+          <div style={{ gridColumn: "span 8" }}>
+  <div className="muted">City</div>
+  <ModernSelect
+    value={form.country_id}
+    onChange={(v) => setForm((p) => ({ ...p, country_id: v }))}
+    menuWidth="trigger"
+    options={(countries || []).map((c) => ({
+      value: c.id,
+      label: c.name,
+    }))}
+    placeholder="Select a city…"
+  />
 
-          <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">New country (optional)</div>
-            <input
-              className="input"
-              value={form.new_country}
-              placeholder="e.g. Israel"
-              onChange={(e) =>
-                setForm((p) => ({ ...p, new_country: e.target.value }))
-              }
-            />
-          </div>
+  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+    <input
+      className="input"
+      placeholder="Add new city..."
+      value={form.new_city}
+      onChange={(e) =>
+        setForm((p) => ({ ...p, new_city: e.target.value }))
+      }
+    />
+    <button
+      type="button"
+      className="btn"
+      onClick={addNewCity}
+      disabled={addingCity}
+    >
+      {addingCity ? "Adding..." : "Add"}
+    </button>
+  </div>
+  <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+    * أي City بتضيفه هون بينحفظ وبيطلعلك بكل المرات الجاي.
+  </div>
+</div>
 
-          <div style={{ gridColumn: "span 6" }}>
+<div style={{ gridColumn: "span 6" }}>
             <div className="muted">Mother name</div>
             <input
               className="input"
