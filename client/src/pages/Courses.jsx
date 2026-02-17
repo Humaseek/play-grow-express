@@ -167,7 +167,7 @@ export default function Courses() {
   }
 
   function kindLabel(k) {
-    return k === "workshop" ? "Workshop" : "Course";
+    return k === "workshop" ? "ورشة" : "دورة";
   }
 
   function openCreate() {
@@ -204,7 +204,7 @@ export default function Courses() {
       };
 
       if (!payload.title) {
-        toast("Title is required.", "warn");
+        toast("العنوان مطلوب.", "warn");
         setSaving(false);
         return;
       }
@@ -215,7 +215,7 @@ export default function Courses() {
           .update(payload)
           .eq("id", form.id);
         if (error) throw error;
-        toast("Course updated.", "ok");
+        toast("تم تحديث الدورة.", "ok");
       } else {
         const { data, error } = await supabase
           .from("courses")
@@ -223,7 +223,7 @@ export default function Courses() {
           .select("id")
           .single();
         if (error) throw error;
-        toast("Course created.", "ok");
+        toast("تم إنشاء الدورة.", "ok");
         setOpenForm(false);
         await load();
         navigate(`/courses/${data.id}`);
@@ -235,7 +235,7 @@ export default function Courses() {
       await load();
     } catch (e2) {
       setError(e2);
-      toast("Failed to save course.", "danger");
+      toast("فشل حفظ الدورة.", "danger");
     } finally {
       setSaving(false);
     }
@@ -246,21 +246,21 @@ export default function Courses() {
     const { error } = await supabase.from("courses").delete().eq("id", id);
     if (error) {
       setError(error);
-      toast("Failed to delete course.", "danger");
+      toast("فشل حذف الدورة.", "danger");
       return;
     }
-    toast("Course deleted.", "ok");
+    toast("تم حذف الدورة.", "ok");
     await load();
   }
 
   return (
-    <div className="container page page--courses">
+    <div className="container page page--courses" dir="rtl" lang="ar">
       <PageHeader
-        title="Courses"
-        subtitle="Manage courses and workshops"
+        title="الدورات"
+        subtitle="إدارة الدورات والورشات"
         actions={
           <div className="pageHeader__actions">
-            <button className="btn soft" onClick={load} title="Refresh">
+            <button className="btn soft" onClick={load} title="تحديث">
               Refresh
             </button>
           </div>
@@ -270,13 +270,14 @@ export default function Courses() {
       {/* Filters */}
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="sectionRow">
-          <div className="sectionLabel">Filters</div>
+          <div className="sectionLabel">فلاتر</div>
         </div>
 
         <div className="filtersBar">
           <input
             className="input filtersBar__search"
-            placeholder="Search courses…"
+            style={{ textAlign: "right" }}
+            placeholder="ابحث عن دورة…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -287,9 +288,9 @@ export default function Courses() {
             onChange={setKindFilter}
             menuWidth="trigger"
             options={[
-              { value: "all", label: "All types" },
-              { value: "course", label: "Courses" },
-              { value: "workshop", label: "Workshops" },
+              { value: "all", label: "كل الأنواع" },
+              { value: "course", label: "دورات" },
+              { value: "workshop", label: "ورشات" },
             ]}
           />
 
@@ -299,9 +300,9 @@ export default function Courses() {
             onChange={setActiveFilter}
             menuWidth="trigger"
             options={[
-              { value: "all", label: "All statuses" },
-              { value: "active", label: "Active" },
-              { value: "inactive", label: "Inactive" },
+              { value: "all", label: "كل الحالات" },
+              { value: "active", label: "فعّال" },
+              { value: "inactive", label: "غير فعّال" },
             ]}
           />
 
@@ -311,13 +312,13 @@ export default function Courses() {
             onChange={setSortBy}
             menuWidth="trigger"
             options={[
-              { value: "newest", label: "Newest" },
-              { value: "title", label: "Title (A–Z)" },
-              { value: "next", label: "Next session" },
+              { value: "newest", label: "الأحدث" },
+              { value: "title", label: "العنوان (أ-ي)" },
+              { value: "next", label: "الجلسة القادمة" },
             ]}
           />
           <button className="btn primary filtersBar__btn" onClick={openCreate}>
-            <Plus size={18} /> Add
+            <Plus size={18} /> إضافة
           </button>
         </div>
       </div>
@@ -325,13 +326,13 @@ export default function Courses() {
       <ErrorBanner error={error} />
 
       {loading ? (
-        <div className="card">Loading...</div>
+        <div className="card">جارٍ التحميل...</div>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={BookOpen}
-          title="No courses found"
-          description="Create your first course to get started."
-          actionLabel="Create course"
+          title="لا توجد دورات"
+          description=""
+          actionLabel="إضافة دورة"
           onAction={openCreate}
         />
       ) : (
@@ -370,40 +371,40 @@ export default function Courses() {
                       {kindLabel(r.kind)}
                     </span>
                     {r.is_active ? (
-                      <span className="badge ok">Active</span>
+                      <span className="badge ok">فعّال</span>
                     ) : (
-                      <span className="badge danger">Inactive</span>
+                      <span className="badge danger">غير فعّال</span>
                     )}
                   </div>
 
                   <span className="muted" style={{ fontSize: 12 }}>
-                    Click to open
+                    اضغط للفتح
                   </span>
                 </div>
 
                 <div className="muted" style={{ marginTop: 8 }}>
-                  Active runs: <b>{Number(m.activeRuns ?? 0)}</b> · Next session:{" "}
+                  الدفعات الفعّالة: <b>{Number(m.activeRuns ?? 0)}</b> · الجلسة القادمة:{" "}
                   <b>{fmtDT(m.nextSessionAt)}</b>
                 </div>
 
                 <div className="statsRow">
                   <div className="stat">
                     <div className="muted">
-                      <Users size={14} /> Capacity
+                      <Users size={14} /> السعة
                     </div>
                     <b>{Number(r.capacity ?? 0)}</b>
                   </div>
                   <div className="stat">
-                    <div className="muted">₪ Default price</div>
+                    <div className="muted">₪ السعر الافتراضي</div>
                     <b>{Number(r.default_price ?? 0).toFixed(2)}</b>
                   </div>
                   <div className="stat">
-                    <div className="muted">Participants (approx.)</div>
+                    <div className="muted">المشاركون (تقريبًا)</div>
                     <b>{Number(m.participants ?? 0)}</b>
                   </div>
                   <div className="stat">
                     <div className="muted">
-                      <CalendarClock size={14} /> Total sessions (all runs)
+                      <CalendarClock size={14} /> مجموع الجلسات (كل الدفعات)
                     </div>
                     <b>{Number(m.sessions ?? 0)}</b>
                   </div>
@@ -420,7 +421,7 @@ export default function Courses() {
                       e.stopPropagation();
                       openEdit(r);
                     }}
-                    title="Edit"
+                    title="تعديل"
                   >
                     Edit
                   </IconButton>
@@ -431,7 +432,7 @@ export default function Courses() {
                       e.stopPropagation();
                       setConfirmDel({ open: true, id: r.id, title: r.title });
                     }}
-                    title="Delete"
+                    title="حذف"
                   >
                     Delete
                   </IconButton>
@@ -444,7 +445,7 @@ export default function Courses() {
 
       <Modal
         open={openForm}
-        title={form.id ? "Edit course" : "Create course"}
+        title={form.id ? "تعديل دورة" : "إضافة دورة"}
         onClose={() => {
           setOpenForm(false);
           setForm(emptyForm);
@@ -452,7 +453,7 @@ export default function Courses() {
       >
         <form onSubmit={save} className="grid">
           <div style={{ gridColumn: "span 7" }}>
-            <div className="muted">Title *</div>
+            <div className="muted">العنوان *</div>
             <input
               className="input"
               value={form.title}
@@ -463,20 +464,20 @@ export default function Courses() {
           </div>
 
           <div style={{ gridColumn: "span 5" }}>
-            <div className="muted">Type</div>
+            <div className="muted">النوع</div>
             <ModernSelect
               value={form.kind}
               onChange={(v) => setForm((p) => ({ ...p, kind: v }))}
               menuWidth="trigger"
               options={[
-                { value: "course", label: "Course" },
-                { value: "workshop", label: "Workshop" },
+                { value: "course", label: "دورة" },
+                { value: "workshop", label: "ورشة" },
               ]}
             />
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">Capacity</div>
+            <div className="muted">السعة</div>
             <input
               className="input"
               type="number"
@@ -489,7 +490,7 @@ export default function Courses() {
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">Default price</div>
+            <div className="muted">السعر الافتراضي</div>
             <input
               className="input"
               type="number"
@@ -504,21 +505,21 @@ export default function Courses() {
 
           {form.id ? (
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Status</div>
+              <div className="muted">الحالة</div>
               <ModernSelect
                 value={form.is_active ? "1" : "0"}
                 onChange={(v) => setForm((p) => ({ ...p, is_active: v === "1" }))}
                 menuWidth="trigger"
                 options={[
-                  { value: "1", label: "Active" },
-                  { value: "0", label: "Inactive" },
+                  { value: "1", label: "فعّال" },
+                  { value: "0", label: "غير فعّال" },
                 ]}
               />
             </div>
           ) : null}
 
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">Notes</div>
+            <div className="muted">ملاحظات</div>
             <textarea
               className="input"
               rows={3}
@@ -531,7 +532,7 @@ export default function Courses() {
 
           <div className="row" style={{ gridColumn: "span 12" }}>
             <button className="btn primary" disabled={saving}>
-              {saving ? "Saving..." : "Save"}
+              {saving ? "جارٍ الحفظ..." : "حفظ"}
             </button>
             <button
               type="button"
@@ -549,10 +550,10 @@ export default function Courses() {
 
       <ConfirmDialog
         open={confirmDel.open}
-        title="Delete course"
-        message={`Delete this course: ${confirmDel.title}? This will also delete related enrollments.`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        title="حذف الدورة"
+        message={`حذف هذه الدورة: ${confirmDel.title}؟ سيتم أيضًا حذف الاشتراكات المرتبطة.`}
+        confirmText="حذف"
+        cancelText="إلغاء"
         danger
         onCancel={() => setConfirmDel({ open: false, id: null, title: "" })}
         onConfirm={async () => {
