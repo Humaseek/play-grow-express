@@ -78,7 +78,7 @@ export default function Today() {
   const navigate = useNavigate();
   const { toast } = useOutletContext();
 
-  // view = "active" (dashboard ) | "day" ( Today)
+  // view = "active" (dashboard) | "day" (جدول اليوم)
   const [view, setView] = useState("active");
 
   const [activeRuns, setActiveRuns] = useState([]);
@@ -187,7 +187,6 @@ export default function Today() {
       new Set(baseRows.map((r) => r.course_id).filter(Boolean)),
     );
 
-
     const paidByRun = new Map(); // run_id(string) -> ratio(0..1)
     if (runIds.length) {
       const { data: parts, error: partErr } = await supabase
@@ -217,7 +216,6 @@ export default function Today() {
       }
     }
 
-    
     const runLabelById = new Map(); // run_id(string) -> label
     if (runIds.length) {
       const { data: metaRuns, error: metaRunsErr } = await supabase
@@ -250,15 +248,18 @@ export default function Today() {
       }
     }
 
-const normalized = baseRows.map((r) => {
+    const normalized = baseRows.map((r) => {
       const rid = String(r.run_id ?? "");
       const fallbackPaid = paidByRun.get(rid) ?? 0;
 
       return {
         ...r,
-        run_label: runLabelById.get(rid) ?? r.run_label ?? r.label ?? r.title ?? "",
+        run_label:
+          runLabelById.get(rid) ?? r.run_label ?? r.label ?? r.title ?? "",
         course_title:
-          courseTitleById.get(String(r.course_id ?? "")) ?? r.course_title ?? "",
+          courseTitleById.get(String(r.course_id ?? "")) ??
+          r.course_title ??
+          "",
         paid_ratio:
           normalizeRatio(r.paid_ratio) > 0
             ? normalizeRatio(r.paid_ratio)
@@ -293,7 +294,7 @@ const normalized = baseRows.map((r) => {
     const next = activeRuns[0]?.next_session ?? null;
     const nextLabel = next
       ? `${fmtDay(next.start_at)} • ${formatTimeRange(next.start_at, next.end_at)}`
-      : "No upcoming sessions";
+      : "لا توجد جلسات قادمة";
 
     return { runsCount, upcomingSum, participantsSum, next, nextLabel };
   }, [activeRuns]);
@@ -352,10 +353,10 @@ const normalized = baseRows.map((r) => {
 
     if (err) {
       setError(err);
-      toast("Failed to update session status.", "danger");
+      toast("فشل تحديث حالة الجلسة.", "danger");
       return;
     }
-    toast("Session status updated.", "ok");
+    toast("تم تحديث حالة الجلسة.", "ok");
     await loadTodayAgenda();
     await loadActiveRuns();
   }
@@ -363,10 +364,10 @@ const normalized = baseRows.map((r) => {
   const paidPctKpi = dayStats.avgPaid * 100 || 0;
 
   return (
-    <div className="container page page--today">
+    <div className="container page page--today" dir="rtl" lang="ar">
       <PageHeader
-        title="Dashboard"
-        subtitle={view === "active" ? "" : ""}
+        title="لوحة التحكم"
+        subtitle=""
         actions={
           <div className="toolbar" style={{ gap: 10 }}>
             <div className="segmented">
@@ -375,34 +376,34 @@ const normalized = baseRows.map((r) => {
                 onClick={() => setView("active")}
                 type="button"
               >
-                Active Courses
+                الدورات الفعّالة
               </button>
               <button
                 className={`segmentedBtn ${view === "day" ? "isActive" : ""}`}
                 onClick={() => setView("day")}
                 type="button"
               >
-                Today&apos;s Agenda
+                جدول اليوم
               </button>
             </div>
 
             <IconButton
-              title="Refresh"
+              title="تحديث"
               variant="soft"
               onClick={loadAll}
-              ariaLabel="Refresh"
+              ariaLabel="تحديث"
             >
               <RefreshCcw size={18} />
             </IconButton>
 
             <button className="btn soft" onClick={() => navigate("/courses")}>
-              Courses
+              الدورات
             </button>
             <button className="btn soft" onClick={() => navigate("/payments")}>
-              Payments
+              المدفوعات
             </button>
             <button className="btn soft" onClick={() => navigate("/expenses")}>
-              Expenses
+              المصروفات
             </button>
           </div>
         }
@@ -417,12 +418,12 @@ const normalized = baseRows.map((r) => {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={Sparkles}
-                label="Active Courses"
+                label="الدورات الفعّالة"
                 value={activeStats.runsCount}
                 hint={
                   activeStats.next
-                    ? `Next session: ${activeStats.nextLabel}`
-                    : "No upcoming sessions"
+                    ? `الجلسة القادمة: ${activeStats.nextLabel}`
+                    : "لا توجد جلسات قادمة"
                 }
                 variant={activeStats.runsCount === 0 ? "neutral" : "info"}
               />
@@ -431,7 +432,7 @@ const normalized = baseRows.map((r) => {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={CalendarDays}
-                label="Upcoming Sessions"
+                label="الجلسات القادمة"
                 value={activeStats.upcomingSum}
                 hint=""
                 variant={activeStats.upcomingSum === 0 ? "neutral" : "info"}
@@ -441,7 +442,7 @@ const normalized = baseRows.map((r) => {
             <div style={{ gridColumn: "span 4" }}>
               <KpiCard
                 icon={ClipboardList}
-                label="Active Participants"
+                label="المشتركين النشطين"
                 value={activeStats.participantsSum}
                 hint=""
                 variant={activeStats.participantsSum === 0 ? "neutral" : "ok"}
@@ -450,13 +451,13 @@ const normalized = baseRows.map((r) => {
           </div>
 
           {loading.active ? (
-            <div className="card">Loading...</div>
+            <div className="card">جارٍ التحميل...</div>
           ) : activeRuns.length === 0 ? (
             <EmptyState
               icon={Sparkles}
-              title="No active courses"
+              title="لا توجد دورات فعّالة"
               description=""
-              actionLabel="Go to Courses"
+              actionLabel="الدورات"
               onAction={() => navigate("/courses")}
             />
           ) : (
@@ -483,12 +484,11 @@ const normalized = baseRows.map((r) => {
                           <Badge
                             variant={r.kind === "workshop" ? "info" : "neutral"}
                           >
-                            {r.kind === "workshop" ? "Workshop" : "Course"}
+                            {r.kind === "workshop" ? "ورشة" : "دورة"}
                           </Badge>
                         </div>
                         <div className="muted" style={{ marginTop: 6 }}>
-                          {r.label} • Participants:{" "}
-                          <b>{r.participants_count ?? 0}</b>
+                          {r.label} • المشتركين: <b>{r.participants_count ?? 0}</b>
                         </div>
                       </div>
 
@@ -496,7 +496,7 @@ const normalized = baseRows.map((r) => {
                         className="stack"
                         style={{ gap: 8, alignItems: "flex-end" }}
                       >
-                        <Badge variant="info">Next session</Badge>
+                        <Badge variant="info">الجلسة القادمة</Badge>
                         <div style={{ fontWeight: 950 }}>{when}</div>
                       </div>
                     </div>
@@ -505,13 +505,13 @@ const normalized = baseRows.map((r) => {
 
                     <div className="row space" style={{ alignItems: "center" }}>
                       <div className="muted">
-                        Remaining sessions: <b>{r.upcoming_count}</b>
+                        الجلسات المتبقية: <b>{r.upcoming_count}</b>
                       </div>
 
                       <div className="actionsRow">
                         {next?.id ? (
                           <IconButton
-                            title="Open next session (attendance)"
+                            title="فتح الجلسة القادمة (الحضور)"
                             variant="primary"
                             onClick={() =>
                               navigate(`/sessions/${next.id}/attendance`)
@@ -522,14 +522,14 @@ const normalized = baseRows.map((r) => {
                         ) : null}
 
                         <IconButton
-                          title="Run details"
+                          title="تفاصيل الدورة"
                           onClick={() => navigate(`/runs/${r.run_id}`)}
                         >
                           <Layers size={18} />
                         </IconButton>
 
                         <IconButton
-                          title="Course template"
+                          title="قالب الدورة"
                           onClick={() => navigate(`/courses/${r.template_id}`)}
                         >
                           <LayoutTemplate size={18} />
@@ -551,12 +551,12 @@ const normalized = baseRows.map((r) => {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={CalendarDays}
-                label="Today's Sessions"
+                label="جلسات اليوم"
                 value={dayStats.count}
                 hint={
                   dayStats.next
-                    ? `Next session: ${formatTimeRange(dayStats.next.start_at, dayStats.next.end_at)}`
-                    : "No sessions scheduled"
+                    ? `الجلسة القادمة: ${formatTimeRange(dayStats.next.start_at, dayStats.next.end_at)}`
+                    : "لا توجد جلسات اليوم"
                 }
                 variant={dayStats.count === 0 ? "neutral" : "info"}
               />
@@ -565,9 +565,9 @@ const normalized = baseRows.map((r) => {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={Sparkles}
-                label="Scheduled"
+                label="مجدولة"
                 value={dayStats.scheduled}
-                hint="Sessions scheduled for today"
+                hint=""
                 variant={dayStats.scheduled === 0 ? "neutral" : "info"}
               />
             </div>
@@ -575,9 +575,9 @@ const normalized = baseRows.map((r) => {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={ClipboardList}
-                label="Attendance Recorded"
+                label="تسجيل الحضور"
                 value={`${dayStats.recordedSum}/${dayStats.expectedSum}`}
-                hint={`${dayStats.recordedPct.toFixed(0)}% of expected`}
+                hint={`${dayStats.recordedPct.toFixed(0)}% من المتوقع`}
                 variant={pctVariant(dayStats.recordedPct)}
               />
             </div>
@@ -585,22 +585,22 @@ const normalized = baseRows.map((r) => {
             <div style={{ gridColumn: "span 3" }}>
               <KpiCard
                 icon={Banknote}
-                label="Average Payment"
+                label="متوسط الدفع"
                 value={`${paidPctKpi.toFixed(0)}%`}
-                hint="Payment ratio across today's sessions"
+                hint=""
                 variant={paidVariant(dayStats.avgPaid)}
               />
             </div>
           </div>
 
           {loading.day ? (
-            <div className="card">Loading...</div>
+            <div className="card">جارٍ التحميل...</div>
           ) : todayRows.length === 0 ? (
             <EmptyState
               icon={CalendarDays}
-              title="No sessions today"
-              description="Add sessions inside a Run and they will appear here immediately as a one-day agenda."
-              actionLabel="Go to Courses"
+              title="لا توجد جلسات اليوم"
+              description=""
+              actionLabel="الدورات"
               onAction={() => navigate("/courses")}
             />
           ) : (
@@ -630,13 +630,15 @@ const normalized = baseRows.map((r) => {
                       >
                         <div>
                           <div className="titleRow">
-                            <div className="titleMain">{r.run_label ?? r.title}</div>
+                            <div className="titleMain">
+                              {r.run_label ?? r.title}
+                            </div>
                             <Badge
                               variant={
                                 r.kind === "workshop" ? "info" : "neutral"
                               }
                             >
-                              {r.kind === "workshop" ? "Workshop" : "Course"}
+                              {r.kind === "workshop" ? "ورشة" : "دورة"}
                             </Badge>
                           </div>
                           {r.course_title ? (
@@ -662,10 +664,10 @@ const normalized = baseRows.map((r) => {
                           }
                         >
                           {r.status === "scheduled"
-                            ? "Scheduled"
+                            ? "مجدولة"
                             : r.status === "done"
-                              ? "Completed"
-                              : "Canceled"}
+                              ? "مكتملة"
+                              : "ملغاة"}
                         </Badge>
                       </div>
 
@@ -676,25 +678,25 @@ const normalized = baseRows.map((r) => {
                         style={{ gap: 10, flexWrap: "wrap" }}
                       >
                         <div className="pill">
-                          <span className="muted">Recorded attendance</span>
+                          <span className="muted">الحضور المسجّل</span>
                           <b>
                             {recorded}/{expected}
                           </b>
                         </div>
                         <div className="pill">
-                          <span className="muted">Present</span>
+                          <span className="muted">حاضر</span>
                           <b>
                             {present}/{expected}
                           </b>
                         </div>
                         <div className="pill">
-                          <span className="muted">Payment</span>
+                          <span className="muted">الدفع</span>
                           <Badge variant={paidVariant(r.paid_ratio)}>
                             {paidPct.toFixed(0)}%
                           </Badge>
                         </div>
                         <div className="pill">
-                          <span className="muted">Attendance rate</span>
+                          <span className="muted">نسبة التسجيل</span>
                           <Badge variant={pctVariant(recordedPct)}>
                             {recordedPct.toFixed(0)}%
                           </Badge>
@@ -703,7 +705,7 @@ const normalized = baseRows.map((r) => {
 
                       <div className="actionsRow" style={{ marginTop: 12 }}>
                         <IconButton
-                          title="Open attendance"
+                          title="فتح الحضور"
                           variant="primary"
                           onClick={() =>
                             navigate(`/sessions/${r.session_id}/attendance`)
@@ -713,21 +715,21 @@ const normalized = baseRows.map((r) => {
                         </IconButton>
 
                         <IconButton
-                          title="Run details"
+                          title="تفاصيل الدورة"
                           onClick={() => navigate(`/runs/${r.run_id}`)}
                         >
                           <Layers size={18} />
                         </IconButton>
 
                         <IconButton
-                          title="Course template"
+                          title="قالب الدورة"
                           onClick={() => navigate(`/courses/${r.course_id}`)}
                         >
                           <LayoutTemplate size={18} />
                         </IconButton>
 
                         <IconButton
-                          title="Complete"
+                          title="إنهاء"
                           onClick={() =>
                             setConfirm({
                               open: true,
@@ -741,7 +743,7 @@ const normalized = baseRows.map((r) => {
                         </IconButton>
 
                         <IconButton
-                          title="Cancel"
+                          title="إلغاء"
                           variant="danger"
                           onClick={() =>
                             setConfirm({
@@ -766,14 +768,14 @@ const normalized = baseRows.map((r) => {
 
       <ConfirmDialog
         open={confirm.open}
-        title="Confirm"
+        title="تأكيد"
         message={
           confirm.action === "done"
-            ? "Mark this session as completed?"
-            : "Cancel this session?"
+            ? "هل تريد تعليم الجلسة كمكتملة؟"
+            : "هل تريد إلغاء الجلسة؟"
         }
-        confirmText="Yes"
-        cancelText="Cancel"
+        confirmText="نعم"
+        cancelText="إلغاء"
         danger={confirm.action !== "done"}
         onCancel={() =>
           setConfirm({ open: false, action: null, sessionId: null })
