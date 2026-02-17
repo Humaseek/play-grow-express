@@ -34,8 +34,11 @@ export default function Login() {
   return (
     <div className="container" style={{ maxWidth: 560 }}>
       <div className="card" style={{ marginTop: 24 }}>
-        <div className="h1" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <LogIn size={20} /> Enroll
+        <div
+          className="h1"
+          style={{ display: "flex", alignItems: "center", gap: 10 }}
+        >
+          <LogIn size={20} /> Login
         </div>
 
         <div className="muted" style={{ marginTop: 6, lineHeight: 1.4 }}>
@@ -49,10 +52,18 @@ export default function Login() {
         <form onSubmit={onSubmit} style={{ display: "grid", gap: 12 }}>
           <div>
             <div className="label">Email</div>
-            <div className="input" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              className="input"
+              style={{ display: "flex", alignItems: "center", gap: 10 }}
+            >
               <Mail size={18} style={{ opacity: 0.7, flex: "0 0 auto" }} />
               <input
-                style={{ width: "100%", border: "none", background: "transparent", outline: "none" }}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  background: "transparent",
+                  outline: "none",
+                }}
                 type="email"
                 inputMode="email"
                 autoComplete="email"
@@ -66,10 +77,18 @@ export default function Login() {
 
           <div>
             <div className="label">Password</div>
-            <div className="input" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              className="input"
+              style={{ display: "flex", alignItems: "center", gap: 10 }}
+            >
               <Lock size={18} style={{ opacity: 0.7, flex: "0 0 auto" }} />
               <input
-                style={{ width: "100%", border: "none", background: "transparent", outline: "none" }}
+                style={{
+                  width: "100%",
+                  border: "none",
+                  background: "transparent",
+                  outline: "none",
+                }}
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="••••••••••••"
@@ -97,13 +116,12 @@ export default function Login() {
             </div>
           </div>
 
-          <button className="btn primary" disabled={loading || !email.trim() || !password}>
+          <button
+            className="btn primary"
+            disabled={loading || !email.trim() || !password}
+          >
             {loading ? "..." : "Login"}
           </button>
-
-          <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>
-            إذا بدك نضيف "Forgot password" احكيلي.
-          </div>
         </form>
       </div>
     </div>
