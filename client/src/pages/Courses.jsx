@@ -154,6 +154,22 @@ export default function Courses() {
     return sorted;
   }, [rows, q, kindFilter, activeFilter, sortBy, meta]);
 
+  const courseCount = useMemo(
+    () => filtered.filter((r) => r.kind !== "workshop").length,
+    [filtered],
+  );
+  const workshopCount = useMemo(
+    () => filtered.filter((r) => r.kind === "workshop").length,
+    [filtered],
+  );
+
+  // Keep original ordering from 'filtered', but group: Courses first, then Workshops
+  const filteredSorted = useMemo(() => {
+    const courses = filtered.filter((r) => r.kind !== "workshop");
+    const workshops = filtered.filter((r) => r.kind === "workshop");
+    return [...courses, ...workshops];
+  }, [filtered]);
+
   function fmtDT(v) {
     if (!v) return "-";
     const d = new Date(v);
@@ -175,7 +191,7 @@ export default function Courses() {
     setOpenForm(true);
   }
 
-  function openEdit(r) {
+  function openتعديل(r) {
     setForm({
       id: r.id,
       title: r.title ?? "",
@@ -261,13 +277,13 @@ export default function Courses() {
         actions={
           <div className="pageHeader__actions">
             <button className="btn soft" onClick={load} title="تحديث">
-              Refresh
+              تحديث
             </button>
           </div>
         }
       />
 
-      {/* Filters */}
+      {/* فلترة */}
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="sectionRow">
           <div className="sectionLabel">فلاتر</div>
@@ -330,21 +346,40 @@ export default function Courses() {
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={BookOpen}
-          title="لا توجد دورات"
+          title="لا توجد دورات أو ورشات"
           description=""
-          actionLabel="إضافة دورة"
+          actionLabel="إضافة"
           onAction={openCreate}
         />
       ) : (
         <div className="cardsGrid">
-          {filtered.map((r) => {
+          {filteredSorted.map((r, idx) => {
             const m = meta[r.id] ?? {};
             const isWorkshop = r.kind === "workshop";
             const openCourse = () => navigate(`/courses/${r.id}`);
+            const showHeader =
+              idx === 0 || (filteredSorted[idx - 1]?.kind ?? null) !== r.kind;
+            const sectionTitle = isWorkshop ? "الورشات" : "الدورات";
+            const sectionCount = isWorkshop ? workshopCount : courseCount;
             return (
-              <div
-                key={r.id}
-                className="card hoverLift clickCard"
+              <React.Fragment key={r.id}>
+                {showHeader ? (
+                  <div
+                    className="card"
+                    style={{ gridColumn: "1 / -1", padding: 14, marginBottom: 2 }}
+                  >
+                    <div className="row space" style={{ alignItems: "center" }}>
+                      <div style={{ fontWeight: 950, fontSize: 16 }}>
+                        {sectionTitle}
+                      </div>
+                      <span className="badge badge--page">{sectionCount}</span>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div
+                  className="card hoverLift clickCard"
+
                 role="button"
                 tabIndex={0}
                 onClick={openCourse}
@@ -419,11 +454,11 @@ export default function Courses() {
                     icon={Pencil}
                     onClick={(e) => {
                       e.stopPropagation();
-                      openEdit(r);
+                      openتعديل(r);
                     }}
                     title="تعديل"
                   >
-                    Edit
+                    تعديل
                   </IconButton>
                   <IconButton
                     variant="danger"
@@ -434,10 +469,11 @@ export default function Courses() {
                     }}
                     title="حذف"
                   >
-                    Delete
+                    حذف
                   </IconButton>
                 </div>
               </div>
+              </React.Fragment>
             );
           })}
         </div>
