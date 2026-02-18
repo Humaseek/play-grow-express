@@ -107,12 +107,12 @@ export default function CourseDetails() {
 
       if (u.error) throw u.error;
 
-      toast("Run updated successfully.", "ok");
+      toast("تم تحديث الدفعة.", "ok");
       setEditOpen(false);
       await load();
     } catch (e) {
       setError(e);
-      toast("Failed to update run.", "danger");
+      toast("فشل تحديث الدفعة.", "danger");
     } finally {
       setSaving(false);
     }
@@ -256,9 +256,9 @@ export default function CourseDetails() {
   }, [runs]);
 
   function runBadge(status) {
-    if (status === "active") return <Badge variant="ok">Active</Badge>;
-    if (status === "done") return <Badge variant="info">Completed</Badge>;
-    return <Badge variant="danger">Canceled</Badge>;
+    if (status === "active") return <Badge variant="ok">فعّالة</Badge>;
+    if (status === "done") return <Badge variant="info">مكتملة</Badge>;
+    return <Badge variant="danger">ملغاة</Badge>;
   }
 
   async function autoEnrollPackages(runId) {
@@ -285,7 +285,7 @@ export default function CourseDetails() {
       await load();
     } catch (e) {
       setError(e);
-      toast("Auto-sync failed.", "danger");
+      toast("فشلت المزامنة.", "danger");
     }
   }
 
@@ -297,8 +297,8 @@ export default function CourseDetails() {
       const finalLabel = label.trim()
         ? label.trim()
         : firstStart
-          ? `Run ${new Date(firstStart).toLocaleDateString("en-US")}`
-          : "New run";
+          ? `دفعة ${new Date(firstStart).toLocaleDateString("en-US")}`
+          : "دفعة جديدة";
 
       const ins = await supabase
         .from("course_runs")
@@ -335,12 +335,12 @@ export default function CourseDetails() {
         await autoEnrollPackages(runId);
       } else {
         toast(
-          "Run created. After adding/generating sessions, use to auto-enroll children who have remaining package sessions.",
+          "تم إنشاء الدفعة. بعد إضافة/إنشاء الجلسات، استخدم زر المزامنة لتسجيل المشتركين الذين لديهم رصيد جلسات متبقي.",
           "info",
         );
       }
 
-      toast("Run created successfully.", "ok");
+      toast("تم إنشاء الدفعة.", "ok");
 
       setOpen(false);
       setLabel("");
@@ -354,7 +354,7 @@ export default function CourseDetails() {
       navigate(`/runs/${runId}`);
     } catch (e) {
       setError(e);
-      toast("Failed to create run.", "danger");
+      toast("فشل إنشاء الدفعة.", "danger");
     } finally {
       setSaving(false);
     }
@@ -369,11 +369,11 @@ export default function CourseDetails() {
 
     if (u.error) {
       setError(u.error);
-      toast("Failed to update run status.", "danger");
+      toast("فشل تحديث حالة الدفعة.", "danger");
       return;
     }
 
-    toast("Run status updated.", "ok");
+    toast("تم تحديث حالة الدفعة.", "ok");
     await load();
   }
 
@@ -383,17 +383,17 @@ export default function CourseDetails() {
 
     if (d.error) {
       setError(d.error);
-      toast("Failed to delete run.", "danger");
+      toast("فشل حذف الدفعة.", "danger");
       return;
     }
 
-    toast("Run deleted.", "ok");
+    toast("تم حذف الدفعة.", "ok");
     await load();
   }
 
   if (loading) {
     return (
-      <div className="container page page--courses">
+      <div className="container page page--courses" dir="rtl" lang="ar">
         <div className="card">Loading...</div>
       </div>
     );
@@ -401,24 +401,24 @@ export default function CourseDetails() {
 
   if (!course) {
     return (
-      <div className="container">
+      <div className="container" dir="rtl" lang="ar">
         <div className="card">Course not found.</div>
       </div>
     );
   }
 
   return (
-    <div className="container page page--courses">
+    <div className="container page page--courses" dir="rtl" lang="ar">
       <PageHeader
         title={course.title}
-        subtitle={`Capacity: ${course.capacity} — Default price: ${Number(course.default_price).toFixed(2)}`}
+        subtitle={`السعة: ${course.capacity} — السعر الافتراضي: ${Number(course.default_price).toFixed(2)}`}
         actions={
           <>
             <button className="btn" onClick={() => navigate("/courses")}>
-              Back
+              رجوع
             </button>
             <button className="btn primary" onClick={openCreateRunModal}>
-              <Plus size={18} /> New run
+              <Plus size={18} /> دفعة جديدة
             </button>
           </>
         }
@@ -431,10 +431,10 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.activeCount ? "ok" : "neutral"}
-            label="Active runs"
+            label="الدفعات الفعّالة"
             value={stats.activeCount}
             hint={
-              stats.totalRuns ? `of ${stats.totalRuns} total` : "No runs yet"
+              stats.totalRuns ? `من أصل ${stats.totalRuns}` : "لا يوجد دفعات"
             }
             icon={Layers}
           />
@@ -443,9 +443,9 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.totalParticipants ? "info" : "neutral"}
-            label="Participants"
+            label="المشتركين"
             value={stats.totalParticipants}
-            hint="Across all runs"
+            hint="عبر كل الدفعات"
             icon={Users}
           />
         </div>
@@ -453,12 +453,12 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.nextSessionAt ? "warn" : "neutral"}
-            label="Next session"
+            label="الجلسة القادمة"
             value={stats.nextSessionAt ? fmtDT(stats.nextSessionAt) : "-"}
             hint={
               stats.nextSessionAt
-                ? "Earliest upcoming session"
-                : "No upcoming sessions"
+                ? "أقرب جلسة قادمة"
+                : "لا توجد جلسات قادمة"
             }
             icon={CalendarClock}
           />
@@ -467,9 +467,9 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.totalsessions ? "neutral" : "neutral"}
-            label="Total sessions"
+            label="مجموع الجلسات"
             value={stats.totalsessions}
-            hint="Across all runs"
+            hint="عبر كل الدفعات"
             icon={CalendarClock}
           />
         </div>
@@ -481,10 +481,10 @@ export default function CourseDetails() {
           style={{ justifyContent: "space-between", alignItems: "center" }}
         >
           <div>
-            <div className="cardTitle">Runs</div>
+            <div className="cardTitle">الدفعات</div>
           </div>
           <button className="btn primary" onClick={openCreateRunModal}>
-            <Plus size={18} /> New run
+            <Plus size={18} /> دفعة جديدة
           </button>
         </div>
       </div>
@@ -492,12 +492,12 @@ export default function CourseDetails() {
       {sortedRuns.length === 0 ? (
         <div className="card" style={{ marginTop: 12 }}>
           <EmptyState
-            title="No runs yet"
-            description="Create the first run for this course."
+            title="لا يوجد دفعات"
+            description="أنشئ أول دفعة للدورة."
             icon={Layers}
             actions={
               <button className="btn primary" onClick={openCreateRunModal}>
-                <Plus size={18} /> New run
+                <Plus size={18} /> دفعة جديدة
               </button>
             }
           />
@@ -529,13 +529,13 @@ export default function CourseDetails() {
                       </span>
                     </div>
                     <div className="muted" style={{ marginTop: 6 }}>
-                      Next session:{" "}
+                      الجلسة القادمة:{" "}
                       <span className="ltrIso">{fmtDT(r.next_session_at)}</span>
                     </div>
                     <div className="muted" style={{ marginTop: 4 }}>
-                      Capacity:{" "}
+                      السعة:{" "}
                       <span className="ltrIso">{course.capacity}</span> •
-                      Default price:{" "}
+                      السعر الافتراضي:{" "}
                       <span className="ltrIso">
                         {Number(course.default_price).toFixed(2)}
                       </span>
@@ -545,27 +545,27 @@ export default function CourseDetails() {
 
                 <div className="statsRow">
                   <div className="stat">
-                    <span className="muted">sessions</span>
+                    <span className="muted">الجلسات</span>
                     <b>{r.sessions_count ?? 0}</b>
                   </div>
                   <div className="stat">
-                    <span className="muted">Participants</span>
+                    <span className="muted">المشتركين</span>
                     <b>{r.participants_count ?? 0}</b>
                   </div>
                   <div className="stat">
-                    <span className="muted">Next session</span>
+                    <span className="muted">الجلسة القادمة</span>
                     <b className="ltrIso" style={{ fontSize: 14 }}>
                       {fmtDT(r.next_session_at)}
                     </b>
                   </div>
                   <div className="stat">
-                    <span className="muted">Status</span>
+                    <span className="muted">الحالة</span>
                     <b>
                       {r.status === "active"
-                        ? "Active"
+                        ? "فعّالة"
                         : r.status === "done"
-                          ? "Completed"
-                          : "Canceled"}
+                          ? "مكتملة"
+                          : "ملغاة"}
                     </b>
                   </div>
                 </div>
@@ -576,7 +576,7 @@ export default function CourseDetails() {
                 >
                   <IconButton
                     icon={Pencil}
-                    title="Edit run"
+                    title="تعديل الدفعة"
                     variant="ghost"
                     size="sm"
                     onClick={() => openEditRunModal(r)}
@@ -584,7 +584,7 @@ export default function CourseDetails() {
 
                   <IconButton
                      icon={RefreshCw}
-                    title="Sync enrollments from packages"
+                    title="مزامنة اشتراكات من الباقات"
                     variant="soft"
                     size="sm"
                     disabled={!isActive}
@@ -592,7 +592,7 @@ export default function CourseDetails() {
                   />
                   <IconButton
                     icon={CheckCircle2}
-                    title="Mark completed"
+                    title="إنهاء الدفعة"
                     variant="soft"
                     size="sm"
                     disabled={!isActive}
@@ -601,13 +601,13 @@ export default function CourseDetails() {
                         open: true,
                         type: "done",
                         runId: r.run_id,
-                        text: `Mark completed: ${title}`,
+                        text: `إنهاء الدفعة: ${title}`,
                       })
                     }
                   />
                   <IconButton
                     icon={Ban}
-                    title="Cancel run"
+                    title="إلغاء الدفعة"
                     variant="danger"
                     size="sm"
                     disabled={!isActive}
@@ -616,14 +616,14 @@ export default function CourseDetails() {
                         open: true,
                         type: "canceled",
                         runId: r.run_id,
-                        text: `Cancel run: ${title}`,
+                        text: `إلغاء الدفعة: ${title}`,
                       })
                     }
                   />
                   {r.status !== "active" ? (
                     <IconButton
                       icon={RotateCcw}
-                      title="Reactivate run"
+                      title="إعادة تفعيل الدفعة"
                       variant="ghost"
                       size="sm"
                       onClick={() =>
@@ -631,14 +631,14 @@ export default function CourseDetails() {
                           open: true,
                           type: "reactivate",
                           runId: r.run_id,
-                          text: `Reactivate run: ${title}`,
+                          text: `إعادة تفعيل الدفعة: ${title}`,
                         })
                       }
                     />
                   ) : null}
                   <IconButton
                     icon={Trash2}
-                    title="Delete run"
+                    title="حذف الدفعة"
                     variant="danger"
                     size="sm"
                     onClick={() =>
@@ -646,7 +646,7 @@ export default function CourseDetails() {
                         open: true,
                         type: "delete",
                         runId: r.run_id,
-                        text: `Delete run: ${title}`,
+                        text: `حذف الدفعة: ${title}`,
                       })
                     }
                   />
@@ -657,27 +657,26 @@ export default function CourseDetails() {
         </div>
       )}
 
-      <Modal open={open} title="Create run" onClose={() => setOpen(false)}>
+      <Modal open={open} title="إنشاء دفعة" onClose={() => setOpen(false)}>
         <div className="muted">
-          This course template stays the same; each run is a new batch with its
-          own dates.
+          دفعة جديدة للدورة.
         </div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">Run label (optional)</div>
+            <div className="muted">اسم الدفعة (اختياري)</div>
             <input
               className="input"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g. Sunday Club - Feb 2026"
+              placeholder="مثال: نادي الأحد - شباط 2026"
             />
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">First session start (date/time)</div>
+            <div className="muted">بداية أول جلسة (تاريخ/وقت)</div>
             <input
               className="input"
               type="datetime-local"
@@ -688,14 +687,14 @@ export default function CourseDetails() {
 
           {!isWorkshop && (
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Generate sessions automatically?</div>
+              <div className="muted">إنشاء الجلسات تلقائيًا؟</div>
               <ModernSelect
                 value={createsessions ? "1" : "0"}
                 onChange={(v) => setCreatesessions(v === "1")}
                 menuWidth="trigger"
                 options={[
-                  { value: "1", label: "Yes" },
-                  { value: "0", label: "No" },
+                  { value: "1", label: "نعم" },
+                  { value: "0", label: "لا" },
                 ]}
               />
             </div>
@@ -704,7 +703,7 @@ export default function CourseDetails() {
           {isWorkshop && (
             <>
               <div style={{ gridColumn: "span 6" }}>
-                <div className="muted">Session duration (minutes)</div>
+                <div className="muted">مدة الجلسة (دقائق)</div>
                 <input
                   className="input"
                   type="number"
@@ -719,7 +718,7 @@ export default function CourseDetails() {
           {!isWorkshop && createsessions && (
             <>
               <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">Session duration (minutes)</div>
+                <div className="muted">مدة الجلسة (دقائق)</div>
                 <input
                   className="input"
                   type="number"
@@ -730,7 +729,7 @@ export default function CourseDetails() {
               </div>
 
               <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">Number of sessions</div>
+                <div className="muted">عدد الجلسات</div>
                 <input
                   className="input"
                   type="number"
@@ -741,7 +740,7 @@ export default function CourseDetails() {
               </div>
 
               <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">Repeat every (days)</div>
+                <div className="muted">التكرار كل (أيام)</div>
                 <input
                   className="input"
                   type="number"
@@ -762,36 +761,35 @@ export default function CourseDetails() {
               disabled={saving}
               onClick={createRun}
             >
-              {saving ? "Creating..." : "Create run"}
+              {saving ? "جارٍ الإنشاء..." : "إنشاء دفعة"}
             </button>
             <button className="btn" onClick={() => setOpen(false)}>
-              Cancel
+              إلغاء
             </button>
           </div>
         </div>
       </Modal>
 
-      <Modal open={editOpen} title="Edit run" onClose={() => setEditOpen(false)}>
+      <Modal open={editOpen} title="تعديل الدفعة" onClose={() => setEditOpen(false)}>
         <div className="muted">
-          Update the run label and the default sessions used when enrolling a new
-          child.
+          تعديل اسم الدفعة والإعدادات.
         </div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">Run label</div>
+            <div className="muted">اسم الدفعة</div>
             <input
               className="input"
               value={editLabel}
               onChange={(e) => setEditLabel(e.target.value)}
-              placeholder="e.g. Sunday Club - Feb 2026"
+              placeholder="مثال: نادي الأحد - شباط 2026"
             />
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">Default sessions to add</div>
+            <div className="muted">جلسات افتراضية للإضافة</div>
             <input
               className="input"
               type="number"
@@ -803,10 +801,9 @@ export default function CourseDetails() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">Note</div>
+            <div className="muted">ملاحظة</div>
             <div style={{ fontSize: 12 }} className="muted">
-              This only changes the default "Sessions to add" for new enrollments.
-              It does not change existing enrollments.
+              يؤثر على المشتركين الجدد فقط.
             </div>
           </div>
         </div>
@@ -821,7 +818,7 @@ export default function CourseDetails() {
             onClick={() => setEditOpen(false)}
             disabled={saving}
           >
-            Cancel
+            إلغاء
           </button>
           <button
             className="btn primary"
@@ -829,17 +826,17 @@ export default function CourseDetails() {
             onClick={updateRun}
             disabled={saving || !editRunId}
           >
-            Save changes
+            حفظ
           </button>
         </div>
       </Modal>
 
       <ConfirmDialog
         open={confirm.open}
-        title="Confirm"
+        title="تأكيد"
         message={confirm.text}
-        confirmText="Yes"
-        cancelText="Cancel"
+        confirmText="نعم"
+        cancelText="إلغاء"
         danger={confirm.type === "canceled" || confirm.type === "delete"}
         onCancel={() =>
           setConfirm({ open: false, type: null, runId: null, text: "" })
