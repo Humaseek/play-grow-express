@@ -95,7 +95,10 @@ export default function CourseDetails() {
     setError(null);
 
     try {
-      const nextDefault = Math.max(0, parseInt(editDefaultSessionsTotal, 10) || 0);
+      const nextDefault = Math.max(
+        0,
+        parseInt(editDefaultSessionsTotal, 10) || 0,
+      );
 
       const u = await supabase
         .from("course_runs")
@@ -117,7 +120,6 @@ export default function CourseDetails() {
       setSaving(false);
     }
   }
-
 
   async function load() {
     setLoading(true);
@@ -307,7 +309,7 @@ export default function CourseDetails() {
             template_id: Number(courseId),
             label: finalLabel,
             status: "active",
-          default_sessions_total: Number(count) || 0,
+            default_sessions_total: Number(count) || 0,
           },
         ])
         .select("id")
@@ -456,9 +458,7 @@ export default function CourseDetails() {
             label="الجلسة القادمة"
             value={stats.nextSessionAt ? fmtDT(stats.nextSessionAt) : "-"}
             hint={
-              stats.nextSessionAt
-                ? "أقرب جلسة قادمة"
-                : "لا توجد جلسات قادمة"
+              stats.nextSessionAt ? "أقرب جلسة قادمة" : "لا توجد جلسات قادمة"
             }
             icon={CalendarClock}
           />
@@ -472,20 +472,6 @@ export default function CourseDetails() {
             hint="عبر كل الدفعات"
             icon={CalendarClock}
           />
-        </div>
-      </div>
-
-      <div className="card" style={{ marginTop: 14 }}>
-        <div
-          className="row"
-          style={{ justifyContent: "space-between", alignItems: "center" }}
-        >
-          <div>
-            <div className="cardTitle">الدفعات</div>
-          </div>
-          <button className="btn primary" onClick={openCreateRunModal}>
-            <Plus size={18} /> دفعة جديدة
-          </button>
         </div>
       </div>
 
@@ -533,8 +519,7 @@ export default function CourseDetails() {
                       <span className="ltrIso">{fmtDT(r.next_session_at)}</span>
                     </div>
                     <div className="muted" style={{ marginTop: 4 }}>
-                      السعة:{" "}
-                      <span className="ltrIso">{course.capacity}</span> •
+                      السعة: <span className="ltrIso">{course.capacity}</span> •
                       السعر الافتراضي:{" "}
                       <span className="ltrIso">
                         {Number(course.default_price).toFixed(2)}
@@ -583,7 +568,7 @@ export default function CourseDetails() {
                   />
 
                   <IconButton
-                     icon={RefreshCw}
+                    icon={RefreshCw}
                     title="مزامنة اشتراكات من الباقات"
                     variant="soft"
                     size="sm"
@@ -658,9 +643,7 @@ export default function CourseDetails() {
       )}
 
       <Modal open={open} title="إنشاء دفعة" onClose={() => setOpen(false)}>
-        <div className="muted">
-          دفعة جديدة للدورة.
-        </div>
+        <div className="muted">دفعة جديدة للدورة.</div>
 
         <hr className="sep" />
 
@@ -770,10 +753,12 @@ export default function CourseDetails() {
         </div>
       </Modal>
 
-      <Modal open={editOpen} title="تعديل الدفعة" onClose={() => setEditOpen(false)}>
-        <div className="muted">
-          تعديل اسم الدفعة والإعدادات.
-        </div>
+      <Modal
+        open={editOpen}
+        title="تعديل الدفعة"
+        onClose={() => setEditOpen(false)}
+      >
+        <div className="muted">تعديل اسم الدفعة والإعدادات.</div>
 
         <hr className="sep" />
 
