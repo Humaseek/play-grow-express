@@ -242,10 +242,10 @@ export default function Expenses() {
       const b = toDate ? new Date(toDate).toLocaleDateString("en") : "—";
       return `${a} → ${b}`;
     }
-    if (rangePreset === "this_month") return "This month";
-    if (rangePreset === "30d") return "Last 30 days";
-    if (rangePreset === "all") return "All time";
-    return "This month";
+    if (rangePreset === "this_month") return "هذا الشهر";
+    if (rangePreset === "30d") return "آخر 30 يوم";
+    if (rangePreset === "all") return "كل الوقت";
+    return "هذا الشهر";
   }, [rangePreset, fromDate, toDate]);
 
   const stats = useMemo(() => {
@@ -321,14 +321,14 @@ export default function Expenses() {
 
     const r = await safeInsertPicklist("expense_categories", name);
     if (!r.ok) {
-      toast("Failed to add category.", "danger");
+      toast("فشل إضافة الفئة.", "danger");
       return;
     }
 
     await loadPicklists();
     setExpCategory(name);
     setNewCatName("");
-    toast("Category added.", "ok");
+    toast("تم إضافة الفئة.", "ok");
   }
 
   async function addNewParty() {
@@ -337,24 +337,24 @@ export default function Expenses() {
 
     const r = await safeInsertPicklist("expense_parties", name);
     if (!r.ok) {
-      toast("Failed to add person.", "danger");
+      toast("فشل إضافة الشخص.", "danger");
       return;
     }
 
     await loadPicklists();
     setExpParty(name);
     setNewPartyName("");
-    toast("Person added.", "ok");
+    toast("تم إضافة الشخص.", "ok");
   }
 
   async function saveExpense() {
     const amount = Number(expAmount);
     if (!expDate) {
-      toast(" .", "warn");
+      toast("الرجاء اختيار التاريخ.", "warn");
       return;
     }
     if (!amount || amount <= 0) {
-      toast(" .", "warn");
+      toast("الرجاء إدخال مبلغ صحيح.", "warn");
       return;
     }
 
@@ -370,18 +370,18 @@ export default function Expenses() {
       const up = await supabase.from("expenses").update(payload).eq("id", editId);
       if (up.error) {
         setError(up.error);
-        toast("Failed Edit .", "danger");
+        toast("فشل تعديل المصروف.", "danger");
         return;
       }
-      toast(" Edit .", "ok");
+      toast("تم تعديل المصروف.", "ok");
     } else {
       const ins = await supabase.from("expenses").insert([payload]);
       if (ins.error) {
         setError(ins.error);
-        toast("Failed to save expense.", "danger");
+        toast("فشل حفظ المصروف.", "danger");
         return;
       }
-      toast("Expense saved.", "ok");
+      toast("تم حفظ المصروف.", "ok");
     }
 
     setOpenAdd(false);
@@ -393,25 +393,25 @@ export default function Expenses() {
     const d = await supabase.from("expenses").delete().eq("id", id);
     if (d.error) {
       setError(d.error);
-      toast("Failed Delete .", "danger");
+      toast("فشل حذف المصروف.", "danger");
       return;
     }
-    toast(" Delete .", "ok");
+    toast("تم حذف المصروف.", "ok");
     await load();
   }
 
   return (
-    <div className="container page page--expenses">
+    <div className="container page page--expenses" dir="rtl" lang="ar">
       <PageHeader
-        title="Expenses"
-        subtitle={`Range: ${rangeHint}`}
+        title="المصروفات"
+        subtitle={`النطاق: ${rangeHint}`}
         actions={
           <div className="toolbar">
             <button className="btn" onClick={load}>
-              Refresh
+              تحديث
             </button>
             <button className="btn primary" onClick={openCreate}>
-              <Plus size={18} /> Add expense
+              <Plus size={18} /> إضافة مصروف
             </button>
           </div>
         }
@@ -423,8 +423,8 @@ export default function Expenses() {
         <div className="card">
           <EmptyState
             icon={AlertTriangle}
-            title="Expenses table not found"
-            description="The expenses table is missing. Please run the database migrations (or create the table) and refresh."
+            title="جدول المصروفات غير موجود"
+            description="جدول المصروفات غير موجود في قاعدة البيانات. شغّل ملفات الـ SQL ثم حدّث الصفحة."
           />
         </div>
       ) : (
@@ -432,12 +432,11 @@ export default function Expenses() {
           <div className="kpiGrid4" style={{ marginBottom: 14 }}>
             <KpiCard
               icon={Receipt}
-              label="Total spent"
+              label="إجمالي المصروف"
               value={`${fmtMoney(stats.total)} ₪`}
               hint={
                 stats.count
-                  ? `${stats.count} expense${stats.count === 1 ? "" : "s"}`
-                  : "No expenses"
+                  ? `${stats.count} ${stats.count === 1 ? "مصروف" : "مصروفات"}` : "لا توجد مصروفات"
               }
               variant={stats.total === 0 ? "neutral" : "warn"}
               className="kpi--accent"
@@ -445,7 +444,7 @@ export default function Expenses() {
 
             <KpiCard
               icon={Layers}
-              label="Top category"
+              label="أعلى فئة"
               value={stats.topCat}
               hint={stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"}
               variant={stats.topCat !== "—" ? "info" : "neutral"}
@@ -454,18 +453,18 @@ export default function Expenses() {
 
             <KpiCard
               icon={Banknote}
-              label="Average expense"
+              label="متوسط المصروف"
               value={`${fmtMoney(stats.avg)} ₪`}
-              hint={stats.count ? "Average per expense" : "—"}
+              hint={stats.count ? "متوسط لكل مصروف" : "—"}
               variant={stats.avg === 0 ? "neutral" : "info"}
               className="kpi--accent"
             />
 
             <KpiCard
               icon={Banknote}
-              label="Largest expense"
+              label="أكبر مصروف"
               value={`${fmtMoney(stats.max)} ₪`}
-              hint={stats.max === 0 ? "—" : "Largest single expense"}
+              hint={stats.max === 0 ? "—" : "أكبر مصروف منفرد"}
               variant={stats.max === 0 ? "neutral" : "danger"}
               className="kpi--accent"
             />
@@ -482,7 +481,7 @@ export default function Expenses() {
                   <input
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Search expenses..."
+                    placeholder="ابحث في المصروفات..."
                   />
                 </Control>
 
@@ -491,9 +490,9 @@ export default function Expenses() {
                     bare
                     value={cat}
                     onChange={setCat}
-                    placeholder="All categories"
+                    placeholder="كل الفئات"
                     options={[
-                      { value: "all", label: "All categories" },
+                      { value: "all", label: "كل الفئات" },
                       ...categories.map((c) => ({ value: c, label: c })),
                     ]}
                   />
@@ -504,9 +503,9 @@ export default function Expenses() {
                     bare
                     value={partyFilter}
                     onChange={setPartyFilter}
-                    placeholder="All people"
+                    placeholder="كل الأشخاص"
                     options={[
-                      { value: "all", label: "All people" },
+                      { value: "all", label: "كل الأشخاص" },
                       ...parties.map((p) => ({ value: p, label: p })),
                     ]}
                   />
@@ -520,12 +519,12 @@ export default function Expenses() {
                     bare
                     value={rangePreset}
                     onChange={setRangePreset}
-                    placeholder="This month"
+                    placeholder="هذا الشهر"
                     options={[
-                      { value: "this_month", label: "This month" },
-                      { value: "30d", label: "Last 30 days" },
-                      { value: "custom", label: "Custom range" },
-                      { value: "all", label: "All time" },
+                      { value: "this_month", label: "هذا الشهر" },
+                      { value: "30d", label: "آخر 30 يوم" },
+                      { value: "custom", label: "نطاق مخصص" },
+                      { value: "all", label: "كل الوقت" },
                     ]}
                   />
                 </Control>
@@ -556,17 +555,17 @@ export default function Expenses() {
           </div>
 
           {loading ? (
-            <div className="card">Loading...</div>
+            <div className="card">جارٍ التحميل...</div>
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={Receipt}
-              title={rows.length === 0 ? "No expenses yet" : "No results found"}
+              title={rows.length === 0 ? "لا توجد مصروفات بعد" : "لا توجد نتائج"}
               description={
                 rows.length === 0
-                  ? "Add your first expense to start tracking spending."
-                  : "Try adjusting your search or filters."
+                  ? "أضف أول مصروف للبدء بالتتبع."
+                  : "جرّب تغيير البحث أو الفلاتر."
               }
-              actionLabel="Add expense"
+              actionLabel="إضافة مصروف"
               onAction={openCreate}
             />
           ) : (
@@ -574,11 +573,11 @@ export default function Expenses() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Person</th>
-                    <th>Description</th>
-                    <th>Amount</th>
+                    <th>التاريخ</th>
+                    <th>الفئة</th>
+                    <th>الشخص</th>
+                    <th>الوصف</th>
+                    <th>المبلغ</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -597,13 +596,13 @@ export default function Expenses() {
                       <td style={{ whiteSpace: "nowrap" }}>
                         <div className="row" style={{ justifyContent: "flex-end" }}>
                           <IconButton
-                            title="Edit"
+                            title="تعديل"
                             onClick={() => openEdit(r)}
                             icon={Pencil}
                             variant="soft"
                           />
                           <IconButton
-                            title="Delete"
+                            title="حذف"
                             onClick={() => setConfirm({ open: true, id: r.id })}
                             icon={Trash2}
                             variant="danger"
@@ -621,20 +620,19 @@ export default function Expenses() {
 
       <Modal
         open={openAdd}
-        title={editId ? "Edit expense" : "Add expense"}
+        title={editId ? "تعديل مصروف" : "إضافة مصروف"}
         onClose={() => setOpenAdd(false)}
       >
         <div className="card" style={{ border: "none", boxShadow: "none" }}>
           {!hasPicklists ? (
             <div className="muted" style={{ marginBottom: 10, lineHeight: 1.4 }}>
-              ملاحظة: جداول الدروب داون غير موجودة (expense_categories / expense_parties). <br />
-              شغّل ملف الـ SQL الخاص بالدروب داون وبعدها اعمل Refresh.
+              ملاحظة: جداول الخيارات غير موجودة. شغّل ملف الـ SQL ثم حدّث الصفحة.
             </div>
           ) : null}
 
           <div className="grid" style={{ marginBottom: 12 }}>
             <div style={{ gridColumn: "span 4" }}>
-              <div className="label">Date</div>
+              <div className="label">التاريخ</div>
               <div className="input">
                 <input
                   style={{
@@ -651,7 +649,7 @@ export default function Expenses() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="label">Amount (₪)</div>
+              <div className="label">المبلغ (₪)</div>
               <div className="input">
                 <input
                   style={{
@@ -671,13 +669,13 @@ export default function Expenses() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="label">Category</div>
+              <div className="label">الفئة</div>
               <div className="input">
                 <ModernSelect
                   bare
                   value={expCategory || ""}
                   onChange={setExpCategory}
-                  placeholder="Select category..."
+                  placeholder="اختر فئة..."
                   options={[
                     { value: "", label: "—" },
                     ...categories.map((c) => ({ value: c, label: c })),
@@ -696,7 +694,7 @@ export default function Expenses() {
                     }}
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="Add new category..."
+                    placeholder="إضافة فئة جديدة..."
                   />
                 </div>
                 <button className="btn" onClick={addNewCategory} disabled={!newCatName.trim()}>
@@ -706,13 +704,13 @@ export default function Expenses() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="label">Person</div>
+              <div className="label">الشخص</div>
               <div className="input">
                 <ModernSelect
                   bare
                   value={expParty || ""}
                   onChange={setExpParty}
-                  placeholder="Select person..."
+                  placeholder="اختر شخص..."
                   options={[
                     { value: "", label: "—" },
                     ...parties.map((p) => ({ value: p, label: p })),
@@ -731,7 +729,7 @@ export default function Expenses() {
                     }}
                     value={newPartyName}
                     onChange={(e) => setNewPartyName(e.target.value)}
-                    placeholder="Add new person..."
+                    placeholder="إضافة شخص جديد..."
                   />
                 </div>
                 <button className="btn" onClick={addNewParty} disabled={!newPartyName.trim()}>
@@ -741,7 +739,7 @@ export default function Expenses() {
             </div>
 
             <div style={{ gridColumn: "span 8" }}>
-              <div className="label">Description</div>
+              <div className="label">الوصف</div>
               <div className="input">
                 <input
                   style={{
@@ -760,10 +758,10 @@ export default function Expenses() {
 
           <div className="row" style={{ gap: 10 }}>
             <button className="btn primary" onClick={saveExpense}>
-              <Plus size={18} /> Save
+              <Plus size={18} /> حفظ
             </button>
             <button className="btn" onClick={() => setOpenAdd(false)}>
-              Cancel
+              إلغاء
             </button>
           </div>
         </div>
@@ -771,10 +769,10 @@ export default function Expenses() {
 
       <ConfirmDialog
         open={confirm.open}
-        title="Delete expense"
-        message="Are you sure you want to delete this expense? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
+        title="حذف مصروف"
+        message="هل أنت متأكد أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء."
+        confirmText="حذف"
+        cancelText="إلغاء"
         danger
         onCancel={() => setConfirm({ open: false, id: null })}
         onConfirm={async () => {
