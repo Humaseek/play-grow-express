@@ -35,10 +35,10 @@ function fmtDT(dt) {
 }
 
 function methodLabel(m) {
-  if (m === "cash") return "Cash";
-  if (m === "card") return "Card";
-  if (m === "transfer") return "Bank transfer";
-  if (m === "other") return "Other";
+  if (m === "cash") return "كاش";
+  if (m === "card") return "بطاقة";
+  if (m === "transfer") return "تحويل بنكي";
+  if (m === "other") return "أخرى";
   return "—";
 }
 
@@ -318,10 +318,10 @@ export default function Payments() {
       const b = toDate ? new Date(toDate).toLocaleDateString("en") : "—";
       return `${a} → ${b}`;
     }
-    if (rangePreset === "30d") return "Last 30 days";
-    if (rangePreset === "90d") return "Last 90 days";
-    if (rangePreset === "this_month") return "This month";
-    return "All time";
+    if (rangePreset === "30d") return "آخر 30 يوم";
+    if (rangePreset === "90d") return "آخر 90 يوم";
+    if (rangePreset === "this_month") return "هذا الشهر";
+    return "كل الوقت";
   }, [rangePreset, fromDate, toDate]);
 
   const childOptions = useMemo(() => {
@@ -350,13 +350,13 @@ export default function Payments() {
 
   const enrollmentOptions = useMemo(() => {
     if (!payChildId) {
-      return [{ value: "", label: "Select child first" }];
+      return [{ value: "", label: "اختر الطفل أولاً" }];
     }
 
     const list = enrollmentsForChild.map((x) => {
       const agreed = Number(x.agreed_price || 0);
       const bal = Number(x.balance || 0);
-      const hint = agreed > 0 ? ` (Balance: ${fmtMoney(bal)}₪)` : "";
+      const hint = agreed > 0 ? ` (المتبقي: ${fmtMoney(bal)}₪)` : "";
       const label = `${x.course_title} — ${x.run_label}${hint}`;
       return {
         value: String(x.enrollment_id),
@@ -365,7 +365,7 @@ export default function Payments() {
       };
     });
 
-    return [{ value: "", label: "Select enrollment..." }, ...list];
+    return [{ value: "", label: "اختر اشتراكًا..." }, ...list];
   }, [payChildId, enrollmentsForChild]);
 
   const selectedEnrollment = useMemo(() => {
@@ -391,13 +391,13 @@ export default function Payments() {
 
   async function createPayment() {
     if (!payEnrollmentId) {
-      toast("Please choose an enrollment.", "warn");
+      toast("اختر اشتراكًا.", "warn");
       return;
     }
 
     const amount = Number(payAmount);
     if (!amount || amount <= 0) {
-      toast("Please enter a valid amount.", "warn");
+      toast("أدخل مبلغًا صحيحًا.", "warn");
       return;
     }
 
@@ -416,11 +416,11 @@ export default function Payments() {
 
     if (ins.error) {
       setError(ins.error);
-      toast("Failed to create payment.", "danger");
+      toast("فشل حفظ الدفعة.", "danger");
       return;
     }
 
-    toast("Payment saved.", "ok");
+    toast("تم حفظ الدفعة.", "ok");
     setOpenAdd(false);
     await loadPayments();
   }
@@ -429,25 +429,25 @@ export default function Payments() {
     const d = await supabase.from("payments").delete().eq("id", id);
     if (d.error) {
       setError(d.error);
-      toast("Failed to delete payment.", "danger");
+      toast("فشل حذف الدفعة.", "danger");
       return;
     }
-    toast("Payment deleted.", "ok");
+    toast("تم حذف الدفعة.", "ok");
     await loadPayments();
   }
 
   return (
-    <div className="container page page--payments">
+    <div className="container page page--payments" dir="rtl" lang="ar">
       <PageHeader
-        title="Payments"
-        subtitle={`Range: ${rangeHint}`}
+        title="المدفوعات"
+        subtitle={`الفترة: ${rangeHint}`}
         actions={
           <div className="toolbar">
             <button className="btn" onClick={loadPayments}>
-              Refresh
+              تحديث
             </button>
             <button className="btn primary" onClick={openAddModal}>
-              <Plus size={18} /> Add payment
+              <Plus size={18} /> إضافة دفعة
             </button>
           </div>
         }
@@ -459,36 +459,36 @@ export default function Payments() {
       <div className="kpiGrid4" style={{ marginBottom: 14 }}>
         <KpiCard
           icon={Banknote}
-          label="Total received"
+          label="إجمالي المقبوضات"
           value={`${fmtMoney(kpis.total)}₪`}
-          hint="Sum of payments in the current view"
+          hint="مجموع الدفعات في العرض الحالي"
           variant={kpis.total === 0 ? "neutral" : "info"}
           className="kpi--accent"
         />
 
         <KpiCard
           icon={CreditCard}
-          label="Payments"
+          label="عدد الدفعات"
           value={kpis.count}
-          hint="Number of payments in the current view"
+          hint="عدد الدفعات في العرض الحالي"
           variant={kpis.count === 0 ? "neutral" : "info"}
           className="kpi--accent"
         />
 
         <KpiCard
           icon={Banknote}
-          label="Cash total"
+          label="إجمالي الكاش"
           value={`${fmtMoney(kpis.cash)}₪`}
-          hint="Sum of cash payments"
+          hint="مجموع دفعات الكاش"
           variant={kpis.cash === 0 ? "neutral" : "ok"}
           className="kpi--accent"
         />
 
         <KpiCard
           icon={UserRound}
-          label="Unique payers"
+          label="عدد الدافعين"
           value={kpis.uniqChildren}
-          hint={`Average payment: ${fmtMoney(kpis.avg)}₪`}
+          hint={`متوسط الدفعة: ${fmtMoney(kpis.avg)}₪`}
           variant={kpis.uniqChildren === 0 ? "neutral" : "info"}
           className="kpi--accent"
         />
@@ -510,7 +510,7 @@ export default function Payments() {
               style={{ minWidth: 260, width: "auto" }}
             >
               <input
-                placeholder="Search payments..."
+                placeholder="ابحث عن دفعة..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -525,13 +525,13 @@ export default function Payments() {
                 bare
                 value={method}
                 onChange={setMethod}
-                placeholder="All methods"
+                placeholder="كل الطرق"
                 options={[
-                  { value: "all", label: "All methods" },
-                  { value: "cash", label: "Cash" },
-                  { value: "card", label: "Card" },
-                  { value: "transfer", label: "Bank transfer" },
-                  { value: "other", label: "Other" },
+                  { value: "all", label: "كل الطرق" },
+                  { value: "cash", label: "كاش" },
+                  { value: "card", label: "بطاقة" },
+                  { value: "transfer", label: "تحويل بنكي" },
+                  { value: "other", label: "أخرى" },
                 ]}
               />
             </Control>
@@ -545,12 +545,12 @@ export default function Payments() {
                 bare
                 value={rangePreset}
                 onChange={setRangePreset}
-                placeholder="Last 90 days"
+                placeholder="آخر 90 يوم"
                 options={[
-                  { value: "30d", label: "Last 30 days" },
-                  { value: "90d", label: "Last 90 days" },
-                  { value: "this_month", label: "This month" },
-                  { value: "custom", label: "Custom range" },
+                  { value: "30d", label: "آخر 30 يوم" },
+                  { value: "90d", label: "آخر 90 يوم" },
+                  { value: "this_month", label: "هذا الشهر" },
+                  { value: "custom", label: "مخصص" },
                 ]}
               />
             </Control>
@@ -558,7 +558,7 @@ export default function Payments() {
             {rangePreset === "custom" ? (
               <>
                 <div className="filtersBar__date" style={{ minWidth: 160 }}>
-                  <div className="label">From</div>
+                  <div className="label">من</div>
                   <input
                     className="input"
                     type="date"
@@ -568,7 +568,7 @@ export default function Payments() {
                 </div>
 
                 <div className="filtersBar__date" style={{ minWidth: 160 }}>
-                  <div className="label">To</div>
+                  <div className="label">إلى</div>
                   <input
                     className="input"
                     type="date"
@@ -583,15 +583,15 @@ export default function Payments() {
       </div>
 
       {loading ? (
-        <div className="card">Loading...</div>
+        <div className="card">جارٍ التحميل...</div>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={CreditCard}
-          title="No payments found"
-          description="Try adjusting filters, or add a new payment."
-          actionLabel="Add payment"
+          title="لا توجد دفعات"
+          description="غيّر الفلاتر أو أضف دفعة جديدة."
+          actionLabel="إضافة دفعة"
           onAction={openAddModal}
-          secondaryLabel="Reset filters"
+          secondaryLabel="تصفير الفلاتر"
           onSecondary={() => {
             setSearch("");
             setMethod("all");
@@ -605,13 +605,13 @@ export default function Payments() {
           <table className="table">
             <thead>
               <tr>
-                <th>Paid at</th>
-                <th>Child</th>
-                <th>Course</th>
-                <th>Run</th>
-                <th>Amount</th>
-                <th>Method</th>
-                <th>Note</th>
+                <th>وقت الدفع</th>
+                <th>الطفل</th>
+                <th>الدورة</th>
+                <th>المجموعة</th>
+                <th>المبلغ</th>
+                <th>الطريقة</th>
+                <th>ملاحظة</th>
                 <th style={{ width: 1 }}></th>
               </tr>
             </thead>
@@ -652,7 +652,7 @@ export default function Payments() {
                         className="linkBtn"
                         onClick={() => navigate(`/runs/${p.run_id}`)}
                       >
-                        {p.run_label ?? `Run #${p.run_id}`}
+                        {p.run_label ?? `مجموعة #${p.run_id}`}
                       </button>
                     ) : (
                       <span>{p.run_label ?? "—"}</span>
@@ -681,7 +681,7 @@ export default function Payments() {
                     <IconButton
                       icon={Trash2}
                       label=""
-                      title="Delete"
+                      title="حذف"
                       iconOnly
                       onClick={() => setConfirm({ open: true, id: p.id })}
                     />
@@ -696,12 +696,12 @@ export default function Payments() {
       {/* Add Payment Modal */}
       <Modal
         open={openAdd}
-        title="Add payment"
+        title="إضافة دفعة"
         onClose={() => setOpenAdd(false)}
       >
         <div style={{ padding: 16 }}>
           {pickerLoading ? (
-            <div className="card">Loading...</div>
+            <div className="card">جارٍ التحميل...</div>
           ) : (
             <>
               <div className="grid" style={{ marginBottom: 12 }}>
@@ -710,7 +710,7 @@ export default function Payments() {
                     className="muted"
                     style={{ fontWeight: 900, marginBottom: 6 }}
                   >
-                    Child
+                    الطفل
                   </div>
                   <ModernSelect
                     value={payChildId}
@@ -726,7 +726,7 @@ export default function Payments() {
                         setPayEnrollmentId(String(opts[0].enrollment_id));
                     }}
                     menuWidth="trigger"
-                    placeholder="Select child..."
+                    placeholder="اختر طفلاً..."
                     options={childOptions}
                   />
                 </div>
@@ -736,7 +736,7 @@ export default function Payments() {
                     className="muted"
                     style={{ fontWeight: 900, marginBottom: 6 }}
                   >
-                    Enrollment
+                    الاشتراك
                   </div>
                   <ModernSelect
                     value={payEnrollmentId}
@@ -744,7 +744,7 @@ export default function Payments() {
                     menuWidth="trigger"
                     disabled={!payChildId}
                     placeholder={
-                      payChildId ? "Select enrollment..." : "Select child first"
+                      payChildId ? "اختر اشتراكًا..." : "اختر الطفل أولاً"
                     }
                     options={enrollmentOptions}
                   />
@@ -757,7 +757,7 @@ export default function Payments() {
                     className="muted"
                     style={{ fontWeight: 900, marginBottom: 6 }}
                   >
-                    Amount
+                    المبلغ
                   </div>
                   <Control>
                     <input
@@ -810,10 +810,10 @@ export default function Payments() {
                     onChange={setPayMethod}
                     menuWidth="trigger"
                     options={[
-                      { value: "cash", label: "Cash" },
-                      { value: "card", label: "Card" },
-                      { value: "transfer", label: "Bank transfer" },
-                      { value: "other", label: "Other" },
+                      { value: "cash", label: "كاش" },
+                      { value: "card", label: "بطاقة" },
+                      { value: "transfer", label: "تحويل بنكي" },
+                      { value: "other", label: "أخرى" },
                     ]}
                   />
                 </div>
@@ -823,7 +823,7 @@ export default function Payments() {
                     className="muted"
                     style={{ fontWeight: 900, marginBottom: 6 }}
                   >
-                    Paid at
+                    وقت الدفع
                   </div>
                   <Control>
                     <input
@@ -840,7 +840,7 @@ export default function Payments() {
                   className="muted"
                   style={{ fontWeight: 900, marginBottom: 6 }}
                 >
-                  Note (optional)
+                  ملاحظة (اختياري)
                 </div>
                 <Control>
                   <input
@@ -853,10 +853,10 @@ export default function Payments() {
 
               <div className="row" style={{ gap: 10 }}>
                 <button className="btn primary" onClick={createPayment}>
-                  <Plus size={18} /> Save
+                  <Plus size={18} /> حفظ
                 </button>
                 <button className="btn" onClick={() => setOpenAdd(false)}>
-                  Cancel
+                  إلغاء
                 </button>
               </div>
             </>
@@ -866,10 +866,10 @@ export default function Payments() {
 
       <ConfirmDialog
         open={confirm.open}
-        title="Delete payment"
-        message="Are you sure you want to delete this payment? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
+        title="حذف الدفعة"
+        message="متأكد بدك تحذف الدفعة؟ ما في رجعة."
+        confirmText="حذف"
+        cancelText="إلغاء"
         danger
         onCancel={() => setConfirm({ open: false, id: null })}
         onConfirm={async () => {
