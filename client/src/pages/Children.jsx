@@ -296,7 +296,7 @@ async function addNewCity() {
         !Number.isFinite(payload.age) ||
         payload.age < 0
       ) {
-        toast("Name and age are required.", "warn");
+        toast("الاسم والعمر مطلوبان.", "warn");
         setSaving(false);
         return;
       }
@@ -307,11 +307,11 @@ async function addNewCity() {
           .update(payload)
           .eq("id", form.id);
         if (error) throw error;
-        toast("Edit.", "ok");
+        toast("تم التعديل.", "ok");
       } else {
         const { error } = await supabase.from("children").insert([payload]);
         if (error) throw error;
-        toast("Add.", "ok");
+        toast("تمت الإضافة.", "ok");
       }
 
       setOpenForm(false);
@@ -320,7 +320,7 @@ async function addNewCity() {
       await loadAll();
     } catch (e2) {
       setError(e2);
-      toast("Failed to save child.", "danger");
+      toast("فشل حفظ بيانات الطفل.", "danger");
     } finally {
       setSaving(false);
     }
@@ -331,28 +331,28 @@ async function addNewCity() {
     const { error } = await supabase.from("children").delete().eq("id", id);
     if (error) {
       setError(error);
-      toast("Failed to delete child.", "danger");
+      toast("فشل حذف الطفل.", "danger");
       return;
     }
-    toast("Child deleted.", "ok");
+    toast("تم حذف الطفل.", "ok");
     await loadAll();
   }
 
   return (
-    <div className="container page page--children">
+    <div className="container page page--children" dir="rtl" lang="ar">
       <PageHeader
-        title="Children"
-        subtitle="Manage children"
+        title="الأطفال"
+        subtitle="إدارة الأطفال"
         actions={
           <div className="toolbar">
             <input
               className="input"
-              placeholder="Search by name…"
+              placeholder="ابحث بالاسم…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
             <button className="btn primary" onClick={openCreate}>
-              <Plus size={18} /> Add child
+              <Plus size={18} /> إضافة طفل
             </button>
           </div>
         }
@@ -361,13 +361,13 @@ async function addNewCity() {
       <ErrorBanner error={error} />
 
       {loading ? (
-        <div className="card">Loading...</div>
+        <div className="card">جاري التحميل...</div>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={UserRound}
-          title="No children found"
+          title="لا يوجد أطفال"
           description="Add a child to start enrolling."
-          actionLabel="Add child"
+          actionLabel="إضافة طفل"
           onAction={openCreate}
         />
       ) : (
@@ -375,15 +375,15 @@ async function addNewCity() {
           <table className="table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Age</th>
-                <th>Class</th>
-                <th>Gender</th>
-                <th>City</th>
-                <th>Mother phone</th>
-                <th>Father phone</th>
-                <th>Actions</th>
+                <th>رقم</th>
+                <th>الاسم</th>
+                <th>العمر</th>
+                <th>الصف</th>
+                <th>الجنس</th>
+                <th>المدينة</th>
+                <th>هاتف الأم</th>
+                <th>هاتف الأب</th>
+                <th>إجراءات</th>
               </tr>
             </thead>
             <tbody>
@@ -403,7 +403,7 @@ async function addNewCity() {
                   <td>{r.age}</td>
                   <td className="muted">{r.class ?? "-"}</td>
                   <td className="muted">
-                    {r.gender === "male" ? "Male" : "Female"}
+                    {r.gender === "male" ? "ذكر" : "أنثى"}
                   </td>
                   <td className="muted">{r.country || "-"}</td>
                   <td className="muted">{r.mother_phone ?? "-"}</td>
@@ -411,12 +411,12 @@ async function addNewCity() {
                   <td>
                     <div className="row">
                       <div className="actionsRow">
-                        <IconButton title="Edit" onClick={() => openEdit(r)}>
+                        <IconButton title="تعديل" onClick={() => openEdit(r)}>
                           <Pencil size={18} />
                         </IconButton>
 
                         <IconButton
-                          title="Delete"
+                          title="حذف"
                           variant="danger"
                           onClick={() =>
                             setConfirmDel({
@@ -440,7 +440,7 @@ async function addNewCity() {
 
       <Modal
         open={openForm}
-        title={form.id ? "Edit child" : "Add child"}
+        title={form.id ? "تعديل طفل" : "إضافة طفل"}
         onClose={() => {
           setOpenForm(false);
           setForm(emptyForm);
@@ -449,7 +449,7 @@ async function addNewCity() {
       >
         <form onSubmit={saveChild} className="grid">
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">Name *</div>
+            <div className="muted">الاسم *</div>
             <input
               className="input"
               value={form.name}
@@ -460,7 +460,7 @@ async function addNewCity() {
           </div>
 
           <div style={{ gridColumn: "span 3" }}>
-            <div className="muted">Age *</div>
+            <div className="muted">العمر *</div>
             <input
               className="input"
               type="number"
@@ -473,20 +473,20 @@ async function addNewCity() {
           </div>
 
           <div style={{ gridColumn: "span 3" }}>
-            <div className="muted">Gender</div>
+            <div className="muted">الجنس</div>
             <ModernSelect
               value={form.gender}
               onChange={(v) => setForm((p) => ({ ...p, gender: v }))}
               menuWidth="trigger"
               options={[
-                { value: "male", label: "Male" },
-                { value: "female", label: "Female" },
+                { value: "male", label: "ذكر" },
+                { value: "female", label: "أنثى" },
               ]}
             />
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">Class</div>
+            <div className="muted">الصف</div>
             <ModernSelect
               value={form.class}
               onChange={(v) => setForm((p) => ({ ...p, class: v }))}
@@ -502,7 +502,7 @@ async function addNewCity() {
             <div className="row" style={{ gap: 8, marginTop: 8 }}>
               <input
                 className="input"
-                placeholder="Add new class…"
+                placeholder="أضف صفًا جديدًا…"
                 value={newClassName}
                 onChange={(e) => setNewClassName(e.target.value)}
               />
@@ -512,16 +512,13 @@ async function addNewCity() {
                 onClick={addNewClass}
                 disabled={addingClass}
               >
-                {addingClass ? "Adding..." : "Add"}
+                {addingClass ? "جاري الإضافة..." : "إضافة"}
               </button>
             </div>
-            <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-              * أي Class بتضيفه هون بينحفظ وبيطلعلك بكل المرات الجاي.
-            </div>
-          </div>
+</div>
 
           <div style={{ gridColumn: "span 8" }}>
-  <div className="muted">City</div>
+  <div className="muted">المدينة</div>
   <ModernSelect
     value={form.country_id}
     onChange={(v) => setForm((p) => ({ ...p, country_id: v }))}
@@ -530,13 +527,13 @@ async function addNewCity() {
       value: c.id,
       label: c.name,
     }))}
-    placeholder="Select a city…"
+    placeholder="اختر مدينة…"
   />
 
   <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
     <input
       className="input"
-      placeholder="Add new city..."
+      placeholder="أضف مدينة جديدة..."
       value={form.new_city}
       onChange={(e) =>
         setForm((p) => ({ ...p, new_city: e.target.value }))
@@ -548,16 +545,13 @@ async function addNewCity() {
       onClick={addNewCity}
       disabled={addingCity}
     >
-      {addingCity ? "Adding..." : "Add"}
+      {addingCity ? "جاري الإضافة..." : "إضافة"}
     </button>
-  </div>
-  <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-    * أي City بتضيفه هون بينحفظ وبيطلعلك بكل المرات الجاي.
   </div>
 </div>
 
 <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">Mother name</div>
+            <div className="muted">اسم الأم</div>
             <input
               className="input"
               value={form.mother_name}
@@ -568,7 +562,7 @@ async function addNewCity() {
             />
           </div>
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">Mother phone</div>
+            <div className="muted">هاتف الأم</div>
             <input
               className="input"
               value={form.mother_phone}
@@ -580,7 +574,7 @@ async function addNewCity() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">Father name</div>
+            <div className="muted">اسم الأب</div>
             <input
               className="input"
               value={form.father_name}
@@ -591,7 +585,7 @@ async function addNewCity() {
             />
           </div>
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">Father phone</div>
+            <div className="muted">هاتف الأب</div>
             <input
               className="input"
               value={form.father_phone}
@@ -603,11 +597,11 @@ async function addNewCity() {
           </div>
 
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">Notes (optional)</div>
+            <div className="muted">ملاحظات (اختياري)</div>
             <textarea
               className="input"
               rows={3}
-              placeholder="Optional notes..."
+              placeholder="ملاحظات (اختياري)..."
               value={form.notes}
               onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
             />
@@ -615,7 +609,7 @@ async function addNewCity() {
 
           <div className="row" style={{ gridColumn: "span 12" }}>
             <button className="btn primary" disabled={saving}>
-              {saving ? " Save..." : "Save"}
+              {saving ? "جاري الحفظ..." : "حفظ"}
             </button>
             <button
               type="button"
@@ -625,19 +619,17 @@ async function addNewCity() {
                 setForm(emptyForm);
                 setNewClassName("");
               }}
-            >
-              Cancel
-            </button>
+            >إلغاء</button>
           </div>
         </form>
       </Modal>
 
       <ConfirmDialog
         open={confirmDel.open}
-        title="Delete "
-        message={` Delete : ${confirmDel.name} `}
-        confirmText="Delete"
-        cancelText="Cancel"
+        title="حذف"
+        message={`حذف: ${confirmDel.name}`}
+        confirmText="حذف"
+        cancelText="إلغاء"
         danger
         onCancel={() => setConfirmDel({ open: false, id: null, name: "" })}
         onConfirm={async () => {
