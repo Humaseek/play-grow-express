@@ -100,6 +100,24 @@ function fmtILS(n, digits = 2) {
   }).format(x);
 }
 
+function isoDate(d) {
+  // YYYY-MM-DD (for <input type="date" />)
+  const dt = d instanceof Date ? d : new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const da = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${da}`;
+}
+
+function uniqSorted(list) {
+  const s = new Set();
+  for (const v of list || []) {
+    const x = String(v || "").trim();
+    if (x) s.add(x);
+  }
+  return Array.from(s).sort((a, b) => a.localeCompare(b, "en"));
+}
+
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
@@ -118,6 +136,15 @@ function rowClassByPayment(status) {
   return "";
 }
 
+function calcAge(birthDate) {
+  if (!birthDate) return null;
+  const d = new Date(birthDate);
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age;
+}
 
 async function copyText(text) {
   try {
@@ -140,6 +167,30 @@ export default function RunDetails() {
   const [sessions, setSessions] = useState([]);
   const [children, setChildren] = useState([]);
   const [payments, setPayments] = useState([]);
+  // ✅ Run expenses (linked to this run)
+  const [expenses, setExpenses] = useState([]);
+  const [expFeatureAvailable, setExpFeatureAvailable] = useState(true);
+
+  const [expQ, setExpQ] = useState("");
+  const [expCatFilter, setExpCatFilter] = useState("all");
+  const [expPartyFilter, setExpPartyFilter] = useState("all");
+
+  const [expCatOptions, setExpCatOptions] = useState([]);
+  const [expPartyOptions, setExpPartyOptions] = useState([]);
+  const [expHasPicklists, setExpHasPicklists] = useState(true);
+
+  const [openExpenseModal, setOpenExpenseModal] = useState(false);
+  const [expenseEditId, setExpenseEditId] = useState(null);
+  const [expDate, setExpDate] = useState(isoDate(new Date()));
+  const [expAmount, setExpAmount] = useState("");
+  const [expCategory, setExpCategory] = useState("");
+  const [expParty, setExpParty] = useState("");
+  const [expDesc, setExpDesc] = useState("");
+  const [expSaving, setExpSaving] = useState(false);
+
+  const [newCatName, setNewCatName] = useState("");
+  const [newPartyName, setNewPartyName] = useState("");
+
 
   const isWorkshop = (() => {
     const raw =
@@ -187,7 +238,7 @@ export default function RunDetails() {
   const [openNewChild, setOpenNewChild] = useState(false);
   const [newChildForm, setNewChildForm] = useState({
     name: "",
-    age: "",
+    birth_date: "",
     class: "",
     gender: "male",
     country_id: 1,
@@ -340,7 +391,7 @@ export default function RunDetails() {
     const tryView = await supabase
       .from("children_view")
       .select(
-        "id,name,age,class,gender,mother_name,mother_phone,father_name,father_phone",
+        "id,name,age,class,gender,mother_name,mother_phone,father_name,father_phone,birth_date",
       )
       .order("name", { ascending: true });
 
@@ -349,21 +400,23 @@ export default function RunDetails() {
     const tryTable = await supabase
       .from("children")
       .select(
-        "id,name,age,class,gender,mother_name,mother_phone,father_name,father_phone",
+        "id,name,birth_date,class,gender,mother_name,mother_phone,father_name,father_phone",
       )
       .order("name", { ascending: true });
 
     if (tryTable.error) throw tryTable.error;
 
-    return (tryTable.data ?? []);
-}
+    return (tryTable.data ?? []).map((r) => ({
+      ...r,
+      age: calcAge(r.birth_date),
+    }));
+  }
 
   async function createChildInline({ enrollNow = false } = {}) {
     const name = (newChildForm.name || "").trim();
-    const ageRaw = String(newChildForm.age ?? "").trim();
-    const ageNum = ageRaw === "" ? NaN : Number(ageRaw);
-    if (!name || !Number.isFinite(ageNum) || ageNum < 0) {
-      toast("Name and age are required.", "warn");
+    const birth = (newChildForm.birth_date || "").trim();
+    if (!name || !birth) {
+      toast("Name and birth date are required.", "warn");
       return;
     }
 
@@ -404,7 +457,7 @@ export default function RunDetails() {
 
       const payload = {
         name,
-        age: Math.floor(ageNum),
+        birth_date: birth,
         class: (newChildForm.class || "").trim() || null,
         gender: newChildForm.gender || "male",
         mother_name: (newChildForm.mother_name || "").trim() || null,
@@ -441,7 +494,7 @@ export default function RunDetails() {
       // reset
       setNewChildForm({
         name: "",
-        age: "",
+        birth_date: "",
         class: "",
         gender: "male",
         country_id: 1,
@@ -482,7 +535,170 @@ export default function RunDetails() {
     setTab("participants");
   }
 
-  // ========= load =========
+    // ============================
+  // Run expenses
+  // ============================
+  function resetExpenseForm() {
+    setExpenseEditId(null);
+    setExpDate(isoDate(new Date()));
+    setExpAmount("");
+    setExpCategory("");
+    setExpParty("");
+    setExpDesc("");
+    setNewCatName("");
+    setNewPartyName("");
+  }
+
+  function openAddExpense() {
+    resetExpenseForm();
+    setOpenExpenseModal(true);
+  }
+
+  function openEditExpense(row) {
+    setExpenseEditId(row.id);
+    setExpDate(row.spent_on ? String(row.spent_on) : isoDate(new Date()));
+    setExpAmount(String(row.amount ?? ""));
+    setExpCategory(String(row.category ?? ""));
+    setExpParty(String(row.party ?? ""));
+    setExpDesc(String(row.description ?? ""));
+    setOpenExpenseModal(true);
+  }
+
+  async function loadExpensePicklistsSafe() {
+    try {
+      const cRes = await supabase
+        .from("expense_categories")
+        .select("name")
+        .order("name", { ascending: true });
+
+      if (cRes.error) throw cRes.error;
+
+      const pRes = await supabase
+        .from("expense_parties")
+        .select("name")
+        .order("name", { ascending: true });
+
+      if (pRes.error) throw pRes.error;
+
+      setExpCatOptions((cRes.data ?? []).map((r) => r.name));
+      setExpPartyOptions((pRes.data ?? []).map((r) => r.name));
+      setExpHasPicklists(true);
+    } catch (e) {
+      const msg = String(e?.message || "").toLowerCase();
+      if (msg.includes("does not exist")) setExpHasPicklists(false);
+    }
+  }
+
+  async function loadRunExpensesSafe() {
+    try {
+      const res = await supabase
+        .from("expenses")
+        .select("id,spent_on,amount,category,party,description,created_at")
+        .eq("run_id", Number(runId))
+        .order("spent_on", { ascending: false })
+        .order("id", { ascending: false });
+
+      if (res.error) throw res.error;
+
+      setExpenses(res.data ?? []);
+      setExpFeatureAvailable(true);
+    } catch (e) {
+      const msg = String(e?.message || "").toLowerCase();
+
+      // If migration not applied yet, don't fail the whole screen
+      if (msg.includes("column") && msg.includes("run_id")) {
+        setExpFeatureAvailable(false);
+        setExpenses([]);
+        return;
+      }
+
+      setExpFeatureAvailable(true);
+      setExpenses([]);
+    }
+  }
+
+  async function addPicklistValue(kind, name) {
+    const clean = String(name || "").trim();
+    if (!clean) return;
+
+    const table = kind === "category" ? "expense_categories" : "expense_parties";
+    const setter = kind === "category" ? setExpCategory : setExpParty;
+    const inputSetter = kind === "category" ? setNewCatName : setNewPartyName;
+
+    try {
+      const ins = await supabase.from(table).insert({ name: clean });
+      if (ins.error) {
+        // Ignore duplicates
+        const m = String(ins.error.message || "").toLowerCase();
+        if (!m.includes("duplicate") && !m.includes("unique")) throw ins.error;
+      }
+      setter(clean);
+      inputSetter("");
+      await loadExpensePicklistsSafe();
+      toast("Saved.", "ok");
+    } catch (e) {
+      toast("Failed to save.", "danger");
+    }
+  }
+
+  async function saveExpense() {
+    if (!expFeatureAvailable) {
+      toast("Please apply the DB migration first.", "danger");
+      return;
+    }
+
+    const amt = Number(expAmount);
+    if (!expDate || !Number.isFinite(amt) || amt <= 0) {
+      toast("Please enter a valid date and amount.", "danger");
+      return;
+    }
+
+    setExpSaving(true);
+    setError(null);
+
+    const payload = {
+      spent_on: expDate,
+      amount: amt,
+      category: expCategory?.trim() || null,
+      party: expParty?.trim() || null,
+      description: expDesc?.trim() || null,
+      run_id: Number(runId),
+    };
+
+    try {
+      if (expenseEditId) {
+        const up = await supabase.from("expenses").update(payload).eq("id", expenseEditId);
+        if (up.error) throw up.error;
+        toast("Saved.", "ok");
+      } else {
+        const ins = await supabase.from("expenses").insert(payload);
+        if (ins.error) throw ins.error;
+        toast("Added.", "ok");
+      }
+
+      setOpenExpenseModal(false);
+      resetExpenseForm();
+      await loadRunExpensesSafe();
+    } catch (e) {
+      setError(e);
+      toast("Failed to save.", "danger");
+    } finally {
+      setExpSaving(false);
+    }
+  }
+
+  async function deleteExpense(id) {
+    try {
+      const del = await supabase.from("expenses").delete().eq("id", id);
+      if (del.error) throw del.error;
+      toast("Deleted.", "ok");
+      await loadRunExpensesSafe();
+    } catch (e) {
+      toast("Failed to delete.", "danger");
+    }
+  }
+
+// ========= load =========
   async function loadFixed() {
     setLoading(true);
     setError(null);
@@ -558,6 +774,8 @@ export default function RunDetails() {
         setPayments(enriched);
       }
 
+      await loadRunExpensesSafe();
+
       setLoading(false);
     } catch (e) {
       setError(e);
@@ -570,6 +788,11 @@ export default function RunDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId]);
 
+  useEffect(() => {
+    loadExpensePicklistsSafe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ✅ ( /Edit) manageP stale
   useEffect(() => {
     if (!openManage || !manageP) return;
@@ -579,6 +802,36 @@ export default function RunDetails() {
     if (updated) setManageP(updated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [participants]);
+
+  const expCategories = useMemo(() => {
+    if (expHasPicklists && expCatOptions.length) return uniqSorted(expCatOptions);
+    return uniqSorted(expenses.map((r) => r.category));
+  }, [expHasPicklists, expCatOptions, expenses]);
+
+  const expParties = useMemo(() => {
+    if (expHasPicklists && expPartyOptions.length) return uniqSorted(expPartyOptions);
+    return uniqSorted(expenses.map((r) => r.party));
+  }, [expHasPicklists, expPartyOptions, expenses]);
+
+  const expensesFiltered = useMemo(() => {
+    let list = [...expenses];
+    const s = expQ.trim().toLowerCase();
+    if (s) {
+      list = list.filter((r) => {
+        const a = String(r.category || "").toLowerCase();
+        const b = String(r.party || "").toLowerCase();
+        const c = String(r.description || "").toLowerCase();
+        return a.includes(s) || b.includes(s) || c.includes(s);
+      });
+    }
+    if (expCatFilter !== "all") list = list.filter((r) => String(r.category || "") === expCatFilter);
+    if (expPartyFilter !== "all") list = list.filter((r) => String(r.party || "") === expPartyFilter);
+    return list;
+  }, [expenses, expQ, expCatFilter, expPartyFilter]);
+
+  const runExpensesTotal = useMemo(() => {
+    return expenses.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+  }, [expenses]);
 
   const runFutureSessionsCount = useMemo(() => {
     const now = new Date();
@@ -1893,6 +2146,13 @@ export default function RunDetails() {
           >
             Payments
           </button>
+          <button
+            type="button"
+            className={`tab ${tab === "expenses" ? "active" : ""}`}
+            onClick={() => setTab("expenses")}
+          >
+            Expenses
+          </button>
         </div>
 
         {/* ===================== PARTICIPANTS ===================== */}
@@ -2734,6 +2994,188 @@ export default function RunDetails() {
           </div>
         )}
 
+
+        {/* ===================== EXPENSES ===================== */}
+        {tab === "expenses" && (
+          <div className="card">
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-end",
+                gap: 16,
+                flexWrap: "wrap",
+              }}
+            >
+              <div>
+                <h2 style={{ marginBottom: 4 }}>المصاريف</h2>
+                <div className="muted small">مصاريف مرتبطة بهذه الدفعة (Run)</div>
+              </div>
+
+              <button
+                type="button"
+                className="btn primary"
+                onClick={openAddExpense}
+                disabled={!expFeatureAvailable}
+              >
+                + إضافة مصروف
+              </button>
+            </div>
+
+            {!expFeatureAvailable ? (
+              <div style={{ marginTop: 14 }} className="muted">
+                ميزة ربط المصاريف بالـ Run غير مفعّلة بعد.
+                شغّل ملف الـ SQL الذي يضيف <b>run_id</b> لجدول <b>expenses</b>.
+              </div>
+            ) : (
+              <>
+                <div className="grid" style={{ marginTop: 14, marginBottom: 12 }}>
+                  <div className="card" style={{ gridColumn: "span 4" }}>
+                    <div className="muted">المجموع</div>
+                    <div style={{ fontSize: 22, fontWeight: 900 }}>
+                      <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
+                    </div>
+                  </div>
+
+                  <div className="card" style={{ gridColumn: "span 4" }}>
+                    <div className="muted">عدد المصاريف</div>
+                    <div style={{ fontSize: 22, fontWeight: 900 }}>
+                      <span className="ltrIso">{fmtNum(expenses.length)}</span>
+                    </div>
+                  </div>
+
+                  <div className="card" style={{ gridColumn: "span 4" }}>
+                    <div className="muted">الصافي (المدفوع - المصاريف)</div>
+                    <div style={{ fontSize: 22, fontWeight: 900 }}>
+                      <span className="ltrIso">{fmtILS(totals.paid - runExpensesTotal, 2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      position: "relative",
+                      flex: "1 1 0px",
+                      minWidth: 220,
+                    }}
+                  >
+                    <Search
+                      size={16}
+                      style={{
+                        position: "absolute",
+                        left: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        pointerEvents: "none",
+                        opacity: 0.7,
+                      }}
+                    />
+                    <input
+                      className="input"
+                      value={expQ}
+                      onChange={(e) => setExpQ(e.target.value)}
+                      placeholder="ابحث..."
+                      style={{ width: "100%", paddingLeft: 38 }}
+                    />
+                  </div>
+
+                  <div style={{ width: 220, minWidth: 170 }}>
+                    <ModernSelect
+                      value={expCatFilter}
+                      onChange={setExpCatFilter}
+                      options={[
+                        { value: "all", label: "كل التصنيفات" },
+                        ...expCategories.map((x) => ({ value: x, label: x })),
+                      ]}
+                    />
+                  </div>
+
+                  <div style={{ width: 220, minWidth: 170 }}>
+                    <ModernSelect
+                      value={expPartyFilter}
+                      onChange={setExpPartyFilter}
+                      options={[
+                        { value: "all", label: "كل الأشخاص" },
+                        ...expParties.map((x) => ({ value: x, label: x })),
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ height: 10 }} />
+
+                {expensesFiltered.length === 0 ? (
+                  <div className="muted">ما في مصاريف.</div>
+                ) : (
+                  <div className="tableWrap inCard">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: 140 }}>التاريخ</th>
+                          <th>التصنيف</th>
+                          <th style={{ width: 180 }}>الشخص</th>
+                          <th>الوصف</th>
+                          <th style={{ width: 140 }}>المبلغ</th>
+                          <th style={{ width: 92, textAlign: "center" }} />
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {expensesFiltered.map((r) => (
+                          <tr key={r.id}>
+                            <td className="muted">
+                              <span className="ltrIso">{r.spent_on || "-"}</span>
+                            </td>
+                            <td style={{ fontWeight: 800 }}>{r.category || "—"}</td>
+                            <td className="muted">{r.party || "—"}</td>
+                            <td className="muted">{r.description || "—"}</td>
+                            <td>
+                              <span className="ltrIso">{fmtILS(r.amount, 2)}</span>
+                            </td>
+                            <td style={{ textAlign: "center" }}>
+                              <div className="tableActions">
+                                <IconButton
+                                  title="تعديل"
+                                  onClick={() => openEditExpense(r)}
+                                >
+                                  <Pencil size={16} />
+                                </IconButton>
+
+                                <IconButton
+                                  title="حذف"
+                                  danger
+                                  onClick={() =>
+                                    setConfirm({
+                                      open: true,
+                                      type: "deleteExpense",
+                                      id: r.id,
+                                      text: "هل تريد حذف هذا المصروف؟",
+                                    })
+                                  }
+                                >
+                                  <Trash2 size={16} />
+                                </IconButton>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
         {/* ===================== MODALS ===================== */}
 
         {/* ✅ Child */}
@@ -3345,17 +3787,14 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Age *</div>
+              <div className="muted">Birth date *</div>
               <input
                 className="input"
-                type="number"
-                min={0}
-                step={1}
-                value={newChildForm.age}
+                type="date"
+                value={newChildForm.birth_date}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, age: e.target.value }))
+                  setNewChildForm((p) => ({ ...p, birth_date: e.target.value }))
                 }
-                placeholder="e.g. 6"
               />
             </div>
 
@@ -4047,6 +4486,153 @@ export default function RunDetails() {
           </div>
         </Modal>
 
+
+        {/* Expense modal */}
+        <Modal
+          open={openExpenseModal}
+          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
+          onClose={() => {
+            setOpenExpenseModal(false);
+            resetExpenseForm();
+          }}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">التاريخ</div>
+              <input
+                className="input"
+                type="date"
+                value={expDate}
+                onChange={(e) => setExpDate(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">المبلغ</div>
+              <input
+                className="input"
+                type="number"
+                step="0.01"
+                min="0"
+                value={expAmount}
+                onChange={(e) => setExpAmount(e.target.value)}
+                placeholder="مثال: 50"
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">التصنيف</div>
+              {expHasPicklists ? (
+                <ModernSelect
+                  value={expCategory || ""}
+                  onChange={(v) => setExpCategory(v)}
+                  options={[
+                    { value: "", label: "—" },
+                    ...expCategories.map((x) => ({ value: x, label: x })),
+                  ]}
+                />
+              ) : (
+                <input
+                  className="input"
+                  value={expCategory}
+                  onChange={(e) => setExpCategory(e.target.value)}
+                  placeholder="مثال: معاشات"
+                />
+              )}
+
+              {expHasPicklists && (
+                <div className="row" style={{ marginTop: 8, gap: 8 }}>
+                  <input
+                    className="input"
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="إضافة تصنيف جديد..."
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => addPicklistValue("category", newCatName)}
+                  >
+                    إضافة
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">الشخص</div>
+              {expHasPicklists ? (
+                <ModernSelect
+                  value={expParty || ""}
+                  onChange={(v) => setExpParty(v)}
+                  options={[
+                    { value: "", label: "—" },
+                    ...expParties.map((x) => ({ value: x, label: x })),
+                  ]}
+                />
+              ) : (
+                <input
+                  className="input"
+                  value={expParty}
+                  onChange={(e) => setExpParty(e.target.value)}
+                  placeholder="مثال: سامر"
+                />
+              )}
+
+              {expHasPicklists && (
+                <div className="row" style={{ marginTop: 8, gap: 8 }}>
+                  <input
+                    className="input"
+                    value={newPartyName}
+                    onChange={(e) => setNewPartyName(e.target.value)}
+                    placeholder="إضافة شخص جديد..."
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => addPicklistValue("party", newPartyName)}
+                  >
+                    إضافة
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الوصف</div>
+              <input
+                className="input"
+                value={expDesc}
+                onChange={(e) => setExpDesc(e.target.value)}
+                placeholder="اختياري..."
+              />
+            </div>
+
+            <div className="row" style={{ gridColumn: "span 12" }}>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={saveExpense}
+                disabled={expSaving}
+              >
+                {expSaving ? "حفظ..." : "حفظ"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setOpenExpenseModal(false);
+                  resetExpenseForm();
+                }}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </Modal>
+
         {/* Confirm */}
         <ConfirmDialog
           open={confirm.open}
@@ -4076,6 +4662,7 @@ export default function RunDetails() {
 
             if (type === "deleteSession") await deleteSession(id);
             if (type === "deletePayment") await deletePayment(id);
+            if (type === "deleteExpense") await deleteExpense(id);
           }}
         />
       </div>
