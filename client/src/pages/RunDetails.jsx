@@ -311,7 +311,7 @@ export default function RunDetails() {
 
   // Sessions generator
   const [firstStart, setFirstStart] = useState("");
-  const [durationMinutes, setDurationMinutesutes] = useState(60);
+  const [durationMinutes, setDurationMinutes] = useState(60);
   const [count, setCount] = useState(8);
   const [intervalDays, setIntervalDays] = useState(7);
   const [genLoading, setGenLoading] = useState(false);
