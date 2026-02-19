@@ -136,15 +136,6 @@ function rowClassByPayment(status) {
   return "";
 }
 
-function calcAge(birthDate) {
-  if (!birthDate) return null;
-  const d = new Date(birthDate);
-  const now = new Date();
-  let age = now.getFullYear() - d.getFullYear();
-  const m = now.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
-  return age;
-}
 
 async function copyText(text) {
   try {
@@ -238,7 +229,7 @@ export default function RunDetails() {
   const [openNewChild, setOpenNewChild] = useState(false);
   const [newChildForm, setNewChildForm] = useState({
     name: "",
-    birth_date: "",
+    age: "",
     class: "",
     gender: "male",
     country_id: 1,
@@ -391,7 +382,7 @@ export default function RunDetails() {
     const tryView = await supabase
       .from("children_view")
       .select(
-        "id,name,age,class,gender,mother_name,mother_phone,father_name,father_phone,birth_date",
+        "id,name,age,class,gender,country_id,country_name,mother_name,mother_phone,father_name,father_phone",
       )
       .order("name", { ascending: true });
 
@@ -400,23 +391,21 @@ export default function RunDetails() {
     const tryTable = await supabase
       .from("children")
       .select(
-        "id,name,birth_date,class,gender,mother_name,mother_phone,father_name,father_phone",
+        "id,name,age,class,gender,country_id,mother_name,mother_phone,father_name,father_phone",
       )
       .order("name", { ascending: true });
 
     if (tryTable.error) throw tryTable.error;
 
-    return (tryTable.data ?? []).map((r) => ({
-      ...r,
-      age: calcAge(r.birth_date),
-    }));
+    return tryTable.data ?? [];
   }
 
   async function createChildInline({ enrollNow = false } = {}) {
     const name = (newChildForm.name || "").trim();
-    const birth = (newChildForm.birth_date || "").trim();
-    if (!name || !birth) {
-      toast("Name and birth date are required.", "warn");
+    const ageNum = Number(String(newChildForm.age ?? "").trim());
+    const hasAge = Number.isFinite(ageNum) && ageNum >= 0 && ageNum <= 120;
+    if (!name || !hasAge) {
+      toast("Name and age are required.", "warn");
       return;
     }
 
@@ -457,7 +446,7 @@ export default function RunDetails() {
 
       const payload = {
         name,
-        birth_date: birth,
+        age: ageNum,
         class: (newChildForm.class || "").trim() || null,
         gender: newChildForm.gender || "male",
         mother_name: (newChildForm.mother_name || "").trim() || null,
@@ -494,7 +483,7 @@ export default function RunDetails() {
       // reset
       setNewChildForm({
         name: "",
-        birth_date: "",
+        age: "",
         class: "",
         gender: "male",
         country_id: 1,
@@ -3787,13 +3776,15 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Birth date *</div>
+              <div className="muted">Age *</div>
               <input
                 className="input"
-                type="date"
-                value={newChildForm.birth_date}
+                type="number"
+                min={0}
+                max={120}
+                value={newChildForm.age}
                 onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, birth_date: e.target.value }))
+                  setNewChildForm((p) => ({ ...p, age: e.target.value }))
                 }
               />
             </div>
