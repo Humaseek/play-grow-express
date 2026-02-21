@@ -4219,13 +4219,13 @@ export default function RunDetails() {
         >
           <div className="grid">
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Child</div>
+              <div className="muted">الطفل</div>
               <ModernSelect
                 value={payEnrollmentId}
                 onChange={setPayEnrollmentId}
                 menuWidth="trigger"
                 disabled={paySaving || !!payEditId}
-                placeholder="— Select child —"
+                placeholder="— اختيار طفل —"
                 options={[
                   { value: "", label: "— Select child —" },
                   ...participants
@@ -4239,7 +4239,7 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Amount (₪)</div>
+              <div className="muted">المبلغ (₪)</div>
               <input
                 className="input"
                 type="number"
@@ -4252,7 +4252,7 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Payment method</div>
+              <div className="muted">طريقة الدفع</div>
               <ModernSelect
                 value={payMethod}
                 onChange={setPayMethod}
@@ -4269,7 +4269,7 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Note</div>
+              <div className="muted">ملاحظات</div>
               <input
                 className="input"
                 placeholder="Optional"
@@ -4295,7 +4295,7 @@ export default function RunDetails() {
                   setPayEditId(null);
                 }}
               >
-                Cancel
+                إلغاء
               </button>
             </div>
           </div>
