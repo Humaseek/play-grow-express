@@ -2303,7 +2303,7 @@ export default function RunDetails() {
                   const status = p.payment_status || "free";
                   const barClass =
                     status === "paid"
-                      ? "pBar pBarمدفوع"
+                      ? "pBar pBarPaid"
                       : status === "partial"
                         ? "pBar pBarPartial"
                         : status === "unpaid"
@@ -2365,7 +2365,7 @@ export default function RunDetails() {
                           </div>
 
                           <div className={barClass} aria-hidden="true">
-                            <span style={{ width: `${pct}%` }} />
+                            <span style={{ width: `${pct}%`, backgroundColor: status === "paid" ? "rgb(0,172,71)" : undefined }} />
                           </div>
 
                           <div
