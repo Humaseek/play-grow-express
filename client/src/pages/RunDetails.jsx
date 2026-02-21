@@ -111,7 +111,7 @@ function isoDate(d) {
 
 function uniqSorted(list) {
   const s = new Set();
-  for (const v of list || []) {
+  for (const v من list || []) {
     const x = String(v || "").trim();
     if (x) s.add(x);
   }
@@ -123,14 +123,14 @@ function clamp(n, a, b) {
 }
 
 function badgePayment(status) {
-  if (status === "paid") return <Badge variant="ok">Paid</Badge>;
-  if (status === "partial") return <Badge variant="warn">Partial</Badge>;
-  if (status === "unpaid") return <Badge variant="danger">Unpaid</Badge>;
-  return <Badge variant="info">Free</Badge>;
+  if (status === "paid") return <Badge variant="ok">مدفوع</Badge>;
+  if (status === "partial") return <Badge variant="warn">جزئي</Badge>;
+  if (status === "unpaid") return <Badge variant="danger">غير مدفوع</Badge>;
+  return <Badge variant="info">مجاني</Badge>;
 }
 
 function rowClassByPayment(status) {
-  if (status === "paid") return "rowPaid";
+  if (status === "paid") return "rowمدفوع";
   if (status === "partial") return "rowPartial";
   if (status === "unpaid") return "rowUnpaid";
   return "";
@@ -334,17 +334,17 @@ export default function RunDetails() {
   const [adjPackageId, setAdjPackageId] = useState(null);
   const [adjChildName, setAdjChildName] = useState("");
   const [adjAllocatedNow, setAdjAllocatedNow] = useState(0);
-  const [adjAttended, setAdjAttended] = useState(0);
-  const [adjPkgRemaining, setAdjPkgRemaining] = useState(0);
+  const [adjحضر, setAdjحضر] = useState(0);
+  const [adjPkgالمتبقي, setAdjPkgالمتبقي] = useState(0);
   const [adjRunFuture, setAdjRunFuture] = useState(0);
   const [adjMaxAllowed, setAdjMaxAllowed] = useState(0);
   const [adjNewAllocated, setAdjNewAllocated] = useState(0);
   const [adjPkgDelta, setAdjPkgDelta] = useState(0);
   const [adjSaving, setAdjSaving] = useState(false);
 
-  // ✅ Manage Enrollment (single child in this run) — 8
-  const [openManage, setOpenManage] = useState(false);
-  const [manageP, setManageP] = useState(null);
+  // ✅ إدارة Enrollment (single child in this run) — 8
+  const [openإدارة, setOpenإدارة] = useState(false);
+  const [manageP, setإدارةP] = useState(null);
 
   // Confirm
   const [confirm, setConfirm] = useState({
@@ -730,10 +730,10 @@ export default function RunDetails() {
       const ch = await loadChildrenSafe();
       setChildren(ch);
 
-      // Payments related to packages of kids in this run
+      // Payments related to packages من kids in this run
       const pkgMap = new Map();
       const pkgIds = [];
-      for (const r of part) {
+      for (const r من part) {
         if (r.package_id) {
           pkgMap.set(r.package_id, {
             child_id: r.child_id,
@@ -784,11 +784,11 @@ export default function RunDetails() {
 
   // ✅ ( /Edit) manageP stale
   useEffect(() => {
-    if (!openManage || !manageP) return;
+    if (!openإدارة || !manageP) return;
     const updated = participants.find(
       (x) => Number(x.enrollment_id) === Number(manageP.enrollment_id),
     );
-    if (updated) setManageP(updated);
+    if (updated) setإدارةP(updated);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [participants]);
 
@@ -922,9 +922,9 @@ export default function RunDetails() {
     );
   }, [manageP, children]);
 
-  function openManageFor(p) {
-    setManageP(p);
-    setOpenManage(true);
+  function openإدارةFor(p) {
+    setإدارةP(p);
+    setOpenإدارة(true);
   }
 
   // ============================
@@ -1076,7 +1076,7 @@ export default function RunDetails() {
   function bulkSelectAllFiltered() {
     setBulkSelected((prev) => {
       const next = { ...prev };
-      for (const c of bulkCandidates) next[String(c.id)] = true;
+      for (const c من bulkCandidates) next[String(c.id)] = true;
       return next;
     });
   }
@@ -1178,7 +1178,7 @@ export default function RunDetails() {
           .eq("id", existing.package_id);
         if (pkgUpd.error) throw pkgUpd.error;
 
-        // Add sessions back to the package total (keeps sessions_used consistent)
+        // إضافة جلسةs back to the package total (keeps sessions_used consistent)
         if (sessionsToBuy > 0) {
           const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
             p_package_id: Number(existing.package_id),
@@ -1193,7 +1193,7 @@ export default function RunDetails() {
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
         toast("Child re-enrolled successfully.", "ok");
       } else {
-        toast("Enrollment re-activated. Add sessions then click Save.", "ok");
+        toast("Enrollment re-activated. إضافة جلسةs then click Save.", "ok");
       }
 
       setOpenEnroll(false);
@@ -1212,7 +1212,7 @@ export default function RunDetails() {
     sessionsToBuy,
     priceTotalNum,
   ) {
-    // Bulk-safe variant of reactivateWithdrawnEnrollment:
+    // Bulk-safe variant من reactivateWithdrawnEnrollment:
     // uses explicit sessions/price (does NOT depend on the single-enroll modal state).
     const existing = participants.find(
       (p) =>
@@ -1311,7 +1311,7 @@ export default function RunDetails() {
         }
       }
       // buy_new
-      // If previously removed (withdrawn), re-activate instead of inserting a new enrollment.
+      // If previously removed (withdrawn), re-activate instead من inserting a new enrollment.
       const handled = await reactivateWithdrawnEnrollment(selectedChildId);
       if (handled) return;
 
@@ -1334,7 +1334,7 @@ export default function RunDetails() {
 
         if (existing) {
           setOpenEnroll(false);
-          openManageFor(existing);
+          openإدارةFor(existing);
           return;
         }
 
@@ -1378,7 +1378,7 @@ export default function RunDetails() {
     try {
       // Build a quick lookup for existing run enrollment status per child
       const statusByChild = new Map();
-      for (const p of participants || []) {
+      for (const p من participants || []) {
         const cid = Number(p.child_id);
         if (!Number.isFinite(cid)) continue;
         statusByChild.set(cid, p.enrollment_status);
@@ -1389,7 +1389,7 @@ export default function RunDetails() {
       let skipped = 0;
       let failed = 0;
 
-      for (const childId of bulkSelectedIds) {
+      for (const childId من bulkSelectedIds) {
         const cid = Number(childId);
         if (!Number.isFinite(cid)) continue;
 
@@ -1411,7 +1411,7 @@ export default function RunDetails() {
           continue;
         }
 
-        // Withdrawn -> reactivate instead of inserting a new row
+        // Withdrawn -> reactivate instead من inserting a new row
         if (existingStatus === "withdrawn") {
           const ok = await reactivateWithdrawnEnrollmentBulk(
             cid,
@@ -1456,7 +1456,7 @@ export default function RunDetails() {
         added += 1;
       }
 
-      // Refresh run state
+      // تحديث run state
       await loadFixed();
       setTab("participants");
 
@@ -1558,7 +1558,7 @@ export default function RunDetails() {
       }
 
       toast(
-        `Removed ${childName} from this course. Remaining sessions set to 0.`,
+        `Removed ${childName} from this course. المتبقي sessions set to 0.`,
         "ok",
       );
       await loadFixed();
@@ -1864,8 +1864,8 @@ export default function RunDetails() {
     setAdjPackageId(p.package_id ?? null);
     setAdjChildName(p.child_name);
     setAdjAllocatedNow(alloc);
-    setAdjAttended(attended);
-    setAdjPkgRemaining(pkgRemain);
+    setAdjحضر(attended);
+    setAdjPkgالمتبقي(pkgRemain);
     setAdjRunFuture(runFuture);
     setAdjMaxAllowed(maxAllowed);
     setAdjNewAllocated(alloc);
@@ -1895,7 +1895,7 @@ export default function RunDetails() {
     }
   }
 
-  function quickAdjustFromManage(delta) {
+  function quickAdjustFromإدارة(delta) {
     if (!manageP) return;
 
     // : Add " " Edit
@@ -1958,9 +1958,9 @@ export default function RunDetails() {
 
   if (loading) {
     return (
-      <div className="page page--runs">
+      <div className="page page--runs" dir="rtl" lang="ar">
         <div className="container runDetails">
-          <div className="card">Loading...</div>
+          <div className="card">جاري التحميل...</div>
         </div>
       </div>
     );
@@ -1968,7 +1968,7 @@ export default function RunDetails() {
 
   if (!summary) {
     return (
-      <div className="page page--runs">
+      <div className="page page--runs" dir="rtl" lang="ar">
         <div className="container runDetails">
           <div className="card"> .</div>
         </div>
@@ -1977,7 +1977,7 @@ export default function RunDetails() {
   }
 
   return (
-    <div className="page page--runs">
+    <div className="page page--runs" dir="rtl" lang="ar">
       <div className="container runDetails">
         <div className="topbar">
           <div>
@@ -1991,17 +1991,17 @@ export default function RunDetails() {
             <div className="statRow" style={{ marginTop: 10 }}>
               <span className="statChip" title="">
                 <Users size={16} className="ico" />
-                <span className="statLabel">Participants</span>
+                <span className="statLabel">المشاركون</span>
                 <b className="ltrIso">{fmtNum(totals.activeCount)}</b>
               </span>
               <span className="statChip" title="">
                 <CalendarDays size={16} className="ico" />
-                <span className="statLabel">Sessions</span>
+                <span className="statLabel">الجلسات</span>
                 <b className="ltrIso">{fmtNum(summary.sessions_count)}</b>
               </span>
               <span className="statChip" title=" ">
                 <CreditCard size={16} className="ico" />
-                <span className="statLabel">Payment rate</span>
+                <span className="statLabel">نسبة الدفع</span>
                 <b className="ltrIso">
                   {fmtNum((totals.paidRatio * 100).toFixed(0))}%
                 </b>
@@ -2015,7 +2015,7 @@ export default function RunDetails() {
               className="btn"
               onClick={() => navigate(`/courses/${summary.template_id}`)}
             >
-              Back
+              رجوع
             </button>
 
             {nextSession && (
@@ -2026,12 +2026,12 @@ export default function RunDetails() {
                   navigate(`/sessions/${nextSession.id}/attendance`)
                 }
               >
-                Attendance
+                الحضور
               </button>
             )}
 
             <button type="button" className="btn" onClick={loadFixed}>
-              Refresh
+              تحديث
             </button>
           </div>
         </div>
@@ -2044,7 +2044,7 @@ export default function RunDetails() {
                 <Tag />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div className="runLabel">Loading...</div>
+                <div className="runLabel">الدفعة</div>
                 <div className="runValue">{summary.label || "—"}</div>
               </div>
             </div>
@@ -2054,7 +2054,7 @@ export default function RunDetails() {
                 <Clock />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div className="runLabel">Schedule</div>
+                <div className="runLabel">الجدول</div>
                 <div className="runValue">
                   {scheduleInfo.weekday}{" "}
                   <span className="ltrIso">{scheduleInfo.timeRange}</span>
@@ -2067,7 +2067,7 @@ export default function RunDetails() {
                 <CalendarClock />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div className="runLabel">Next session</div>
+                <div className="runLabel">الجلسة القادمة</div>
                 <div className="runValue">
                   <span className="ltrIso">
                     {fmtDT(summary.next_session_at)}
@@ -2081,7 +2081,7 @@ export default function RunDetails() {
                 <CalendarPlus />
               </div>
               <div style={{ minWidth: 0 }}>
-                <div className="runLabel">Course</div>
+                <div className="runLabel">جلسات قادمة</div>
                 <div className="runValue">
                   <span className="ltrIso">
                     {fmtNum(runFutureSessionsCount)}
@@ -2094,19 +2094,19 @@ export default function RunDetails() {
 
         <div className="grid" style={{ marginBottom: 12 }}>
           <div className="card" style={{ gridColumn: "span 4" }}>
-            <div className="muted">Agreed</div>
+            <div className="muted">المتفق عليه</div>
             <div style={{ fontSize: 26, fontWeight: 900 }}>
               <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
             </div>
           </div>
           <div className="card" style={{ gridColumn: "span 4" }}>
-            <div className="muted">Paid</div>
+            <div className="muted">المدفوع</div>
             <div style={{ fontSize: 26, fontWeight: 900 }}>
               <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
             </div>
           </div>
           <div className="card" style={{ gridColumn: "span 4" }}>
-            <div className="muted">Balance</div>
+            <div className="muted">المتبقي</div>
             <div style={{ fontSize: 26, fontWeight: 900 }}>
               <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
             </div>
@@ -2119,28 +2119,28 @@ export default function RunDetails() {
             className={`tab ${tab === "participants" ? "active" : ""}`}
             onClick={() => setTab("participants")}
           >
-            Children
+            الأطفال
           </button>
           <button
             type="button"
             className={`tab ${tab === "sessions" ? "active" : ""}`}
             onClick={() => setTab("sessions")}
           >
-            Sessions
+            الجلسات
           </button>
           <button
             type="button"
             className={`tab ${tab === "payments" ? "active" : ""}`}
             onClick={() => setTab("payments")}
           >
-            Payments
+            المدفوعات
           </button>
           <button
             type="button"
             className={`tab ${tab === "expenses" ? "active" : ""}`}
             onClick={() => setTab("expenses")}
           >
-            Expenses
+            المصاريف
           </button>
         </div>
 
@@ -2158,9 +2158,9 @@ export default function RunDetails() {
               }}
             >
               <div className="pTitle">
-                <h2>Children</h2>
+                <h2>الأطفال</h2>
                 <div className="muted small">
-                  {participantsFiltered.length} of {participants.length}
+                  {participantsFiltered.length} من {participants.length}
                 </div>
               </div>
 
@@ -2207,7 +2207,7 @@ export default function RunDetails() {
                       className="input"
                       value={childSearch}
                       onChange={(e) => setChildSearch(e.target.value)}
-                      placeholder="Search Child..."
+                      placeholder="ابحث عن طفل..."
                       style={{ width: "100%", paddingLeft: 38 }}
                     />
                   </div>
@@ -2218,9 +2218,9 @@ export default function RunDetails() {
                     onChange={(e) => setChildStatusFilter(e.target.value)}
                     style={{ flex: "0 1 150px", minWidth: 130 }}
                   >
-                    <option value="all">All</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
+                    <option value="all">الكل</option>
+                    <option value="active">نشط</option>
+                    <option value="inactive">غير نشط</option>
                   </select>
 
                   <select
@@ -2229,10 +2229,10 @@ export default function RunDetails() {
                     onChange={(e) => setChildSort(e.target.value)}
                     style={{ flex: "0 1 210px", minWidth: 170 }}
                   >
-                    <option value="balance_desc">Balance: high to low</option>
-                    <option value="balance_asc">Balance: low to high</option>
-                    <option value="name_asc">Name: A to Z</option>
-                    <option value="name_desc">Name: Z to A</option>
+                    <option value="balance_desc">المتبقي: من الأعلى للأقل</option>
+                    <option value="balance_asc">المتبقي: من الأقل للأعلى</option>
+                    <option value="name_asc">الاسم: أ-ي</option>
+                    <option value="name_desc">الاسم: ي-أ</option>
                   </select>
                 </div>
 
@@ -2250,11 +2250,11 @@ export default function RunDetails() {
                     className="btn"
                     onClick={openSingleEnrollNew}
                   >
-                    + Add child to course
+                    + إضافة طفل للدورة
                   </button>
 
                   <button type="button" className="btn" onClick={openBulkModal}>
-                    + Add multiple
+                    + إضافة مجموعة
                   </button>
 
                   <button
@@ -2262,7 +2262,7 @@ export default function RunDetails() {
                     className="btn primary"
                     onClick={openCreateEnroll}
                   >
-                    <Plus size={16} /> Add &amp; Enroll
+                    <Plus size={16} /> إضافة وتسجيل
                   </button>
                 </div>
               </div>
@@ -2271,7 +2271,7 @@ export default function RunDetails() {
             <hr className="sep" />
 
             {participantsFiltered.length === 0 ? (
-              <div className="muted">No items found.</div>
+              <div className="muted">لا يوجد عناصر.</div>
             ) : (
               <div
                 className="pGrid"
@@ -2292,7 +2292,7 @@ export default function RunDetails() {
 
                   const pkgRemain = Number(p.package_sessions_remaining || 0);
                   const pkgTotal = Number(p.package_sessions_total || 0);
-                  const pkgUsed = Math.max(0, pkgTotal - pkgRemain);
+                  const pkgمستخدم = Math.max(0, pkgTotal - pkgRemain);
 
                   const runSessions = Number(
                     summary?.sessions_count || sessions.length || 0,
@@ -2303,7 +2303,7 @@ export default function RunDetails() {
                   const status = p.payment_status || "free";
                   const barClass =
                     status === "paid"
-                      ? "pBar pBarPaid"
+                      ? "pBar pBarمدفوع"
                       : status === "partial"
                         ? "pBar pBarPartial"
                         : status === "unpaid"
@@ -2317,10 +2317,10 @@ export default function RunDetails() {
                       style={{ width: 380, maxWidth: "100%" }}
                       role="button"
                       tabIndex={0}
-                      onClick={() => openManageFor(p)}
+                      onClick={() => openإدارةFor(p)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ")
-                          openManageFor(p);
+                          openإدارةFor(p);
                       }}
                     >
                       <div className="pHead">
@@ -2360,7 +2360,7 @@ export default function RunDetails() {
                             </div>
                             <div className="pBigLabel">
                               <Hourglass size={14} className="ico" />{" "}
-                              <span>Remaining</span>
+                              <span>المتبقي</span>
                             </div>
                           </div>
 
@@ -2380,7 +2380,7 @@ export default function RunDetails() {
                               }}
                             >
                               <CreditCard size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>Paid</span>
+                              <span style={{ opacity: 0.75 }}>مدفوع</span>
                               <b dir="ltr">{fmtILS(paid)}</b>
                             </div>
                             <div
@@ -2391,7 +2391,7 @@ export default function RunDetails() {
                               }}
                             >
                               <Tag size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>Agreed</span>
+                              <span style={{ opacity: 0.75 }}>المتفق عليه</span>
                               <b dir="ltr">{fmtILS(agreed)}</b>
                             </div>
                           </div>
@@ -2404,7 +2404,7 @@ export default function RunDetails() {
                             </div>
                             <div className="pBigLabel">
                               <Ticket size={14} className="ico" />{" "}
-                              <span>Session balance</span>
+                              <span>رصيد الجلسات</span>
                             </div>
                           </div>
                           <div
@@ -2419,8 +2419,8 @@ export default function RunDetails() {
                               }}
                             >
                               <CheckCircle2 size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>Used</span>
-                              <b dir="ltr">{fmtNum(pkgUsed)}</b>
+                              <span style={{ opacity: 0.75 }}>مستخدم</span>
+                              <b dir="ltr">{fmtNum(pkgمستخدم)}</b>
                             </div>
                             <div
                               style={{
@@ -2430,7 +2430,7 @@ export default function RunDetails() {
                               }}
                             >
                               <Ticket size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>In this run</span>
+                              <span style={{ opacity: 0.75 }}>بهذه الدفعة</span>
                               <b dir="ltr">{fmtNum(pkgTotal)}</b>
                             </div>
                           </div>
@@ -2447,7 +2447,7 @@ export default function RunDetails() {
                               }}
                             >
                               <CalendarDays size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>Attended</span>
+                              <span style={{ opacity: 0.75 }}>حضر</span>
                               <b dir="ltr">{fmtNum(attended)}</b>
                             </div>
                             <div
@@ -2458,7 +2458,7 @@ export default function RunDetails() {
                               }}
                             >
                               <Hourglass size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>Remaining</span>
+                              <span style={{ opacity: 0.75 }}>المتبقي</span>
                               <b dir="ltr">{fmtNum(runSessions)}</b>
                             </div>
                           </div>
@@ -2496,12 +2496,12 @@ export default function RunDetails() {
                             title=""
                             variant="solid"
                             size="sm"
-                            onClick={() => openManageFor(p)}
+                            onClick={() => openإدارةFor(p)}
                           />
                         </div>
 
                         <div className="pActionHint muted">
-                          More details inside "Manage"
+                          تفاصيل أكثر داخل "إدارة"
                         </div>
                       </div>
                     </div>
@@ -2523,10 +2523,10 @@ export default function RunDetails() {
           <div className="grid">
             {/* LEFT: generator + quick add */}
             <div className="card" style={{ gridColumn: "span 4" }}>
-              <div className="h1">Sessions</div>
+              <div className="h1">الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Set the recurrence, then generate a session list. Times are in
-                your local timezone.
+                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب
+                توقيتك المحلي.
               </div>
 
               <hr className="sep" />
@@ -2534,8 +2534,8 @@ export default function RunDetails() {
               {isWorkshop ? (
                 <div style={{ display: "grid", gap: 12 }}>
                   <div className="muted">
-                    Workshop runs usually have a single session. Create it once,
-                    then manage it from the list.
+                    الورشات غالبًا تكون جلسة واحدة. أنشئها مرة واحدة،
+                    ثم قم بإدارتها من القائمة.
                   </div>
 
                   <button
@@ -2546,19 +2546,19 @@ export default function RunDetails() {
                     disabled={(sessions || []).length > 0}
                     title={
                       (sessions || []).length > 0
-                        ? "Session already created"
-                        : "Create the workshop session"
+                        ? "الجلسة موجودة بالفعل"
+                        : "إنشاء جلسة الورشة"
                     }
                   >
                     {(sessions || []).length > 0
-                      ? "Session created"
-                      : "+ Create session"}
+                      ? "تم إنشاء الجلسة"
+                      : "+ إنشاء جلسة"}
                   </button>
                 </div>
               ) : (
                 <div style={{ display: "grid", gap: 12 }}>
                   <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">First session (date/time)</div>
+                    <div className="muted">أول جلسة (تاريخ/وقت)</div>
                     <input
                       className="input"
                       type={isWorkshop ? "date" : "datetime-local"}
@@ -2575,7 +2575,7 @@ export default function RunDetails() {
                     }}
                   >
                     <div style={{ display: "grid", gap: 6 }}>
-                      <div className="muted">Duration (minutes)</div>
+                      <div className="muted">المدة (دقائق)</div>
                       <input
                         className="input"
                         type="number"
@@ -2586,7 +2586,7 @@ export default function RunDetails() {
                     </div>
 
                     <div style={{ display: "grid", gap: 6 }}>
-                      <div className="muted">Number of sessions</div>
+                      <div className="muted">Number من sessions</div>
                       <input
                         className="input"
                         type="number"
@@ -2598,7 +2598,7 @@ export default function RunDetails() {
                   </div>
 
                   <div style={{ display: "grid", gap: 6 }}>
-                    <div className="muted">Repeat every (days)</div>
+                    <div className="muted">التكرار كل (أيام)</div>
                     <input
                       className="input"
                       type="number"
@@ -2607,7 +2607,7 @@ export default function RunDetails() {
                       onChange={(e) => setIntervalDays(e.target.value)}
                     />
                     <div className="muted" style={{ marginTop: -2 }}>
-                      Current schedule: every <b>{intervalDays}</b> days
+                      الجدول الحالي: every <b>{intervalDays}</b> days
                     </div>
                   </div>
 
@@ -2618,7 +2618,7 @@ export default function RunDetails() {
                     disabled={genLoading || !firstStart}
                     onClick={generateSessions}
                   >
-                    {genLoading ? "Generating..." : "Generate sessions"}
+                    {genLoading ? "Generating..." : "إنشاء الجلسات"}
                   </button>
 
                   <hr className="sep" />
@@ -2629,7 +2629,7 @@ export default function RunDetails() {
                     style={{ width: "100%" }}
                     onClick={openCreateSession}
                   >
-                    <Plus size={16} className="ico" /> Add single session
+                    <Plus size={16} className="ico" /> إضافة جلسة واحدة
                   </button>
                 </div>
               )}
@@ -2642,7 +2642,7 @@ export default function RunDetails() {
             >
               <div className="h1">Session list</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                Manage sessions for this run. Edit times, mark done/canceled, or
+                إدارة sessions for this run. Edit times, mark done/canceled, or
                 delete.
               </div>
 
@@ -2743,8 +2743,8 @@ export default function RunDetails() {
                               <button
                                 type="button"
                                 className="btn primary"
-                                title="Manage"
-                                aria-label="Manage"
+                                title="إدارة"
+                                aria-label="إدارة"
                                 style={{
                                   width: 36,
                                   height: 36,
@@ -2884,9 +2884,9 @@ export default function RunDetails() {
             <div className="card" style={{ gridColumn: "span 12" }}>
               <div className="row space" style={{ alignItems: "flex-start" }}>
                 <div>
-                  <div className="h1">Payments</div>
+                  <div className="h1">المدفوعات</div>
                   <div className="muted" style={{ marginTop: 6 }}>
-                    View and manage payments for this run.
+                    عرض وإدارة المدفوعات لهذه الدفعة.
                   </div>
                 </div>
 
@@ -2895,24 +2895,24 @@ export default function RunDetails() {
                   className="btn primary"
                   onClick={openNewPaymentModal}
                 >
-                  + Add payment
+                  + إضافة دفعة
                 </button>
               </div>
 
               <hr className="sep" />
 
               {payments.length === 0 ? (
-                <div className="muted">No items found.</div>
+                <div className="muted">لا يوجد عناصر.</div>
               ) : (
                 <div className="tableWrap inCard">
                   <table className="table">
                     <thead>
                       <tr>
-                        <th>Child</th>
-                        <th>Amount (₪)</th>
-                        <th style={{ width: 140 }}>Method</th>
-                        <th style={{ width: 170 }}>Date</th>
-                        <th>Note</th>
+                        <th>الطفل</th>
+                        <th>المبلغ (₪)</th>
+                        <th style={{ width: 140 }}>الطريقة</th>
+                        <th style={{ width: 170 }}>التاريخ</th>
+                        <th>ملاحظة</th>
                         <th style={{ width: 92, textAlign: "center" }}></th>
                       </tr>
                     </thead>
@@ -2948,8 +2948,8 @@ export default function RunDetails() {
                               <button
                                 type="button"
                                 className="btn iconOnly"
-                                title="Edit payment"
-                                aria-label="Edit payment"
+                                title="تعديل دفعة"
+                                aria-label="تعديل دفعة"
                                 onClick={() => openEditPayment(p)}
                               >
                                 <Pencil size={16} className="ico" />
@@ -2958,14 +2958,14 @@ export default function RunDetails() {
                               <button
                                 type="button"
                                 className="btn danger iconOnly"
-                                title="Delete payment"
-                                aria-label="Delete payment"
+                                title="حذف دفعة"
+                                aria-label="حذف دفعة"
                                 onClick={() =>
                                   setConfirm({
                                     open: true,
                                     type: "deletePayment",
                                     id: p.id,
-                                    text: "Delete payment",
+                                    text: "حذف دفعة",
                                   })
                                 }
                               >
@@ -3169,9 +3169,9 @@ export default function RunDetails() {
 
         {/* ✅ Child */}
         <Modal
-          open={openManage}
-          title={manageP ? `Manage — ${manageP.child_name}` : "Manage"}
-          onClose={() => setOpenManage(false)}
+          open={openإدارة}
+          title={manageP ? `إدارة — ${manageP.child_name}` : "إدارة"}
+          onClose={() => setOpenإدارة(false)}
         >
           {!manageP ? (
             <div className="muted">—</div>
@@ -3201,9 +3201,9 @@ export default function RunDetails() {
                     >
                       {badgePayment(manageP.payment_status)}
                       {manageP.enrollment_status === "active" ? (
-                        <Badge variant="ok">Active</Badge>
+                        <Badge variant="ok">نشط</Badge>
                       ) : (
-                        <Badge variant="warn">Inactive</Badge>
+                        <Badge variant="warn">غير نشط</Badge>
                       )}
                       {manageP.is_free ? (
                         <Badge variant="info">Free</Badge>
@@ -3213,19 +3213,19 @@ export default function RunDetails() {
 
                   <div className="row" style={{ gap: 18, flexWrap: "wrap" }}>
                     <div>
-                      <div className="muted">Agreed</div>
+                      <div className="muted">المتفق عليه</div>
                       <div style={{ fontWeight: 900 }} dir="ltr">
                         {fmtILS(manageP.agreed_price || 0)}
                       </div>
                     </div>
                     <div>
-                      <div className="muted">Paid</div>
+                      <div className="muted">المدفوع</div>
                       <div style={{ fontWeight: 900 }} dir="ltr">
                         {fmtILS(manageP.paid_amount || 0)}
                       </div>
                     </div>
                     <div>
-                      <div className="muted">Balance</div>
+                      <div className="muted">المتبقي</div>
                       <div style={{ fontWeight: 900 }} dir="ltr">
                         {fmtILS(manageP.balance || 0)}
                       </div>
@@ -3246,7 +3246,7 @@ export default function RunDetails() {
 
                   <div className="row" style={{ gap: 8 }}>
                     <Hourglass size={14} className="ico" />
-                    <span className="muted">Remaining</span>
+                    <span className="muted">المتبقي</span>
                     <b dir="ltr">
                       {fmtNum(manageP.package_sessions_remaining ?? 0)}
                     </b>
@@ -3254,7 +3254,7 @@ export default function RunDetails() {
 
                   <div className="row" style={{ gap: 8 }}>
                     <CheckCircle2 size={14} className="ico" />
-                    <span className="muted">Used</span>
+                    <span className="muted">مستخدم</span>
                     <b dir="ltr">
                       {fmtNum(
                         Math.max(
@@ -3268,7 +3268,7 @@ export default function RunDetails() {
 
                   <div className="row" style={{ gap: 8 }}>
                     <CalendarDays size={14} className="ico" />
-                    <span className="muted">Attended in run</span>
+                    <span className="muted">حضر in run</span>
                     <b dir="ltr">
                       {fmtNum(manageP.sessions_attended_in_run ?? 0)}
                     </b>
@@ -3400,12 +3400,12 @@ export default function RunDetails() {
                       type="button"
                       className="btn"
                       onClick={() => {
-                        setOpenManage(false);
+                        setOpenإدارة(false);
                         openSingleTopup(manageP);
                       }}
-                      title="Add sessions"
+                      title="إضافة جلسةs"
                     >
-                      <ShoppingCart size={16} className="ico" /> Add sessions
+                      <ShoppingCart size={16} className="ico" /> إضافة جلسةs
                     </button>
 
                     <div
@@ -3424,7 +3424,7 @@ export default function RunDetails() {
                         type="button"
                         className="btn"
                         style={{ padding: "8px 12px" }}
-                        onClick={() => quickAdjustFromManage(-1)}
+                        onClick={() => quickAdjustFromإدارة(-1)}
                         title="Decrease"
                       >
                         <Minus size={16} className="ico" />
@@ -3433,7 +3433,7 @@ export default function RunDetails() {
                         type="button"
                         className="btn"
                         style={{ padding: "8px 12px" }}
-                        onClick={() => quickAdjustFromManage(1)}
+                        onClick={() => quickAdjustFromإدارة(1)}
                         title="Increase"
                       >
                         <Plus size={16} className="ico" />
@@ -3445,7 +3445,7 @@ export default function RunDetails() {
                 <hr className="sep" />
 
                 <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                  Payments
+                  المدفوعات
                 </div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   <button
@@ -3453,7 +3453,7 @@ export default function RunDetails() {
                     className="btn primary"
                     disabled={Number(manageP.balance || 0) <= 0}
                     onClick={() => {
-                      setOpenManage(false);
+                      setOpenإدارة(false);
                       openPaymentModalFor(manageP, "remaining");
                     }}
                   >
@@ -3464,18 +3464,18 @@ export default function RunDetails() {
                     type="button"
                     className="btn"
                     onClick={() => {
-                      setOpenManage(false);
+                      setOpenإدارة(false);
                       openPaymentModalFor(manageP, "custom");
                     }}
                   >
-                    <Receipt size={16} className="ico" /> Add payment
+                    <Receipt size={16} className="ico" /> إضافة دفعة
                   </button>
 
                   <button
                     type="button"
                     className="btn"
                     onClick={() => {
-                      setOpenManage(false);
+                      setOpenإدارة(false);
                       openPaymentHistory(manageP);
                     }}
                   >
@@ -3487,7 +3487,7 @@ export default function RunDetails() {
                     className="btn"
                     disabled={!manageP.package_id}
                     onClick={() => {
-                      setOpenManage(false);
+                      setOpenإدارة(false);
                       setPricePackageId(manageP.package_id);
                       setPriceValue(String(Number(manageP.agreed_price || 0)));
                       setOpenPrice(true);
@@ -3508,7 +3508,7 @@ export default function RunDetails() {
                       type="button"
                       className="btn danger"
                       onClick={() => {
-                        setOpenManage(false);
+                        setOpenإدارة(false);
                         setConfirm({
                           open: true,
                           type: "inactive",
@@ -3524,7 +3524,7 @@ export default function RunDetails() {
                       type="button"
                       className="btn primary"
                       onClick={() => {
-                        setOpenManage(false);
+                        setOpenإدارة(false);
                         setConfirm({
                           open: true,
                           type: "active",
@@ -3541,7 +3541,7 @@ export default function RunDetails() {
                     type="button"
                     className="btn danger"
                     onClick={() => {
-                      setOpenManage(false);
+                      setOpenإدارة(false);
                       setConfirm({
                         open: true,
                         type: "deleteEnroll",
@@ -3560,7 +3560,7 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => setOpenManage(false)}
+                    onClick={() => setOpenإدارة(false)}
                   >
                     Close
                   </button>
@@ -3574,7 +3574,7 @@ export default function RunDetails() {
         <Modal
           open={openEnroll}
           title={
-            enrollLocked ? `Add sessions — ${enrollLockedName}` : "Enroll child"
+            enrollLocked ? `إضافة جلسةs — ${enrollLockedName}` : "Enroll child"
           }
           onClose={() => setOpenEnroll(false)}
         >
@@ -3612,7 +3612,7 @@ export default function RunDetails() {
               ) : pkgInfo ? (
                 <div className="muted">
                   Existing sessions balance:{" "}
-                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — Remaining
+                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي
                   to pay:{" "}
                   <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
                 </div>
@@ -3638,7 +3638,7 @@ export default function RunDetails() {
                 disabled={enrollLocked}
                 options={[
                   { value: "use_existing", label: "Use existing balance" },
-                  { value: "buy_new", label: "Add sessions (new)" },
+                  { value: "buy_new", label: "إضافة جلسةs (new)" },
                 ]}
               />
             </div>
@@ -3826,7 +3826,7 @@ export default function RunDetails() {
                 disabled={countriesLoading}
               >
                 <option value="">
-                  {countriesLoading ? "Loading..." : "Select a country..."}
+                  {countriesLoading ? "جاري التحميل..." : "Select a country..."}
                 </option>
                 {(countries ?? []).map((c) => (
                   <option key={c.id} value={c.id}>
@@ -4151,7 +4151,7 @@ export default function RunDetails() {
           onClose={() => setOpenPrice(false)}
         >
           <div style={{ display: "grid", gap: 10 }}>
-            <div className="muted">Duration (minutes)</div>
+            <div className="muted">المدة (دقائق)</div>
             <input
               className="input"
               type="number"
@@ -4182,7 +4182,7 @@ export default function RunDetails() {
         {/* Payment */}
         <Modal
           open={openPay}
-          title={payEditId ? "Edit payment" : "Record payment"}
+          title={payEditId ? "تعديل دفعة" : "Record payment"}
           onClose={() => {
             setOpenPay(false);
             setPayEditId(null);
@@ -4284,17 +4284,17 @@ export default function RunDetails() {
           </div>
 
           {historyLoading ? (
-            <div className="card">Loading...</div>
+            <div className="card">جاري التحميل...</div>
           ) : historyRows.length === 0 ? (
             <div className="card">No children found.</div>
           ) : (
             <table className="table">
               <thead>
                 <tr>
-                  <th>Amount (₪)</th>
-                  <th style={{ width: 140 }}>Method</th>
-                  <th style={{ width: 170 }}>Date</th>
-                  <th>Note</th>
+                  <th>المبلغ (₪)</th>
+                  <th style={{ width: 140 }}>الطريقة</th>
+                  <th style={{ width: 170 }}>التاريخ</th>
+                  <th>ملاحظة</th>
                   <th style={{ width: 72, textAlign: "center" }}></th>
                 </tr>
               </thead>
@@ -4311,14 +4311,14 @@ export default function RunDetails() {
                       <button
                         type="button"
                         className="btn danger iconOnly"
-                        title="Delete payment"
-                        aria-label="Delete payment"
+                        title="حذف دفعة"
+                        aria-label="حذف دفعة"
                         onClick={() =>
                           setConfirm({
                             open: true,
                             type: "deletePayment",
                             id: x.id,
-                            text: "Delete payment",
+                            text: "حذف دفعة",
                           })
                         }
                       >
@@ -4354,7 +4354,7 @@ export default function RunDetails() {
             </div>
             {isWorkshop && (
               <div style={{ gridColumn: "span 6" }}>
-                <div className="muted">Duration (minutes)</div>
+                <div className="muted">المدة (دقائق)</div>
                 <input
                   className="input"
                   type="number"
@@ -4424,8 +4424,8 @@ export default function RunDetails() {
           <div className="grid">
             <div style={{ gridColumn: "span 12" }} className="card">
               <div className="muted">
-                : <b>{adjAttended}</b> — : <b>{adjRunFuture}</b> — :{" "}
-                <b>{adjPkgRemaining}</b>
+                : <b>{adjحضر}</b> — : <b>{adjRunFuture}</b> — :{" "}
+                <b>{adjPkgالمتبقي}</b>
               </div>
               <div className="muted" style={{ marginTop: 6 }}>
                 : <b>{adjMaxAllowed}</b>
@@ -4433,11 +4433,11 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Duration (minutes)</div>
+              <div className="muted">المدة (دقائق)</div>
               <input
                 className="input"
                 type="number"
-                min={adjAttended}
+                min={adjحضر}
                 max={adjMaxAllowed}
                 value={adjNewAllocated}
                 onChange={(e) => setAdjNewAllocated(e.target.value)}
