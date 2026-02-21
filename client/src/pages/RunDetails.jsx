@@ -4208,7 +4208,7 @@ export default function RunDetails() {
         {/* Payment */}
         <Modal
           open={openPay}
-          title={payEditId ? "تعديل دفعة" : "Record payment"}
+          title={payEditId ? "تعديل دفعة" : "إضافة دفعة جديدة"}
           onClose={() => {
             setOpenPay(false);
             setPayEditId(null);
