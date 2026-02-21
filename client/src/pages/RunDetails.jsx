@@ -111,7 +111,7 @@ function isoDate(d) {
 
 function uniqSorted(list) {
   const s = new Set();
-  for (const v من list || []) {
+  for (const v of list || []) {
     const x = String(v || "").trim();
     if (x) s.add(x);
   }
@@ -733,7 +733,7 @@ export default function RunDetails() {
       // Payments related to packages من kids in this run
       const pkgMap = new Map();
       const pkgIds = [];
-      for (const r من part) {
+      for (const r of part) {
         if (r.package_id) {
           pkgMap.set(r.package_id, {
             child_id: r.child_id,
@@ -1076,7 +1076,7 @@ export default function RunDetails() {
   function bulkSelectAllFiltered() {
     setBulkSelected((prev) => {
       const next = { ...prev };
-      for (const c من bulkCandidates) next[String(c.id)] = true;
+      for (const c of bulkCandidates) next[String(c.id)] = true;
       return next;
     });
   }
@@ -1378,7 +1378,7 @@ export default function RunDetails() {
     try {
       // Build a quick lookup for existing run enrollment status per child
       const statusByChild = new Map();
-      for (const p من participants || []) {
+      for (const p of participants || []) {
         const cid = Number(p.child_id);
         if (!Number.isFinite(cid)) continue;
         statusByChild.set(cid, p.enrollment_status);
@@ -1389,7 +1389,7 @@ export default function RunDetails() {
       let skipped = 0;
       let failed = 0;
 
-      for (const childId من bulkSelectedIds) {
+      for (const childId of bulkSelectedIds) {
         const cid = Number(childId);
         if (!Number.isFinite(cid)) continue;
 
