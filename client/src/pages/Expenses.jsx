@@ -138,8 +138,14 @@ export default function Expenses() {
     setHasPicklists(true);
 
     const [catsRes, partiesRes] = await Promise.all([
-      supabase.from("expense_categories").select("name").order("name", { ascending: true }),
-      supabase.from("expense_parties").select("name").order("name", { ascending: true }),
+      supabase
+        .from("expense_categories")
+        .select("name")
+        .order("name", { ascending: true }),
+      supabase
+        .from("expense_parties")
+        .select("name")
+        .order("name", { ascending: true }),
     ]);
 
     const anyErr = catsRes.error || partiesRes.error;
@@ -230,8 +236,10 @@ export default function Expenses() {
       });
     }
 
-    if (cat !== "all") list = list.filter((r) => String(r.category || "") === cat);
-    if (partyFilter !== "all") list = list.filter((r) => String(r.party || "") === partyFilter);
+    if (cat !== "all")
+      list = list.filter((r) => String(r.category || "") === cat);
+    if (partyFilter !== "all")
+      list = list.filter((r) => String(r.party || "") === partyFilter);
 
     return list;
   }, [rows, q, cat, partyFilter]);
@@ -252,7 +260,10 @@ export default function Expenses() {
     const total = filtered.reduce((acc, r) => acc + Number(r.amount || 0), 0);
     const count = filtered.length;
     const avg = count === 0 ? 0 : total / count;
-    const max = filtered.reduce((m, r) => Math.max(m, Number(r.amount || 0)), 0);
+    const max = filtered.reduce(
+      (m, r) => Math.max(m, Number(r.amount || 0)),
+      0,
+    );
 
     const byCat = new Map();
     for (const r of filtered) {
@@ -337,14 +348,14 @@ export default function Expenses() {
 
     const r = await safeInsertPicklist("expense_parties", name);
     if (!r.ok) {
-      toast("فشل إضافة الشخص.", "danger");
+      toast("فشل إضافة شخص/المتجر.", "danger");
       return;
     }
 
     await loadPicklists();
     setExpParty(name);
     setNewPartyName("");
-    toast("تم إضافة الشخص.", "ok");
+    toast("تم إضافة شخص/المتجر.", "ok");
   }
 
   async function saveExpense() {
@@ -367,7 +378,10 @@ export default function Expenses() {
     };
 
     if (editId) {
-      const up = await supabase.from("expenses").update(payload).eq("id", editId);
+      const up = await supabase
+        .from("expenses")
+        .update(payload)
+        .eq("id", editId);
       if (up.error) {
         setError(up.error);
         toast("فشل تعديل المصروف.", "danger");
@@ -436,7 +450,8 @@ export default function Expenses() {
               value={`${fmtMoney(stats.total)} ₪`}
               hint={
                 stats.count
-                  ? `${stats.count} ${stats.count === 1 ? "مصروف" : "مصروفات"}` : "لا توجد مصروفات"
+                  ? `${stats.count} ${stats.count === 1 ? "مصروف" : "مصروفات"}`
+                  : "لا توجد مصروفات"
               }
               variant={stats.total === 0 ? "neutral" : "warn"}
               className="kpi--accent"
@@ -446,7 +461,9 @@ export default function Expenses() {
               icon={Layers}
               label="أعلى فئة"
               value={stats.topCat}
-              hint={stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"}
+              hint={
+                stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"
+              }
               variant={stats.topCat !== "—" ? "info" : "neutral"}
               className="kpi--accent"
             />
@@ -471,7 +488,10 @@ export default function Expenses() {
           </div>
 
           <div className="card" style={{ marginBottom: 12 }}>
-            <div className="toolbar" style={{ justifyContent: "space-between" }}>
+            <div
+              className="toolbar"
+              style={{ justifyContent: "space-between" }}
+            >
               <div className="filtersBar">
                 <Control
                   icon={Search}
@@ -485,7 +505,10 @@ export default function Expenses() {
                   />
                 </Control>
 
-                <Control icon={Filter} style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}>
+                <Control
+                  icon={Filter}
+                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
+                >
                   <ModernSelect
                     bare
                     value={cat}
@@ -498,7 +521,10 @@ export default function Expenses() {
                   />
                 </Control>
 
-                <Control icon={Filter} style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}>
+                <Control
+                  icon={Filter}
+                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
+                >
                   <ModernSelect
                     bare
                     value={partyFilter}
@@ -530,7 +556,10 @@ export default function Expenses() {
                 </Control>
 
                 {rangePreset === "custom" ? (
-                  <div className="filtersBar" style={{ justifyContent: "flex-start" }}>
+                  <div
+                    className="filtersBar"
+                    style={{ justifyContent: "flex-start" }}
+                  >
                     <div className="input">
                       <input
                         type="date"
@@ -559,7 +588,9 @@ export default function Expenses() {
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={Receipt}
-              title={rows.length === 0 ? "لا توجد مصروفات بعد" : "لا توجد نتائج"}
+              title={
+                rows.length === 0 ? "لا توجد مصروفات بعد" : "لا توجد نتائج"
+              }
               description={
                 rows.length === 0
                   ? "أضف أول مصروف للبدء بالتتبع."
@@ -575,7 +606,7 @@ export default function Expenses() {
                   <tr>
                     <th>التاريخ</th>
                     <th>الفئة</th>
-                    <th>الشخص</th>
+                    <th>شخص/المتجر</th>
                     <th>الوصف</th>
                     <th>المبلغ</th>
                     <th></th>
@@ -584,7 +615,9 @@ export default function Expenses() {
                 <tbody>
                   {filtered.map((r) => (
                     <tr key={r.id}>
-                      <td style={{ whiteSpace: "nowrap" }}>{fmtDate(r.spent_on)}</td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        {fmtDate(r.spent_on)}
+                      </td>
                       <td>{r.category || <span className="muted">—</span>}</td>
                       <td>{r.party || <span className="muted">—</span>}</td>
                       <td style={{ minWidth: 260 }}>
@@ -594,7 +627,10 @@ export default function Expenses() {
                         {fmtMoney(r.amount)} ₪
                       </td>
                       <td style={{ whiteSpace: "nowrap" }}>
-                        <div className="row" style={{ justifyContent: "flex-end" }}>
+                        <div
+                          className="row"
+                          style={{ justifyContent: "flex-end" }}
+                        >
                           <IconButton
                             title="تعديل"
                             onClick={() => openEdit(r)}
@@ -625,8 +661,12 @@ export default function Expenses() {
       >
         <div className="card" style={{ border: "none", boxShadow: "none" }}>
           {!hasPicklists ? (
-            <div className="muted" style={{ marginBottom: 10, lineHeight: 1.4 }}>
-              ملاحظة: جداول الخيارات غير موجودة. شغّل ملف الـ SQL ثم حدّث الصفحة.
+            <div
+              className="muted"
+              style={{ marginBottom: 10, lineHeight: 1.4 }}
+            >
+              ملاحظة: جداول الخيارات غير موجودة. شغّل ملف الـ SQL ثم حدّث
+              الصفحة.
             </div>
           ) : null}
 
@@ -697,20 +737,24 @@ export default function Expenses() {
                     placeholder="إضافة فئة جديدة..."
                   />
                 </div>
-                <button className="btn" onClick={addNewCategory} disabled={!newCatName.trim()}>
+                <button
+                  className="btn"
+                  onClick={addNewCategory}
+                  disabled={!newCatName.trim()}
+                >
                   Add
                 </button>
               </div>
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="label">الشخص</div>
+              <div className="label">شخص/متجر</div>
               <div className="input">
                 <ModernSelect
                   bare
                   value={expParty || ""}
                   onChange={setExpParty}
-                  placeholder="اختر شخص..."
+                  placeholder="اختر شخص/متجر..."
                   options={[
                     { value: "", label: "—" },
                     ...parties.map((p) => ({ value: p, label: p })),
@@ -729,10 +773,14 @@ export default function Expenses() {
                     }}
                     value={newPartyName}
                     onChange={(e) => setNewPartyName(e.target.value)}
-                    placeholder="إضافة شخص جديد..."
+                    placeholder="إضافة شخص/متجر جديد..."
                   />
                 </div>
-                <button className="btn" onClick={addNewParty} disabled={!newPartyName.trim()}>
+                <button
+                  className="btn"
+                  onClick={addNewParty}
+                  disabled={!newPartyName.trim()}
+                >
                   Add
                 </button>
               </div>
