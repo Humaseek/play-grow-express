@@ -136,7 +136,6 @@ function rowClassByPayment(status) {
   return "";
 }
 
-
 async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -181,7 +180,6 @@ export default function RunDetails() {
 
   const [newCatName, setNewCatName] = useState("");
   const [newPartyName, setNewPartyName] = useState("");
-
 
   const isWorkshop = (() => {
     const raw =
@@ -524,7 +522,7 @@ export default function RunDetails() {
     setTab("participants");
   }
 
-    // ============================
+  // ============================
   // Run expenses
   // ============================
   function resetExpenseForm() {
@@ -610,7 +608,8 @@ export default function RunDetails() {
     const clean = String(name || "").trim();
     if (!clean) return;
 
-    const table = kind === "category" ? "expense_categories" : "expense_parties";
+    const table =
+      kind === "category" ? "expense_categories" : "expense_parties";
     const setter = kind === "category" ? setExpCategory : setExpParty;
     const inputSetter = kind === "category" ? setNewCatName : setNewPartyName;
 
@@ -656,7 +655,10 @@ export default function RunDetails() {
 
     try {
       if (expenseEditId) {
-        const up = await supabase.from("expenses").update(payload).eq("id", expenseEditId);
+        const up = await supabase
+          .from("expenses")
+          .update(payload)
+          .eq("id", expenseEditId);
         if (up.error) throw up.error;
         toast("Saved.", "ok");
       } else {
@@ -687,7 +689,7 @@ export default function RunDetails() {
     }
   }
 
-// ========= load =========
+  // ========= load =========
   async function loadFixed() {
     setLoading(true);
     setError(null);
@@ -793,12 +795,14 @@ export default function RunDetails() {
   }, [participants]);
 
   const expCategories = useMemo(() => {
-    if (expHasPicklists && expCatOptions.length) return uniqSorted(expCatOptions);
+    if (expHasPicklists && expCatOptions.length)
+      return uniqSorted(expCatOptions);
     return uniqSorted(expenses.map((r) => r.category));
   }, [expHasPicklists, expCatOptions, expenses]);
 
   const expParties = useMemo(() => {
-    if (expHasPicklists && expPartyOptions.length) return uniqSorted(expPartyOptions);
+    if (expHasPicklists && expPartyOptions.length)
+      return uniqSorted(expPartyOptions);
     return uniqSorted(expenses.map((r) => r.party));
   }, [expHasPicklists, expPartyOptions, expenses]);
 
@@ -813,8 +817,10 @@ export default function RunDetails() {
         return a.includes(s) || b.includes(s) || c.includes(s);
       });
     }
-    if (expCatFilter !== "all") list = list.filter((r) => String(r.category || "") === expCatFilter);
-    if (expPartyFilter !== "all") list = list.filter((r) => String(r.party || "") === expPartyFilter);
+    if (expCatFilter !== "all")
+      list = list.filter((r) => String(r.category || "") === expCatFilter);
+    if (expPartyFilter !== "all")
+      list = list.filter((r) => String(r.party || "") === expPartyFilter);
     return list;
   }, [expenses, expQ, expCatFilter, expPartyFilter]);
 
@@ -2229,8 +2235,12 @@ export default function RunDetails() {
                     onChange={(e) => setChildSort(e.target.value)}
                     style={{ flex: "0 1 210px", minWidth: 170 }}
                   >
-                    <option value="balance_desc">المتبقي: من الأعلى للأقل</option>
-                    <option value="balance_asc">المتبقي: من الأقل للأعلى</option>
+                    <option value="balance_desc">
+                      المتبقي: من الأعلى للأقل
+                    </option>
+                    <option value="balance_asc">
+                      المتبقي: من الأقل للأعلى
+                    </option>
                     <option value="name_asc">الاسم: أ-ي</option>
                     <option value="name_desc">الاسم: ي-أ</option>
                   </select>
@@ -2319,8 +2329,7 @@ export default function RunDetails() {
                       tabIndex={0}
                       onClick={() => openإدارةFor(p)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ")
-                          openإدارةFor(p);
+                        if (e.key === "Enter" || e.key === " ") openإدارةFor(p);
                       }}
                     >
                       <div className="pHead">
@@ -2365,7 +2374,15 @@ export default function RunDetails() {
                           </div>
 
                           <div className={barClass} aria-hidden="true">
-                            <span style={{ width: `${pct}%`, backgroundColor: status === "paid" ? "rgb(0,172,71)" : undefined }} />
+                            <span
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor:
+                                  status === "paid"
+                                    ? "rgb(0,172,71)"
+                                    : undefined,
+                              }}
+                            />
                           </div>
 
                           <div
@@ -2525,8 +2542,7 @@ export default function RunDetails() {
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب
-                توقيتك المحلي.
+                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيتك المحلي.
               </div>
 
               <hr className="sep" />
@@ -2534,8 +2550,8 @@ export default function RunDetails() {
               {isWorkshop ? (
                 <div style={{ display: "grid", gap: 12 }}>
                   <div className="muted">
-                    الورشات غالبًا تكون جلسة واحدة. أنشئها مرة واحدة،
-                    ثم قم بإدارتها من القائمة.
+                    الورشات غالبًا تكون جلسة واحدة. أنشئها مرة واحدة، ثم قم
+                    بإدارتها من القائمة.
                   </div>
 
                   <button
@@ -2983,7 +2999,6 @@ export default function RunDetails() {
           </div>
         )}
 
-
         {/* ===================== EXPENSES ===================== */}
         {tab === "expenses" && (
           <div className="card">
@@ -2998,7 +3013,9 @@ export default function RunDetails() {
             >
               <div>
                 <h2 style={{ marginBottom: 4 }}>المصاريف</h2>
-                <div className="muted small">مصاريف مرتبطة بهذه الدفعة (Run)</div>
+                <div className="muted small">
+                  مصاريف مرتبطة بهذه الدفعة (Run)
+                </div>
               </div>
 
               <button
@@ -3013,16 +3030,21 @@ export default function RunDetails() {
 
             {!expFeatureAvailable ? (
               <div style={{ marginTop: 14 }} className="muted">
-                ميزة ربط المصاريف بالـ Run غير مفعّلة بعد.
-                شغّل ملف الـ SQL الذي يضيف <b>run_id</b> لجدول <b>expenses</b>.
+                ميزة ربط المصاريف بالـ Run غير مفعّلة بعد. شغّل ملف الـ SQL الذي
+                يضيف <b>run_id</b> لجدول <b>expenses</b>.
               </div>
             ) : (
               <>
-                <div className="grid" style={{ marginTop: 14, marginBottom: 12 }}>
+                <div
+                  className="grid"
+                  style={{ marginTop: 14, marginBottom: 12 }}
+                >
                   <div className="card" style={{ gridColumn: "span 4" }}>
                     <div className="muted">المجموع</div>
                     <div style={{ fontSize: 22, fontWeight: 900 }}>
-                      <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
+                      <span className="ltrIso">
+                        {fmtILS(runExpensesTotal, 2)}
+                      </span>
                     </div>
                   </div>
 
@@ -3036,7 +3058,9 @@ export default function RunDetails() {
                   <div className="card" style={{ gridColumn: "span 4" }}>
                     <div className="muted">الصافي (المدفوع - المصاريف)</div>
                     <div style={{ fontSize: 22, fontWeight: 900 }}>
-                      <span className="ltrIso">{fmtILS(totals.paid - runExpensesTotal, 2)}</span>
+                      <span className="ltrIso">
+                        {fmtILS(totals.paid - runExpensesTotal, 2)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -3121,13 +3145,19 @@ export default function RunDetails() {
                         {expensesFiltered.map((r) => (
                           <tr key={r.id}>
                             <td className="muted">
-                              <span className="ltrIso">{r.spent_on || "-"}</span>
+                              <span className="ltrIso">
+                                {r.spent_on || "-"}
+                              </span>
                             </td>
-                            <td style={{ fontWeight: 800 }}>{r.category || "—"}</td>
+                            <td style={{ fontWeight: 800 }}>
+                              {r.category || "—"}
+                            </td>
                             <td className="muted">{r.party || "—"}</td>
                             <td className="muted">{r.description || "—"}</td>
                             <td>
-                              <span className="ltrIso">{fmtILS(r.amount, 2)}</span>
+                              <span className="ltrIso">
+                                {fmtILS(r.amount, 2)}
+                              </span>
                             </td>
                             <td style={{ textAlign: "center" }}>
                               <div className="tableActions">
@@ -3612,9 +3642,8 @@ export default function RunDetails() {
               ) : pkgInfo ? (
                 <div className="muted">
                   Existing sessions balance:{" "}
-                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي
-                  to pay:{" "}
-                  <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
+                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي to
+                  pay: <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
                 </div>
               ) : (
                 <div className="muted">
@@ -4232,6 +4261,7 @@ export default function RunDetails() {
                 options={[
                   { value: "cash", label: "Cash" },
                   { value: "card", label: "Card" },
+                  { value: "bit", label: "Bit" },
                   { value: "transfer", label: "Bank transfer" },
                   { value: "other", label: "Other" },
                 ]}
@@ -4476,7 +4506,6 @@ export default function RunDetails() {
             </div>
           </div>
         </Modal>
-
 
         {/* Expense modal */}
         <Modal
