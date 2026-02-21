@@ -2165,9 +2165,6 @@ export default function RunDetails() {
             >
               <div className="pTitle">
                 <h2>الأطفال</h2>
-                <div className="muted small">
-                  {participantsFiltered.length} من {participants.length}
-                </div>
               </div>
 
               <div
