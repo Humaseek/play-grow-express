@@ -58,10 +58,8 @@ function fmtTimeHM(dt) {
 }
 
 function fmtWeekday(dt) {
-  if (!dt) return "-";
-  return new Intl.DateTimeFormat("en-IL", { weekday: "long" }).format(
-    new Date(dt),
-  );
+  if (!dt) return "—";
+  return new Intl.DateTimeFormat("ar", { weekday: "long" }).format(new Date(dt));
 }
 
 function fmtNum(n) {
@@ -1962,7 +1960,7 @@ export default function RunDetails() {
 
   if (loading) {
     return (
-      <div className="page page--runs" dir="rtl" lang="ar">
+      <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
         <div className="container runDetails">
           <div className="card">جاري التحميل...</div>
         </div>
@@ -1972,7 +1970,7 @@ export default function RunDetails() {
 
   if (!summary) {
     return (
-      <div className="page page--runs" dir="rtl" lang="ar">
+      <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
         <div className="container runDetails">
           <div className="card"> .</div>
         </div>
@@ -1981,7 +1979,7 @@ export default function RunDetails() {
   }
 
   return (
-    <div className="page page--runs" dir="rtl" lang="ar">
+    <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
       <div className="container runDetails">
         <div className="topbar">
           <div>
@@ -2010,7 +2008,23 @@ export default function RunDetails() {
                   {fmtNum((totals.paidRatio * 100).toFixed(0))}%
                 </b>
               </span>
-            </div>
+            {expFeatureAvailable ? (
+  <span className="statChip" title="">
+    <Receipt size={16} className="ico" />
+    <span className="statLabel">المصاريف</span>
+    <b className="ltrIso">{fmtILS(runExpensesTotal, 0)}</b>
+  </span>
+) : null}
+{expFeatureAvailable ? (
+  <span className="statChip" title="">
+    <Ticket size={16} className="ico" />
+    <span className="statLabel">الصافي</span>
+    <b className="ltrIso">
+      {fmtILS(totals.paid - runExpensesTotal, 0)}
+    </b>
+  </span>
+) : null}
+</div>
           </div>
 
           <div className="topActions">
@@ -2097,27 +2111,206 @@ export default function RunDetails() {
         </div>
 
         <div className="grid" style={{ marginBottom: 12 }}>
-          <div className="card" style={{ gridColumn: "span 4" }}>
-            <div className="muted">المتفق عليه</div>
-            <div style={{ fontSize: 26, fontWeight: 900 }}>
-              <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
-            </div>
-          </div>
-          <div className="card" style={{ gridColumn: "span 4" }}>
-            <div className="muted">المدفوع</div>
-            <div style={{ fontSize: 26, fontWeight: 900 }}>
-              <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
-            </div>
-          </div>
-          <div className="card" style={{ gridColumn: "span 4" }}>
-            <div className="muted">المتبقي</div>
-            <div style={{ fontSize: 26, fontWeight: 900 }}>
-              <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
-            </div>
-          </div>
+  <div
+    className="card"
+    style={{
+      gridColumn: "span 3",
+      border: "1px solid rgba(122, 92, 255, 0.22)",
+      background:
+        "linear-gradient(180deg, rgba(122, 92, 255, 0.10) 0%, rgba(255,255,255,1) 72%)",
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 12,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div className="muted">المتفق عليه</div>
+        <div style={{ fontSize: 26, fontWeight: 900 }}>
+          <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
         </div>
+      </div>
 
-        <div className="tabs" style={{ marginBottom: 10 }}>
+      <div
+        aria-hidden="true"
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 14,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "rgba(122, 92, 255, 0.14)",
+          border: "1px solid rgba(122, 92, 255, 0.18)",
+        }}
+      >
+        <Tag size={18} />
+      </div>
+    </div>
+  </div>
+
+  <div
+    className="card"
+    style={{
+      gridColumn: "span 3",
+      border: "1px solid rgba(0, 172, 71, 0.24)",
+      background:
+        "linear-gradient(180deg, rgba(0, 172, 71, 0.12) 0%, rgba(255,255,255,1) 72%)",
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 12,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div className="muted">المدفوع</div>
+        <div style={{ fontSize: 26, fontWeight: 900 }}>
+          <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
+        </div>
+        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+          نسبة الدفع:{" "}
+          <b className="ltrIso">{fmtNum((totals.paidRatio * 100).toFixed(0))}%</b>
+        </div>
+      </div>
+
+      <div
+        aria-hidden="true"
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 14,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "rgba(0, 172, 71, 0.14)",
+          border: "1px solid rgba(0, 172, 71, 0.18)",
+        }}
+      >
+        <CreditCard size={18} />
+      </div>
+    </div>
+  </div>
+
+  <div
+    className="card"
+    style={{
+      gridColumn: "span 3",
+      border: "1px solid rgba(255, 153, 0, 0.28)",
+      background:
+        "linear-gradient(180deg, rgba(255, 153, 0, 0.12) 0%, rgba(255,255,255,1) 72%)",
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 12,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div className="muted">مجموع المصاريف</div>
+        <div style={{ fontSize: 26, fontWeight: 900 }}>
+          <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
+        </div>
+        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+          {expFeatureAvailable
+            ? `عدد العمليات: ${fmtNum(expenses.length)}`
+            : "ميزة المصاريف غير مفعّلة"}
+        </div>
+      </div>
+
+      <div
+        aria-hidden="true"
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 14,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "rgba(255, 153, 0, 0.14)",
+          border: "1px solid rgba(255, 153, 0, 0.18)",
+        }}
+      >
+        <Receipt size={18} />
+      </div>
+    </div>
+  </div>
+
+  <div
+    className="card"
+    style={{
+      gridColumn: "span 3",
+      border:
+        totals.balance <= 0
+          ? "1px solid rgba(0, 172, 71, 0.24)"
+          : "1px solid rgba(255, 77, 77, 0.24)",
+      background:
+        totals.balance <= 0
+          ? "linear-gradient(180deg, rgba(0, 172, 71, 0.10) 0%, rgba(255,255,255,1) 72%)"
+          : "linear-gradient(180deg, rgba(255, 77, 77, 0.10) 0%, rgba(255,255,255,1) 72%)",
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 12,
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div className="muted">المتبقي</div>
+        <div style={{ fontSize: 26, fontWeight: 900 }}>
+          <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
+        </div>
+        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+          الصافي بعد المصاريف:{" "}
+          <b className="ltrIso">
+            {fmtILS(totals.paid - runExpensesTotal, 0)}
+          </b>
+        </div>
+      </div>
+
+      <div
+        aria-hidden="true"
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 14,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background:
+            totals.balance <= 0
+              ? "rgba(0, 172, 71, 0.14)"
+              : "rgba(255, 77, 77, 0.14)",
+          border:
+            totals.balance <= 0
+              ? "1px solid rgba(0, 172, 71, 0.18)"
+              : "1px solid rgba(255, 77, 77, 0.18)",
+        }}
+      >
+        <Hourglass size={18} />
+      </div>
+    </div>
+  </div>
+</div>
+
+<div className="tabs" style={{ marginBottom: 10 }}>
           <button
             type="button"
             className={`tab ${tab === "participants" ? "active" : ""}`}
