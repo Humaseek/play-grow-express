@@ -345,6 +345,8 @@ export default function RunDetails() {
   const [openإدارة, setOpenإدارة] = useState(false);
   const [manageP, setإدارةP] = useState(null);
 
+  const manageHasPayments = useMemo(() => Number(manageP?.paid_amount || 0) > 0, [manageP]);
+
   // Confirm
   const [confirm, setConfirm] = useState({
     open: false,
@@ -1531,6 +1533,19 @@ export default function RunDetails() {
     setError(null);
 
     try {
+      // ✅ منع حذف/سحب اشتراك إذا فيه دفعات مرتبطة
+      const payCheck = await supabase
+        .from("payments")
+        .select("id", { count: "exact", head: true })
+        .eq("enrollment_id", enrollmentId);
+
+      if (!payCheck.error && (payCheck.count || 0) > 0) {
+        toast(
+          "لا يمكن حذف هذا الطفل من الدورة لأنه توجد له دفعات مسجّلة داخل هذه الدورة.",
+          "warn",
+        );
+        return;
+      }
       // 1) Mark enrollment as withdrawn (so it disappears from active participants)
       const updEnroll = await supabase
         .from("enrollments")
@@ -3737,7 +3752,16 @@ export default function RunDetails() {
                   <button
                     type="button"
                     className="btn danger"
+                    disabled={manageHasPayments}
+                    title={manageHasPayments ? "لا يمكن حذف الاشتراك لأن هناك دفعات مسجلة." : "حذف الاشتراك"}
                     onClick={() => {
+                      if (manageHasPayments) {
+                        toast(
+                          "لا يمكن حذف هذا الطفل من الدورة لأنه توجد له دفعات مسجّلة داخل هذه الدورة.",
+                          "warn",
+                        );
+                        return;
+                      }
                       setOpenإدارة(false);
                       setConfirm({
                         open: true,
@@ -3747,7 +3771,7 @@ export default function RunDetails() {
                           packageId: manageP.package_id,
                           childName: manageP.child_name,
                         },
-                        text: `Delete enrollment: ${manageP.child_name}`,
+                        text: `حذف الاشتراك: ${manageP.child_name}`,
                       });
                     }}
                   >
