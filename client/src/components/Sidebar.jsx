@@ -13,7 +13,7 @@ export default function Sidebar({ onSignOut }) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="h1">لوحة تحكم الادمين</div>
+        <div className="h1">Admin - </div>
         <div className="h2">Play & Grow</div>
       </div>
 
