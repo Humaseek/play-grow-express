@@ -70,20 +70,19 @@ export default function Children() {
     setClassOptions(clsRes.data ?? []);
   }
 
-async function loadCitiesOnly() {
-  const cRes = await supabase
-    .from("countries")
-    .select("id,name")
-    .order("name", { ascending: true });
+  async function loadCitiesOnly() {
+    const cRes = await supabase
+      .from("countries")
+      .select("id,name")
+      .order("name", { ascending: true });
 
-  if (cRes.error) {
-    setError(cRes.error);
-    return;
+    if (cRes.error) {
+      setError(cRes.error);
+      return;
+    }
+
+    setCountries(cRes.data ?? []);
   }
-
-  setCountries(cRes.data ?? []);
-}
-
 
   async function loadAll() {
     setLoading(true);
@@ -226,47 +225,45 @@ async function loadCitiesOnly() {
     }
   }
 
-async function addNewCity() {
-  const name = (form.new_city ?? "").trim();
-  if (!name) {
-    toast("اكتب اسم المدينة أولاً", "warn");
-    return;
-  }
-
-  setAddingCity(true);
-  setError(null);
-
-  try {
-    const { data, error } = await supabase
-      .from("countries")
-      .upsert([{ name }], { onConflict: "name" })
-      .select("id,name")
-      .single();
-
-    if (error) throw error;
-
-    await loadCitiesOnly();
-    setForm((p) => ({
-      ...p,
-      country_id: data?.id ? String(data.id) : p.country_id,
-      new_city: "",
-    }));
-    toast("تم إضافة المدينة وحفظها للدروب داون", "ok");
-  } catch (e) {
-    if (String(e?.code) === "42P01") {
-      toast("جدول المدن غير موجود. تأكد إن جدول countries موجود.", "warn");
-    } else if (String(e?.code) === "23505") {
-      toast("المدينة موجودة مسبقًا", "warn");
-    } else {
-      toast("فشل إضافة المدينة", "danger");
+  async function addNewCity() {
+    const name = (form.new_city ?? "").trim();
+    if (!name) {
+      toast("اكتب اسم المدينة أولاً", "warn");
+      return;
     }
-    setError(e);
-  } finally {
-    setAddingCity(false);
+
+    setAddingCity(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase
+        .from("countries")
+        .upsert([{ name }], { onConflict: "name" })
+        .select("id,name")
+        .single();
+
+      if (error) throw error;
+
+      await loadCitiesOnly();
+      setForm((p) => ({
+        ...p,
+        country_id: data?.id ? String(data.id) : p.country_id,
+        new_city: "",
+      }));
+      toast("تم إضافة المدينة وحفظها للدروب داون", "ok");
+    } catch (e) {
+      if (String(e?.code) === "42P01") {
+        toast("جدول المدن غير موجود. تأكد إن جدول countries موجود.", "warn");
+      } else if (String(e?.code) === "23505") {
+        toast("المدينة موجودة مسبقًا", "warn");
+      } else {
+        toast("فشل إضافة المدينة", "danger");
+      }
+      setError(e);
+    } finally {
+      setAddingCity(false);
+    }
   }
-}
-
-
 
   async function saveChild(e) {
     e.preventDefault();
@@ -367,7 +364,7 @@ async function addNewCity() {
           icon={UserRound}
           title="لا يوجد أطفال"
           description="Add a child to start enrolling."
-          actionLabel="إضافة طفل"
+          actionLabel=""
           onAction={openCreate}
         />
       ) : (
@@ -453,9 +450,7 @@ async function addNewCity() {
             <input
               className="input"
               value={form.name}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, name: e.target.value }))
-              }
+              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
             />
           </div>
 
@@ -515,42 +510,42 @@ async function addNewCity() {
                 {addingClass ? "جاري الإضافة..." : "إضافة"}
               </button>
             </div>
-</div>
+          </div>
 
           <div style={{ gridColumn: "span 8" }}>
-  <div className="muted">المدينة</div>
-  <ModernSelect
-    value={form.country_id}
-    onChange={(v) => setForm((p) => ({ ...p, country_id: v }))}
-    menuWidth="trigger"
-    options={(countries || []).map((c) => ({
-      value: c.id,
-      label: c.name,
-    }))}
-    placeholder="اختر مدينة…"
-  />
+            <div className="muted">المدينة</div>
+            <ModernSelect
+              value={form.country_id}
+              onChange={(v) => setForm((p) => ({ ...p, country_id: v }))}
+              menuWidth="trigger"
+              options={(countries || []).map((c) => ({
+                value: c.id,
+                label: c.name,
+              }))}
+              placeholder="اختر مدينة…"
+            />
 
-  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-    <input
-      className="input"
-      placeholder="أضف مدينة جديدة..."
-      value={form.new_city}
-      onChange={(e) =>
-        setForm((p) => ({ ...p, new_city: e.target.value }))
-      }
-    />
-    <button
-      type="button"
-      className="btn"
-      onClick={addNewCity}
-      disabled={addingCity}
-    >
-      {addingCity ? "جاري الإضافة..." : "إضافة"}
-    </button>
-  </div>
-</div>
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <input
+                className="input"
+                placeholder="أضف مدينة جديدة..."
+                value={form.new_city}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, new_city: e.target.value }))
+                }
+              />
+              <button
+                type="button"
+                className="btn"
+                onClick={addNewCity}
+                disabled={addingCity}
+              >
+                {addingCity ? "جاري الإضافة..." : "إضافة"}
+              </button>
+            </div>
+          </div>
 
-<div style={{ gridColumn: "span 6" }}>
+          <div style={{ gridColumn: "span 6" }}>
             <div className="muted">اسم الأم</div>
             <input
               className="input"
@@ -603,7 +598,9 @@ async function addNewCity() {
               rows={3}
               placeholder="ملاحظات (اختياري)..."
               value={form.notes}
-              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, notes: e.target.value }))
+              }
             />
           </div>
 
@@ -619,7 +616,9 @@ async function addNewCity() {
                 setForm(emptyForm);
                 setNewClassName("");
               }}
-            >إلغاء</button>
+            >
+              إلغاء
+            </button>
           </div>
         </form>
       </Modal>
