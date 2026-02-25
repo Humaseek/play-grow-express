@@ -363,7 +363,7 @@ export default function Children() {
         <EmptyState
           icon={UserRound}
           title="لا يوجد أطفال"
-          description="Add a child to start enrolling."
+          description=""
           actionLabel=""
           onAction={openCreate}
         />
