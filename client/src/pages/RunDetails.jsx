@@ -59,7 +59,9 @@ function fmtTimeHM(dt) {
 
 function fmtWeekday(dt) {
   if (!dt) return "—";
-  return new Intl.DateTimeFormat("ar", { weekday: "long" }).format(new Date(dt));
+  return new Intl.DateTimeFormat("ar", { weekday: "long" }).format(
+    new Date(dt),
+  );
 }
 
 function fmtNum(n) {
@@ -134,7 +136,6 @@ function rowClassByPayment(status) {
   return "";
 }
 
-
 async function copyText(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -179,7 +180,6 @@ export default function RunDetails() {
 
   const [newCatName, setNewCatName] = useState("");
   const [newPartyName, setNewPartyName] = useState("");
-
 
   const isWorkshop = (() => {
     const raw =
@@ -345,7 +345,10 @@ export default function RunDetails() {
   const [openإدارة, setOpenإدارة] = useState(false);
   const [manageP, setإدارةP] = useState(null);
 
-  const manageHasPayments = useMemo(() => Number(manageP?.paid_amount || 0) > 0, [manageP]);
+  const manageHasPayments = useMemo(
+    () => Number(manageP?.paid_amount || 0) > 0,
+    [manageP],
+  );
 
   // Confirm
   const [confirm, setConfirm] = useState({
@@ -525,7 +528,7 @@ export default function RunDetails() {
     setTab("participants");
   }
 
-    // ============================
+  // ============================
   // Run expenses
   // ============================
   function resetExpenseForm() {
@@ -611,7 +614,8 @@ export default function RunDetails() {
     const clean = String(name || "").trim();
     if (!clean) return;
 
-    const table = kind === "category" ? "expense_categories" : "expense_parties";
+    const table =
+      kind === "category" ? "expense_categories" : "expense_parties";
     const setter = kind === "category" ? setExpCategory : setExpParty;
     const inputSetter = kind === "category" ? setNewCatName : setNewPartyName;
 
@@ -657,7 +661,10 @@ export default function RunDetails() {
 
     try {
       if (expenseEditId) {
-        const up = await supabase.from("expenses").update(payload).eq("id", expenseEditId);
+        const up = await supabase
+          .from("expenses")
+          .update(payload)
+          .eq("id", expenseEditId);
         if (up.error) throw up.error;
         toast("Saved.", "ok");
       } else {
@@ -688,7 +695,7 @@ export default function RunDetails() {
     }
   }
 
-// ========= load =========
+  // ========= load =========
   async function loadFixed() {
     setLoading(true);
     setError(null);
@@ -794,12 +801,14 @@ export default function RunDetails() {
   }, [participants]);
 
   const expCategories = useMemo(() => {
-    if (expHasPicklists && expCatOptions.length) return uniqSorted(expCatOptions);
+    if (expHasPicklists && expCatOptions.length)
+      return uniqSorted(expCatOptions);
     return uniqSorted(expenses.map((r) => r.category));
   }, [expHasPicklists, expCatOptions, expenses]);
 
   const expParties = useMemo(() => {
-    if (expHasPicklists && expPartyOptions.length) return uniqSorted(expPartyOptions);
+    if (expHasPicklists && expPartyOptions.length)
+      return uniqSorted(expPartyOptions);
     return uniqSorted(expenses.map((r) => r.party));
   }, [expHasPicklists, expPartyOptions, expenses]);
 
@@ -814,8 +823,10 @@ export default function RunDetails() {
         return a.includes(s) || b.includes(s) || c.includes(s);
       });
     }
-    if (expCatFilter !== "all") list = list.filter((r) => String(r.category || "") === expCatFilter);
-    if (expPartyFilter !== "all") list = list.filter((r) => String(r.party || "") === expPartyFilter);
+    if (expCatFilter !== "all")
+      list = list.filter((r) => String(r.category || "") === expCatFilter);
+    if (expPartyFilter !== "all")
+      list = list.filter((r) => String(r.party || "") === expPartyFilter);
     return list;
   }, [expenses, expQ, expCatFilter, expPartyFilter]);
 
@@ -1975,7 +1986,15 @@ export default function RunDetails() {
 
   if (loading) {
     return (
-      <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
+      <div
+        className="page page--runs"
+        dir="rtl"
+        lang="ar"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)",
+        }}
+      >
         <div className="container runDetails">
           <div className="card">جاري التحميل...</div>
         </div>
@@ -1985,7 +2004,15 @@ export default function RunDetails() {
 
   if (!summary) {
     return (
-      <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
+      <div
+        className="page page--runs"
+        dir="rtl"
+        lang="ar"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)",
+        }}
+      >
         <div className="container runDetails">
           <div className="card"> .</div>
         </div>
@@ -1994,7 +2021,15 @@ export default function RunDetails() {
   }
 
   return (
-    <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
+    <div
+      className="page page--runs"
+      dir="rtl"
+      lang="ar"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)",
+      }}
+    >
       <div className="container runDetails">
         <div className="topbar">
           <div>
@@ -2023,23 +2058,23 @@ export default function RunDetails() {
                   {fmtNum((totals.paidRatio * 100).toFixed(0))}%
                 </b>
               </span>
-            {expFeatureAvailable ? (
-  <span className="statChip" title="">
-    <Receipt size={16} className="ico" />
-    <span className="statLabel">المصاريف</span>
-    <b className="ltrIso">{fmtILS(runExpensesTotal, 0)}</b>
-  </span>
-) : null}
-{expFeatureAvailable ? (
-  <span className="statChip" title="">
-    <Ticket size={16} className="ico" />
-    <span className="statLabel">الصافي</span>
-    <b className="ltrIso">
-      {fmtILS(totals.paid - runExpensesTotal, 0)}
-    </b>
-  </span>
-) : null}
-</div>
+              {expFeatureAvailable ? (
+                <span className="statChip" title="">
+                  <Receipt size={16} className="ico" />
+                  <span className="statLabel">المصاريف</span>
+                  <b className="ltrIso">{fmtILS(runExpensesTotal, 0)}</b>
+                </span>
+              ) : null}
+              {expFeatureAvailable ? (
+                <span className="statChip" title="">
+                  <Ticket size={16} className="ico" />
+                  <span className="statLabel">الصافي</span>
+                  <b className="ltrIso">
+                    {fmtILS(totals.paid - runExpensesTotal, 0)}
+                  </b>
+                </span>
+              ) : null}
+            </div>
           </div>
 
           <div className="topActions">
@@ -2050,18 +2085,6 @@ export default function RunDetails() {
             >
               رجوع
             </button>
-
-            {nextSession && (
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() =>
-                  navigate(`/sessions/${nextSession.id}/attendance`)
-                }
-              >
-                الحضور
-              </button>
-            )}
 
             <button type="button" className="btn" onClick={loadFixed}>
               تحديث
@@ -2126,206 +2149,208 @@ export default function RunDetails() {
         </div>
 
         <div className="grid" style={{ marginBottom: 12 }}>
-  <div
-    className="card"
-    style={{
-      gridColumn: "span 3",
-      border: "1px solid rgba(122, 92, 255, 0.22)",
-      background:
-        "linear-gradient(180deg, rgba(122, 92, 255, 0.10) 0%, rgba(255,255,255,1) 72%)",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div className="muted">المتفق عليه</div>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>
-          <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
+          <div
+            className="card"
+            style={{
+              gridColumn: "span 3",
+              border: "1px solid rgba(122, 92, 255, 0.22)",
+              background:
+                "linear-gradient(180deg, rgba(122, 92, 255, 0.10) 0%, rgba(255,255,255,1) 72%)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 12,
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div className="muted">المتفق عليه</div>
+                <div style={{ fontSize: 26, fontWeight: 900 }}>
+                  <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
+                </div>
+              </div>
+
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(122, 92, 255, 0.14)",
+                  border: "1px solid rgba(122, 92, 255, 0.18)",
+                }}
+              >
+                <Tag size={18} />
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="card"
+            style={{
+              gridColumn: "span 3",
+              border: "1px solid rgba(0, 172, 71, 0.24)",
+              background:
+                "linear-gradient(180deg, rgba(0, 172, 71, 0.12) 0%, rgba(255,255,255,1) 72%)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 12,
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div className="muted">المدفوع</div>
+                <div style={{ fontSize: 26, fontWeight: 900 }}>
+                  <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
+                </div>
+                <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+                  نسبة الدفع:{" "}
+                  <b className="ltrIso">
+                    {fmtNum((totals.paidRatio * 100).toFixed(0))}%
+                  </b>
+                </div>
+              </div>
+
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(0, 172, 71, 0.14)",
+                  border: "1px solid rgba(0, 172, 71, 0.18)",
+                }}
+              >
+                <CreditCard size={18} />
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="card"
+            style={{
+              gridColumn: "span 3",
+              border: "1px solid rgba(255, 153, 0, 0.28)",
+              background:
+                "linear-gradient(180deg, rgba(255, 153, 0, 0.12) 0%, rgba(255,255,255,1) 72%)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 12,
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div className="muted">مجموع المصاريف</div>
+                <div style={{ fontSize: 26, fontWeight: 900 }}>
+                  <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
+                </div>
+                <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+                  {expFeatureAvailable
+                    ? `عدد العمليات: ${fmtNum(expenses.length)}`
+                    : "ميزة المصاريف غير مفعّلة"}
+                </div>
+              </div>
+
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(255, 153, 0, 0.14)",
+                  border: "1px solid rgba(255, 153, 0, 0.18)",
+                }}
+              >
+                <Receipt size={18} />
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="card"
+            style={{
+              gridColumn: "span 3",
+              border:
+                totals.balance <= 0
+                  ? "1px solid rgba(0, 172, 71, 0.24)"
+                  : "1px solid rgba(255, 77, 77, 0.24)",
+              background:
+                totals.balance <= 0
+                  ? "linear-gradient(180deg, rgba(0, 172, 71, 0.10) 0%, rgba(255,255,255,1) 72%)"
+                  : "linear-gradient(180deg, rgba(255, 77, 77, 0.10) 0%, rgba(255,255,255,1) 72%)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 12,
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div className="muted">المتبقي</div>
+                <div style={{ fontSize: 26, fontWeight: 900 }}>
+                  <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
+                </div>
+                <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
+                  الصافي بعد المصاريف:{" "}
+                  <b className="ltrIso">
+                    {fmtILS(totals.paid - runExpensesTotal, 0)}
+                  </b>
+                </div>
+              </div>
+
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background:
+                    totals.balance <= 0
+                      ? "rgba(0, 172, 71, 0.14)"
+                      : "rgba(255, 77, 77, 0.14)",
+                  border:
+                    totals.balance <= 0
+                      ? "1px solid rgba(0, 172, 71, 0.18)"
+                      : "1px solid rgba(255, 77, 77, 0.18)",
+                }}
+              >
+                <Hourglass size={18} />
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div
-        aria-hidden="true"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(122, 92, 255, 0.14)",
-          border: "1px solid rgba(122, 92, 255, 0.18)",
-        }}
-      >
-        <Tag size={18} />
-      </div>
-    </div>
-  </div>
-
-  <div
-    className="card"
-    style={{
-      gridColumn: "span 3",
-      border: "1px solid rgba(0, 172, 71, 0.24)",
-      background:
-        "linear-gradient(180deg, rgba(0, 172, 71, 0.12) 0%, rgba(255,255,255,1) 72%)",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div className="muted">المدفوع</div>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>
-          <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
-        </div>
-        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-          نسبة الدفع:{" "}
-          <b className="ltrIso">{fmtNum((totals.paidRatio * 100).toFixed(0))}%</b>
-        </div>
-      </div>
-
-      <div
-        aria-hidden="true"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(0, 172, 71, 0.14)",
-          border: "1px solid rgba(0, 172, 71, 0.18)",
-        }}
-      >
-        <CreditCard size={18} />
-      </div>
-    </div>
-  </div>
-
-  <div
-    className="card"
-    style={{
-      gridColumn: "span 3",
-      border: "1px solid rgba(255, 153, 0, 0.28)",
-      background:
-        "linear-gradient(180deg, rgba(255, 153, 0, 0.12) 0%, rgba(255,255,255,1) 72%)",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div className="muted">مجموع المصاريف</div>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>
-          <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
-        </div>
-        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-          {expFeatureAvailable
-            ? `عدد العمليات: ${fmtNum(expenses.length)}`
-            : "ميزة المصاريف غير مفعّلة"}
-        </div>
-      </div>
-
-      <div
-        aria-hidden="true"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(255, 153, 0, 0.14)",
-          border: "1px solid rgba(255, 153, 0, 0.18)",
-        }}
-      >
-        <Receipt size={18} />
-      </div>
-    </div>
-  </div>
-
-  <div
-    className="card"
-    style={{
-      gridColumn: "span 3",
-      border:
-        totals.balance <= 0
-          ? "1px solid rgba(0, 172, 71, 0.24)"
-          : "1px solid rgba(255, 77, 77, 0.24)",
-      background:
-        totals.balance <= 0
-          ? "linear-gradient(180deg, rgba(0, 172, 71, 0.10) 0%, rgba(255,255,255,1) 72%)"
-          : "linear-gradient(180deg, rgba(255, 77, 77, 0.10) 0%, rgba(255,255,255,1) 72%)",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div className="muted">المتبقي</div>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>
-          <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
-        </div>
-        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-          الصافي بعد المصاريف:{" "}
-          <b className="ltrIso">
-            {fmtILS(totals.paid - runExpensesTotal, 0)}
-          </b>
-        </div>
-      </div>
-
-      <div
-        aria-hidden="true"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background:
-            totals.balance <= 0
-              ? "rgba(0, 172, 71, 0.14)"
-              : "rgba(255, 77, 77, 0.14)",
-          border:
-            totals.balance <= 0
-              ? "1px solid rgba(0, 172, 71, 0.18)"
-              : "1px solid rgba(255, 77, 77, 0.18)",
-        }}
-      >
-        <Hourglass size={18} />
-      </div>
-    </div>
-  </div>
-</div>
-
-<div className="tabs" style={{ marginBottom: 10 }}>
+        <div className="tabs" style={{ marginBottom: 10 }}>
           <button
             type="button"
             className={`tab ${tab === "participants" ? "active" : ""}`}
@@ -2441,8 +2466,12 @@ export default function RunDetails() {
                     onChange={(e) => setChildSort(e.target.value)}
                     style={{ flex: "0 1 210px", minWidth: 170 }}
                   >
-                    <option value="balance_desc">المتبقي: من الأعلى للأقل</option>
-                    <option value="balance_asc">المتبقي: من الأقل للأعلى</option>
+                    <option value="balance_desc">
+                      المتبقي: من الأعلى للأقل
+                    </option>
+                    <option value="balance_asc">
+                      المتبقي: من الأقل للأعلى
+                    </option>
                     <option value="name_asc">الاسم: أ-ي</option>
                     <option value="name_desc">الاسم: ي-أ</option>
                   </select>
@@ -2531,8 +2560,7 @@ export default function RunDetails() {
                       tabIndex={0}
                       onClick={() => openإدارةFor(p)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ")
-                          openإدارةFor(p);
+                        if (e.key === "Enter" || e.key === " ") openإدارةFor(p);
                       }}
                     >
                       <div className="pHead">
@@ -2577,7 +2605,15 @@ export default function RunDetails() {
                           </div>
 
                           <div className={barClass} aria-hidden="true">
-                            <span style={{ width: `${pct}%`, backgroundColor: status === "paid" ? "rgb(0,172,71)" : undefined }} />
+                            <span
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor:
+                                  status === "paid"
+                                    ? "rgb(0,172,71)"
+                                    : undefined,
+                              }}
+                            />
                           </div>
 
                           <div
@@ -2737,8 +2773,7 @@ export default function RunDetails() {
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب
-                توقيتك المحلي.
+                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيتك المحلي.
               </div>
 
               <hr className="sep" />
@@ -2746,8 +2781,8 @@ export default function RunDetails() {
               {isWorkshop ? (
                 <div style={{ display: "grid", gap: 12 }}>
                   <div className="muted">
-                    الورشات غالبًا تكون جلسة واحدة. أنشئها مرة واحدة،
-                    ثم قم بإدارتها من القائمة.
+                    الورشات غالبًا تكون جلسة واحدة. أنشئها مرة واحدة، ثم قم
+                    بإدارتها من القائمة.
                   </div>
 
                   <button
@@ -3195,7 +3230,6 @@ export default function RunDetails() {
           </div>
         )}
 
-
         {/* ===================== EXPENSES ===================== */}
         {tab === "expenses" && (
           <div className="card">
@@ -3210,7 +3244,9 @@ export default function RunDetails() {
             >
               <div>
                 <h2 style={{ marginBottom: 4 }}>المصاريف</h2>
-                <div className="muted small">مصاريف مرتبطة بهذه الدفعة (Run)</div>
+                <div className="muted small">
+                  مصاريف مرتبطة بهذه الدفعة (Run)
+                </div>
               </div>
 
               <button
@@ -3225,16 +3261,21 @@ export default function RunDetails() {
 
             {!expFeatureAvailable ? (
               <div style={{ marginTop: 14 }} className="muted">
-                ميزة ربط المصاريف بالـ Run غير مفعّلة بعد.
-                شغّل ملف الـ SQL الذي يضيف <b>run_id</b> لجدول <b>expenses</b>.
+                ميزة ربط المصاريف بالـ Run غير مفعّلة بعد. شغّل ملف الـ SQL الذي
+                يضيف <b>run_id</b> لجدول <b>expenses</b>.
               </div>
             ) : (
               <>
-                <div className="grid" style={{ marginTop: 14, marginBottom: 12 }}>
+                <div
+                  className="grid"
+                  style={{ marginTop: 14, marginBottom: 12 }}
+                >
                   <div className="card" style={{ gridColumn: "span 4" }}>
                     <div className="muted">المجموع</div>
                     <div style={{ fontSize: 22, fontWeight: 900 }}>
-                      <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
+                      <span className="ltrIso">
+                        {fmtILS(runExpensesTotal, 2)}
+                      </span>
                     </div>
                   </div>
 
@@ -3248,7 +3289,9 @@ export default function RunDetails() {
                   <div className="card" style={{ gridColumn: "span 4" }}>
                     <div className="muted">الصافي (المدفوع - المصاريف)</div>
                     <div style={{ fontSize: 22, fontWeight: 900 }}>
-                      <span className="ltrIso">{fmtILS(totals.paid - runExpensesTotal, 2)}</span>
+                      <span className="ltrIso">
+                        {fmtILS(totals.paid - runExpensesTotal, 2)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -3333,13 +3376,19 @@ export default function RunDetails() {
                         {expensesFiltered.map((r) => (
                           <tr key={r.id}>
                             <td className="muted">
-                              <span className="ltrIso">{r.spent_on || "-"}</span>
+                              <span className="ltrIso">
+                                {r.spent_on || "-"}
+                              </span>
                             </td>
-                            <td style={{ fontWeight: 800 }}>{r.category || "—"}</td>
+                            <td style={{ fontWeight: 800 }}>
+                              {r.category || "—"}
+                            </td>
                             <td className="muted">{r.party || "—"}</td>
                             <td className="muted">{r.description || "—"}</td>
                             <td>
-                              <span className="ltrIso">{fmtILS(r.amount, 2)}</span>
+                              <span className="ltrIso">
+                                {fmtILS(r.amount, 2)}
+                              </span>
                             </td>
                             <td style={{ textAlign: "center" }}>
                               <div className="tableActions">
@@ -3753,7 +3802,11 @@ export default function RunDetails() {
                     type="button"
                     className="btn danger"
                     disabled={manageHasPayments}
-                    title={manageHasPayments ? "لا يمكن حذف الاشتراك لأن هناك دفعات مسجلة." : "حذف الاشتراك"}
+                    title={
+                      manageHasPayments
+                        ? "لا يمكن حذف الاشتراك لأن هناك دفعات مسجلة."
+                        : "حذف الاشتراك"
+                    }
                     onClick={() => {
                       if (manageHasPayments) {
                         toast(
@@ -3833,9 +3886,8 @@ export default function RunDetails() {
               ) : pkgInfo ? (
                 <div className="muted">
                   Existing sessions balance:{" "}
-                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي
-                  to pay:{" "}
-                  <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
+                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي to
+                  pay: <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
                 </div>
               ) : (
                 <div className="muted">
@@ -4699,7 +4751,6 @@ export default function RunDetails() {
             </div>
           </div>
         </Modal>
-
 
         {/* Expense modal */}
         <Modal
