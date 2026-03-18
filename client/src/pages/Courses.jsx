@@ -498,7 +498,7 @@ export default function Courses() {
                         margin: 0,
                         display: "inline-flex",
                         alignItems: "center",
-                        padding: "10px 16px",
+                        padding: "0px",
                         borderRadius: 18,
                         border: "1px solid #ddd4ea",
                         background:
@@ -508,7 +508,7 @@ export default function Courses() {
                         fontWeight: 950,
                         color: "#1f172b",
                         lineHeight: 1.35,
-                        maxWidth: "70%",
+                        maxWidth: "100%",
                         wordBreak: "break-word",
                       }}
                     >
@@ -611,9 +611,9 @@ export default function Courses() {
           style={{
             direction: "rtl",
             width: "100%",
-            maxWidth: "70%",
+            maxWidth: "100%",
             margin: 0,
-            padding: "8px 12px 12px",
+            padding: "0px",
             display: "grid",
             gap: 14,
             background: "transparent",
