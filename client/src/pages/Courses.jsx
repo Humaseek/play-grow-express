@@ -581,20 +581,7 @@ export default function Courses() {
             />
           </div>
 
-          <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">عدد الاطفال للدورة</div>
-            <input
-              className="input"
-              type="number"
-              min="1"
-              value={form.capacity}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, capacity: e.target.value }))
-              }
-            />
-          </div>
-
-          <div style={{ gridColumn: "span 4" }}>
+          <div style={{ gridColumn: "span 6" }}>
             <div className="muted">السعر</div>
             <input
               className="input"
@@ -609,7 +596,7 @@ export default function Courses() {
           </div>
 
           {form.id ? (
-            <div style={{ gridColumn: "span 4" }}>
+            <div style={{ gridColumn: "span 6" }}>
               <div className="muted">الحالة</div>
               <ModernSelect
                 value={form.is_active ? "1" : "0"}
