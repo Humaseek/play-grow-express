@@ -485,18 +485,13 @@ export default function Courses() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                      gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
                       gap: 12,
                     }}
                   >
                     <InfoBox
                       label="₪ السعر"
                       value={Number(r.default_price ?? 0).toFixed(2)}
-                    />
-
-                    <InfoBox
-                      label="عدد الأطفال للدورة"
-                      value={Number(r.capacity ?? 0)}
                     />
 
                     <InfoBox
