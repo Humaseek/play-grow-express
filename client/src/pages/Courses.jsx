@@ -598,7 +598,7 @@ export default function Courses() {
 
       <Modal
         open={openForm}
-        title={form.id ? "تعديل دورة" : "إضافة دورة"}
+        title=""
         onClose={() => {
           setOpenForm(false);
           setForm(emptyForm);
@@ -609,7 +609,7 @@ export default function Courses() {
           lang="ar"
           style={{
             direction: "rtl",
-            padding: "18px 20px 22px",
+            padding: "8px 12px 12px",
           }}
         >
           <form
