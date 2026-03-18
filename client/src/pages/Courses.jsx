@@ -35,21 +35,16 @@ const formInputStyle = {
   direction: "rtl",
   boxSizing: "border-box",
   background: "#ffffff",
-  border: "1px solid #e4daf0",
-  borderRadius: 16,
-  minHeight: 50,
+  border: "1px solid #ddd7ea",
+  borderRadius: 14,
+  minHeight: 48,
   padding: "12px 14px",
   color: "#1f172b",
-  boxShadow: "inset 0 1px 2px rgba(39, 20, 61, 0.03)",
   outline: "none",
+  boxShadow: "none",
 };
 
 const formFieldCardStyle = {
-  background: "rgba(255, 255, 255, 0.88)",
-  border: "1px solid #e9e0f3",
-  borderRadius: 22,
-  padding: 14,
-  boxShadow: "0 8px 24px rgba(65, 37, 97, 0.045)",
   minWidth: 0,
 };
 
@@ -621,13 +616,12 @@ export default function Courses() {
             onSubmit={save}
             style={{
               background:
-                "linear-gradient(180deg, rgba(247, 241, 255, 0.76) 0%, rgba(255, 255, 255, 0.98) 46%, rgba(239, 249, 242, 0.60) 100%)",
-              border: "1px solid #e7def2",
-              borderRadius: 30,
-              padding: 20,
-              boxShadow: "0 18px 44px rgba(65, 37, 97, 0.08)",
+                "linear-gradient(180deg, rgba(247, 241, 255, 0.55) 0%, rgba(255, 255, 255, 0.98) 52%, rgba(239, 249, 242, 0.42) 100%)",
+              border: "1px solid #ebe5f4",
+              borderRadius: 24,
+              padding: 18,
               display: "grid",
-              gap: 14,
+              gap: 16,
             }}
           >
             <div
@@ -635,7 +629,7 @@ export default function Courses() {
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
                 gap: 14,
-                alignItems: "start",
+                alignItems: "end",
               }}
             >
               <div style={formFieldCardStyle}>
@@ -673,7 +667,7 @@ export default function Courses() {
                   ? "repeat(auto-fit, minmax(260px, 1fr))"
                   : "minmax(0, 1fr)",
                 gap: 14,
-                alignItems: "start",
+                alignItems: "end",
               }}
             >
               <div style={formFieldCardStyle}>
@@ -738,7 +732,7 @@ export default function Courses() {
                 flexWrap: "wrap",
                 gap: 10,
                 direction: "rtl",
-                paddingTop: 6,
+                paddingTop: 4,
               }}
             >
               <button className="btn primary" disabled={saving}>
