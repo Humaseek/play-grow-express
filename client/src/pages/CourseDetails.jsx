@@ -17,17 +17,23 @@ import {
   Users,
   CalendarClock,
   CheckCircle2,
-  Ban,
   Trash2,
   Plus,
-  RefreshCw,
   RotateCcw,
   Pencil,
+  Ban,
+  RefreshCw,
 } from "lucide-react";
 
 function fmtDT(dt) {
   if (!dt) return "-";
   return fmtDateTime24(dt);
+}
+
+function statusLabel(status) {
+  if (status === "active") return "فعّال";
+  if (status === "done") return "مكتمل";
+  return "ملغى";
 }
 
 export default function CourseDetails() {
@@ -40,21 +46,20 @@ export default function CourseDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Create Run modal
   const [open, setOpen] = useState(false);
   const [label, setLabel] = useState("");
   const [firstStart, setFirstStart] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [count, setCount] = useState(8);
   const [intervalDays, setIntervalDays] = useState(7);
-  const [createsessions, setCreatesessions] = useState(true);
+  const [createSessions, setCreateSessions] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Edit Run modal
   const [editOpen, setEditOpen] = useState(false);
   const [editRunId, setEditRunId] = useState(null);
   const [editLabel, setEditLabel] = useState("");
   const [editDefaultSessionsTotal, setEditDefaultSessionsTotal] = useState("0");
+  const [editStatus, setEditStatus] = useState("active");
 
   const [confirm, setConfirm] = useState({
     open: false,
@@ -67,17 +72,84 @@ export default function CourseDetails() {
     return (course?.kind || "").toLowerCase() === "workshop";
   }, [course]);
 
+  const activeRuns = useMemo(
+    () => runs.filter((r) => r.status === "active"),
+    [runs],
+  );
+
+  const stats = useMemo(() => {
+    const totalRuns = runs.length;
+    const activeCount = activeRuns.length;
+    let totalParticipants = 0;
+    let totalSessions = 0;
+    let next = null;
+
+    for (const r of runs) {
+      totalParticipants += Number(r.participants_count ?? 0);
+      totalSessions += Number(r.sessions_count ?? 0);
+      if (r.status === "active" && r.next_session_at) {
+        const dt = new Date(r.next_session_at);
+        if (!Number.isNaN(dt.getTime()) && (!next || dt < next)) next = dt;
+      }
+    }
+
+    return {
+      totalRuns,
+      activeCount,
+      totalParticipants,
+      totalSessions,
+      nextSessionAt: next ? next.toISOString() : null,
+    };
+  }, [runs, activeRuns]);
+
+  const sortedRuns = useMemo(() => {
+    const list = [...runs];
+    list.sort((a, b) => {
+      const as = a.status === "active" ? 0 : 1;
+      const bs = b.status === "active" ? 0 : 1;
+      if (as !== bs) return as - bs;
+
+      if (a.status === "active" && b.status === "active") {
+        const ad = a.next_session_at ? new Date(a.next_session_at) : null;
+        const bd = b.next_session_at ? new Date(b.next_session_at) : null;
+        if (ad && bd) return ad - bd;
+        if (ad && !bd) return -1;
+        if (!ad && bd) return 1;
+      }
+
+      return Number(b.run_id) - Number(a.run_id);
+    });
+    return list;
+  }, [runs]);
+
+  function runBadge(status) {
+    if (status === "active") return <Badge variant="ok">فعّال</Badge>;
+    if (status === "done") return <Badge variant="info">مكتمل</Badge>;
+    return <Badge variant="danger">ملغى</Badge>;
+  }
+
+  function resetCreateForm() {
+    setLabel("");
+    setFirstStart("");
+    setDurationMinutes(60);
+    setCount(isWorkshop ? 1 : 8);
+    setIntervalDays(isWorkshop ? 1 : 7);
+    setCreateSessions(true);
+  }
+
   function openCreateRunModal() {
-    // For workshops, create exactly 1 session (no weekly repeat).
     if ((course?.kind || "").toLowerCase() === "workshop") {
-      setCreatesessions(true);
+      setCreateSessions(true);
       setCount(1);
       setIntervalDays(1);
     } else {
-      setCreatesessions(true);
+      setCreateSessions(true);
       setCount(isWorkshop ? 1 : 8);
       setIntervalDays(isWorkshop ? 1 : 7);
     }
+    setLabel("");
+    setFirstStart("");
+    setDurationMinutes(60);
     setOpen(true);
   }
 
@@ -85,7 +157,32 @@ export default function CourseDetails() {
     setEditRunId(r.run_id);
     setEditLabel(r.label ?? "");
     setEditDefaultSessionsTotal(String(r.default_sessions_total ?? 0));
+    setEditStatus(r.status ?? "active");
     setEditOpen(true);
+  }
+
+  async function autoEnrollPackages(runId) {
+    setError(null);
+    try {
+      const rpc = await supabase.rpc("auto_enroll_packages_for_run", {
+        p_run_id: Number(runId),
+      });
+
+      if (rpc.error) throw rpc.error;
+
+      const insertedCount =
+        typeof rpc.data === "number"
+          ? rpc.data
+          : Array.isArray(rpc.data)
+            ? rpc.data[0]
+            : rpc.data;
+
+      toast(`تمت المزامنة بنجاح. (${insertedCount ?? 0})`, "ok");
+      await load();
+    } catch (e) {
+      setError(e);
+      toast("فشلت المزامنة.", "danger");
+    }
   }
 
   async function updateRun() {
@@ -105,20 +202,113 @@ export default function CourseDetails() {
         .update({
           label: (editLabel ?? "").trim(),
           default_sessions_total: nextDefault,
+          status: editStatus,
         })
         .eq("id", editRunId);
 
       if (u.error) throw u.error;
 
-      toast("تم تحديث الدفعة.", "ok");
+      toast("تم تحديث الفوج.", "ok");
       setEditOpen(false);
       await load();
     } catch (e) {
       setError(e);
-      toast("فشل تحديث الدفعة.", "danger");
+      toast("فشل تحديث الفوج.", "danger");
     } finally {
       setSaving(false);
     }
+  }
+
+  async function createRun() {
+    setSaving(true);
+    setError(null);
+
+    try {
+      const finalLabel = label.trim()
+        ? label.trim()
+        : firstStart
+          ? `فوج ${new Date(firstStart).toLocaleDateString("en-US")}`
+          : "فوج جديد";
+
+      const ins = await supabase
+        .from("course_runs")
+        .insert([
+          {
+            template_id: Number(courseId),
+            label: finalLabel,
+            status: "active",
+            default_sessions_total: Number(count) || 0,
+          },
+        ])
+        .select("id")
+        .single();
+
+      if (ins.error) throw ins.error;
+
+      const runId = ins.data.id;
+
+      let sessionsGenerated = false;
+      if (createSessions && firstStart) {
+        const iso = new Date(firstStart).toISOString();
+        const rpc = await supabase.rpc("generate_weekly_sessions_for_run", {
+          p_run_id: Number(runId),
+          p_first_start: iso,
+          p_duration_minutes: Number(durationMinutes),
+          p_count: Number(count),
+          p_interval_days: Number(intervalDays),
+        });
+        if (rpc.error) throw rpc.error;
+        sessionsGenerated = true;
+      }
+
+      if (sessionsGenerated) {
+        await autoEnrollPackages(runId);
+      }
+
+      toast("تم إنشاء الفوج.", "ok");
+
+      setOpen(false);
+      resetCreateForm();
+      await load();
+      navigate(`/runs/${runId}`);
+    } catch (e) {
+      setError(e);
+      toast("فشل إنشاء الفوج.", "danger");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function setRunStatus(runId, status) {
+    setError(null);
+
+    const u = await supabase
+      .from("course_runs")
+      .update({ status })
+      .eq("id", runId);
+
+    if (u.error) {
+      setError(u.error);
+      toast("فشل تحديث حالة الفوج.", "danger");
+      return;
+    }
+
+    toast("تم تحديث حالة الفوج.", "ok");
+    await load();
+  }
+
+  async function deleteRun(runId) {
+    setError(null);
+    const d = await supabase.from("course_runs").delete().eq("id", runId);
+
+    if (d.error) {
+      setError(d.error);
+      toast("فشل حذف الفوج.", "danger");
+      return;
+    }
+
+    toast("تم حذف الفوج.", "ok");
+    await load();
   }
 
   async function load() {
@@ -149,7 +339,6 @@ export default function CourseDetails() {
       return { error: null, data: r.data ?? [] };
     };
 
-    // 1) Fetch runs
     const rr = await fetchRuns();
     if (rr.error) {
       setError(rr.error);
@@ -157,8 +346,6 @@ export default function CourseDetails() {
       return;
     }
 
-    // 2) Auto-finish runs: if a run is active, has sessions, and there is no upcoming session,
-    //    mark it as done (meaning the last scheduled session already passed/ended).
     const autoDoneIds = (rr.data ?? [])
       .filter(
         (x) =>
@@ -175,14 +362,12 @@ export default function CourseDetails() {
         .in("id", autoDoneIds);
 
       if (u.error) {
-        // Don't block the page if auto-update fails; just show error and continue with current data.
         setError(u.error);
         setRuns(rr.data ?? []);
         setLoading(false);
         return;
       }
 
-      // re-fetch after auto-update
       const rr2 = await fetchRuns();
       if (rr2.error) {
         setError(rr2.error);
@@ -204,199 +389,10 @@ export default function CourseDetails() {
     load();
   }, [courseId]);
 
-  const activeRuns = useMemo(
-    () => runs.filter((r) => r.status === "active"),
-    [runs],
-  );
-
-  const stats = useMemo(() => {
-    const totalRuns = runs.length;
-    const activeCount = activeRuns.length;
-    let totalParticipants = 0;
-    let totalsessions = 0;
-    let next = null;
-
-    for (const r of runs) {
-      totalParticipants += Number(r.participants_count ?? 0);
-      totalsessions += Number(r.sessions_count ?? 0);
-      if (r.status === "active" && r.next_session_at) {
-        const dt = new Date(r.next_session_at);
-        if (!Number.isNaN(dt.getTime()) && (!next || dt < next)) next = dt;
-      }
-    }
-
-    return {
-      totalRuns,
-      activeCount,
-      totalParticipants,
-      totalsessions,
-      nextSessionAt: next ? next.toISOString() : null,
-    };
-  }, [runs, activeRuns]);
-
-  const sortedRuns = useMemo(() => {
-    const list = [...runs];
-    list.sort((a, b) => {
-      // 1) Active first
-      const as = a.status === "active" ? 0 : 1;
-      const bs = b.status === "active" ? 0 : 1;
-      if (as !== bs) return as - bs;
-
-      // 2) For active: sort by next session ASC
-      if (a.status === "active" && b.status === "active") {
-        const ad = a.next_session_at ? new Date(a.next_session_at) : null;
-        const bd = b.next_session_at ? new Date(b.next_session_at) : null;
-        if (ad && bd) return ad - bd;
-        if (ad && !bd) return -1;
-        if (!ad && bd) return 1;
-      }
-
-      // 3) fallback: newest first
-      return Number(b.run_id) - Number(a.run_id);
-    });
-    return list;
-  }, [runs]);
-
-  function runBadge(status) {
-    if (status === "active") return <Badge variant="ok">فعّالة</Badge>;
-    if (status === "done") return <Badge variant="info">مكتملة</Badge>;
-    return <Badge variant="danger">ملغاة</Badge>;
-  }
-
-  async function autoEnrollPackages(runId) {
-    setError(null);
-    try {
-      const rpc = await supabase.rpc("auto_enroll_packages_for_run", {
-        p_run_id: Number(runId),
-      });
-
-      if (rpc.error) throw rpc.error;
-
-      const insertedCount =
-        typeof rpc.data === "number"
-          ? rpc.data
-          : Array.isArray(rpc.data)
-            ? rpc.data[0]
-            : rpc.data;
-
-      toast(
-        `Synced: inserted/updated ${insertedCount ?? 0} auto-enrollments based on package session balance.`,
-        "ok",
-      );
-
-      await load();
-    } catch (e) {
-      setError(e);
-      toast("فشلت المزامنة.", "danger");
-    }
-  }
-
-  async function createRun() {
-    setSaving(true);
-    setError(null);
-
-    try {
-      const finalLabel = label.trim()
-        ? label.trim()
-        : firstStart
-          ? `دفعة ${new Date(firstStart).toLocaleDateString("en-US")}`
-          : "دفعة جديدة";
-
-      const ins = await supabase
-        .from("course_runs")
-        .insert([
-          {
-            template_id: Number(courseId),
-            label: finalLabel,
-            status: "active",
-            default_sessions_total: Number(count) || 0,
-          },
-        ])
-        .select("id")
-        .single();
-
-      if (ins.error) throw ins.error;
-
-      const runId = ins.data.id;
-
-      let sessionsGenerated = false;
-      if (createsessions && firstStart) {
-        const iso = new Date(firstStart).toISOString();
-        const rpc = await supabase.rpc("generate_weekly_sessions_for_run", {
-          p_run_id: Number(runId),
-          p_first_start: iso,
-          p_duration_minutes: Number(durationMinutes),
-          p_count: Number(count),
-          p_interval_days: Number(intervalDays),
-        });
-        if (rpc.error) throw rpc.error;
-        sessionsGenerated = true;
-      }
-
-      if (sessionsGenerated) {
-        await autoEnrollPackages(runId);
-      } else {
-        toast(
-          "تم إنشاء الدفعة. بعد إضافة/إنشاء الجلسات، استخدم زر المزامنة لتسجيل المشتركين الذين لديهم رصيد جلسات متبقي.",
-          "info",
-        );
-      }
-
-      toast("تم إنشاء الدفعة.", "ok");
-
-      setOpen(false);
-      setLabel("");
-      setFirstStart("");
-      setDurationMinutes(60);
-      setCount(isWorkshop ? 1 : 8);
-      setIntervalDays(isWorkshop ? 1 : 7);
-      setCreatesessions(true);
-
-      await load();
-      navigate(`/runs/${runId}`);
-    } catch (e) {
-      setError(e);
-      toast("فشل إنشاء الدفعة.", "danger");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function setRunStatus(runId, status) {
-    setError(null);
-    const u = await supabase
-      .from("course_runs")
-      .update({ status })
-      .eq("id", runId);
-
-    if (u.error) {
-      setError(u.error);
-      toast("فشل تحديث حالة الدفعة.", "danger");
-      return;
-    }
-
-    toast("تم تحديث حالة الدفعة.", "ok");
-    await load();
-  }
-
-  async function deleteRun(runId) {
-    setError(null);
-    const d = await supabase.from("course_runs").delete().eq("id", runId);
-
-    if (d.error) {
-      setError(d.error);
-      toast("فشل حذف الدفعة.", "danger");
-      return;
-    }
-
-    toast("تم حذف الدفعة.", "ok");
-    await load();
-  }
-
   if (loading) {
     return (
       <div className="container page page--courses" dir="rtl" lang="ar">
-        <div className="card">Loading...</div>
+        <div className="card">جارٍ التحميل...</div>
       </div>
     );
   }
@@ -404,7 +400,7 @@ export default function CourseDetails() {
   if (!course) {
     return (
       <div className="container" dir="rtl" lang="ar">
-        <div className="card">Course not found.</div>
+        <div className="card">الدورة غير موجودة.</div>
       </div>
     );
   }
@@ -420,7 +416,7 @@ export default function CourseDetails() {
               رجوع
             </button>
             <button className="btn primary" onClick={openCreateRunModal}>
-              <Plus size={18} /> دفعة جديدة
+              <Plus size={18} /> فوج جديد
             </button>
           </>
         }
@@ -428,16 +424,13 @@ export default function CourseDetails() {
 
       <ErrorBanner error={error} />
 
-      {/* KPI row */}
       <div className="grid" style={{ marginTop: 10 }}>
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.activeCount ? "ok" : "neutral"}
-            label="الدفعات الفعّالة"
+            label="الأفواج الفعّالة"
             value={stats.activeCount}
-            hint={
-              stats.totalRuns ? `من أصل ${stats.totalRuns}` : "لا يوجد دفعات"
-            }
+            hint={stats.totalRuns ? `من أصل ${stats.totalRuns}` : "لا يوجد أفواج"}
             icon={Layers}
           />
         </div>
@@ -447,7 +440,7 @@ export default function CourseDetails() {
             variant={stats.totalParticipants ? "info" : "neutral"}
             label="المشتركين"
             value={stats.totalParticipants}
-            hint="عبر كل الدفعات"
+            hint="عبر كل الأفواج"
             icon={Users}
           />
         </div>
@@ -457,19 +450,17 @@ export default function CourseDetails() {
             variant={stats.nextSessionAt ? "warn" : "neutral"}
             label="الجلسة القادمة"
             value={stats.nextSessionAt ? fmtDT(stats.nextSessionAt) : "-"}
-            hint={
-              stats.nextSessionAt ? "أقرب جلسة قادمة" : "لا توجد جلسات قادمة"
-            }
+            hint={stats.nextSessionAt ? "أقرب جلسة قادمة" : "لا توجد جلسات قادمة"}
             icon={CalendarClock}
           />
         </div>
 
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
-            variant={stats.totalsessions ? "neutral" : "neutral"}
+            variant={stats.totalSessions ? "neutral" : "neutral"}
             label="مجموع الجلسات"
-            value={stats.totalsessions}
-            hint="عبر كل الدفعات"
+            value={stats.totalSessions}
+            hint="عبر كل الأفواج"
             icon={CalendarClock}
           />
         </div>
@@ -478,12 +469,12 @@ export default function CourseDetails() {
       {sortedRuns.length === 0 ? (
         <div className="card" style={{ marginTop: 12 }}>
           <EmptyState
-            title="لا يوجد دفعات"
-            description="أنشئ أول دفعة للدورة."
+            title="لا يوجد أفواج"
+            description="أنشئ أول فوج للدورة."
             icon={Layers}
             actions={
               <button className="btn primary" onClick={openCreateRunModal}>
-                <Plus size={18} /> دفعة جديدة
+                <Plus size={18} /> فوج جديد
               </button>
             }
           />
@@ -491,8 +482,9 @@ export default function CourseDetails() {
       ) : (
         <div className="cardsGrid" style={{ marginTop: 12 }}>
           {sortedRuns.map((r) => {
-            const title = r.label || `Run #${r.run_id}`;
+            const title = r.label || `فوج #${r.run_id}`;
             const isActive = r.status === "active";
+
             return (
               <div
                 key={r.run_id}
@@ -501,41 +493,55 @@ export default function CourseDetails() {
                 tabIndex={0}
                 onClick={() => navigate(`/runs/${r.run_id}`)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ")
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
                     navigate(`/runs/${r.run_id}`);
+                  }
+                }}
+                style={{
+                  padding: 16,
+                  borderRadius: 22,
+                  display: "grid",
+                  gap: 12,
                 }}
               >
                 <div className="runCard__top">
-                  <div>
-                    <div className="metaRow">
-                      {runBadge(r.status)}
-                      <span className="pill" style={{ padding: "6px 10px" }}>
+                  <div style={{ width: "100%" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 10,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <div className="metaRow">{runBadge(r.status)}</div>
+
+                      <span className="pill" style={{ padding: "6px 12px" }}>
                         <Layers size={16} />
                         <b>{title}</b>
                       </span>
                     </div>
-                    <div className="muted" style={{ marginTop: 6 }}>
-                      الجلسة القادمة:{" "}
-                      <span className="ltrIso">{fmtDT(r.next_session_at)}</span>
-                    </div>
-                    <div className="muted" style={{ marginTop: 4 }}>
-                      السعة: <span className="ltrIso">{course.capacity}</span> •
-                      السعر الافتراضي:{" "}
-                      <span className="ltrIso">
-                        {Number(course.default_price).toFixed(2)}
-                      </span>
+
+                    <div className="muted" style={{ marginTop: 8, lineHeight: 1.7 }}>
+                      الجلسة القادمة: <span className="ltrIso">{fmtDT(r.next_session_at)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="statsRow">
+                <div className="statsRow" style={{ marginTop: 0 }}>
+                  <div className="stat">
+                    <span className="muted">المشتركين</span>
+                    <b>{r.participants_count ?? 0}</b>
+                  </div>
                   <div className="stat">
                     <span className="muted">الجلسات</span>
                     <b>{r.sessions_count ?? 0}</b>
                   </div>
                   <div className="stat">
-                    <span className="muted">المشتركين</span>
-                    <b>{r.participants_count ?? 0}</b>
+                    <span className="muted">الحالة</span>
+                    <b>{statusLabel(r.status)}</b>
                   </div>
                   <div className="stat">
                     <span className="muted">الجلسة القادمة</span>
@@ -543,72 +549,44 @@ export default function CourseDetails() {
                       {fmtDT(r.next_session_at)}
                     </b>
                   </div>
-                  <div className="stat">
-                    <span className="muted">الحالة</span>
-                    <b>
-                      {r.status === "active"
-                        ? "فعّالة"
-                        : r.status === "done"
-                          ? "مكتملة"
-                          : "ملغاة"}
-                    </b>
-                  </div>
                 </div>
 
                 <div
                   className="runCard__actions"
                   onClick={(e) => e.stopPropagation()}
+                  style={{ justifyContent: "flex-start" }}
                 >
                   <IconButton
                     icon={Pencil}
-                    title="تعديل الدفعة"
-                    variant="ghost"
+                    title="تعديل الفوج"
+                    variant="soft"
                     size="sm"
                     onClick={() => openEditRunModal(r)}
-                  />
+                  >
+                    تعديل
+                  </IconButton>
 
-                  <IconButton
-                    icon={RefreshCw}
-                    title="مزامنة اشتراكات من الباقات"
-                    variant="soft"
-                    size="sm"
-                    disabled={!isActive}
-                    onClick={() => autoEnrollPackages(r.run_id)}
-                  />
-                  <IconButton
-                    icon={CheckCircle2}
-                    title="إنهاء الدفعة"
-                    variant="soft"
-                    size="sm"
-                    disabled={!isActive}
-                    onClick={() =>
-                      setConfirm({
-                        open: true,
-                        type: "done",
-                        runId: r.run_id,
-                        text: `إنهاء الدفعة: ${title}`,
-                      })
-                    }
-                  />
-                  <IconButton
-                    icon={Ban}
-                    title="إلغاء الدفعة"
-                    variant="danger"
-                    size="sm"
-                    disabled={!isActive}
-                    onClick={() =>
-                      setConfirm({
-                        open: true,
-                        type: "canceled",
-                        runId: r.run_id,
-                        text: `إلغاء الدفعة: ${title}`,
-                      })
-                    }
-                  />
-                  {r.status !== "active" ? (
+                  {isActive ? (
+                    <IconButton
+                      icon={CheckCircle2}
+                      title="إنهاء الفوج"
+                      variant="soft"
+                      size="sm"
+                      onClick={() =>
+                        setConfirm({
+                          open: true,
+                          type: "done",
+                          runId: r.run_id,
+                          text: `إنهاء الفوج: ${title}`,
+                        })
+                      }
+                    >
+                      إنهاء
+                    </IconButton>
+                  ) : (
                     <IconButton
                       icon={RotateCcw}
-                      title="إعادة تفعيل الدفعة"
+                      title="إعادة تفعيل الفوج"
                       variant="ghost"
                       size="sm"
                       onClick={() =>
@@ -616,14 +594,17 @@ export default function CourseDetails() {
                           open: true,
                           type: "reactivate",
                           runId: r.run_id,
-                          text: `إعادة تفعيل الدفعة: ${title}`,
+                          text: `إعادة تفعيل الفوج: ${title}`,
                         })
                       }
-                    />
-                  ) : null}
+                    >
+                      إعادة تفعيل
+                    </IconButton>
+                  )}
+
                   <IconButton
                     icon={Trash2}
-                    title="حذف الدفعة"
+                    title="حذف الفوج"
                     variant="danger"
                     size="sm"
                     onClick={() =>
@@ -631,10 +612,12 @@ export default function CourseDetails() {
                         open: true,
                         type: "delete",
                         runId: r.run_id,
-                        text: `حذف الدفعة: ${title}`,
+                        text: `حذف الفوج: ${title}`,
                       })
                     }
-                  />
+                  >
+                    حذف
+                  </IconButton>
                 </div>
               </div>
             );
@@ -642,23 +625,23 @@ export default function CourseDetails() {
         </div>
       )}
 
-      <Modal open={open} title="إنشاء دفعة" onClose={() => setOpen(false)}>
-        <div className="muted">دفعة جديدة للدورة.</div>
+      <Modal open={open} title="إنشاء فوج" onClose={() => setOpen(false)}>
+        <div className="muted">فوج جديد للدورة.</div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">اسم الدفعة (اختياري)</div>
+            <div className="muted">اسم الفوج (اختياري)</div>
             <input
               className="input"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="مثال: نادي الأحد - شباط 2026"
+              placeholder="مثال: فوج الأحد - شباط 2026"
             />
           </div>
 
-          <div style={{ gridColumn: "span 6" }}>
+          <div style={{ gridColumn: isWorkshop ? "span 12" : "span 6" }}>
             <div className="muted">بداية أول جلسة (تاريخ/وقت)</div>
             <input
               className="input"
@@ -668,12 +651,12 @@ export default function CourseDetails() {
             />
           </div>
 
-          {!isWorkshop && (
+          {!isWorkshop ? (
             <div style={{ gridColumn: "span 6" }}>
               <div className="muted">إنشاء الجلسات تلقائيًا؟</div>
               <ModernSelect
-                value={createsessions ? "1" : "0"}
-                onChange={(v) => setCreatesessions(v === "1")}
+                value={createSessions ? "1" : "0"}
+                onChange={(v) => setCreateSessions(v === "1")}
                 menuWidth="trigger"
                 options={[
                   { value: "1", label: "نعم" },
@@ -681,26 +664,11 @@ export default function CourseDetails() {
                 ]}
               />
             </div>
-          )}
+          ) : null}
 
-          {isWorkshop && (
+          {((!isWorkshop && createSessions) || isWorkshop) && (
             <>
-              <div style={{ gridColumn: "span 6" }}>
-                <div className="muted">مدة الجلسة (دقائق)</div>
-                <input
-                  className="input"
-                  type="number"
-                  min="15"
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(e.target.value)}
-                />
-              </div>
-            </>
-          )}
-
-          {!isWorkshop && createsessions && (
-            <>
-              <div style={{ gridColumn: "span 4" }}>
+              <div style={{ gridColumn: isWorkshop ? "span 4" : "span 4" }}>
                 <div className="muted">مدة الجلسة (دقائق)</div>
                 <input
                   className="input"
@@ -711,30 +679,31 @@ export default function CourseDetails() {
                 />
               </div>
 
-              <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">عدد الجلسات</div>
-                <input
-                  className="input"
-                  type="number"
-                  min="1"
-                  value={count}
-                  onChange={(e) => setCount(e.target.value)}
-                />
-              </div>
+              {!isWorkshop ? (
+                <>
+                  <div style={{ gridColumn: "span 4" }}>
+                    <div className="muted">عدد الجلسات</div>
+                    <input
+                      className="input"
+                      type="number"
+                      min="1"
+                      value={count}
+                      onChange={(e) => setCount(e.target.value)}
+                    />
+                  </div>
 
-              <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">التكرار كل (أيام)</div>
-                <input
-                  className="input"
-                  type="number"
-                  min="1"
-                  value={intervalDays}
-                  onChange={(e) => setIntervalDays(e.target.value)}
-                />
-                <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                  Weekly: use 7
-                </div>
-              </div>
+                  <div style={{ gridColumn: "span 4" }}>
+                    <div className="muted">التكرار كل (أيام)</div>
+                    <input
+                      className="input"
+                      type="number"
+                      min="1"
+                      value={intervalDays}
+                      onChange={(e) => setIntervalDays(e.target.value)}
+                    />
+                  </div>
+                </>
+              ) : null}
             </>
           )}
 
@@ -742,34 +711,31 @@ export default function CourseDetails() {
             <button
               className="btn primary"
               disabled={saving}
+              type="button"
               onClick={createRun}
             >
-              {saving ? "جارٍ الإنشاء..." : "إنشاء دفعة"}
+              {saving ? "جارٍ الإنشاء..." : "إنشاء فوج"}
             </button>
-            <button className="btn" onClick={() => setOpen(false)}>
+            <button className="btn" type="button" onClick={() => setOpen(false)}>
               إلغاء
             </button>
           </div>
         </div>
       </Modal>
 
-      <Modal
-        open={editOpen}
-        title="تعديل الدفعة"
-        onClose={() => setEditOpen(false)}
-      >
-        <div className="muted">تعديل اسم الدفعة والإعدادات.</div>
+      <Modal open={editOpen} title="تعديل الفوج" onClose={() => setEditOpen(false)}>
+        <div className="muted">تعديل بيانات الفوج وإجراءاته الأساسية.</div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">اسم الدفعة</div>
+            <div className="muted">اسم الفوج</div>
             <input
               className="input"
               value={editLabel}
               onChange={(e) => setEditLabel(e.target.value)}
-              placeholder="مثال: نادي الأحد - شباط 2026"
+              placeholder="مثال: فوج الأحد - شباط 2026"
             />
           </div>
 
@@ -786,9 +752,59 @@ export default function CourseDetails() {
           </div>
 
           <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">ملاحظة</div>
-            <div style={{ fontSize: 12 }} className="muted">
-              يؤثر على المشتركين الجدد فقط.
+            <div className="muted">الحالة</div>
+            <ModernSelect
+              value={editStatus}
+              onChange={setEditStatus}
+              menuWidth="trigger"
+              options={[
+                { value: "active", label: "فعّال" },
+                { value: "done", label: "مكتمل" },
+                { value: "canceled", label: "ملغى" },
+              ]}
+            />
+          </div>
+
+          <div style={{ gridColumn: "span 12" }}>
+            <div
+              style={{
+                border: "1px solid rgba(0,0,0,.08)",
+                borderRadius: 16,
+                padding: 12,
+                background: "rgba(0,0,0,.02)",
+              }}
+            >
+              <div className="muted" style={{ marginBottom: 10 }}>
+                إجراءات إضافية
+              </div>
+
+              <div className="row" style={{ flexWrap: "wrap" }}>
+                <button
+                  className="btn"
+                  type="button"
+                  disabled={!editRunId || editStatus !== "active"}
+                  onClick={() => autoEnrollPackages(editRunId)}
+                >
+                  <RefreshCw size={16} /> مزامنة المشتركين
+                </button>
+
+                <button
+                  className="btn danger"
+                  type="button"
+                  disabled={!editRunId || editStatus !== "active"}
+                  onClick={() => {
+                    setEditOpen(false);
+                    setConfirm({
+                      open: true,
+                      type: "canceled",
+                      runId: editRunId,
+                      text: `إلغاء الفوج: ${editLabel || "هذا الفوج"}`,
+                    });
+                  }}
+                >
+                  <Ban size={16} /> إلغاء الفوج
+                </button>
+              </div>
             </div>
           </div>
         </div>
