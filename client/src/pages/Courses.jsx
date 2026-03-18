@@ -649,24 +649,6 @@ export default function Courses() {
               />
             </div>
 
-            <div style={formFieldCardStyle}>
-              <div style={formLabelStyle}>ملاحظات</div>
-              <textarea
-                className="input"
-                rows={4}
-                style={{
-                  ...formInputStyle,
-                  minHeight: 110,
-                  borderRadius: 24,
-                  resize: "vertical",
-                }}
-                value={form.notes}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, notes: e.target.value }))
-                }
-              />
-            </div>
-
             <button
               className="btn primary"
               disabled={saving}
