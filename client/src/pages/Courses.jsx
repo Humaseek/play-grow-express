@@ -649,13 +649,6 @@ export default function Courses() {
               />
             </div>
 
-            {form.id ? (
-              <div style={formFieldCardStyle}>
-                <div style={formLabelStyle}>الحالة</div>
-                <div dir="rtl"></div>
-              </div>
-            ) : null}
-
             <div style={formFieldCardStyle}>
               <div style={formLabelStyle}>ملاحظات</div>
               <textarea
