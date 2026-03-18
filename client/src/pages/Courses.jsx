@@ -44,6 +44,10 @@ const formInputStyle = {
   boxShadow: "none",
 };
 
+const formFieldCardStyle = {
+  minWidth: 0,
+};
+
 function InfoBox({ label, value }) {
   return (
     <div
