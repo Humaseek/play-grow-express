@@ -196,6 +196,8 @@ export default function Courses() {
     [filtered],
   );
 
+  const totalCount = filtered.length;
+
   const filteredSorted = useMemo(() => {
     const courses = filtered.filter((r) => r.kind !== "workshop");
     const workshops = filtered.filter((r) => r.kind === "workshop");
@@ -298,7 +300,18 @@ export default function Courses() {
   return (
     <div className="container page page--courses" dir="rtl" lang="ar">
       <PageHeader
-        title="الدورات"
+        title={
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <span style={{ fontWeight: 950 }}>الدورات</span>
+            <span className="badge badge--page">{totalCount}</span>
+          </div>
+        }
         subtitle="إدارة الدورات والورشات"
         actions={
           <div className="pageHeader__actions">
