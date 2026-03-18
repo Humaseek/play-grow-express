@@ -473,12 +473,6 @@ export default function Courses() {
                         )}
                         {kindLabel(r.kind)}
                       </span>
-
-                      {r.is_active ? (
-                        <span className="badge ok">فعّال</span>
-                      ) : (
-                        <span className="badge danger">غير فعّال</span>
-                      )}
                     </div>
                   </div>
 
