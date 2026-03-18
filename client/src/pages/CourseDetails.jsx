@@ -4,7 +4,6 @@ import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
-import Badge from "../components/Badge";
 import PageHeader from "../components/PageHeader";
 import EmptyState from "../components/EmptyState";
 import KpiCard from "../components/KpiCard";
@@ -28,12 +27,6 @@ import {
 function fmtDT(dt) {
   if (!dt) return "-";
   return fmtDateTime24(dt);
-}
-
-function statusLabel(status) {
-  if (status === "active") return "فعّال";
-  if (status === "done") return "مكتمل";
-  return "ملغى";
 }
 
 export default function CourseDetails() {
@@ -121,12 +114,6 @@ export default function CourseDetails() {
     });
     return list;
   }, [runs]);
-
-  function runBadge(status) {
-    if (status === "active") return <Badge variant="ok">فعّال</Badge>;
-    if (status === "done") return <Badge variant="info">مكتمل</Badge>;
-    return <Badge variant="danger">ملغى</Badge>;
-  }
 
   function resetCreateForm() {
     setLabel("");
@@ -516,16 +503,10 @@ export default function CourseDetails() {
                         flexWrap: "wrap",
                       }}
                     >
-                      <div className="metaRow">{runBadge(r.status)}</div>
-
                       <span className="pill" style={{ padding: "6px 12px" }}>
                         <Layers size={16} />
                         <b>{title}</b>
                       </span>
-                    </div>
-
-                    <div className="muted" style={{ marginTop: 8, lineHeight: 1.7 }}>
-                      الجلسة القادمة: <span className="ltrIso">{fmtDT(r.next_session_at)}</span>
                     </div>
                   </div>
                 </div>
@@ -538,16 +519,6 @@ export default function CourseDetails() {
                   <div className="stat">
                     <span className="muted">الجلسات</span>
                     <b>{r.sessions_count ?? 0}</b>
-                  </div>
-                  <div className="stat">
-                    <span className="muted">الحالة</span>
-                    <b>{statusLabel(r.status)}</b>
-                  </div>
-                  <div className="stat">
-                    <span className="muted">الجلسة القادمة</span>
-                    <b className="ltrIso" style={{ fontSize: 14 }}>
-                      {fmtDT(r.next_session_at)}
-                    </b>
                   </div>
                 </div>
 
@@ -668,7 +639,7 @@ export default function CourseDetails() {
 
           {((!isWorkshop && createSessions) || isWorkshop) && (
             <>
-              <div style={{ gridColumn: isWorkshop ? "span 4" : "span 4" }}>
+              <div style={{ gridColumn: "span 4" }}>
                 <div className="muted">مدة الجلسة (دقائق)</div>
                 <input
                   className="input"
