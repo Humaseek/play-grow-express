@@ -7,15 +7,7 @@ import PageHeader from "../components/PageHeader";
 import EmptyState from "../components/EmptyState";
 import IconButton from "../components/IconButton";
 import ModernSelect from "../components/ModernSelect";
-import {
-  BookOpen,
-  Plus,
-  Sparkles,
-  Users,
-  CalendarClock,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { BookOpen, Plus, Sparkles, Pencil, Trash2 } from "lucide-react";
 import { useNavigate, useOutletContext } from "react-router";
 
 const emptyForm = {
@@ -27,6 +19,47 @@ const emptyForm = {
   is_active: true,
   notes: "",
 };
+
+function InfoBox({ label, value }) {
+  return (
+    <div
+      style={{
+        border: "1px solid #e6deee",
+        borderRadius: 18,
+        padding: "14px 16px",
+        minHeight: 92,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        background: "#ffffff",
+        textAlign: "right",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: "#756d80",
+          marginBottom: 8,
+          lineHeight: 1.4,
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: 18,
+          fontWeight: 900,
+          color: "#1f172b",
+          lineHeight: 1.2,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
 
 export default function Courses() {
   const navigate = useNavigate();
@@ -61,9 +94,7 @@ export default function Courses() {
         supabase.from("courses").select("*").order("id", { ascending: false }),
         supabase
           .from("course_runs_summary_view")
-          .select(
-            "template_id,status,next_session_at,participants_count,sessions_count",
-          ),
+          .select("template_id,status,next_session_at,participants_count"),
       ]);
 
       if (cRes.error) throw cRes.error;
@@ -76,16 +107,15 @@ export default function Courses() {
       for (const r of runs) {
         const id = r.template_id;
         if (!id) continue;
+
         if (!m[id]) {
           m[id] = {
-            activeRuns: 0,
             participants: 0,
             nextSessionAt: null,
-            sessions: 0,
           };
         }
+
         if (r.status === "active") {
-          m[id].activeRuns += 1;
           const dt = r.next_session_at ? new Date(r.next_session_at) : null;
           if (
             dt &&
@@ -94,8 +124,8 @@ export default function Courses() {
             m[id].nextSessionAt = r.next_session_at;
           }
         }
+
         m[id].participants += Number(r.participants_count ?? 0);
-        m[id].sessions += Number(r.sessions_count ?? 0);
       }
 
       setRows(courses);
@@ -130,9 +160,10 @@ export default function Courses() {
     }
 
     const sorted = [...list];
+
     if (sortBy === "title") {
       sorted.sort((a, b) =>
-        String(a.title ?? "").localeCompare(String(b.title ?? ""), "en"),
+        String(a.title ?? "").localeCompare(String(b.title ?? ""), "ar"),
       );
     } else if (sortBy === "next") {
       sorted.sort((a, b) => {
@@ -142,6 +173,7 @@ export default function Courses() {
         const bd = meta[b.id]?.nextSessionAt
           ? new Date(meta[b.id].nextSessionAt)
           : null;
+
         if (ad && bd) return ad - bd;
         if (ad && !bd) return -1;
         if (!ad && bd) return 1;
@@ -158,29 +190,17 @@ export default function Courses() {
     () => filtered.filter((r) => r.kind !== "workshop").length,
     [filtered],
   );
+
   const workshopCount = useMemo(
     () => filtered.filter((r) => r.kind === "workshop").length,
     [filtered],
   );
 
-  // Keep original ordering from 'filtered', but group: Courses first, then Workshops
   const filteredSorted = useMemo(() => {
     const courses = filtered.filter((r) => r.kind !== "workshop");
     const workshops = filtered.filter((r) => r.kind === "workshop");
     return [...courses, ...workshops];
   }, [filtered]);
-
-  function fmtDT(v) {
-    if (!v) return "-";
-    const d = new Date(v);
-    if (Number.isNaN(d.getTime())) return "-";
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mi = String(d.getMinutes()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
-  }
 
   function kindLabel(k) {
     return k === "workshop" ? "ورشة" : "دورة";
@@ -191,7 +211,7 @@ export default function Courses() {
     setOpenForm(true);
   }
 
-  function openتعديل(r) {
+  function openEdit(r) {
     setForm({
       id: r.id,
       title: r.title ?? "",
@@ -230,6 +250,7 @@ export default function Courses() {
           .from("courses")
           .update(payload)
           .eq("id", form.id);
+
         if (error) throw error;
         toast("تم تحديث الدورة.", "ok");
       } else {
@@ -238,7 +259,9 @@ export default function Courses() {
           .insert([payload])
           .select("id")
           .single();
+
         if (error) throw error;
+
         toast("تم إنشاء الدورة.", "ok");
         setOpenForm(false);
         await load();
@@ -259,12 +282,15 @@ export default function Courses() {
 
   async function removeCourse(id) {
     setError(null);
+
     const { error } = await supabase.from("courses").delete().eq("id", id);
+
     if (error) {
       setError(error);
       toast("فشل حذف الدورة.", "danger");
       return;
     }
+
     toast("تم حذف الدورة.", "ok");
     await load();
   }
@@ -283,7 +309,6 @@ export default function Courses() {
         }
       />
 
-      {/* فلترة */}
       <div className="card" style={{ marginBottom: 14 }}>
         <div className="sectionRow">
           <div className="sectionLabel">فلاتر</div>
@@ -333,6 +358,7 @@ export default function Courses() {
               { value: "next", label: "الجلسة القادمة" },
             ]}
           />
+
           <button className="btn primary filtersBar__btn" onClick={openCreate}>
             <Plus size={18} /> إضافة
           </button>
@@ -361,23 +387,32 @@ export default function Courses() {
               idx === 0 || (filteredSorted[idx - 1]?.kind ?? null) !== r.kind;
             const sectionTitle = isWorkshop ? "الورشات" : "الدورات";
             const sectionCount = isWorkshop ? workshopCount : courseCount;
+
             return (
               <React.Fragment key={r.id}>
                 {showHeader ? (
                   <div
-                    className="card"
                     style={{
                       gridColumn: "1 / -1",
-                      padding: 14,
-                      marginBottom: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      marginTop: idx === 0 ? 0 : 10,
+                      marginBottom: 4,
                     }}
                   >
-                    <div className="row space" style={{ alignItems: "center" }}>
-                      <div style={{ fontWeight: 950, fontSize: 16 }}>
-                        {sectionTitle}
-                      </div>
-                      <span className="badge badge--page">{sectionCount}</span>
+                    <div
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 950,
+                        color: "#241a31",
+                      }}
+                    >
+                      {sectionTitle}
                     </div>
+
+                    <span className="badge badge--page">{sectionCount}</span>
                   </div>
                 ) : null}
 
@@ -392,14 +427,44 @@ export default function Courses() {
                       openCourse();
                     }
                   }}
+                  style={{
+                    padding: 18,
+                    borderRadius: 24,
+                    display: "grid",
+                    gap: 14,
+                    alignContent: "start",
+                  }}
                 >
-                  <div className="cardTitle cardTitle--top">{r.title}</div>
-
                   <div
-                    className="metaRow"
-                    style={{ justifyContent: "space-between", marginTop: 8 }}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: 12,
+                    }}
                   >
-                    <div className="metaRow">
+                    <div
+                      className="cardTitle cardTitle--top"
+                      style={{
+                        margin: 0,
+                        fontSize: 18,
+                        fontWeight: 950,
+                        color: "#1f172b",
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {r.title}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                        justifyContent: "flex-start",
+                      }}
+                    >
                       <span className="badge badge--page">
                         {isWorkshop ? (
                           <Sparkles size={14} />
@@ -408,55 +473,68 @@ export default function Courses() {
                         )}
                         {kindLabel(r.kind)}
                       </span>
+
                       {r.is_active ? (
                         <span className="badge ok">فعّال</span>
                       ) : (
                         <span className="badge danger">غير فعّال</span>
                       )}
                     </div>
-
-                    <span className="muted" style={{ fontSize: 12 }}></span>
-                  </div>
-
-                  <div className="statsRow">
-                    <div className="stat">
-                      <div className="muted">
-                        <Users size={14} />
-                        عدد الاطفال للدورة
-                      </div>
-                      <b>{Number(r.capacity ?? 0)}</b>
-                    </div>
-                    <div className="stat">
-                      <div className="muted">₪ السعر</div>
-                      <b>{Number(r.default_price ?? 0).toFixed(2)}</b>
-                    </div>
-                    <div className="stat">
-                      <div className="muted">المشاركون</div>
-                      <b>{Number(m.participants ?? 0)}</b>
-                    </div>
                   </div>
 
                   <div
-                    className="actionsRow"
-                    style={{ marginTop: 12, justifyContent: "flex-end" }}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                      gap: 12,
+                    }}
+                  >
+                    <InfoBox
+                      label="₪ السعر"
+                      value={Number(r.default_price ?? 0).toFixed(2)}
+                    />
+
+                    <InfoBox
+                      label="عدد الأطفال للدورة"
+                      value={Number(r.capacity ?? 0)}
+                    />
+
+                    <InfoBox
+                      label="المشاركون"
+                      value={Number(m.participants ?? 0)}
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      flexWrap: "wrap",
+                      marginTop: 2,
+                    }}
                   >
                     <IconButton
                       variant="soft"
                       icon={Pencil}
                       onClick={(e) => {
                         e.stopPropagation();
-                        openتعديل(r);
+                        openEdit(r);
                       }}
                       title="تعديل"
                     >
                       تعديل
                     </IconButton>
+
                     <IconButton
                       variant="danger"
                       icon={Trash2}
                       onClick={(e) => {
                         e.stopPropagation();
-                        setConfirmDel({ open: true, id: r.id, title: r.title });
+                        setConfirmDel({
+                          open: true,
+                          id: r.id,
+                          title: r.title,
+                        });
                       }}
                       title="حذف"
                     >
@@ -563,6 +641,7 @@ export default function Courses() {
             <button className="btn primary" disabled={saving}>
               {saving ? "جارٍ الحفظ..." : "حفظ"}
             </button>
+
             <button
               type="button"
               className="btn"
@@ -571,7 +650,7 @@ export default function Courses() {
                 setForm(emptyForm);
               }}
             >
-              Cancel
+              إلغاء
             </button>
           </div>
         </form>
