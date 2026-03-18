@@ -396,8 +396,8 @@ export default function Courses() {
                       gridColumn: "1 / -1",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 12,
+                      justifyContent: "flex-start",
+                      gap: 8,
                       marginTop: idx === 0 ? 0 : 10,
                       marginBottom: 4,
                     }}
