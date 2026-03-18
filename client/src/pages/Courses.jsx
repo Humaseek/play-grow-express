@@ -447,10 +447,20 @@ export default function Courses() {
                       className="cardTitle cardTitle--top"
                       style={{
                         margin: 0,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        padding: "10px 16px",
+                        borderRadius: 18,
+                        border: "1px solid #ddd4ea",
+                        background:
+                          "linear-gradient(135deg, #f7f1ff 0%, #eef9f2 100%)",
+                        boxShadow: "0 8px 20px rgba(115, 87, 148, 0.08)",
                         fontSize: 18,
                         fontWeight: 950,
                         color: "#1f172b",
                         lineHeight: 1.35,
+                        maxWidth: "100%",
+                        wordBreak: "break-word",
                       }}
                     >
                       {r.title}
