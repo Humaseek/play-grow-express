@@ -585,6 +585,7 @@ export default function Courses() {
         }}
       >
         <div
+          className="page page--courses"
           dir="rtl"
           lang="ar"
           style={{
@@ -592,7 +593,7 @@ export default function Courses() {
             width: "100%",
             maxWidth: 420,
             margin: "0 auto",
-            padding: 0,
+            padding: "0 18px 12px",
           }}
         >
           <form
