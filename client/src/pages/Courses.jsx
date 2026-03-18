@@ -652,19 +652,7 @@ export default function Courses() {
             {form.id ? (
               <div style={formFieldCardStyle}>
                 <div style={formLabelStyle}>الحالة</div>
-                <div dir="rtl">
-                  <ModernSelect
-                    value={form.is_active ? "1" : "0"}
-                    onChange={(v) =>
-                      setForm((p) => ({ ...p, is_active: v === "1" }))
-                    }
-                    menuWidth="trigger"
-                    options={[
-                      { value: "1", label: "فعّال" },
-                      { value: "0", label: "غير فعّال" },
-                    ]}
-                  />
-                </div>
+                <div dir="rtl"></div>
               </div>
             ) : null}
 
