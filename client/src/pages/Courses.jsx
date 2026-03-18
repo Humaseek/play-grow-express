@@ -366,7 +366,11 @@ export default function Courses() {
                 {showHeader ? (
                   <div
                     className="card"
-                    style={{ gridColumn: "1 / -1", padding: 14, marginBottom: 2 }}
+                    style={{
+                      gridColumn: "1 / -1",
+                      padding: 14,
+                      marginBottom: 2,
+                    }}
                   >
                     <div className="row space" style={{ alignItems: "center" }}>
                       <div style={{ fontWeight: 950, fontSize: 16 }}>
@@ -379,100 +383,87 @@ export default function Courses() {
 
                 <div
                   className="card hoverLift clickCard"
-
-                role="button"
-                tabIndex={0}
-                onClick={openCourse}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    openCourse();
-                  }
-                }}
-              >
-                <div className="cardTitle cardTitle--top">{r.title}</div>
-
-                <div
-                  className="metaRow"
-                  style={{ justifyContent: "space-between", marginTop: 8 }}
+                  role="button"
+                  tabIndex={0}
+                  onClick={openCourse}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openCourse();
+                    }
+                  }}
                 >
-                  <div className="metaRow">
-                    <span className="badge badge--page">
-                      {isWorkshop ? (
-                        <Sparkles size={14} />
+                  <div className="cardTitle cardTitle--top">{r.title}</div>
+
+                  <div
+                    className="metaRow"
+                    style={{ justifyContent: "space-between", marginTop: 8 }}
+                  >
+                    <div className="metaRow">
+                      <span className="badge badge--page">
+                        {isWorkshop ? (
+                          <Sparkles size={14} />
+                        ) : (
+                          <BookOpen size={14} />
+                        )}
+                        {kindLabel(r.kind)}
+                      </span>
+                      {r.is_active ? (
+                        <span className="badge ok">فعّال</span>
                       ) : (
-                        <BookOpen size={14} />
+                        <span className="badge danger">غير فعّال</span>
                       )}
-                      {kindLabel(r.kind)}
-                    </span>
-                    {r.is_active ? (
-                      <span className="badge ok">فعّال</span>
-                    ) : (
-                      <span className="badge danger">غير فعّال</span>
-                    )}
-                  </div>
-
-                  <span className="muted" style={{ fontSize: 12 }}>
-                    اضغط للفتح
-                  </span>
-                </div>
-
-                <div className="muted" style={{ marginTop: 8 }}>
-                  الدفعات الفعّالة: <b>{Number(m.activeRuns ?? 0)}</b> · الجلسة القادمة:{" "}
-                  <b>{fmtDT(m.nextSessionAt)}</b>
-                </div>
-
-                <div className="statsRow">
-                  <div className="stat">
-                    <div className="muted">
-                      <Users size={14} /> السعة
                     </div>
-                    <b>{Number(r.capacity ?? 0)}</b>
-                  </div>
-                  <div className="stat">
-                    <div className="muted">₪ السعر الافتراضي</div>
-                    <b>{Number(r.default_price ?? 0).toFixed(2)}</b>
-                  </div>
-                  <div className="stat">
-                    <div className="muted">المشاركون (تقريبًا)</div>
-                    <b>{Number(m.participants ?? 0)}</b>
-                  </div>
-                  <div className="stat">
-                    <div className="muted">
-                      <CalendarClock size={14} /> مجموع الجلسات (كل الدفعات)
-                    </div>
-                    <b>{Number(m.sessions ?? 0)}</b>
-                  </div>
-                </div>
 
-                <div
-                  className="actionsRow"
-                  style={{ marginTop: 12, justifyContent: "flex-end" }}
-                >
-                  <IconButton
-                    variant="soft"
-                    icon={Pencil}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openتعديل(r);
-                    }}
-                    title="تعديل"
+                    <span className="muted" style={{ fontSize: 12 }}></span>
+                  </div>
+
+                  <div className="statsRow">
+                    <div className="stat">
+                      <div className="muted">
+                        <Users size={14} />
+                        عدد الاطفال للدورة
+                      </div>
+                      <b>{Number(r.capacity ?? 0)}</b>
+                    </div>
+                    <div className="stat">
+                      <div className="muted">₪ السعر</div>
+                      <b>{Number(r.default_price ?? 0).toFixed(2)}</b>
+                    </div>
+                    <div className="stat">
+                      <div className="muted">المشاركون</div>
+                      <b>{Number(m.participants ?? 0)}</b>
+                    </div>
+                  </div>
+
+                  <div
+                    className="actionsRow"
+                    style={{ marginTop: 12, justifyContent: "flex-end" }}
                   >
-                    تعديل
-                  </IconButton>
-                  <IconButton
-                    variant="danger"
-                    icon={Trash2}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setConfirmDel({ open: true, id: r.id, title: r.title });
-                    }}
-                    title="حذف"
-                  >
-                    حذف
-                  </IconButton>
+                    <IconButton
+                      variant="soft"
+                      icon={Pencil}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openتعديل(r);
+                      }}
+                      title="تعديل"
+                    >
+                      تعديل
+                    </IconButton>
+                    <IconButton
+                      variant="danger"
+                      icon={Trash2}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmDel({ open: true, id: r.id, title: r.title });
+                      }}
+                      title="حذف"
+                    >
+                      حذف
+                    </IconButton>
+                  </div>
                 </div>
-              </div>
               </React.Fragment>
             );
           })}
@@ -513,7 +504,7 @@ export default function Courses() {
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">السعة</div>
+            <div className="muted">عدد الاطفال للدورة</div>
             <input
               className="input"
               type="number"
@@ -526,7 +517,7 @@ export default function Courses() {
           </div>
 
           <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">السعر الافتراضي</div>
+            <div className="muted">السعر</div>
             <input
               className="input"
               type="number"
@@ -544,7 +535,9 @@ export default function Courses() {
               <div className="muted">الحالة</div>
               <ModernSelect
                 value={form.is_active ? "1" : "0"}
-                onChange={(v) => setForm((p) => ({ ...p, is_active: v === "1" }))}
+                onChange={(v) =>
+                  setForm((p) => ({ ...p, is_active: v === "1" }))
+                }
                 menuWidth="trigger"
                 options={[
                   { value: "1", label: "فعّال" },
