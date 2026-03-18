@@ -445,7 +445,7 @@ export default function Courses() {
                       gridColumn: "1 / -1",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "flex-start",
+                      justifyContent: "space-between",
                       gap: 8,
                       marginTop: idx === 0 ? 0 : 10,
                       marginBottom: 4,
@@ -609,17 +609,12 @@ export default function Courses() {
           lang="ar"
           style={{
             direction: "rtl",
-            padding: "18px 20px 20px",
+            padding: "20px 22px 22px",
           }}
         >
           <form
             onSubmit={save}
             style={{
-              background:
-                "linear-gradient(180deg, rgba(247, 241, 255, 0.55) 0%, rgba(255, 255, 255, 0.98) 52%, rgba(239, 249, 242, 0.42) 100%)",
-              border: "1px solid #ebe5f4",
-              borderRadius: 24,
-              padding: 18,
               display: "grid",
               gap: 16,
             }}
@@ -628,7 +623,7 @@ export default function Courses() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                gap: 14,
+                gap: 16,
                 alignItems: "end",
               }}
             >
@@ -666,7 +661,7 @@ export default function Courses() {
                 gridTemplateColumns: form.id
                   ? "repeat(auto-fit, minmax(260px, 1fr))"
                   : "minmax(0, 1fr)",
-                gap: 14,
+                gap: 16,
                 alignItems: "end",
               }}
             >
@@ -715,7 +710,7 @@ export default function Courses() {
                 rows={4}
                 style={{
                   ...formInputStyle,
-                  minHeight: 120,
+                  minHeight: 140,
                   resize: "vertical",
                 }}
                 value={form.notes}
@@ -732,7 +727,7 @@ export default function Courses() {
                 flexWrap: "wrap",
                 gap: 10,
                 direction: "rtl",
-                paddingTop: 4,
+                paddingTop: 6,
               }}
             >
               <button className="btn primary" disabled={saving}>
