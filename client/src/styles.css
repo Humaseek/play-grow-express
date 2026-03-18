@@ -881,7 +881,7 @@ textarea {
   z-index: 50;
 }
 .modalCard {
-  width: min(700px, 100%);
+  width: min(550px, 100%);
   background: var(--surface);
   border-radius: var(--r-xl);
   border: 1px solid rgba(255, 255, 255, 0.12);
