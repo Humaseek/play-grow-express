@@ -424,9 +424,10 @@ export default function Courses() {
                     style={{
                       gridColumn: "1 / -1",
                       display: "flex",
+                      direction: "rtl",
                       alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 8,
+                      justifyContent: "flex-start",
+                      gap: 4,
                       marginTop: idx === 0 ? 0 : 10,
                       marginBottom: 4,
                     }}
