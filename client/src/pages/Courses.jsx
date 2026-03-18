@@ -20,6 +20,22 @@ const emptyForm = {
   notes: "",
 };
 
+const formLabelStyle = {
+  fontSize: 14,
+  fontWeight: 800,
+  color: "#3c3450",
+  marginBottom: 8,
+  textAlign: "right",
+  lineHeight: 1.4,
+};
+
+const formInputStyle = {
+  width: "100%",
+  textAlign: "right",
+  direction: "rtl",
+  boxSizing: "border-box",
+};
+
 function InfoBox({ label, value }) {
   return (
     <div
@@ -555,91 +571,150 @@ export default function Courses() {
           setForm(emptyForm);
         }}
       >
-        <form onSubmit={save} className="grid">
-          <div style={{ gridColumn: "span 7" }}>
-            <div className="muted">العنوان *</div>
-            <input
-              className="input"
-              value={form.title}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, title: e.target.value }))
-              }
-            />
-          </div>
-
-          <div style={{ gridColumn: "span 5" }}>
-            <div className="muted">النوع</div>
-            <ModernSelect
-              value={form.kind}
-              onChange={(v) => setForm((p) => ({ ...p, kind: v }))}
-              menuWidth="trigger"
-              options={[
-                { value: "course", label: "دورة" },
-                { value: "workshop", label: "ورشة" },
-              ]}
-            />
-          </div>
-
-          <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">السعر</div>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              step="0.01"
-              value={form.default_price}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, default_price: e.target.value }))
-              }
-            />
-          </div>
-
-          {form.id ? (
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">الحالة</div>
-              <ModernSelect
-                value={form.is_active ? "1" : "0"}
-                onChange={(v) =>
-                  setForm((p) => ({ ...p, is_active: v === "1" }))
-                }
-                menuWidth="trigger"
-                options={[
-                  { value: "1", label: "فعّال" },
-                  { value: "0", label: "غير فعّال" },
-                ]}
-              />
-            </div>
-          ) : null}
-
-          <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">ملاحظات</div>
-            <textarea
-              className="input"
-              rows={3}
-              value={form.notes}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, notes: e.target.value }))
-              }
-            />
-          </div>
-
-          <div className="row" style={{ gridColumn: "span 12" }}>
-            <button className="btn primary" disabled={saving}>
-              {saving ? "جارٍ الحفظ..." : "حفظ"}
-            </button>
-
-            <button
-              type="button"
-              className="btn"
-              onClick={() => {
-                setOpenForm(false);
-                setForm(emptyForm);
+        <div
+          dir="rtl"
+          lang="ar"
+          style={{
+            padding: "16px 18px 10px",
+            direction: "rtl",
+          }}
+        >
+          <form
+            onSubmit={save}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(12, minmax(0, 1fr))",
+              gap: 16,
+              alignItems: "start",
+              direction: "rtl",
+            }}
+          >
+            <div
+              style={{
+                gridColumn: "span 7",
+                minWidth: 0,
               }}
             >
-              إلغاء
-            </button>
-          </div>
-        </form>
+              <div style={formLabelStyle}>العنوان *</div>
+              <input
+                className="input"
+                style={formInputStyle}
+                value={form.title}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, title: e.target.value }))
+                }
+              />
+            </div>
+
+            <div
+              style={{
+                gridColumn: "span 5",
+                minWidth: 0,
+              }}
+            >
+              <div style={formLabelStyle}>النوع</div>
+              <div dir="rtl">
+                <ModernSelect
+                  value={form.kind}
+                  onChange={(v) => setForm((p) => ({ ...p, kind: v }))}
+                  menuWidth="trigger"
+                  options={[
+                    { value: "course", label: "دورة" },
+                    { value: "workshop", label: "ورشة" },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div
+              style={{
+                gridColumn: form.id ? "span 6" : "span 12",
+                minWidth: 0,
+              }}
+            >
+              <div style={formLabelStyle}>السعر</div>
+              <input
+                className="input"
+                style={formInputStyle}
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.default_price}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, default_price: e.target.value }))
+                }
+              />
+            </div>
+
+            {form.id ? (
+              <div
+                style={{
+                  gridColumn: "span 6",
+                  minWidth: 0,
+                }}
+              >
+                <div style={formLabelStyle}>الحالة</div>
+                <div dir="rtl">
+                  <ModernSelect
+                    value={form.is_active ? "1" : "0"}
+                    onChange={(v) =>
+                      setForm((p) => ({ ...p, is_active: v === "1" }))
+                    }
+                    menuWidth="trigger"
+                    options={[
+                      { value: "1", label: "فعّال" },
+                      { value: "0", label: "غير فعّال" },
+                    ]}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            <div
+              style={{
+                gridColumn: "span 12",
+                minWidth: 0,
+              }}
+            >
+              <div style={formLabelStyle}>ملاحظات</div>
+              <textarea
+                className="input"
+                rows={4}
+                style={{
+                  ...formInputStyle,
+                  minHeight: 110,
+                  resize: "vertical",
+                }}
+                value={form.notes}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, notes: e.target.value }))
+                }
+              />
+            </div>
+
+            <div
+              style={{
+                gridColumn: "span 12",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                marginTop: 4,
+                paddingTop: 4,
+              }}
+            >
+              <button type="button" className="btn" onClick={() => {
+                setOpenForm(false);
+                setForm(emptyForm);
+              }}>
+                إلغاء
+              </button>
+
+              <button className="btn primary" disabled={saving}>
+                {saving ? "جارٍ الحفظ..." : "حفظ"}
+              </button>
+            </div>
+          </form>
+        </div>
       </Modal>
 
       <ConfirmDialog
