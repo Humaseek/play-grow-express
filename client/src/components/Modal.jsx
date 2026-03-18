@@ -5,7 +5,6 @@ export default function Modal({ open, title, children, onClose }) {
   useEffect(() => {
     if (!open) return;
 
-    // Lock body scroll while modal is open
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -22,17 +21,28 @@ export default function Modal({ open, title, children, onClose }) {
 
   if (!open) return null;
 
-  // Render into a portal so the modal isn't affected by any parent stacking/transform/overflow.
   return createPortal(
     <div
       className="modalOverlay"
       onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}
     >
       <div className="modalCard" role="dialog" aria-modal="true">
-        <div className="modalHeader">
-          <div className="h1">{title}</div>
-        </div>
-        {children}
+        <button
+          type="button"
+          className="modalClose"
+          aria-label="إغلاق"
+          onClick={() => onClose?.()}
+        >
+          ×
+        </button>
+
+        {title ? (
+          <div className="modalHeader">
+            <div className="modalTitle">{title}</div>
+          </div>
+        ) : null}
+
+        <div className="modalBody">{children}</div>
       </div>
     </div>,
     document.body,

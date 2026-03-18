@@ -22,11 +22,12 @@ const emptyForm = {
 
 const formLabelStyle = {
   fontSize: 13,
-  fontWeight: 700,
+  fontWeight: 800,
   color: "#4b3f62",
   marginBottom: 8,
   textAlign: "right",
   lineHeight: 1.4,
+  paddingInline: 4,
 };
 
 const formInputStyle = {
@@ -577,7 +578,7 @@ export default function Courses() {
 
       <Modal
         open={openForm}
-        title=""
+        title={form.id ? "تعديل دورة" : "إضافة دورة"}
         onClose={() => {
           setOpenForm(false);
           setForm(emptyForm);
@@ -589,37 +590,18 @@ export default function Courses() {
           style={{
             direction: "rtl",
             width: "100%",
-            maxWidth: 560,
+            maxWidth: 420,
             margin: "0 auto",
-            padding: "0 18px 12px",
+            padding: 0,
           }}
         >
           <form
             onSubmit={save}
             style={{
               display: "grid",
-              gap: 12,
+              gap: 14,
             }}
           >
-            <div
-              style={{
-                textAlign: "center",
-                marginBottom: 2,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 28,
-                  fontWeight: 900,
-                  color: "#241a31",
-                  lineHeight: 1.2,
-                  marginBottom: 4,
-                }}
-              >
-                {form.id ? "تعديل دورة" : "إضافة دورة"}
-              </div>
-            </div>
-
             <div style={formFieldCardStyle}>
               <div style={formLabelStyle}>العنوان *</div>
               <input
@@ -692,7 +674,7 @@ export default function Courses() {
                 style={{
                   ...formInputStyle,
                   minHeight: 110,
-                  borderRadius: 18,
+                  borderRadius: 24,
                   resize: "vertical",
                 }}
                 value={form.notes}
@@ -710,7 +692,7 @@ export default function Courses() {
                 justifyContent: "center",
                 borderRadius: 999,
                 minHeight: 46,
-                marginTop: 4,
+                marginTop: 6,
               }}
             >
               {saving ? "جارٍ الحفظ..." : "حفظ"}
@@ -730,6 +712,7 @@ export default function Courses() {
                 color: "#6c5f85",
                 fontSize: 15,
                 fontWeight: 700,
+                textAlign: "center",
               }}
             >
               إلغاء
