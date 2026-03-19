@@ -518,55 +518,51 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   font-weight: 700;
 }
 
+/* التعديل الجديد على الإحصائيات السريعة لتصبح 2x2 ومريحة */
 .runDetails .pQuickStats {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-@media (max-width: 480px) {
-  .runDetails .pQuickStats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .runDetails .pStatBlock {
-  padding: 10px 6px;
-  border-radius: 12px;
-  background: rgba(248, 250, 252, 0.6);
-  border: none;
+  padding: 14px 10px;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
+  gap: 8px; /* تباعد واضح بين الكلمة والرقم */
 }
 
 .runDetails .pStatBlock.primary {
-  background: rgba(0, 172, 71, 0.05);
+  background: rgba(0, 172, 71, 0.06);
 }
 
 .runDetails .pStatLabel {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   color: rgb(100, 116, 139);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin: 0;
+  white-space: nowrap; /* يمنع الكلمات من النزول لسطر جديد */
 }
 
 .runDetails .pStatValue {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 900;
-  line-height: 1.1;
+  line-height: 1;
   color: rgb(15, 23, 42);
 }
 
 .runDetails .pStatBlock.primary .pStatValue {
-  font-size: 18px;
   color: rgb(0, 172, 71);
 }
 
@@ -3129,7 +3125,7 @@ export default function RunDetails() {
                           <span className="muted">
                             المتفق عليه:{" "}
                             <b
-                              style={{ color: "#0f172a", fontSize: "14px" }}
+                              style={{ color: "#0f172a", fontSize: "15px" }}
                               className="ltrIso"
                             >
                               {fmtILS(agreed)}
@@ -3139,11 +3135,13 @@ export default function RunDetails() {
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              gap: "4px",
+                              gap: "6px",
                             }}
                           >
                             <span className="muted">نسبة الدفع</span>
-                            <b className="ltrIso">{fmtNum(pct.toFixed(0))}%</b>
+                            <b className="ltrIso" style={{ fontSize: "15px" }}>
+                              {fmtNum(pct.toFixed(0))}%
+                            </b>
                           </div>
                         </div>
                         <div className={barClass} aria-hidden="true">
