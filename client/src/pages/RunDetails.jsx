@@ -2953,7 +2953,7 @@ export default function RunDetails() {
                         <div className="pStatBlock">
                           <div className="pStatLabel">
                             <CalendarDays size={14} className="ico" />
-                            <span>حضر</span>
+                            <span>حضور</span>
                           </div>
                           <div className="pStatValueSm ltrIso" dir="ltr">
                             {fmtNum(attended)}
@@ -2977,22 +2977,6 @@ export default function RunDetails() {
                           <span>المتفق عليه</span>
                           <b className="ltrIso" dir="ltr">
                             {fmtILS(agreed)}
-                          </b>
-                        </div>
-
-                        <div className="pMiniFact">
-                          <CheckCircle2 size={14} className="ico" />
-                          <span>مستخدم</span>
-                          <b className="ltrIso" dir="ltr">
-                            {fmtNum(pkgمستخدم)}
-                          </b>
-                        </div>
-
-                        <div className="pMiniFact">
-                          <Hourglass size={14} className="ico" />
-                          <span>جلسات الدفعة</span>
-                          <b className="ltrIso" dir="ltr">
-                            {fmtNum(runSessions)}
                           </b>
                         </div>
                       </div>
