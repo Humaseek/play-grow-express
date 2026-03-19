@@ -2261,14 +2261,15 @@ export default function RunDetails() {
     await loadFixed();
   }
 
-  function openPaymentModalFor(participantRow, mode = "remaining") {
+  function openPaymentModalFor(participantRow, mode = "custom") {
     setPayEnrollmentId(String(participantRow.enrollment_id));
     setPayLocked(true);
     setPayEditId(null);
     const remaining = Number(participantRow.balance || 0);
+    // التعديل هنا: إذا اخترنا "remaining" بيعبي المبلغ، وإذا "custom" بيخليه فاضي
     if (mode === "remaining")
       setPayAmount(remaining > 0 ? String(remaining.toFixed(2)) : "");
-    else setPayAmount("");
+    else setPayAmount(""); // دائماً فاضي في البطاقة الخارجية
     setPayMethod("cash");
     setPayNote("");
     setOpenPay(true);
@@ -3103,14 +3104,7 @@ export default function RunDetails() {
                             title="إضافة دفعة"
                             variant="soft"
                             size="sm"
-                            onClick={() => openPaymentModalFor(p, "remaining")}
-                          />
-                          <IconButton
-                            icon={<Receipt size={16} className="ico" />}
-                            title="سجل الدفعات"
-                            variant="soft"
-                            size="sm"
-                            onClick={() => openPaymentHistory(p)}
+                            onClick={() => openPaymentModalFor(p, "custom")}
                           />
                           <IconButton
                             icon={<Plus size={16} className="ico" />}
@@ -3118,13 +3112,6 @@ export default function RunDetails() {
                             variant="soft"
                             size="sm"
                             onClick={() => openSingleTopup(p)}
-                          />
-                          <IconButton
-                            icon={<Settings2 size={16} className="ico" />}
-                            title="إدارة"
-                            variant="solid"
-                            size="sm"
-                            onClick={() => openإدارةFor(p)}
                           />
                         </div>
 
