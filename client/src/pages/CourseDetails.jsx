@@ -115,6 +115,11 @@ export default function CourseDetails() {
     return list;
   }, [runs]);
 
+  const priceValue = useMemo(
+    () => Number(course?.default_price ?? 0).toFixed(2),
+    [course],
+  );
+
   function resetCreateForm() {
     setLabel("");
     setFirstStart("");
@@ -395,8 +400,80 @@ export default function CourseDetails() {
   return (
     <div className="container page page--courses" dir="rtl" lang="ar">
       <PageHeader
-        title={course.title}
-        subtitle={`السعة: ${course.capacity} — السعر الافتراضي: ${Number(course.default_price).toFixed(2)}`}
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ fontSize: 32, fontWeight: 950, color: "#22182f" }}>
+              {course.title}
+            </span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "6px 12px",
+                borderRadius: 999,
+                background: isWorkshop
+                  ? "rgba(14,165,233,.12)"
+                  : "rgba(124,58,237,.12)",
+                color: isWorkshop ? "#075985" : "#5b21b6",
+                border: isWorkshop
+                  ? "1px solid rgba(14,165,233,.18)"
+                  : "1px solid rgba(124,58,237,.18)",
+                fontSize: 12,
+                fontWeight: 900,
+                lineHeight: 1,
+              }}
+            >
+              {isWorkshop ? "ورشة" : "دورة"}
+            </span>
+          </div>
+        }
+        subtitle={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              marginTop: 2,
+            }}
+          >
+            <span
+              style={{
+                color: "#7a6d91",
+                fontSize: 14,
+                fontWeight: 800,
+              }}
+            >
+              السعر
+            </span>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "7px 12px",
+                borderRadius: 999,
+                background: "linear-gradient(135deg, rgba(124,58,237,.10), rgba(255,255,255,.96))",
+                border: "1px solid rgba(124,58,237,.14)",
+                boxShadow: "0 8px 18px rgba(124,58,237,.08)",
+              }}
+            >
+              <span className="ltrIso" style={{ fontSize: 16, fontWeight: 950, color: "#241a31" }}>
+                {priceValue}
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 900, color: "#8a7ca5" }}>
+                ₪
+              </span>
+            </span>
+          </div>
+        }
         actions={
           <>
             <button className="btn" onClick={() => navigate("/courses")}>
@@ -417,7 +494,9 @@ export default function CourseDetails() {
             variant={stats.activeCount ? "ok" : "neutral"}
             label="الأفواج الفعّالة"
             value={stats.activeCount}
-            hint={stats.totalRuns ? `من أصل ${stats.totalRuns}` : "لا يوجد أفواج"}
+            hint={
+              stats.totalRuns ? `من أصل ${stats.totalRuns}` : "لا يوجد أفواج"
+            }
             icon={Layers}
           />
         </div>
@@ -437,7 +516,9 @@ export default function CourseDetails() {
             variant={stats.nextSessionAt ? "warn" : "neutral"}
             label="الجلسة القادمة"
             value={stats.nextSessionAt ? fmtDT(stats.nextSessionAt) : "-"}
-            hint={stats.nextSessionAt ? "أقرب جلسة قادمة" : "لا توجد جلسات قادمة"}
+            hint={
+              stats.nextSessionAt ? "أقرب جلسة قادمة" : "لا توجد جلسات قادمة"
+            }
             icon={CalendarClock}
           />
         </div>
@@ -687,14 +768,22 @@ export default function CourseDetails() {
             >
               {saving ? "جارٍ الإنشاء..." : "إنشاء فوج"}
             </button>
-            <button className="btn" type="button" onClick={() => setOpen(false)}>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => setOpen(false)}
+            >
               إلغاء
             </button>
           </div>
         </div>
       </Modal>
 
-      <Modal open={editOpen} title="تعديل الفوج" onClose={() => setEditOpen(false)}>
+      <Modal
+        open={editOpen}
+        title="تعديل الفوج"
+        onClose={() => setEditOpen(false)}
+      >
         <div className="muted">تعديل بيانات الفوج وإجراءاته الأساسية.</div>
 
         <hr className="sep" />
