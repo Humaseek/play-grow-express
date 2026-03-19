@@ -511,7 +511,6 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   font-weight: 700;
 }
 
-/* التعديل الجديد على الإحصائيات السريعة لتصبح 2x2 ومريحة */
 .runDetails .pQuickStats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -529,11 +528,10 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 8px; /* تباعد واضح بين الكلمة والرقم */
+  gap: 8px; 
   transition: all 0.2s ease;
 }
 
-/* ألوان حالات المتبقي */
 .runDetails .pStatBlock.stat-green {
   background: rgba(0, 172, 71, 0.08);
   border-color: rgba(0, 172, 71, 0.15);
@@ -547,7 +545,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   border-color: rgba(245, 158, 11, 0.15);
 }
 .runDetails .pStatBlock.stat-yellow .pStatValue {
-  color: rgb(217, 119, 6); /* amber-600 */
+  color: rgb(217, 119, 6); 
 }
 
 .runDetails .pStatBlock.stat-red {
@@ -555,7 +553,10 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   border-color: rgba(239, 68, 68, 0.15);
 }
 .runDetails .pStatBlock.stat-red .pStatValue {
-  color: rgb(220, 38, 38); /* red-600 */
+  color: rgb(220, 38, 38) !important; 
+}
+.runDetails .pStatBlock.stat-red .pStatLabel span {
+  color: rgb(220, 38, 38) !important;
 }
 
 .runDetails .pStatLabel {
@@ -567,7 +568,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   font-size: 13px;
   font-weight: 700;
   margin: 0;
-  white-space: nowrap; /* يمنع الكلمات من النزول لسطر جديد */
+  white-space: nowrap; 
 }
 
 .runDetails .pStatValue {
@@ -745,7 +746,6 @@ export default function RunDetails() {
   const [sessions, setSessions] = useState([]);
   const [children, setChildren] = useState([]);
   const [payments, setPayments] = useState([]);
-  // ✅ Run expenses (linked to this run)
   const [expenses, setExpenses] = useState([]);
   const [expFeatureAvailable, setExpFeatureAvailable] = useState(true);
 
@@ -792,13 +792,10 @@ export default function RunDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filters
-  // Children filters
   const [childSearch, setChildSearch] = useState("");
-  const [childStatusFilter, setChildStatusFilter] = useState("all"); // all | active | inactive
-  const [childSort, setChildSort] = useState("balance_desc"); // balance_desc | balance_asc | name_asc | name_desc
+  const [childStatusFilter, setChildStatusFilter] = useState("all");
+  const [childSort, setChildSort] = useState("balance_desc");
 
-  // Enroll modal (single)
   const [openEnroll, setOpenEnroll] = useState(false);
   const [selectedChildId, setSelectedChildId] = useState("");
   const [enrollLocked, setEnrollLocked] = useState(false);
@@ -807,11 +804,10 @@ export default function RunDetails() {
   const [buySessions, setBuySessions] = useState(8);
   const [buyPriceTotal, setBuyPriceTotal] = useState("");
   const [buyUnitPrice, setBuyUnitPrice] = useState("");
-  const [buyPriceEditMode, setBuyPriceEditMode] = useState("total"); // total | unit
+  const [buyPriceEditMode, setBuyPriceEditMode] = useState("total");
 
   const [enrollSaving, setEnrollSaving] = useState(false);
 
-  // Create child (inline from this run)
   const [openNewChild, setOpenNewChild] = useState(false);
   const [newChildForm, setNewChildForm] = useState({
     name: "",
@@ -832,7 +828,6 @@ export default function RunDetails() {
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
 
-  // Quick action: open "Add child" modal and auto-enroll into this run
   const openCreateEnroll = () => {
     setNewChildEnrollNow(true);
     setOpenNewChild(true);
@@ -848,7 +843,6 @@ export default function RunDetails() {
       if (res.error) throw res.error;
       setCountries(res.data ?? []);
     } catch (e) {
-      // non-blocking: we can still create a child without country_id
       setCountries([]);
     } finally {
       setCountriesLoading(false);
@@ -859,28 +853,24 @@ export default function RunDetails() {
     if (openNewChild) loadCountriesSafe();
   }, [openNewChild]);
 
-  // Package info + mode
   const [pkgInfo, setPkgInfo] = useState(null);
   const [pkgLoading, setPkgLoading] = useState(false);
-  const [enrollMode, setEnrollMode] = useState("buy_new"); // use_existing | buy_new
+  const [enrollMode, setEnrollMode] = useState("buy_new");
 
-  // Bulk enroll
   const [openBulk, setOpenBulk] = useState(false);
   const [bulkQ, setBulkQ] = useState("");
   const [bulkSelected, setBulkSelected] = useState({});
   const [bulkSessions, setBulkSessions] = useState(8);
 
-  const [bulkPriceMode, setBulkPriceMode] = useState("unified"); // unified | perChild
+  const [bulkPriceMode, setBulkPriceMode] = useState("unified");
   const [bulkUnifiedPrice, setBulkUnifiedPrice] = useState("");
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
-  // Edit package price modal
   const [openPrice, setOpenPrice] = useState(false);
   const [pricePackageId, setPricePackageId] = useState(null);
   const [priceValue, setPriceValue] = useState("");
 
-  // Payments modal
   const [openPay, setOpenPay] = useState(false);
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
   const [payAmount, setPayAmount] = useState("");
@@ -890,32 +880,27 @@ export default function RunDetails() {
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
-  // Payment history modal
   const [openHistory, setOpenHistory] = useState(false);
   const [historyEnrollment, setHistoryEnrollment] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Sessions generator
   const [firstStart, setFirstStart] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [count, setCount] = useState(8);
   const [intervalDays, setIntervalDays] = useState(7);
   const [genLoading, setGenLoading] = useState(false);
 
-  // Create/edit session modal
   const [openSession, setOpenSession] = useState(false);
   const [sessionForm, setSessionForm] = useState({
     id: null,
     start_at: "",
     end_at: "",
-    // For workshop: duration can be set per session in the modal.
     duration_min: 60,
     status: "scheduled",
   });
   const [sessionSaving, setSessionSaving] = useState(false);
 
-  // Adjust Sessions modal
   const [openAdjust, setOpenAdjust] = useState(false);
   const [adjEnrollmentId, setAdjEnrollmentId] = useState(null);
   const [adjPackageId, setAdjPackageId] = useState(null);
@@ -924,12 +909,10 @@ export default function RunDetails() {
   const [adjحضر, setAdjحضر] = useState(0);
   const [adjPkgالمتبقي, setAdjPkgالمتبقي] = useState(0);
   const [adjRunFuture, setAdjRunFuture] = useState(0);
-  const [adjMaxAllowed, setAdjMaxAllowed] = useState(0);
   const [adjNewAllocated, setAdjNewAllocated] = useState(0);
   const [adjPkgDelta, setAdjPkgDelta] = useState(0);
   const [adjSaving, setAdjSaving] = useState(false);
 
-  // ✅ إدارة Enrollment (single child in this run) — 8
   const [openإدارة, setOpenإدارة] = useState(false);
   const [manageP, setإدارةP] = useState(null);
 
@@ -938,7 +921,6 @@ export default function RunDetails() {
     [manageP],
   );
 
-  // Confirm
   const [confirm, setConfirm] = useState({
     open: false,
     type: null,
@@ -951,7 +933,6 @@ export default function RunDetails() {
     [summary],
   );
 
-  // Default sessions to add when enrolling (prefer run's configured default, then sessions_count)
   const defaultSessionsTotal = useMemo(() => {
     const raw =
       summary?.default_sessions_total ??
@@ -964,7 +945,6 @@ export default function RunDetails() {
     const n = Number(raw);
     if (Number.isFinite(n) && n > 0) return Math.floor(n);
 
-    // Fallback: if sessions already exist, use their count
     if (Array.isArray(sessions) && sessions.length > 0) return sessions.length;
 
     return 8;
@@ -1009,10 +989,8 @@ export default function RunDetails() {
         ? Number(newChildForm.country_id)
         : null;
 
-      // If user typed a new country/city name, create (or reuse) it and use its id.
       const newCountryName = (newChildForm.new_country_name || "").trim();
       if (newCountryName) {
-        // Try find existing
         const existing = await supabase
           .from("countries")
           .select("id")
@@ -1031,8 +1009,6 @@ export default function RunDetails() {
           if (created.error) throw created.error;
           countryId = created.data?.id ?? countryId;
         }
-
-        // refresh dropdown list (best-effort)
         loadCountriesSafe();
       }
 
@@ -1057,14 +1033,12 @@ export default function RunDetails() {
       if (ins.error) throw ins.error;
 
       const newId = ins.data?.id;
-      // refresh children list
       const ch = await loadChildrenSafe();
       setChildren(ch);
 
       setSelectedChildId(String(newId || ""));
       setOpenNewChild(false);
 
-      // If user wants immediate enroll, keep the enroll modal open.
       if (enrollNow && newId) {
         initEnrollBuyNew({ childId: newId });
         toast("Child created. Set sessions and click Save to enroll.", "ok");
@@ -1072,7 +1046,6 @@ export default function RunDetails() {
         toast("Child created.", "ok");
       }
 
-      // reset
       setNewChildForm({
         name: "",
         age: "",
@@ -1097,10 +1070,6 @@ export default function RunDetails() {
   async function purchaseAndEnrollSpecificChild(childId) {
     if (!summary) return;
     const sessionsToBuy = Number(buySessions);
-    if (!Number.isFinite(sessionsToBuy) || sessionsToBuy <= 0) {
-      toast("Sessions must be greater than 0.", "warn");
-      return;
-    }
     const priceNum = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
     const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
       p_run_id: Number(runId),
@@ -1116,9 +1085,6 @@ export default function RunDetails() {
     setTab("participants");
   }
 
-  // ============================
-  // Run expenses
-  // ============================
   function resetExpenseForm() {
     setExpenseEditId(null);
     setExpDate(isoDate(new Date()));
@@ -1185,14 +1151,11 @@ export default function RunDetails() {
       setExpFeatureAvailable(true);
     } catch (e) {
       const msg = String(e?.message || "").toLowerCase();
-
-      // If migration not applied yet, don't fail the whole screen
       if (msg.includes("column") && msg.includes("run_id")) {
         setExpFeatureAvailable(false);
         setExpenses([]);
         return;
       }
-
       setExpFeatureAvailable(true);
       setExpenses([]);
     }
@@ -1210,7 +1173,6 @@ export default function RunDetails() {
     try {
       const ins = await supabase.from(table).insert({ name: clean });
       if (ins.error) {
-        // Ignore duplicates
         const m = String(ins.error.message || "").toLowerCase();
         if (!m.includes("duplicate") && !m.includes("unique")) throw ins.error;
       }
@@ -1283,7 +1245,6 @@ export default function RunDetails() {
     }
   }
 
-  // ========= load =========
   async function loadFixed() {
     setLoading(true);
     setError(null);
@@ -1326,7 +1287,6 @@ export default function RunDetails() {
       const ch = await loadChildrenSafe();
       setChildren(ch);
 
-      // Payments related to packages من kids in this run
       const pkgMap = new Map();
       const pkgIds = [];
       for (const r of part) {
@@ -1378,7 +1338,6 @@ export default function RunDetails() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ ( /Edit) manageP stale
   useEffect(() => {
     if (!openإدارة || !manageP) return;
     const updated = participants.find(
@@ -1468,8 +1427,6 @@ export default function RunDetails() {
   }, [participants]);
 
   const availableChildren = useMemo(() => {
-    // Allow re-enrolling kids that were previously withdrawn from this run:
-    // only treat ACTIVE enrollments as "enrolled".
     const enrolledActive = new Set(
       participants
         .filter((p) => p.enrollment_status === "active")
@@ -1489,7 +1446,6 @@ export default function RunDetails() {
       );
     }
 
-    // Hide withdrawn enrollments by default
     list = list.filter((p) => p.enrollment_status !== "withdrawn");
 
     if (childStatusFilter !== "all") {
@@ -1521,7 +1477,6 @@ export default function RunDetails() {
     return list;
   }, [participants, childSearch, childStatusFilter, childSort]);
 
-  // ✅ Child: children
   const manageChild = useMemo(() => {
     if (!manageP) return null;
     return (
@@ -1534,16 +1489,12 @@ export default function RunDetails() {
     setOpenإدارة(true);
   }
 
-  // ============================
-  // Enroll modal: pkg balance fetch
-  // ============================
   useEffect(() => {
     async function fetchPkg() {
       if (!openEnroll || !summary) return;
 
       if (!selectedChildId) {
         setPkgInfo(null);
-        // setEnrollMode("auto");
         return;
       }
 
@@ -1582,14 +1533,14 @@ export default function RunDetails() {
 
     if (enrollMode === "use_existing" && pkgInfo) {
       const rem = Number(pkgInfo.sessions_remaining || 0);
-      const allocNow = Math.min(rem, runFuture);
-      const carry = Math.max(0, rem - allocNow);
+      const allocNow = Math.min(rem > 0 ? rem : 0, runFuture);
+      const carry = rem > 0 ? Math.max(0, rem - allocNow) : rem;
       return { runFuture, allocNow, carry, mode: "existing" };
     }
 
     const s = Number(buySessions || 0);
-    const allocNow = Math.min(s, runFuture);
-    const carry = Math.max(0, s - allocNow);
+    const allocNow = Math.min(s > 0 ? s : 0, runFuture);
+    const carry = s > 0 ? Math.max(0, s - allocNow) : s;
     return { runFuture, allocNow, carry, mode: "buy" };
   }, [enrollMode, pkgInfo, buySessions, runFutureSessionsCount]);
 
@@ -1616,7 +1567,6 @@ export default function RunDetails() {
     initEnrollBuyNew();
   }
 
-  // + sessions: always buy new for same child
   function openSingleTopup(participantRow) {
     setEnrollLocked(true);
     setEnrollLockedName(participantRow.child_name);
@@ -1693,14 +1643,11 @@ export default function RunDetails() {
     setBulkPerChildPrice({});
   }
 
-  // Some environments don't have the RPC `adjust_enrollment_allocated_sessions`.
-  // We try RPC first, and if it's missing we fall back to a direct update.
   async function bumpEnrollmentAllocated(enrollmentId, delta) {
     const id = Number(enrollmentId);
     const d = Number(delta);
     if (!Number.isFinite(id) || !Number.isFinite(d) || d === 0) return;
 
-    // Read once so we can pass the correct RPC parameter (p_new_allocated)
     const cur = await supabase
       .from("enrollments")
       .select("sessions_allocated")
@@ -1710,9 +1657,10 @@ export default function RunDetails() {
     if (cur.error) throw cur.error;
 
     const current = Number(cur.data?.sessions_allocated ?? 0);
+    // 💡 تم السماح بالتعديل لأي رقم وإلغاء القيود اللي كانت بتمنعه ينزل للمستويات المطلوبة.
+    // لكن Allocated للـ Run ما بيكون سالب طبيعياً.
     const next = Math.max(0, current + d);
 
-    // 1) Try RPC (if exists)
     const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
       p_enrollment_id: id,
       p_new_allocated: next,
@@ -1720,7 +1668,6 @@ export default function RunDetails() {
 
     if (!rpc.error) return;
 
-    // If RPC is missing / signature mismatch, fall back to direct update.
     const msg = String(rpc.error?.message ?? "");
     const shouldFallback =
       msg.includes("Could not find the function") ||
@@ -1739,9 +1686,6 @@ export default function RunDetails() {
   }
 
   async function reactivateWithdrawnEnrollment(childId) {
-    // If the child was previously removed (withdrawn) from this run,
-    // we "reactivate" the SAME enrollment (unique constraint uq_run_child),
-    // but we still allow setting a NEW price and "fresh" add-sessions inputs.
     const existing = participants.find(
       (p) =>
         Number(p.child_id) === Number(childId) &&
@@ -1770,14 +1714,12 @@ export default function RunDetails() {
     try {
       setError(null);
 
-      // 1) Reactivate enrollment
       const upd = await supabase
         .from("enrollments")
         .update({ status: "active" })
         .eq("id", existing.enrollment_id);
       if (upd.error) throw upd.error;
 
-      // 2) Re-open + UPDATE package price (so re-enroll can have a NEW price)
       if (existing.package_id) {
         const pkgUpd = await supabase
           .from("course_packages")
@@ -1785,7 +1727,6 @@ export default function RunDetails() {
           .eq("id", existing.package_id);
         if (pkgUpd.error) throw pkgUpd.error;
 
-        // إضافة جلسةs back to the package total (keeps sessions_used consistent)
         if (sessionsToBuy > 0) {
           const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
             p_package_id: Number(existing.package_id),
@@ -1795,7 +1736,6 @@ export default function RunDetails() {
         }
       }
 
-      // 3) Allocate sessions for THIS run enrollment (so run balance matches)
       if (sessionsToBuy > 0) {
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
         toast("تمت إعادة التسجيل بنجاح.", "ok");
@@ -1819,8 +1759,6 @@ export default function RunDetails() {
     sessionsToBuy,
     priceTotalNum,
   ) {
-    // Bulk-safe variant من reactivateWithdrawnEnrollment:
-    // uses explicit sessions/price (does NOT depend on the single-enroll modal state).
     const existing = participants.find(
       (p) =>
         Number(p.child_id) === Number(childId) &&
@@ -1834,14 +1772,12 @@ export default function RunDetails() {
     const priceTotal = Number.isFinite(priceRaw) ? priceRaw : 0;
 
     try {
-      // 1) Reactivate enrollment row
       const upd = await supabase
         .from("enrollments")
         .update({ status: "active" })
         .eq("id", existing.enrollment_id);
       if (upd.error) throw upd.error;
 
-      // 2) Reactivate + update package (optional)
       if (existing.package_id) {
         const pkgUpd = await supabase
           .from("course_packages")
@@ -1858,14 +1794,12 @@ export default function RunDetails() {
         }
       }
 
-      // 3) Allocate sessions on the enrollment
       if (s > 0) {
         await bumpEnrollmentAllocated(existing.enrollment_id, s);
       }
 
       return true;
     } catch (e) {
-      // Don't toast here (bulk flow will summarize). Bubble a boolean + let caller setError if needed.
       console.error("Bulk reactivation failed:", e);
       return false;
     }
@@ -1890,7 +1824,7 @@ export default function RunDetails() {
         const remaining = Number(pkgInfo?.sessions_remaining ?? 0);
         if (remaining <= 0) {
           toast(
-            "هذا الطفل لا يملك رصيد جلسات سابق. الرجاء اختيار إضافة جلسات جديدة.",
+            "هذا الطفل لا يملك رصيد جلسات كافٍ. الرجاء اختيار إضافة جلسات جديدة.",
             "warn",
           );
           setEnrollSaving(false);
@@ -1903,13 +1837,10 @@ export default function RunDetails() {
 
         if (rpc.error) {
           const msg = String(rpc.error?.message || rpc.error || "");
-          // If the child has a withdrawn enrollment, we can't insert a new row
-          // due to uq_run_child. Reactivate instead.
           if (msg.includes("uq_run_child") || msg.includes("duplicate key")) {
             await reactivateWithdrawnEnrollment(selectedChildId);
             return;
           }
-
           toast("لم يتم العثور على جلسات متبقية لهذا الطفل.", "warn");
           setError(rpc.error);
           return;
@@ -1922,23 +1853,12 @@ export default function RunDetails() {
         }
       }
 
-      // --- Buy New (إضافة جلسات جديدة أو شحن رصيد) ---
-
-      // ✅ 1. في حال كان الطفل مسجل ونشط (عملية شحن/إضافة رصيد جلسات)
       if (existing && existing.enrollment_status === "active") {
         const sessionsToAdd = Number(buySessions) || 0;
         const priceToAdd = Number(buyPriceTotal) || 0;
 
-        if (sessionsToAdd <= 0) {
-          toast("عدد الجلسات يجب أن يكون أكبر من 0.", "warn");
-          setEnrollSaving(false);
-          return;
-        }
-
-        // 1) إضافة الجلسات للاشتراك في هذه الدورة
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
 
-        // 2) إضافة السعر والجلسات للباقة الشاملة
         if (existing.package_id) {
           const newPriceTotal = Number(existing.agreed_price || 0) + priceToAdd;
           const pkgUpd = await supabase
@@ -1962,13 +1882,11 @@ export default function RunDetails() {
         return;
       }
 
-      // ✅ 2. في حال كان الطفل منسحب (إعادة تفعيل)
       if (existing && existing.enrollment_status === "withdrawn") {
         const handled = await reactivateWithdrawnEnrollment(selectedChildId);
         if (handled) return;
       }
 
-      // ✅ 3. تسجيل جديد تماماً
       await purchaseAndEnrollSpecificChild(selectedChildId);
     } catch (e) {
       const msg = String(e?.message || e || "");
@@ -2005,7 +1923,6 @@ export default function RunDetails() {
   function isDuplicateRunChildError(err) {
     const code = String(err?.code ?? "");
     const msg = String(err?.message ?? err ?? "");
-    // Postgres unique violation is 23505
     if (code === "23505") return true;
     return msg.includes("uq_run_child") || msg.includes("duplicate key");
   }
@@ -2018,16 +1935,11 @@ export default function RunDetails() {
     }
 
     const sessionsToBuy = Number(bulkSessions);
-    if (!Number.isFinite(sessionsToBuy) || sessionsToBuy <= 0) {
-      toast("Sessions must be greater than 0.", "warn");
-      return;
-    }
 
     setBulkSaving(true);
     setError(null);
 
     try {
-      // Build a quick lookup for existing run enrollment status per child
       const statusByChild = new Map();
       for (const p of participants || []) {
         const cid = Number(p.child_id);
@@ -2044,7 +1956,6 @@ export default function RunDetails() {
         const cid = Number(childId);
         if (!Number.isFinite(cid)) continue;
 
-        // compute price per child
         let priceNum = 0;
         if (bulkPriceMode === "unified") {
           priceNum = bulkUnifiedPrice === "" ? 0 : Number(bulkUnifiedPrice);
@@ -2056,13 +1967,11 @@ export default function RunDetails() {
 
         const existingStatus = statusByChild.get(cid);
 
-        // Already enrolled (active/pending/etc) -> skip silently (avoid uq_run_child)
         if (existingStatus && existingStatus !== "withdrawn") {
           skipped += 1;
           continue;
         }
 
-        // Withdrawn -> reactivate instead من inserting a new row
         if (existingStatus === "withdrawn") {
           const ok = await reactivateWithdrawnEnrollmentBulk(
             cid,
@@ -2077,7 +1986,6 @@ export default function RunDetails() {
           continue;
         }
 
-        // Not enrolled -> attempt normal purchase+enroll
         const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
           p_run_id: Number(runId),
           p_child_id: cid,
@@ -2086,9 +1994,7 @@ export default function RunDetails() {
         });
 
         if (rpc2.error) {
-          // If we raced with another request, handle duplicate gracefully
           if (isDuplicateRunChildError(rpc2.error)) {
-            // Try to reactivate if it was withdrawn, otherwise skip
             const ok = await reactivateWithdrawnEnrollmentBulk(
               cid,
               sessionsToBuy,
@@ -2098,7 +2004,6 @@ export default function RunDetails() {
             else skipped += 1;
           } else {
             failed += 1;
-            // Keep the first error for debugging
             setError((prev) => prev || rpc2.error);
           }
           continue;
@@ -2107,17 +2012,14 @@ export default function RunDetails() {
         added += 1;
       }
 
-      // تحديث run state
       await loadFixed();
       setTab("participants");
 
-      // Toast summary
       if (failed > 0) {
         toast(
           `Bulk enroll finished: added ${added}, reactivated ${reactivated}, skipped ${skipped}, failed ${failed}.`,
           "danger",
         );
-        // keep modal open so user can retry / adjust selections
         return;
       }
 
@@ -2179,11 +2081,9 @@ export default function RunDetails() {
   }
 
   async function deleteEnrollment(enrollmentId, childName, packageId) {
-    // Remove the child from this run without deleting the child record or payments.
     setError(null);
 
     try {
-      // ✅ منع حذف/سحب اشتراك إذا فيه دفعات مرتبطة
       const payCheck = await supabase
         .from("payments")
         .select("id", { count: "exact", head: true })
@@ -2196,7 +2096,6 @@ export default function RunDetails() {
         );
         return;
       }
-      // 1) Mark enrollment as withdrawn (so it disappears from active participants)
       const updEnroll = await supabase
         .from("enrollments")
         .update({ status: "withdrawn", sessions_allocated: 0 })
@@ -2204,7 +2103,6 @@ export default function RunDetails() {
 
       if (updEnroll.error) throw updEnroll.error;
 
-      // 2) Close the package by setting sessions_total = sessions_used (remaining becomes 0)
       if (packageId) {
         const bal = await supabase
           .from("package_balance_view")
@@ -2308,7 +2206,6 @@ export default function RunDetails() {
     }
 
     const startLocal = new Date(sessionForm.start_at);
-    // If date-only (YYYY-MM-DD), set local midnight.
     if (String(sessionForm.start_at).length === 10)
       startLocal.setHours(0, 0, 0, 0);
 
@@ -2334,7 +2231,7 @@ export default function RunDetails() {
           .update(payload)
           .eq("id", sessionForm.id);
         if (u.error) throw u.error;
-        toast("تم تحديث الاشتراك.", "ok");
+        toast("تم تحديث الجلسة.", "ok");
       } else {
         const ins = await supabase.from("course_sessions").insert([payload]);
         if (ins.error) throw ins.error;
@@ -2373,7 +2270,7 @@ export default function RunDetails() {
       .eq("id", sessionId);
     if (d.error) {
       setError(d.error);
-      toast("Failed to delete payment.", "danger");
+      toast("Failed to delete session.", "danger");
       return;
     }
     toast("Session deleted.", "ok");
@@ -2523,8 +2420,8 @@ export default function RunDetails() {
     const attended = Number(p.sessions_attended_in_run || 0);
     const pkgRemain = Number(p.package_sessions_remaining || 0);
     const runFuture = runFutureSessionsCount;
-    const maxAllowed = attended + Math.min(runFuture, pkgRemain);
 
+    // تم إزالة قيد الحد الأعلى هنا!
     setAdjEnrollmentId(p.enrollment_id);
     setAdjPackageId(p.package_id ?? null);
     setAdjChildName(p.child_name);
@@ -2532,13 +2429,11 @@ export default function RunDetails() {
     setAdjحضر(attended);
     setAdjPkgالمتبقي(pkgRemain);
     setAdjRunFuture(runFuture);
-    setAdjMaxAllowed(maxAllowed);
     setAdjNewAllocated(alloc);
     setAdjPkgDelta(0);
     setOpenAdjust(true);
   }
 
-  // ✅ Edit (+/-)
   async function doAdjustPackageTotal(packageId, delta) {
     try {
       setError(null);
@@ -2563,7 +2458,6 @@ export default function RunDetails() {
   function quickAdjustFromإدارة(delta) {
     if (!manageP) return;
 
-    // : Add " " Edit
     if (!manageP.package_id) {
       if (delta > 0)
         toast(
@@ -2574,18 +2468,16 @@ export default function RunDetails() {
       return;
     }
 
-    // :
     if (delta < 0) {
       setConfirm({
         open: true,
         type: "pkgDelta",
         id: { packageId: manageP.package_id, delta },
-        text: ` ${Math.abs(delta)} ${manageP.child_name}`,
+        text: `تأكيد خصم ${Math.abs(delta)} جلسة من باقة ${manageP.child_name}`,
       });
       return;
     }
 
-    // Add
     doAdjustPackageTotal(manageP.package_id, delta);
   }
 
@@ -2609,13 +2501,13 @@ export default function RunDetails() {
         if (rpc2.error) throw rpc2.error;
       }
 
-      toast("تم تحديث الاشتراك.", "ok");
+      toast("تم تحديث الجلسات بنجاح.", "ok");
       setOpenAdjust(false);
       await loadFixed();
       setTab("participants");
     } catch (e) {
       setError(e);
-      toast("فشل تعديل الاشتراك.", "danger");
+      toast("فشل التعديل.", "danger");
     } finally {
       setAdjSaving(false);
     }
@@ -2651,7 +2543,7 @@ export default function RunDetails() {
         }}
       >
         <div className="container runDetails">
-          <div className="card"> .</div>
+          <div className="card">لم يتم العثور على الدورة.</div>
         </div>
       </div>
     );
@@ -2669,7 +2561,6 @@ export default function RunDetails() {
     >
       <style>{RUN_DETAILS_SOFT_UI_STYLES}</style>
       <div className="container runDetails">
-        {/* Header Section Modified to match user request and image */}
         <div
           style={{
             display: "flex",
@@ -2681,7 +2572,6 @@ export default function RunDetails() {
             width: "100%",
           }}
         >
-          {/* اليمين: العنوان والمعطيات */}
           <div
             style={{
               display: "flex",
@@ -2784,7 +2674,6 @@ export default function RunDetails() {
             </div>
           </div>
 
-          {/* اليسار: الأزرار */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button
               type="button"
@@ -2938,7 +2827,6 @@ export default function RunDetails() {
           </button>
         </div>
 
-        {/* ===================== PARTICIPANTS ===================== */}
         {tab === "participants" && (
           <div className="card">
             <div
@@ -2968,7 +2856,6 @@ export default function RunDetails() {
                   minWidth: 320,
                 }}
               >
-                {/* Filters */}
                 <div
                   style={{
                     display: "flex",
@@ -3034,7 +2921,6 @@ export default function RunDetails() {
                   </select>
                 </div>
 
-                {/* Actions */}
                 <div
                   style={{
                     display: "flex",
@@ -3101,16 +2987,15 @@ export default function RunDetails() {
                           ? "pBar pBarUnpaid"
                           : "pBar pBarFree";
 
-                  // حساب لون خانة المتبقي حسب حالة الدفع
                   let balClass = "stat-gray";
                   if (agreed === 0) {
-                    balClass = "stat-green"; // مجاني
+                    balClass = "stat-green";
                   } else if (balance <= 0) {
-                    balClass = "stat-green"; // مدفوع بالكامل
+                    balClass = "stat-green";
                   } else if (paid > 0) {
-                    balClass = "stat-yellow"; // مدفوع جزئياً
+                    balClass = "stat-yellow";
                   } else {
-                    balClass = "stat-red"; // غير مدفوع نهائياً
+                    balClass = "stat-red";
                   }
 
                   return (
@@ -3141,7 +3026,6 @@ export default function RunDetails() {
                             </span>
                           </div>
                         </div>
-                        {/* تم حذف شارة حالة الدفع من هنا بناءً على طلبك */}
                       </div>
 
                       <div className="pQuickStats">
@@ -3165,12 +3049,22 @@ export default function RunDetails() {
                           </div>
                         </div>
 
-                        <div className="pStatBlock">
+                        <div
+                          className={`pStatBlock ${pkgRemain < 0 ? "stat-red" : ""}`}
+                        >
                           <div className="pStatLabel">
                             <Ticket size={14} />
-                            <span>رصيد الجلسات</span>
+                            <span
+                              style={pkgRemain < 0 ? { color: "#dc2626" } : {}}
+                            >
+                              رصيد الجلسات
+                            </span>
                           </div>
-                          <div className="pStatValue ltrIso" dir="ltr">
+                          <div
+                            className="pStatValue ltrIso"
+                            dir="ltr"
+                            style={pkgRemain < 0 ? { color: "#dc2626" } : {}}
+                          >
                             {fmtNum(pkgRemain)}
                           </div>
                         </div>
@@ -3268,10 +3162,8 @@ export default function RunDetails() {
           </div>
         )}
 
-        {/* ===================== SESSIONS ===================== */}
         {tab === "sessions" && (
           <div className="grid">
-            {/* LEFT: generator + quick add */}
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
@@ -3384,7 +3276,6 @@ export default function RunDetails() {
               )}
             </div>
 
-            {/* RIGHT: list */}
             <div
               className="card"
               style={{ gridColumn: "span 8", overflow: "hidden" }}
@@ -3428,7 +3319,6 @@ export default function RunDetails() {
                             borderRadius: 14,
                           }}
                         >
-                          {/* Date */}
                           <div style={{ lineHeight: 1.15 }}>
                             <div style={{ fontWeight: 700 }}>
                               {fmtDate(s.start_at)}
@@ -3438,7 +3328,6 @@ export default function RunDetails() {
                             </div>
                           </div>
 
-                          {/* Time */}
                           <div style={{ lineHeight: 1.15 }}>
                             <div style={{ fontWeight: 600 }}>
                               {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
@@ -3446,7 +3335,6 @@ export default function RunDetails() {
                             <div className="muted">{fmtDT(s.start_at)}</div>
                           </div>
 
-                          {/* Status */}
                           <div>
                             <span
                               style={{
@@ -3469,7 +3357,6 @@ export default function RunDetails() {
                             </span>
                           </div>
 
-                          {/* Actions */}
                           <div
                             className="sessionActions"
                             style={{
@@ -3628,7 +3515,6 @@ export default function RunDetails() {
           </div>
         )}
 
-        {/* ===================== PAYMENTS TAB ===================== */}
         {tab === "payments" && (
           <div className="grid">
             <div className="card" style={{ gridColumn: "span 12" }}>
@@ -3733,7 +3619,6 @@ export default function RunDetails() {
           </div>
         )}
 
-        {/* ===================== EXPENSES ===================== */}
         {tab === "expenses" && (
           <div className="card">
             <div
@@ -3929,9 +3814,6 @@ export default function RunDetails() {
           </div>
         )}
 
-        {/* ===================== MODALS ===================== */}
-
-        {/* ✅ Child */}
         <Modal
           open={openإدارة}
           title={manageP ? `إدارة — ${manageP.child_name}` : "إدارة"}
@@ -3941,7 +3823,6 @@ export default function RunDetails() {
             <div className="muted">—</div>
           ) : (
             <div className="grid">
-              {/* Summary */}
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
@@ -3955,7 +3836,7 @@ export default function RunDetails() {
                     <div style={{ fontSize: 18, fontWeight: 900 }}>
                       {manageP.child_name}{" "}
                       <span className="muted" style={{ fontWeight: 700 }}>
-                        — {manageP.class ?? "-"} — Age: {manageP.age ?? "-"}
+                        — {manageP.class ?? "-"} — العمر: {manageP.age ?? "-"}
                       </span>
                     </div>
 
@@ -3963,14 +3844,13 @@ export default function RunDetails() {
                       className="row"
                       style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}
                     >
-                      {/* تم حذف حالة الدفع من هنا أيضاً */}
                       {manageP.enrollment_status === "active" ? (
                         <Badge variant="ok">نشط</Badge>
                       ) : (
                         <Badge variant="warn">غير نشط</Badge>
                       )}
                       {manageP.is_free ? (
-                        <Badge variant="info">Free</Badge>
+                        <Badge variant="info">مجاني</Badge>
                       ) : null}
                     </div>
                   </div>
@@ -4002,7 +3882,7 @@ export default function RunDetails() {
                 <div className="row" style={{ gap: 14, flexWrap: "wrap" }}>
                   <div className="row" style={{ gap: 8 }}>
                     <Ticket size={14} className="ico" />
-                    <span className="muted">Total</span>
+                    <span className="muted">إجمالي الباقة</span>
                     <b dir="ltr">
                       {fmtNum(manageP.package_sessions_total ?? 0)}
                     </b>
@@ -4010,8 +3890,15 @@ export default function RunDetails() {
 
                   <div className="row" style={{ gap: 8 }}>
                     <Hourglass size={14} className="ico" />
-                    <span className="muted">المتبقي</span>
-                    <b dir="ltr">
+                    <span className="muted">الرصيد المتبقي</span>
+                    <b
+                      dir="ltr"
+                      style={
+                        manageP.package_sessions_remaining < 0
+                          ? { color: "#dc2626" }
+                          : {}
+                      }
+                    >
                       {fmtNum(manageP.package_sessions_remaining ?? 0)}
                     </b>
                   </div>
@@ -4032,7 +3919,7 @@ export default function RunDetails() {
 
                   <div className="row" style={{ gap: 8 }}>
                     <CalendarDays size={14} className="ico" />
-                    <span className="muted">حضر in run</span>
+                    <span className="muted">حضر بالدورة</span>
                     <b dir="ltr">
                       {fmtNum(manageP.sessions_attended_in_run ?? 0)}
                     </b>
@@ -4040,7 +3927,6 @@ export default function RunDetails() {
                 </div>
               </div>
 
-              {/* Contact + quick link */}
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div
                   className="row"
@@ -4050,12 +3936,12 @@ export default function RunDetails() {
                     flexWrap: "wrap",
                   }}
                 >
-                  <div style={{ fontWeight: 900 }}>Contact</div>
+                  <div style={{ fontWeight: 900 }}>التواصل</div>
 
                   <div className="row" style={{ gap: 10 }}>
                     <IconButton
                       icon={<ExternalLink size={16} className="ico" />}
-                      title="Open child profile"
+                      title="فتح ملف الطفل"
                       variant="ghost"
                       size="sm"
                       onClick={(e) => {
@@ -4070,14 +3956,14 @@ export default function RunDetails() {
 
                 <div className="grid">
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Mother name</div>
+                    <div className="muted">اسم الأم</div>
                     <div style={{ fontWeight: 800 }}>
                       {manageChild?.mother_name ?? "-"}
                     </div>
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Mother phone</div>
+                    <div className="muted">هاتف الأم</div>
                     <div className="row" style={{ gap: 10 }}>
                       <div style={{ fontWeight: 800 }} dir="ltr">
                         {manageChild?.mother_phone ?? "-"}
@@ -4093,7 +3979,7 @@ export default function RunDetails() {
                               ok ? "ok" : "danger",
                             );
                           }}
-                          title="Copy"
+                          title="نسخ"
                         >
                           <Copy size={16} className="ico" />
                         </button>
@@ -4102,14 +3988,14 @@ export default function RunDetails() {
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Father name</div>
+                    <div className="muted">اسم الأب</div>
                     <div style={{ fontWeight: 800 }}>
                       {manageChild?.father_name ?? "-"}
                     </div>
                   </div>
 
                   <div style={{ gridColumn: "span 6" }}>
-                    <div className="muted">Father phone</div>
+                    <div className="muted">هاتف الأب</div>
                     <div className="row" style={{ gap: 10 }}>
                       <div style={{ fontWeight: 800 }} dir="ltr">
                         {manageChild?.father_phone ?? "-"}
@@ -4125,7 +4011,7 @@ export default function RunDetails() {
                               ok ? "ok" : "danger",
                             );
                           }}
-                          title="Copy"
+                          title="نسخ"
                         >
                           <Copy size={16} className="ico" />
                         </button>
@@ -4135,9 +4021,8 @@ export default function RunDetails() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div style={{ gridColumn: "span 12" }} className="card">
-                <div style={{ fontWeight: 900, marginBottom: 10 }}>Actions</div>
+                <div style={{ fontWeight: 900, marginBottom: 10 }}>إجراءات</div>
 
                 <div
                   className="row"
@@ -4149,7 +4034,7 @@ export default function RunDetails() {
                   }}
                 >
                   <div>
-                    <div className="muted">Unit price</div>
+                    <div className="muted">سعر الجلسة الواحدة</div>
                     <div style={{ fontWeight: 900, fontSize: 18 }} dir="ltr">
                       {(() => {
                         const total = Number(manageP.agreed_price || 0);
@@ -4167,9 +4052,8 @@ export default function RunDetails() {
                         setOpenإدارة(false);
                         openSingleTopup(manageP);
                       }}
-                      title="إضافة جلسةs"
                     >
-                      <ShoppingCart size={16} className="ico" /> إضافة جلسةs
+                      <ShoppingCart size={16} className="ico" /> إضافة جلسات
                     </button>
 
                     <div
@@ -4182,14 +4066,14 @@ export default function RunDetails() {
                         border: "1px solid rgba(0,0,0,.08)",
                         background: "rgba(0,0,0,.02)",
                       }}
-                      title="Adjust remaining sessions"
+                      title="تعديل سريع لعدد الجلسات الإجمالي"
                     >
                       <button
                         type="button"
                         className="btn"
                         style={{ padding: "8px 12px" }}
                         onClick={() => quickAdjustFromإدارة(-1)}
-                        title="Decrease"
+                        title="تنقيص"
                       >
                         <Minus size={16} className="ico" />
                       </button>
@@ -4198,7 +4082,7 @@ export default function RunDetails() {
                         className="btn"
                         style={{ padding: "8px 12px" }}
                         onClick={() => quickAdjustFromإدارة(1)}
-                        title="Increase"
+                        title="زيادة"
                       >
                         <Plus size={16} className="ico" />
                       </button>
@@ -4221,7 +4105,7 @@ export default function RunDetails() {
                       openPaymentModalFor(manageP, "remaining");
                     }}
                   >
-                    <CreditCard size={16} className="ico" /> Pay remaining
+                    <CreditCard size={16} className="ico" /> دفع المتبقي
                   </button>
 
                   <button
@@ -4243,7 +4127,7 @@ export default function RunDetails() {
                       openPaymentHistory(manageP);
                     }}
                   >
-                    <CalendarClock size={16} className="ico" /> History
+                    <CalendarClock size={16} className="ico" /> سجل الدفعات
                   </button>
 
                   <button
@@ -4257,14 +4141,14 @@ export default function RunDetails() {
                       setOpenPrice(true);
                     }}
                   >
-                    <Pencil size={16} className="ico" /> Edit price
+                    <Pencil size={16} className="ico" /> تعديل السعر
                   </button>
                 </div>
 
                 <hr className="sep" />
 
                 <div style={{ fontWeight: 900, marginBottom: 10 }}>
-                  Enrollment
+                  التسجيل (الاشتراك)
                 </div>
                 <div className="row" style={{ flexWrap: "wrap", gap: 10 }}>
                   {manageP.enrollment_status === "active" ? (
@@ -4277,11 +4161,11 @@ export default function RunDetails() {
                           open: true,
                           type: "inactive",
                           id: manageP.enrollment_id,
-                          text: `Deactivate enrollment: ${manageP.child_name}`,
+                          text: `إلغاء تنشيط تسجيل: ${manageP.child_name}`,
                         });
                       }}
                     >
-                      <XCircle size={16} className="ico" /> Deactivate
+                      <XCircle size={16} className="ico" /> غير نشط
                     </button>
                   ) : (
                     <button
@@ -4293,11 +4177,11 @@ export default function RunDetails() {
                           open: true,
                           type: "active",
                           id: manageP.enrollment_id,
-                          text: `Activate enrollment: ${manageP.child_name}`,
+                          text: `تنشيط تسجيل: ${manageP.child_name}`,
                         });
                       }}
                     >
-                      <CheckCircle2 size={16} className="ico" /> Activate
+                      <CheckCircle2 size={16} className="ico" /> تنشيط
                     </button>
                   )}
 
@@ -4331,7 +4215,7 @@ export default function RunDetails() {
                       });
                     }}
                   >
-                    <Trash2 size={16} className="ico" /> Delete enroll
+                    <Trash2 size={16} className="ico" /> حذف التسجيل
                   </button>
 
                   <button
@@ -4339,7 +4223,7 @@ export default function RunDetails() {
                     className="btn"
                     onClick={() => setOpenإدارة(false)}
                   >
-                    Close
+                    إغلاق
                   </button>
                 </div>
               </div>
@@ -4347,7 +4231,6 @@ export default function RunDetails() {
           )}
         </Modal>
 
-        {/* ✅ Enroll */}
         <Modal
           open={openEnroll}
           title={
@@ -4389,8 +4272,15 @@ export default function RunDetails() {
               ) : pkgInfo ? (
                 <div className="muted">
                   رصيد الجلسات السابق:{" "}
-                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي
-                  للدفع: <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
+                  <b
+                    style={
+                      pkgInfo.sessions_remaining < 0 ? { color: "#dc2626" } : {}
+                    }
+                  >
+                    {Number(pkgInfo.sessions_remaining || 0)}
+                  </b>{" "}
+                  — المتبقي للدفع:{" "}
+                  <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
                 </div>
               ) : (
                 <div className="muted">
@@ -4434,14 +4324,13 @@ export default function RunDetails() {
                   <input
                     className="input"
                     type="number"
-                    min="1"
                     value={buySessions}
                     onChange={(e) => {
                       const v = e.target.value;
                       setBuySessions(v);
 
                       const s = Number(v);
-                      if (!Number.isFinite(s) || s <= 0) return;
+                      if (!Number.isFinite(s)) return;
 
                       if (buyPriceEditMode === "unit") {
                         const u = Number(buyUnitPrice || 0);
@@ -4450,7 +4339,7 @@ export default function RunDetails() {
                       } else {
                         const t =
                           buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
-                        if (Number.isFinite(t))
+                        if (Number.isFinite(t) && s > 0)
                           setBuyUnitPrice((t / s).toFixed(2));
                       }
                     }}
@@ -4532,15 +4421,14 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* New child (inline) */}
         <Modal
           open={openNewChild}
-          title={newChildEnrollNow ? "Create child & enroll" : "Add child"}
+          title={newChildEnrollNow ? "إضافة طفل وتسجيله" : "إضافة طفل جديد"}
           onClose={() => setOpenNewChild(false)}
         >
           <div className="grid">
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Name *</div>
+              <div className="muted">الاسم *</div>
               <input
                 className="input"
                 value={newChildForm.name}
@@ -4552,7 +4440,7 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Age *</div>
+              <div className="muted">العمر *</div>
               <input
                 className="input"
                 type="number"
@@ -4566,7 +4454,7 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Gender</div>
+              <div className="muted">الجنس</div>
               <select
                 className="input"
                 value={newChildForm.gender}
@@ -4574,13 +4462,13 @@ export default function RunDetails() {
                   setNewChildForm((p) => ({ ...p, gender: e.target.value }))
                 }
               >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
+                <option value="male">ذكر</option>
+                <option value="female">أنثى</option>
               </select>
             </div>
 
             <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">Class</div>
+              <div className="muted">الصف</div>
               <input
                 className="input"
                 value={newChildForm.class}
@@ -4592,7 +4480,7 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">City</div>
+              <div className="muted">البلد/المدينة</div>
               <select
                 className="input"
                 value={newChildForm.country_id ?? ""}
@@ -4602,7 +4490,7 @@ export default function RunDetails() {
                 disabled={countriesLoading}
               >
                 <option value="">
-                  {countriesLoading ? "جاري التحميل..." : "Select a country..."}
+                  {countriesLoading ? "جاري التحميل..." : "اختر البلد..."}
                 </option>
                 {(countries ?? []).map((c) => (
                   <option key={c.id} value={c.id}>
@@ -4613,7 +4501,7 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">New country (optional)</div>
+              <div className="muted">بلد جديدة (اختياري)</div>
               <input
                 className="input"
                 value={newChildForm.new_country_name}
@@ -4623,12 +4511,12 @@ export default function RunDetails() {
                     new_country_name: e.target.value,
                   }))
                 }
-                placeholder="e.g. Israel"
+                placeholder="مثال: الطيبة"
               />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Mother name</div>
+              <div className="muted">اسم الأم</div>
               <input
                 className="input"
                 value={newChildForm.mother_name}
@@ -4638,12 +4526,11 @@ export default function RunDetails() {
                     mother_name: e.target.value,
                   }))
                 }
-                placeholder="e.g. Sarah"
               />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Mother phone</div>
+              <div className="muted">هاتف الأم</div>
               <input
                 className="input"
                 value={newChildForm.mother_phone}
@@ -4653,12 +4540,11 @@ export default function RunDetails() {
                     mother_phone: e.target.value,
                   }))
                 }
-                placeholder="e.g. 050-1234567"
               />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Father name</div>
+              <div className="muted">اسم الأب</div>
               <input
                 className="input"
                 value={newChildForm.father_name}
@@ -4668,12 +4554,11 @@ export default function RunDetails() {
                     father_name: e.target.value,
                   }))
                 }
-                placeholder="e.g. Ahmad"
               />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Father phone</div>
+              <div className="muted">هاتف الأب</div>
               <input
                 className="input"
                 value={newChildForm.father_phone}
@@ -4683,12 +4568,11 @@ export default function RunDetails() {
                     father_phone: e.target.value,
                   }))
                 }
-                placeholder="e.g. 052-1234567"
               />
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Notes (optional)</div>
+              <div className="muted">ملاحظات (اختياري)</div>
               <textarea
                 className="input"
                 rows={4}
@@ -4696,7 +4580,7 @@ export default function RunDetails() {
                 onChange={(e) =>
                   setNewChildForm((p) => ({ ...p, notes: e.target.value }))
                 }
-                placeholder="Optional notes..."
+                placeholder="أضف ملاحظاتك هنا..."
               />
             </div>
 
@@ -4726,16 +4610,15 @@ export default function RunDetails() {
                 disabled={newChildSaving}
               >
                 {newChildSaving
-                  ? "Saving..."
+                  ? "جاري الحفظ..."
                   : newChildEnrollNow
-                    ? "Create & enroll"
-                    : "Save"}
+                    ? "إضافة وتسجيل"
+                    : "حفظ"}
               </button>
             </div>
           </div>
         </Modal>
 
-        {/* ✅ إضافة مجموعة (تسجيل جماعي) */}
         <Modal
           open={openBulk}
           title="إضافة مجموعة"
@@ -4898,7 +4781,6 @@ export default function RunDetails() {
                 <input
                   className="input"
                   type="number"
-                  min="1"
                   value={bulkSessions}
                   onChange={(e) => setBulkSessions(e.target.value)}
                 />
@@ -4973,14 +4855,13 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* Edit */}
         <Modal
           open={openPrice}
-          title="Edit "
+          title="تعديل السعر المتفق عليه"
           onClose={() => setOpenPrice(false)}
         >
           <div style={{ display: "grid", gap: 10 }}>
-            <div className="muted">المدة (دقائق)</div>
+            <div className="muted">السعر (₪)</div>
             <input
               className="input"
               type="number"
@@ -4995,7 +4876,7 @@ export default function RunDetails() {
                 className="btn primary"
                 onClick={updatePackagePrice}
               >
-                Save
+                حفظ
               </button>
               <button
                 type="button"
@@ -5008,10 +4889,9 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* Payment */}
         <Modal
           open={openPay}
-          title={payEditId ? "تعديل دفعة" : "Record payment"}
+          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
           onClose={() => {
             setOpenPay(false);
             setPayEditId(null);
@@ -5020,27 +4900,27 @@ export default function RunDetails() {
         >
           <div className="grid">
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Child</div>
+              <div className="muted">الطفل</div>
               <ModernSelect
                 value={payEnrollmentId}
                 onChange={setPayEnrollmentId}
                 menuWidth="trigger"
                 disabled={paySaving || !!payEditId || payLocked}
-                placeholder="— Select child —"
+                placeholder="— اختر طفل —"
                 options={[
-                  { value: "", label: "— Select child —" },
+                  { value: "", label: "— اختر طفل —" },
                   ...participants
                     .filter((p) => p.enrollment_status === "active")
                     .map((p) => ({
                       value: p.enrollment_id,
-                      label: `${p.child_name} — balance: ₪${Number(p.balance).toFixed(2)}`,
+                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
                     })),
                 ]}
               />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Amount (₪)</div>
+              <div className="muted">المبلغ (₪)</div>
               <input
                 className="input"
                 type="number"
@@ -5053,26 +4933,25 @@ export default function RunDetails() {
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Payment method</div>
+              <div className="muted">طريقة الدفع</div>
               <ModernSelect
                 value={payMethod}
                 onChange={setPayMethod}
                 menuWidth="trigger"
-                placeholder="— Select method —"
                 options={[
-                  { value: "cash", label: "Cash" },
-                  { value: "card", label: "Card" },
-                  { value: "transfer", label: "Bank transfer" },
-                  { value: "other", label: "Other" },
+                  { value: "cash", label: "نقداً" },
+                  { value: "card", label: "بطاقة ائتمان" },
+                  { value: "transfer", label: "حوالة بنكية" },
+                  { value: "other", label: "أخرى" },
                 ]}
               />
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Note</div>
+              <div className="muted">ملاحظات</div>
               <input
                 className="input"
-                placeholder="Optional"
+                placeholder="اختياري"
                 value={payNote}
                 onChange={(e) => setPayNote(e.target.value)}
               />
@@ -5085,7 +4964,7 @@ export default function RunDetails() {
                 disabled={paySaving || !payEnrollmentId || !payAmount}
                 onClick={addPayment}
               >
-                {paySaving ? "Saving..." : payEditId ? "Update" : "Save"}
+                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
               </button>
               <button
                 type="button"
@@ -5102,22 +4981,21 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* */}
         <Modal
           open={openHistory}
-          title=" "
+          title="سجل الدفعات"
           onClose={() => setOpenHistory(false)}
         >
           <div className="muted" style={{ marginBottom: 10 }}>
             {historyEnrollment
-              ? `${historyEnrollment.child_name} — balance: ₪${Number(historyEnrollment.balance).toFixed(2)}`
+              ? `${historyEnrollment.child_name} — المتبقي: ₪${Number(historyEnrollment.balance).toFixed(2)}`
               : ""}
           </div>
 
           {historyLoading ? (
             <div className="card">جاري التحميل...</div>
           ) : historyRows.length === 0 ? (
-            <div className="card">No children found.</div>
+            <div className="card">لا يوجد دفعات.</div>
           ) : (
             <table className="table">
               <thead>
@@ -5135,7 +5013,7 @@ export default function RunDetails() {
                     <td style={{ fontWeight: 800 }}>
                       {Number(x.amount).toFixed(2)}
                     </td>
-                    <td className="muted">{x.method}</td>
+                    <td className="muted">{paymentMethodLabel(x.method)}</td>
                     <td className="muted">{fmtDT(x.created_at)}</td>
                     <td className="muted">{x.note ?? "-"}</td>
                     <td style={{ textAlign: "center" }}>
@@ -5163,16 +5041,15 @@ export default function RunDetails() {
           )}
         </Modal>
 
-        {/* Edit/Add */}
         <Modal
           open={openSession}
-          title={sessionForm.id ? "Edit " : "Add "}
+          title={sessionForm.id ? "تعديل الجلسة" : "إضافة جلسة"}
           onClose={() => setOpenSession(false)}
         >
           <div className="grid">
             <div style={{ gridColumn: "span 6" }}>
               <div className="muted">
-                {isWorkshop ? "Session date" : "Session date/time"}
+                {isWorkshop ? "تاريخ الورشة" : "تاريخ ووقت الجلسة"}
               </div>
               <input
                 className="input"
@@ -5203,15 +5080,15 @@ export default function RunDetails() {
             )}
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Status</div>
+              <div className="muted">الحالة</div>
               <ModernSelect
                 value={sessionForm.status}
                 onChange={(v) => setSessionForm((p) => ({ ...p, status: v }))}
                 menuWidth="trigger"
                 options={[
-                  { value: "scheduled", label: "scheduled" },
-                  { value: "done", label: "done" },
-                  { value: "canceled", label: "canceled" },
+                  { value: "scheduled", label: "مجدولة" },
+                  { value: "done", label: "مكتملة" },
+                  { value: "canceled", label: "ملغاة" },
                 ]}
               />
             </div>
@@ -5223,7 +5100,7 @@ export default function RunDetails() {
                 disabled={sessionSaving}
                 onClick={saveSession}
               >
-                {sessionSaving ? " Save..." : "Save"}
+                {sessionSaving ? "جاري الحفظ..." : "حفظ"}
               </button>
               <button
                 type="button"
@@ -5236,18 +5113,14 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* Edit */}
         <Modal
           open={openAdjust}
-          title={`Edit — ${adjChildName}`}
+          title={`تعديل الجلسات — ${adjChildName}`}
           onClose={() => setOpenAdjust(false)}
         >
           <div className="muted">
-            /:
-            <br />
-            1)
-            <br />
-            2) ( )
+            تم إزالة جميع القيود! يمكنك إدخال أي رقم (حتى لو كان صفر أو بالسالب)
+            لتعديل جلسات الطالب.
           </div>
 
           <hr className="sep" />
@@ -5255,28 +5128,26 @@ export default function RunDetails() {
           <div className="grid">
             <div style={{ gridColumn: "span 12" }} className="card">
               <div className="muted">
-                : <b>{adjحضر}</b> — : <b>{adjRunFuture}</b> — :{" "}
-                <b>{adjPkgالمتبقي}</b>
-              </div>
-              <div className="muted" style={{ marginTop: 6 }}>
-                : <b>{adjMaxAllowed}</b>
+                حضر بالدورة: <b>{adjحضر}</b> — متبقي بالدورة:{" "}
+                <b>{adjRunFuture}</b> — رصيد الباقة العام:{" "}
+                <b style={{ color: adjPkgالمتبقي < 0 ? "#dc2626" : "inherit" }}>
+                  {adjPkgالمتبقي}
+                </b>
               </div>
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">المدة (دقائق)</div>
+              <div className="muted">الجلسات المخصصة للدورة</div>
               <input
                 className="input"
                 type="number"
-                min={adjحضر}
-                max={adjMaxAllowed}
                 value={adjNewAllocated}
                 onChange={(e) => setAdjNewAllocated(e.target.value)}
               />
             </div>
 
             <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">Edit (Δ )</div>
+              <div className="muted">تعديل رصيد الباقة العام (Δ)</div>
               <input
                 className="input"
                 type="number"
@@ -5284,7 +5155,7 @@ export default function RunDetails() {
                 value={adjPkgDelta}
                 onChange={(e) => setAdjPkgDelta(e.target.value)}
                 disabled={!adjPackageId}
-                placeholder=": -3 +2"
+                placeholder="مثال: -3 أو +2"
               />
             </div>
 
@@ -5308,7 +5179,6 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* Expense modal */}
         <Modal
           open={openExpenseModal}
           title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
@@ -5454,7 +5324,6 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* Confirm */}
         <ConfirmDialog
           open={confirm.open}
           title=""
