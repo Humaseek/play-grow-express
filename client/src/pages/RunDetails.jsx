@@ -2541,7 +2541,6 @@ export default function RunDetails() {
       <div className="container runDetails">
         <div className="runHero">
           <div className="runHeroMain">
-            <div className="runHeroEyebrow">تفاصيل الدفعة</div>
             <div className="runHeroTitle">{summary.title}</div>
 
             <div className="runHeroSubline">
