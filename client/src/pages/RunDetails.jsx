@@ -2196,8 +2196,6 @@ export default function RunDetails() {
     }
   }
 
-  // (Removed stray block that was outside an async function and broke Vite build.)
-
   async function generateSessions() {
     if (!firstStart) {
       toast("Please choose a first session date/time.", "warn");
@@ -2635,82 +2633,170 @@ export default function RunDetails() {
     >
       <style>{RUN_DETAILS_SOFT_UI_STYLES}</style>
       <div className="container runDetails">
-        <div className="runHero">
-          <div className="runHeroMain">
-            <div className="runHeroHeaderBar">
-              <div className="runHeroTitleGroup">
-                <div className="runHeroTitleWrap">
-                  <div className="runHeroTitle">{runHeaderTitle}</div>
-                </div>
-              </div>
+        {/* Header Section Modified to match user request and image */}
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "16px",
+            marginBottom: "24px",
+            width: "100%",
+          }}
+        >
+          {/* اليمين: العنوان والمعطيات */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              flexWrap: "wrap",
+            }}
+          >
+            <div
+              className="runHeroTitle"
+              style={{
+                margin: 0,
+                padding: "10px 24px",
+                borderRadius: "999px",
+                background: "#fff",
+                fontSize: "24px",
+                fontWeight: 900,
+              }}
+            >
+              {runHeaderTitle}
+            </div>
 
-              <div className="runHeroMetaCompact">
-                <span className="heroMiniChip" title="موعد الدورة">
-                  <Clock size={14} className="ico" />
-                  <span className="heroMiniText">
-                    <b className="heroMiniValue">
-                      {scheduleInfo.weekday}{" "}
-                      <span className="ltrIso">{scheduleInfo.timeRange}</span>
-                    </b>
-                  </span>
-                </span>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <span
+                className="heroMiniChip"
+                style={{
+                  borderRadius: "999px",
+                  padding: "8px 16px",
+                  fontWeight: 800,
+                  fontSize: 14,
+                  border: "none",
+                  background: "#fff",
+                }}
+              >
+                <Clock
+                  size={16}
+                  className="ico"
+                  style={{ marginLeft: 6, color: "#000" }}
+                />
+                <span className="ltrIso">{scheduleInfo.timeRange}</span>{" "}
+                {scheduleInfo.weekday}
+              </span>
 
-                <span className="heroMiniChip" title="المشاركون النشطون">
-                  <Users size={14} className="ico" />
-                  <span className="heroMiniText">
-                    <b className="heroMiniValue ltrIso">
-                      {fmtNum(totals.activeCount)}
-                    </b>
-                  </span>
-                </span>
+              <span
+                className="heroMiniChip"
+                style={{
+                  borderRadius: "999px",
+                  padding: "8px 16px",
+                  fontWeight: 800,
+                  fontSize: 14,
+                  border: "none",
+                  background: "#fff",
+                }}
+              >
+                <Users
+                  size={16}
+                  className="ico"
+                  style={{ marginLeft: 6, color: "#000" }}
+                />
+                {fmtNum(totals.activeCount)}
+              </span>
 
-                <span className="heroMiniChip" title="عدد الجلسات الكلي">
-                  <CalendarDays size={14} className="ico" />
-                  <span className="heroMiniText">
-                    <b className="heroMiniValue ltrIso">
-                      {fmtNum(summary.sessions_count)}
-                    </b>
-                  </span>
-                </span>
+              <span
+                className="heroMiniChip"
+                style={{
+                  borderRadius: "999px",
+                  padding: "8px 16px",
+                  fontWeight: 800,
+                  fontSize: 14,
+                  border: "none",
+                  background: "#fff",
+                }}
+              >
+                <CalendarDays
+                  size={16}
+                  className="ico"
+                  style={{ marginLeft: 6, color: "#000" }}
+                />
+                {fmtNum(summary.sessions_count)}
+              </span>
 
-                <span className="heroMiniChip" title="نسبة الدفع الحالية">
-                  <CreditCard size={14} className="ico" />
-                  <span className="heroMiniText">
-                    <b className="heroMiniValue ltrIso">
-                      {fmtNum((totals.paidRatio * 100).toFixed(0))}%
-                    </b>
-                  </span>
-                </span>
-              </div>
+              <span
+                className="heroMiniChip"
+                style={{
+                  borderRadius: "999px",
+                  padding: "8px 16px",
+                  fontWeight: 800,
+                  fontSize: 14,
+                  border: "none",
+                  background: "#fff",
+                }}
+              >
+                <CreditCard
+                  size={16}
+                  className="ico"
+                  style={{ marginLeft: 6, color: "#000" }}
+                />
+                {fmtNum((totals.paidRatio * 100).toFixed(0))}%
+              </span>
             </div>
           </div>
 
-          <div className="topActions runHeroActions">
+          {/* اليسار: الأزرار */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button
               type="button"
               className="btn"
+              style={{
+                borderRadius: "999px",
+                background: "#fff",
+                border: "none",
+                fontWeight: "bold",
+                padding: "8px 24px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              }}
               onClick={() => navigate(`/courses/${summary.template_id}`)}
             >
               رجوع
             </button>
-
-            {nextSession && (
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() =>
-                  navigate(`/sessions/${nextSession.id}/attendance`)
-                }
-              >
-                الحضور
-              </button>
-            )}
-
-            <button type="button" className="btn" onClick={loadFixed}>
+            <button
+              type="button"
+              className="btn primary"
+              style={{
+                borderRadius: "999px",
+                fontWeight: "bold",
+                padding: "8px 24px",
+                border: "none",
+                boxShadow: "0 2px 8px rgba(0,172,71,0.2)",
+              }}
+              onClick={() => setTab("sessions")}
+            >
+              الحضور
+            </button>
+            <button
+              type="button"
+              className="btn"
+              style={{
+                borderRadius: "999px",
+                background: "#fff",
+                border: "none",
+                fontWeight: "bold",
+                padding: "8px 24px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              }}
+              onClick={loadFixed}
+            >
               تحديث
             </button>
           </div>
         </div>
+
         {error ? <ErrorBanner error={error} /> : null}
 
         <div className="summaryGridSoft">
