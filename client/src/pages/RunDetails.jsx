@@ -122,13 +122,6 @@ function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
 
-function badgePayment(status) {
-  if (status === "paid") return <Badge variant="ok">مدفوع</Badge>;
-  if (status === "partial") return <Badge variant="warn">جزئي</Badge>;
-  if (status === "unpaid") return <Badge variant="danger">غير مدفوع</Badge>;
-  return <Badge variant="info">مجاني</Badge>;
-}
-
 function rowClassByPayment(status) {
   if (status === "paid") return "rowمدفوع";
   if (status === "partial") return "rowPartial";
@@ -537,10 +530,32 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   justify-content: center;
   text-align: center;
   gap: 8px; /* تباعد واضح بين الكلمة والرقم */
+  transition: all 0.2s ease;
 }
 
-.runDetails .pStatBlock.primary {
-  background: rgba(0, 172, 71, 0.06);
+/* ألوان حالات المتبقي */
+.runDetails .pStatBlock.stat-green {
+  background: rgba(0, 172, 71, 0.08);
+  border-color: rgba(0, 172, 71, 0.15);
+}
+.runDetails .pStatBlock.stat-green .pStatValue {
+  color: rgb(0, 172, 71);
+}
+
+.runDetails .pStatBlock.stat-yellow {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.15);
+}
+.runDetails .pStatBlock.stat-yellow .pStatValue {
+  color: rgb(217, 119, 6); /* amber-600 */
+}
+
+.runDetails .pStatBlock.stat-red {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.15);
+}
+.runDetails .pStatBlock.stat-red .pStatValue {
+  color: rgb(220, 38, 38); /* red-600 */
 }
 
 .runDetails .pStatLabel {
@@ -560,10 +575,6 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   font-weight: 900;
   line-height: 1;
   color: rgb(15, 23, 42);
-}
-
-.runDetails .pStatBlock.primary .pStatValue {
-  color: rgb(0, 172, 71);
 }
 
 .runDetails .pProgressWrap {
@@ -3046,6 +3057,18 @@ export default function RunDetails() {
                           ? "pBar pBarUnpaid"
                           : "pBar pBarFree";
 
+                  // حساب لون خانة المتبقي حسب حالة الدفع
+                  let balClass = "stat-gray";
+                  if (agreed === 0) {
+                    balClass = "stat-green"; // مجاني
+                  } else if (balance <= 0) {
+                    balClass = "stat-green"; // مدفوع بالكامل
+                  } else if (paid > 0) {
+                    balClass = "stat-yellow"; // مدفوع جزئياً
+                  } else {
+                    balClass = "stat-red"; // غير مدفوع نهائياً
+                  }
+
                   return (
                     <div
                       key={p.enrollment_id}
@@ -3058,7 +3081,7 @@ export default function RunDetails() {
                         if (e.key === "Enter" || e.key === " ") openإدارةFor(p);
                       }}
                     >
-                      <div className="pHead">
+                      <div className="pHead" style={{ marginBottom: "20px" }}>
                         <div style={{ minWidth: 0 }}>
                           <div className="pName">{p.child_name}</div>
                           <div className="pMeta">
@@ -3074,12 +3097,11 @@ export default function RunDetails() {
                             </span>
                           </div>
                         </div>
-
-                        <div>{badgePayment(p.payment_status)}</div>
+                        {/* تم حذف شارة حالة الدفع من هنا بناءً على طلبك */}
                       </div>
 
                       <div className="pQuickStats">
-                        <div className="pStatBlock primary">
+                        <div className={`pStatBlock ${balClass}`}>
                           <div className="pStatLabel">
                             <Hourglass size={14} />
                             <span>المتبقي</span>
@@ -3897,7 +3919,7 @@ export default function RunDetails() {
                       className="row"
                       style={{ gap: 10, marginTop: 8, flexWrap: "wrap" }}
                     >
-                      {badgePayment(manageP.payment_status)}
+                      {/* تم حذف حالة الدفع من هنا أيضاً */}
                       {manageP.enrollment_status === "active" ? (
                         <Badge variant="ok">نشط</Badge>
                       ) : (
