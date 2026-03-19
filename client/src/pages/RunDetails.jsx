@@ -2639,7 +2639,6 @@ export default function RunDetails() {
           <div className="runHeroMain">
             <div className="runHeroHeaderBar">
               <div className="runHeroTitleGroup">
-                <div className="runHeroEyebrow">تفاصيل الدفعة</div>
                 <div className="runHeroTitleWrap">
                   <div className="runHeroTitle">{runHeaderTitle}</div>
                 </div>
@@ -2649,7 +2648,6 @@ export default function RunDetails() {
                 <span className="heroMiniChip" title="موعد الدورة">
                   <Clock size={14} className="ico" />
                   <span className="heroMiniText">
-                    <span className="heroMiniLabel">الموعد</span>
                     <b className="heroMiniValue">
                       {scheduleInfo.weekday}{" "}
                       <span className="ltrIso">{scheduleInfo.timeRange}</span>
@@ -2660,7 +2658,6 @@ export default function RunDetails() {
                 <span className="heroMiniChip" title="المشاركون النشطون">
                   <Users size={14} className="ico" />
                   <span className="heroMiniText">
-                    <span className="heroMiniLabel">المشاركون</span>
                     <b className="heroMiniValue ltrIso">
                       {fmtNum(totals.activeCount)}
                     </b>
@@ -2670,7 +2667,6 @@ export default function RunDetails() {
                 <span className="heroMiniChip" title="عدد الجلسات الكلي">
                   <CalendarDays size={14} className="ico" />
                   <span className="heroMiniText">
-                    <span className="heroMiniLabel">الجلسات</span>
                     <b className="heroMiniValue ltrIso">
                       {fmtNum(summary.sessions_count)}
                     </b>
@@ -2680,7 +2676,6 @@ export default function RunDetails() {
                 <span className="heroMiniChip" title="نسبة الدفع الحالية">
                   <CreditCard size={14} className="ico" />
                   <span className="heroMiniText">
-                    <span className="heroMiniLabel">نسبة الدفع</span>
                     <b className="heroMiniValue ltrIso">
                       {fmtNum((totals.paidRatio * 100).toFixed(0))}%
                     </b>
