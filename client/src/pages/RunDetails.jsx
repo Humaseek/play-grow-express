@@ -520,43 +520,54 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 
 .runDetails .pQuickStats {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 480px) {
+  .runDetails .pQuickStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .runDetails .pStatBlock {
-  padding: 12px;
-  border-radius: 16px;
-  background: rgba(248, 250, 252, 0.92);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 10px 6px;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.6);
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .runDetails .pStatBlock.primary {
-  background: rgba(0, 172, 71, 0.06);
-  border-color: rgba(0, 172, 71, 0.14);
+  background: rgba(0, 172, 71, 0.05);
 }
 
 .runDetails .pStatLabel {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  color: rgb(82, 82, 82);
-  font-size: 12px;
+  justify-content: center;
+  gap: 4px;
+  color: rgb(100, 116, 139);
+  font-size: 11px;
   font-weight: 700;
   margin-bottom: 6px;
 }
 
 .runDetails .pStatValue {
-  font-size: 26px;
+  font-size: 16px;
   font-weight: 900;
   line-height: 1.1;
+  color: rgb(15, 23, 42);
 }
 
-.runDetails .pStatValueSm {
+.runDetails .pStatBlock.primary .pStatValue {
   font-size: 18px;
-  font-weight: 900;
-  line-height: 1.1;
+  color: rgb(0, 172, 71);
 }
 
 .runDetails .pProgressWrap {
@@ -598,31 +609,6 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 
 .runDetails .pBarFree span {
   background: rgb(148, 163, 184);
-}
-
-.runDetails .pMiniFacts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.runDetails .pMiniFact {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: rgba(248, 250, 252, 0.92);
-  color: rgb(82, 82, 82);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.runDetails .pMiniFact b {
-  margin-inline-start: auto;
-  color: rgb(24, 24, 24);
 }
 
 .runDetails .pActions {
@@ -724,8 +710,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 
   .runInfoGrid,
   .summaryGridSoft,
-  .runDetails .pQuickStats,
-  .runDetails .pMiniFacts {
+  .runDetails .pQuickStats {
     grid-template-columns: 1fr;
   }
 
@@ -3051,14 +3036,7 @@ export default function RunDetails() {
                   const balance = Number(p.balance || 0);
 
                   const attended = Number(p.sessions_attended_in_run || 0);
-
                   const pkgRemain = Number(p.package_sessions_remaining || 0);
-                  const pkgTotal = Number(p.package_sessions_total || 0);
-                  const pkgمستخدم = Math.max(0, pkgTotal - pkgRemain);
-
-                  const runSessions = Number(
-                    summary?.sessions_count || sessions.length || 0,
-                  );
 
                   const pct =
                     agreed > 0 ? clamp((paid / agreed) * 100, 0, 100) : 0;
@@ -3107,7 +3085,7 @@ export default function RunDetails() {
                       <div className="pQuickStats">
                         <div className="pStatBlock primary">
                           <div className="pStatLabel">
-                            <Hourglass size={14} className="ico" />
+                            <Hourglass size={14} />
                             <span>المتبقي</span>
                           </div>
                           <div className="pStatValue ltrIso" dir="ltr">
@@ -3117,30 +3095,30 @@ export default function RunDetails() {
 
                         <div className="pStatBlock">
                           <div className="pStatLabel">
-                            <CreditCard size={14} className="ico" />
+                            <CreditCard size={14} />
                             <span>المدفوع</span>
                           </div>
-                          <div className="pStatValueSm ltrIso" dir="ltr">
+                          <div className="pStatValue ltrIso" dir="ltr">
                             {fmtILS(paid)}
                           </div>
                         </div>
 
                         <div className="pStatBlock">
                           <div className="pStatLabel">
-                            <Ticket size={14} className="ico" />
+                            <Ticket size={14} />
                             <span>رصيد الجلسات</span>
                           </div>
-                          <div className="pStatValueSm ltrIso" dir="ltr">
+                          <div className="pStatValue ltrIso" dir="ltr">
                             {fmtNum(pkgRemain)}
                           </div>
                         </div>
 
                         <div className="pStatBlock">
                           <div className="pStatLabel">
-                            <CalendarDays size={14} className="ico" />
+                            <CalendarDays size={14} />
                             <span>حضر</span>
                           </div>
-                          <div className="pStatValueSm ltrIso" dir="ltr">
+                          <div className="pStatValue ltrIso" dir="ltr">
                             {fmtNum(attended)}
                           </div>
                         </div>
@@ -3148,45 +3126,28 @@ export default function RunDetails() {
 
                       <div className="pProgressWrap">
                         <div className="pProgressHead">
-                          <span>نسبة الدفع</span>
-                          <b className="ltrIso">{fmtNum(pct.toFixed(0))}%</b>
+                          <span className="muted">
+                            المتفق عليه:{" "}
+                            <b
+                              style={{ color: "#0f172a", fontSize: "14px" }}
+                              className="ltrIso"
+                            >
+                              {fmtILS(agreed)}
+                            </b>
+                          </span>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <span className="muted">نسبة الدفع</span>
+                            <b className="ltrIso">{fmtNum(pct.toFixed(0))}%</b>
+                          </div>
                         </div>
                         <div className={barClass} aria-hidden="true">
                           <span style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-
-                      <div className="pMiniFacts">
-                        <div className="pMiniFact">
-                          <Tag size={14} className="ico" />
-                          <span>المتفق عليه</span>
-                          <b className="ltrIso" dir="ltr">
-                            {fmtILS(agreed)}
-                          </b>
-                        </div>
-
-                        <div className="pMiniFact">
-                          <CheckCircle2 size={14} className="ico" />
-                          <span>مستخدم</span>
-                          <b className="ltrIso" dir="ltr">
-                            {fmtNum(pkgمستخدم)}
-                          </b>
-                        </div>
-
-                        <div className="pMiniFact">
-                          <Ticket size={14} className="ico" />
-                          <span>بهذه الدفعة</span>
-                          <b className="ltrIso" dir="ltr">
-                            {fmtNum(pkgTotal)}
-                          </b>
-                        </div>
-
-                        <div className="pMiniFact">
-                          <Hourglass size={14} className="ico" />
-                          <span>جلسات الدفعة</span>
-                          <b className="ltrIso" dir="ltr">
-                            {fmtNum(runSessions)}
-                          </b>
                         </div>
                       </div>
 
