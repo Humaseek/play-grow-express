@@ -162,108 +162,130 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 }
 
 .runHero {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 18px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 14px 20px;
+  margin-bottom: 16px;
 }
 
 .runHeroMain {
-  flex: 1 1 560px;
-  min-width: 280px;
+  grid-column: 2;
+  min-width: 0;
+}
+
+.runHeroHeaderBar {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+}
+
+.runHeroTitleGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .runHeroEyebrow {
-  font-size: 12px;
+  margin: 0;
+  font-size: 11px;
   font-weight: 800;
   color: rgb(0, 172, 71);
-  margin-bottom: 10px;
+  opacity: 0.95;
 }
 
 .runHeroTitleWrap {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
   max-width: 100%;
-  padding: 14px 18px;
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
 }
 
 .runHeroTitle {
-  font-size: clamp(30px, 3vw, 46px);
-  font-weight: 900;
-  line-height: 1.05;
-  color: rgb(24, 24, 24);
-  letter-spacing: -0.02em;
-}
-
-.runHeroSubtext {
-  margin-top: 12px;
-  color: rgb(82, 82, 82);
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.runDetails .statChip {
+  margin: 0;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.86) !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
-  box-shadow: none !important;
-  backdrop-filter: blur(10px);
+  justify-content: center;
+  min-height: 54px;
+  max-width: 100%;
+  padding: 10px 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
+  font-size: clamp(20px, 2vw, 32px);
+  font-weight: 900;
+  line-height: 1.15;
+  color: rgb(24, 24, 24);
+  letter-spacing: -0.015em;
+  white-space: nowrap;
 }
 
-.runDetails .statRow {
+.runHeroMetaCompact {
   display: flex;
+  flex: 1 1 auto;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px !important;
+  justify-content: flex-start;
+  align-items: center;
+  align-content: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 8px;
 }
 
-.runDetails .statChipLead {
-  min-width: 240px;
-  justify-content: space-between;
+.heroMiniChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: none;
+  white-space: nowrap;
 }
 
-.runDetails .statChipText {
+.heroMiniText {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  line-height: 1.08;
 }
 
-.runDetails .statLabel {
+.heroMiniLabel {
   color: rgb(82, 82, 82);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 
-.runDetails .statValue {
+.heroMiniValue {
   color: rgb(24, 24, 24);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
-.runDetails .statChip b {
-  font-size: 15px;
+.runHeroSubtext,
+.runDetails .statRow {
+  display: none !important;
 }
 
 .runHeroActions,
 .runDetails .topActions {
+  grid-column: 1;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  padding-top: 4px;
+  justify-content: flex-start;
+  padding-top: 2px;
 }
 
 .runDetails .btn {
@@ -649,6 +671,42 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   .runInfoGrid,
   .summaryGridSoft {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .runHero {
+    grid-template-columns: 1fr;
+  }
+
+  .runHeroMain,
+  .runHeroActions,
+  .runDetails .topActions {
+    grid-column: auto;
+  }
+
+  .runHeroHeaderBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .runHeroTitleGroup {
+    align-items: flex-start;
+  }
+
+  .runHeroTitleWrap {
+    justify-content: flex-start;
+  }
+
+  .runHeroTitle {
+    white-space: normal;
+    font-size: 24px;
+    min-height: 48px;
+    padding: 10px 14px;
+  }
+
+  .runHeroMetaCompact {
+    padding-top: 0;
   }
 }
 
@@ -2579,10 +2637,12 @@ export default function RunDetails() {
       <div className="container runDetails">
         <div className="runHero">
           <div className="runHeroMain">
-            <div className="runHeroHeaderCompact">
-              <div className="runHeroTitleWrap">
+            <div className="runHeroHeaderBar">
+              <div className="runHeroTitleGroup">
                 <div className="runHeroEyebrow">تفاصيل الدفعة</div>
-                <div className="runHeroTitle">{runHeaderTitle}</div>
+                <div className="runHeroTitleWrap">
+                  <div className="runHeroTitle">{runHeaderTitle}</div>
+                </div>
               </div>
 
               <div className="runHeroMetaCompact">
