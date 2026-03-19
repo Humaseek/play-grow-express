@@ -430,7 +430,7 @@ export default function CourseDetails() {
                 lineHeight: 1,
               }}
             >
-              {isWorkshop ? "ورشة" : "دورة"}
+              {isWorkshop ? "" : ""}
             </span>
           </div>
         }
@@ -460,12 +460,16 @@ export default function CourseDetails() {
                 gap: 8,
                 padding: "7px 12px",
                 borderRadius: 999,
-                background: "linear-gradient(135deg, rgba(124,58,237,.10), rgba(255,255,255,.96))",
+                background:
+                  "linear-gradient(135deg, rgba(124,58,237,.10), rgba(255,255,255,.96))",
                 border: "1px solid rgba(124,58,237,.14)",
                 boxShadow: "0 8px 18px rgba(124,58,237,.08)",
               }}
             >
-              <span className="ltrIso" style={{ fontSize: 16, fontWeight: 950, color: "#241a31" }}>
+              <span
+                className="ltrIso"
+                style={{ fontSize: 16, fontWeight: 950, color: "#241a31" }}
+              >
                 {priceValue}
               </span>
               <span style={{ fontSize: 12, fontWeight: 900, color: "#8a7ca5" }}>
@@ -494,9 +498,7 @@ export default function CourseDetails() {
             variant={stats.activeCount ? "ok" : "neutral"}
             label="الأفواج الفعّالة"
             value={stats.activeCount}
-            hint={
-              stats.totalRuns ? `من أصل ${stats.totalRuns}` : "لا يوجد أفواج"
-            }
+            hint={stats.totalRuns ? `` : ""}
             icon={Layers}
           />
         </div>
@@ -506,7 +508,7 @@ export default function CourseDetails() {
             variant={stats.totalParticipants ? "info" : "neutral"}
             label="المشتركين"
             value={stats.totalParticipants}
-            hint="عبر كل الأفواج"
+            hint=""
             icon={Users}
           />
         </div>
@@ -516,9 +518,7 @@ export default function CourseDetails() {
             variant={stats.nextSessionAt ? "warn" : "neutral"}
             label="الجلسة القادمة"
             value={stats.nextSessionAt ? fmtDT(stats.nextSessionAt) : "-"}
-            hint={
-              stats.nextSessionAt ? "أقرب جلسة قادمة" : "لا توجد جلسات قادمة"
-            }
+            hint={stats.nextSessionAt ? "" : ""}
             icon={CalendarClock}
           />
         </div>
@@ -528,7 +528,7 @@ export default function CourseDetails() {
             variant={stats.totalSessions ? "neutral" : "neutral"}
             label="مجموع الجلسات"
             value={stats.totalSessions}
-            hint="عبر كل الأفواج"
+            hint=""
             icon={CalendarClock}
           />
         </div>
