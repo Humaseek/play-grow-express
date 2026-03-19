@@ -59,7 +59,9 @@ function fmtTimeHM(dt) {
 
 function fmtWeekday(dt) {
   if (!dt) return "—";
-  return new Intl.DateTimeFormat("ar", { weekday: "long" }).format(new Date(dt));
+  return new Intl.DateTimeFormat("ar", { weekday: "long" }).format(
+    new Date(dt),
+  );
 }
 
 function fmtNum(n) {
@@ -133,7 +135,6 @@ function rowClassByPayment(status) {
   if (status === "unpaid") return "rowUnpaid";
   return "";
 }
-
 
 async function copyText(text) {
   try {
@@ -718,7 +719,6 @@ export default function RunDetails() {
   const [newCatName, setNewCatName] = useState("");
   const [newPartyName, setNewPartyName] = useState("");
 
-
   const isWorkshop = (() => {
     const raw =
       summary?.course_type ??
@@ -883,7 +883,10 @@ export default function RunDetails() {
   const [openإدارة, setOpenإدارة] = useState(false);
   const [manageP, setإدارةP] = useState(null);
 
-  const manageHasPayments = useMemo(() => Number(manageP?.paid_amount || 0) > 0, [manageP]);
+  const manageHasPayments = useMemo(
+    () => Number(manageP?.paid_amount || 0) > 0,
+    [manageP],
+  );
 
   // Confirm
   const [confirm, setConfirm] = useState({
@@ -1063,7 +1066,7 @@ export default function RunDetails() {
     setTab("participants");
   }
 
-    // ============================
+  // ============================
   // Run expenses
   // ============================
   function resetExpenseForm() {
@@ -1149,7 +1152,8 @@ export default function RunDetails() {
     const clean = String(name || "").trim();
     if (!clean) return;
 
-    const table = kind === "category" ? "expense_categories" : "expense_parties";
+    const table =
+      kind === "category" ? "expense_categories" : "expense_parties";
     const setter = kind === "category" ? setExpCategory : setExpParty;
     const inputSetter = kind === "category" ? setNewCatName : setNewPartyName;
 
@@ -1195,7 +1199,10 @@ export default function RunDetails() {
 
     try {
       if (expenseEditId) {
-        const up = await supabase.from("expenses").update(payload).eq("id", expenseEditId);
+        const up = await supabase
+          .from("expenses")
+          .update(payload)
+          .eq("id", expenseEditId);
         if (up.error) throw up.error;
         toast("Saved.", "ok");
       } else {
@@ -1226,7 +1233,7 @@ export default function RunDetails() {
     }
   }
 
-// ========= load =========
+  // ========= load =========
   async function loadFixed() {
     setLoading(true);
     setError(null);
@@ -1332,12 +1339,14 @@ export default function RunDetails() {
   }, [participants]);
 
   const expCategories = useMemo(() => {
-    if (expHasPicklists && expCatOptions.length) return uniqSorted(expCatOptions);
+    if (expHasPicklists && expCatOptions.length)
+      return uniqSorted(expCatOptions);
     return uniqSorted(expenses.map((r) => r.category));
   }, [expHasPicklists, expCatOptions, expenses]);
 
   const expParties = useMemo(() => {
-    if (expHasPicklists && expPartyOptions.length) return uniqSorted(expPartyOptions);
+    if (expHasPicklists && expPartyOptions.length)
+      return uniqSorted(expPartyOptions);
     return uniqSorted(expenses.map((r) => r.party));
   }, [expHasPicklists, expPartyOptions, expenses]);
 
@@ -1352,8 +1361,10 @@ export default function RunDetails() {
         return a.includes(s) || b.includes(s) || c.includes(s);
       });
     }
-    if (expCatFilter !== "all") list = list.filter((r) => String(r.category || "") === expCatFilter);
-    if (expPartyFilter !== "all") list = list.filter((r) => String(r.party || "") === expPartyFilter);
+    if (expCatFilter !== "all")
+      list = list.filter((r) => String(r.category || "") === expCatFilter);
+    if (expPartyFilter !== "all")
+      list = list.filter((r) => String(r.party || "") === expPartyFilter);
     return list;
   }, [expenses, expQ, expCatFilter, expPartyFilter]);
 
@@ -2520,7 +2531,15 @@ export default function RunDetails() {
 
   if (loading) {
     return (
-      <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
+      <div
+        className="page page--runs"
+        dir="rtl"
+        lang="ar"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)",
+        }}
+      >
         <div className="container runDetails">
           <div className="card">جاري التحميل...</div>
         </div>
@@ -2530,7 +2549,15 @@ export default function RunDetails() {
 
   if (!summary) {
     return (
-      <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
+      <div
+        className="page page--runs"
+        dir="rtl"
+        lang="ar"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)",
+        }}
+      >
         <div className="container runDetails">
           <div className="card"> .</div>
         </div>
@@ -2539,53 +2566,67 @@ export default function RunDetails() {
   }
 
   return (
-    <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
+    <div
+      className="page page--runs"
+      dir="rtl"
+      lang="ar"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)",
+      }}
+    >
       <style>{RUN_DETAILS_SOFT_UI_STYLES}</style>
       <div className="container runDetails">
         <div className="runHero">
           <div className="runHeroMain">
-            <div className="runHeroEyebrow">تفاصيل الدفعة</div>
-            <div className="runHeroTitleWrap">
-              <div className="runHeroTitle">{runHeaderTitle}</div>
-            </div>
-            <div className="runHeroSubtext">
-              عرض سريع وواضح لأهم المعطيات الحالية بدون ازدحام بصري.
-            </div>
+            <div className="runHeroHeaderCompact">
+              <div className="runHeroTitleWrap">
+                <div className="runHeroEyebrow">تفاصيل الدفعة</div>
+                <div className="runHeroTitle">{runHeaderTitle}</div>
+              </div>
 
-            <div className="statRow">
-              <span className="statChip statChipLead" title="موعد الدورة">
-                <Clock size={16} className="ico" />
-                <span className="statChipText">
-                  <span className="statLabel">الموعد</span>
-                  <span className="statValue">
-                    {scheduleInfo.weekday} <span className="ltrIso">{scheduleInfo.timeRange}</span>
+              <div className="runHeroMetaCompact">
+                <span className="heroMiniChip" title="موعد الدورة">
+                  <Clock size={14} className="ico" />
+                  <span className="heroMiniText">
+                    <span className="heroMiniLabel">الموعد</span>
+                    <b className="heroMiniValue">
+                      {scheduleInfo.weekday}{" "}
+                      <span className="ltrIso">{scheduleInfo.timeRange}</span>
+                    </b>
                   </span>
                 </span>
-              </span>
 
-              <span className="statChip" title="المشاركون النشطون">
-                <Users size={16} className="ico" />
-                <span className="statChipText">
-                  <span className="statLabel">المشاركون</span>
-                  <b className="ltrIso">{fmtNum(totals.activeCount)}</b>
+                <span className="heroMiniChip" title="المشاركون النشطون">
+                  <Users size={14} className="ico" />
+                  <span className="heroMiniText">
+                    <span className="heroMiniLabel">المشاركون</span>
+                    <b className="heroMiniValue ltrIso">
+                      {fmtNum(totals.activeCount)}
+                    </b>
+                  </span>
                 </span>
-              </span>
 
-              <span className="statChip" title="عدد الجلسات الكلي">
-                <CalendarDays size={16} className="ico" />
-                <span className="statChipText">
-                  <span className="statLabel">الجلسات</span>
-                  <b className="ltrIso">{fmtNum(summary.sessions_count)}</b>
+                <span className="heroMiniChip" title="عدد الجلسات الكلي">
+                  <CalendarDays size={14} className="ico" />
+                  <span className="heroMiniText">
+                    <span className="heroMiniLabel">الجلسات</span>
+                    <b className="heroMiniValue ltrIso">
+                      {fmtNum(summary.sessions_count)}
+                    </b>
+                  </span>
                 </span>
-              </span>
 
-              <span className="statChip" title="نسبة الدفع الحالية">
-                <CreditCard size={16} className="ico" />
-                <span className="statChipText">
-                  <span className="statLabel">نسبة الدفع</span>
-                  <b className="ltrIso">{fmtNum((totals.paidRatio * 100).toFixed(0))}%</b>
+                <span className="heroMiniChip" title="نسبة الدفع الحالية">
+                  <CreditCard size={14} className="ico" />
+                  <span className="heroMiniText">
+                    <span className="heroMiniLabel">نسبة الدفع</span>
+                    <b className="heroMiniValue ltrIso">
+                      {fmtNum((totals.paidRatio * 100).toFixed(0))}%
+                    </b>
+                  </span>
                 </span>
-              </span>
+              </div>
             </div>
           </div>
 
@@ -2628,7 +2669,9 @@ export default function RunDetails() {
             <div className="summaryValue">
               <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
             </div>
-            <div className="summaryNote">إجمالي المبلغ المتفق عليه للمشاركين النشطين.</div>
+            <div className="summaryNote">
+              إجمالي المبلغ المتفق عليه للمشاركين النشطين.
+            </div>
           </div>
 
           <div className="card summaryCardSoft is-paid">
@@ -2642,7 +2685,10 @@ export default function RunDetails() {
               <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
             </div>
             <div className="summaryNote">
-              نسبة الدفع الحالية <b className="ltrIso">{fmtNum((totals.paidRatio * 100).toFixed(0))}%</b>
+              نسبة الدفع الحالية{" "}
+              <b className="ltrIso">
+                {fmtNum((totals.paidRatio * 100).toFixed(0))}%
+              </b>
             </div>
           </div>
 
@@ -2663,7 +2709,9 @@ export default function RunDetails() {
             </div>
           </div>
 
-          <div className={`card summaryCardSoft is-balance ${totals.balance <= 0 ? "is-good" : ""}`}>
+          <div
+            className={`card summaryCardSoft is-balance ${totals.balance <= 0 ? "is-good" : ""}`}
+          >
             <div className="summaryCardTop">
               <span className="summaryLabel">المتبقي</span>
               <span className="summaryIcon" aria-hidden="true">
@@ -2674,12 +2722,15 @@ export default function RunDetails() {
               <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
             </div>
             <div className="summaryNote">
-              الصافي بعد المصاريف <b className="ltrIso">{fmtILS(totals.paid - runExpensesTotal, 0)}</b>
+              الصافي بعد المصاريف{" "}
+              <b className="ltrIso">
+                {fmtILS(totals.paid - runExpensesTotal, 0)}
+              </b>
             </div>
           </div>
         </div>
 
-<div className="tabs" style={{ marginBottom: 10 }}>
+        <div className="tabs" style={{ marginBottom: 10 }}>
           <button
             type="button"
             className={`tab ${tab === "participants" ? "active" : ""}`}
@@ -2795,8 +2846,12 @@ export default function RunDetails() {
                     onChange={(e) => setChildSort(e.target.value)}
                     style={{ flex: "0 1 210px", minWidth: 170 }}
                   >
-                    <option value="balance_desc">المتبقي: من الأعلى للأقل</option>
-                    <option value="balance_asc">المتبقي: من الأقل للأعلى</option>
+                    <option value="balance_desc">
+                      المتبقي: من الأعلى للأقل
+                    </option>
+                    <option value="balance_asc">
+                      المتبقي: من الأقل للأعلى
+                    </option>
                     <option value="name_asc">الاسم: أ-ي</option>
                     <option value="name_desc">الاسم: ي-أ</option>
                   </select>
@@ -2885,8 +2940,7 @@ export default function RunDetails() {
                       tabIndex={0}
                       onClick={() => openإدارةFor(p)}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ")
-                          openإدارةFor(p);
+                        if (e.key === "Enter" || e.key === " ") openإدارةFor(p);
                       }}
                     >
                       <div className="pHead">
@@ -2915,7 +2969,9 @@ export default function RunDetails() {
                             <Hourglass size={14} className="ico" />
                             <span>المتبقي</span>
                           </div>
-                          <div className="pStatValue ltrIso" dir="ltr">{fmtILS(balance)}</div>
+                          <div className="pStatValue ltrIso" dir="ltr">
+                            {fmtILS(balance)}
+                          </div>
                         </div>
 
                         <div className="pStatBlock">
@@ -2923,7 +2979,9 @@ export default function RunDetails() {
                             <CreditCard size={14} className="ico" />
                             <span>المدفوع</span>
                           </div>
-                          <div className="pStatValueSm ltrIso" dir="ltr">{fmtILS(paid)}</div>
+                          <div className="pStatValueSm ltrIso" dir="ltr">
+                            {fmtILS(paid)}
+                          </div>
                         </div>
 
                         <div className="pStatBlock">
@@ -2931,7 +2989,9 @@ export default function RunDetails() {
                             <Ticket size={14} className="ico" />
                             <span>رصيد الجلسات</span>
                           </div>
-                          <div className="pStatValueSm ltrIso" dir="ltr">{fmtNum(pkgRemain)}</div>
+                          <div className="pStatValueSm ltrIso" dir="ltr">
+                            {fmtNum(pkgRemain)}
+                          </div>
                         </div>
 
                         <div className="pStatBlock">
@@ -2939,7 +2999,9 @@ export default function RunDetails() {
                             <CalendarDays size={14} className="ico" />
                             <span>حضر</span>
                           </div>
-                          <div className="pStatValueSm ltrIso" dir="ltr">{fmtNum(attended)}</div>
+                          <div className="pStatValueSm ltrIso" dir="ltr">
+                            {fmtNum(attended)}
+                          </div>
                         </div>
                       </div>
 
@@ -2957,25 +3019,33 @@ export default function RunDetails() {
                         <div className="pMiniFact">
                           <Tag size={14} className="ico" />
                           <span>المتفق عليه</span>
-                          <b className="ltrIso" dir="ltr">{fmtILS(agreed)}</b>
+                          <b className="ltrIso" dir="ltr">
+                            {fmtILS(agreed)}
+                          </b>
                         </div>
 
                         <div className="pMiniFact">
                           <CheckCircle2 size={14} className="ico" />
                           <span>مستخدم</span>
-                          <b className="ltrIso" dir="ltr">{fmtNum(pkgمستخدم)}</b>
+                          <b className="ltrIso" dir="ltr">
+                            {fmtNum(pkgمستخدم)}
+                          </b>
                         </div>
 
                         <div className="pMiniFact">
                           <Ticket size={14} className="ico" />
                           <span>بهذه الدفعة</span>
-                          <b className="ltrIso" dir="ltr">{fmtNum(pkgTotal)}</b>
+                          <b className="ltrIso" dir="ltr">
+                            {fmtNum(pkgTotal)}
+                          </b>
                         </div>
 
                         <div className="pMiniFact">
                           <Hourglass size={14} className="ico" />
                           <span>جلسات الدفعة</span>
-                          <b className="ltrIso" dir="ltr">{fmtNum(runSessions)}</b>
+                          <b className="ltrIso" dir="ltr">
+                            {fmtNum(runSessions)}
+                          </b>
                         </div>
                       </div>
 
@@ -3039,8 +3109,7 @@ export default function RunDetails() {
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب
-                توقيتك المحلي.
+                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيتك المحلي.
               </div>
 
               <hr className="sep" />
@@ -3048,8 +3117,8 @@ export default function RunDetails() {
               {isWorkshop ? (
                 <div style={{ display: "grid", gap: 12 }}>
                   <div className="muted">
-                    الورشات غالبًا تكون جلسة واحدة. أنشئها مرة واحدة،
-                    ثم قم بإدارتها من القائمة.
+                    الورشات غالبًا تكون جلسة واحدة. أنشئها مرة واحدة، ثم قم
+                    بإدارتها من القائمة.
                   </div>
 
                   <button
@@ -3304,7 +3373,9 @@ export default function RunDetails() {
                                 type="button"
                                 className="btn"
                                 title={isDone ? "إعادة فتح" : "تعيين كمكتملة"}
-                                aria-label={isDone ? "إعادة فتح" : "تعيين كمكتملة"}
+                                aria-label={
+                                  isDone ? "إعادة فتح" : "تعيين كمكتملة"
+                                }
                                 style={{
                                   width: 36,
                                   height: 36,
@@ -3496,7 +3567,6 @@ export default function RunDetails() {
           </div>
         )}
 
-
         {/* ===================== EXPENSES ===================== */}
         {tab === "expenses" && (
           <div className="card">
@@ -3511,7 +3581,9 @@ export default function RunDetails() {
             >
               <div>
                 <h2 style={{ marginBottom: 4 }}>المصاريف</h2>
-                <div className="muted small">مصاريف مرتبطة بهذه الدفعة (Run)</div>
+                <div className="muted small">
+                  مصاريف مرتبطة بهذه الدفعة (Run)
+                </div>
               </div>
 
               <button
@@ -3526,16 +3598,21 @@ export default function RunDetails() {
 
             {!expFeatureAvailable ? (
               <div style={{ marginTop: 14 }} className="muted">
-                ميزة ربط المصاريف بالـ Run غير مفعّلة بعد.
-                شغّل ملف الـ SQL الذي يضيف <b>run_id</b> لجدول <b>expenses</b>.
+                ميزة ربط المصاريف بالـ Run غير مفعّلة بعد. شغّل ملف الـ SQL الذي
+                يضيف <b>run_id</b> لجدول <b>expenses</b>.
               </div>
             ) : (
               <>
-                <div className="grid" style={{ marginTop: 14, marginBottom: 12 }}>
+                <div
+                  className="grid"
+                  style={{ marginTop: 14, marginBottom: 12 }}
+                >
                   <div className="card" style={{ gridColumn: "span 4" }}>
                     <div className="muted">المجموع</div>
                     <div style={{ fontSize: 22, fontWeight: 900 }}>
-                      <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
+                      <span className="ltrIso">
+                        {fmtILS(runExpensesTotal, 2)}
+                      </span>
                     </div>
                   </div>
 
@@ -3549,7 +3626,9 @@ export default function RunDetails() {
                   <div className="card" style={{ gridColumn: "span 4" }}>
                     <div className="muted">الصافي (المدفوع - المصاريف)</div>
                     <div style={{ fontSize: 22, fontWeight: 900 }}>
-                      <span className="ltrIso">{fmtILS(totals.paid - runExpensesTotal, 2)}</span>
+                      <span className="ltrIso">
+                        {fmtILS(totals.paid - runExpensesTotal, 2)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -3634,13 +3713,19 @@ export default function RunDetails() {
                         {expensesFiltered.map((r) => (
                           <tr key={r.id}>
                             <td className="muted">
-                              <span className="ltrIso">{r.spent_on || "-"}</span>
+                              <span className="ltrIso">
+                                {r.spent_on || "-"}
+                              </span>
                             </td>
-                            <td style={{ fontWeight: 800 }}>{r.category || "—"}</td>
+                            <td style={{ fontWeight: 800 }}>
+                              {r.category || "—"}
+                            </td>
                             <td className="muted">{r.party || "—"}</td>
                             <td className="muted">{r.description || "—"}</td>
                             <td>
-                              <span className="ltrIso">{fmtILS(r.amount, 2)}</span>
+                              <span className="ltrIso">
+                                {fmtILS(r.amount, 2)}
+                              </span>
                             </td>
                             <td style={{ textAlign: "center" }}>
                               <div className="tableActions">
@@ -4054,7 +4139,11 @@ export default function RunDetails() {
                     type="button"
                     className="btn danger"
                     disabled={manageHasPayments}
-                    title={manageHasPayments ? "لا يمكن حذف الاشتراك لأن هناك دفعات مسجلة." : "حذف الاشتراك"}
+                    title={
+                      manageHasPayments
+                        ? "لا يمكن حذف الاشتراك لأن هناك دفعات مسجلة."
+                        : "حذف الاشتراك"
+                    }
                     onClick={() => {
                       if (manageHasPayments) {
                         toast(
@@ -4134,9 +4223,8 @@ export default function RunDetails() {
               ) : pkgInfo ? (
                 <div className="muted">
                   Existing sessions balance:{" "}
-                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي
-                  to pay:{" "}
-                  <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
+                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي to
+                  pay: <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
                 </div>
               ) : (
                 <div className="muted">
@@ -4511,11 +4599,19 @@ export default function RunDetails() {
                 onChange={(e) => setBulkQ(e.target.value)}
               />
 
-              <button type="button" className="btn" onClick={bulkSelectAllFiltered}>
+              <button
+                type="button"
+                className="btn"
+                onClick={bulkSelectAllFiltered}
+              >
                 تحديد الكل
               </button>
 
-              <button type="button" className="btn danger" onClick={bulkClearSelection}>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={bulkClearSelection}
+              >
                 إلغاء التحديد
               </button>
 
@@ -4538,16 +4634,27 @@ export default function RunDetails() {
                   }}
                 >
                   <table className="table" style={{ margin: 0, minWidth: 720 }}>
-                    <thead style={{ position: "sticky", top: 0, background: "white", zIndex: 2 }}>
+                    <thead
+                      style={{
+                        position: "sticky",
+                        top: 0,
+                        background: "white",
+                        zIndex: 2,
+                      }}
+                    >
                       <tr>
-                        <th style={{ width: 70, textAlign: "right" }}>اختيار</th>
+                        <th style={{ width: 70, textAlign: "right" }}>
+                          اختيار
+                        </th>
                         <th style={{ textAlign: "right" }}>الاسم</th>
                         <th style={{ textAlign: "right" }}>العمر</th>
                         <th style={{ textAlign: "right" }}>الصف</th>
                         <th style={{ textAlign: "right" }}>الجنس</th>
                         <th style={{ textAlign: "right" }}>هاتف الأم</th>
                         {bulkPriceMode === "perChild" && (
-                          <th style={{ width: 150, textAlign: "right" }}>السعر</th>
+                          <th style={{ width: 150, textAlign: "right" }}>
+                            السعر
+                          </th>
                         )}
                       </tr>
                     </thead>
@@ -4560,7 +4667,7 @@ export default function RunDetails() {
                             ? "ذكر"
                             : c.gender === "female"
                               ? "أنثى"
-                              : c.gender ?? "-";
+                              : (c.gender ?? "-");
 
                         return (
                           <tr key={c.id}>
@@ -4578,7 +4685,12 @@ export default function RunDetails() {
                             <td className="muted">{genderLabel}</td>
 
                             <td className="muted">
-                              <span style={{ direction: "ltr", unicodeBidi: "embed" }}>
+                              <span
+                                style={{
+                                  direction: "ltr",
+                                  unicodeBidi: "embed",
+                                }}
+                              >
                                 {c.mother_phone ?? "-"}
                               </span>
                             </td>
@@ -4643,7 +4755,9 @@ export default function RunDetails() {
               </div>
 
               <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">{bulkPriceMode === "unified" ? "سعر الباقة" : "الأسعار"}</div>
+                <div className="muted">
+                  {bulkPriceMode === "unified" ? "سعر الباقة" : "الأسعار"}
+                </div>
                 {bulkPriceMode === "unified" ? (
                   <input
                     className="input"
@@ -4676,10 +4790,16 @@ export default function RunDetails() {
                   disabled={bulkSaving || bulkSelectedCount === 0}
                   onClick={bulkPurchaseAndEnroll}
                 >
-                  {bulkSaving ? "جارٍ الإضافة..." : `إضافة (${bulkSelectedCount})`}
+                  {bulkSaving
+                    ? "جارٍ الإضافة..."
+                    : `إضافة (${bulkSelectedCount})`}
                 </button>
 
-                <button type="button" className="btn" onClick={() => setOpenBulk(false)}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setOpenBulk(false)}
+                >
                   إغلاق
                 </button>
               </div>
@@ -5021,7 +5141,6 @@ export default function RunDetails() {
             </div>
           </div>
         </Modal>
-
 
         {/* Expense modal */}
         <Modal
