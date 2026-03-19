@@ -2663,12 +2663,6 @@ export default function RunDetails() {
             <div className="summaryValue">
               <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
             </div>
-            <div className="summaryNote">
-              الصافي بعد المصاريف{" "}
-              <b className="ltrIso">
-                {fmtILS(totals.paid - runExpensesTotal, 0)}
-              </b>
-            </div>
           </div>
         </div>
 
