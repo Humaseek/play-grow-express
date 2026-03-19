@@ -2625,9 +2625,6 @@ export default function RunDetails() {
             <div className="summaryValue">
               <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
             </div>
-            <div className="summaryNote">
-              إجمالي المبلغ المتفق عليه للمشاركين النشطين.
-            </div>
           </div>
 
           <div className="card summaryCardSoft is-paid">
@@ -2640,12 +2637,6 @@ export default function RunDetails() {
             <div className="summaryValue">
               <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
             </div>
-            <div className="summaryNote">
-              نسبة الدفع الحالية{" "}
-              <b className="ltrIso">
-                {fmtNum((totals.paidRatio * 100).toFixed(0))}%
-              </b>
-            </div>
           </div>
 
           <div className="card summaryCardSoft is-expenses">
@@ -2657,11 +2648,6 @@ export default function RunDetails() {
             </div>
             <div className="summaryValue">
               <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
-            </div>
-            <div className="summaryNote">
-              {expFeatureAvailable
-                ? `عدد العمليات ${fmtNum(expenses.length)}`
-                : "ميزة المصاريف غير مفعّلة"}
             </div>
           </div>
 
@@ -2730,13 +2716,6 @@ export default function RunDetails() {
                 flexWrap: "wrap",
               }}
             >
-              <div className="pTitle">
-                <h2>الأطفال</h2>
-                <div className="muted small">
-                  {participantsFiltered.length} من {participants.length}
-                </div>
-              </div>
-
               <div
                 className="pControls"
                 style={{
