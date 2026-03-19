@@ -412,26 +412,6 @@ export default function CourseDetails() {
             <span style={{ fontSize: 32, fontWeight: 950, color: "#22182f" }}>
               {course.title}
             </span>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "6px 12px",
-                borderRadius: 999,
-                background: isWorkshop
-                  ? "rgba(14,165,233,.12)"
-                  : "rgba(124,58,237,.12)",
-                color: isWorkshop ? "#075985" : "#5b21b6",
-                border: isWorkshop
-                  ? "1px solid rgba(14,165,233,.18)"
-                  : "1px solid rgba(124,58,237,.18)",
-                fontSize: 12,
-                fontWeight: 900,
-                lineHeight: 1,
-              }}
-            >
-              {isWorkshop ? "" : ""}
-            </span>
           </div>
         }
         subtitle={
