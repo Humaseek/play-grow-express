@@ -144,6 +144,513 @@ async function copyText(text) {
   }
 }
 
+const RUN_DETAILS_SOFT_UI_STYLES = `
+.page.page--runs {
+  background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
+}
+
+.runDetails {
+  padding-block: 22px 40px;
+}
+
+.runDetails .card {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+}
+
+.runHero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.runHeroMain {
+  flex: 1 1 560px;
+  min-width: 280px;
+}
+
+.runHeroEyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  color: rgb(0, 172, 71);
+  margin-bottom: 8px;
+}
+
+.runHeroTitle {
+  font-size: clamp(28px, 3vw, 40px);
+  font-weight: 900;
+  line-height: 1.1;
+  color: rgb(24, 24, 24);
+}
+
+.runHeroSubline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.runHeroBadge,
+.runDetails .statChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82) !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(10px);
+}
+
+.runDetails .statRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px !important;
+}
+
+.runDetails .statLabel {
+  color: rgb(82, 82, 82);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.runDetails .statChip b {
+  font-size: 14px;
+}
+
+.runHeroActions,
+.runDetails .topActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.runDetails .btn {
+  border-radius: 14px !important;
+  min-height: 42px;
+  padding-inline: 16px !important;
+  box-shadow: none !important;
+}
+
+.runDetails .btn.primary,
+.runDetails .btn.btn-primary {
+  background: rgb(0, 172, 71) !important;
+  border-color: rgb(0, 172, 71) !important;
+}
+
+.runInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.runInfoItemSoft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 88px;
+}
+
+.runInfoIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 172, 71, 0.10);
+  border: 1px solid rgba(0, 172, 71, 0.14);
+  color: rgb(0, 172, 71);
+  flex: 0 0 auto;
+}
+
+.runInfoLabel {
+  color: rgb(82, 82, 82);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.runInfoValue {
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.2;
+  color: rgb(24, 24, 24);
+}
+
+.summaryGridSoft {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.summaryCardSoft {
+  padding: 18px;
+}
+
+.summaryCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.summaryLabel {
+  font-size: 14px;
+  font-weight: 800;
+  color: rgb(82, 82, 82);
+}
+
+.summaryIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(248, 250, 252, 0.95);
+  color: rgb(24, 24, 24);
+}
+
+.summaryCardSoft.is-agreed .summaryIcon {
+  background: rgba(122, 92, 255, 0.10);
+  color: rgb(122, 92, 255);
+}
+
+.summaryCardSoft.is-paid .summaryIcon {
+  background: rgba(0, 172, 71, 0.10);
+  color: rgb(0, 172, 71);
+}
+
+.summaryCardSoft.is-expenses .summaryIcon {
+  background: rgba(255, 153, 0, 0.12);
+  color: rgb(255, 153, 0);
+}
+
+.summaryCardSoft.is-balance .summaryIcon {
+  background: rgba(239, 68, 68, 0.10);
+  color: rgb(239, 68, 68);
+}
+
+.summaryCardSoft.is-balance.is-good .summaryIcon {
+  background: rgba(0, 172, 71, 0.10);
+  color: rgb(0, 172, 71);
+}
+
+.summaryValue {
+  font-size: clamp(28px, 2vw, 34px);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.summaryNote {
+  color: rgb(82, 82, 82);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.runDetails .tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.8);
+  margin-bottom: 12px !important;
+}
+
+.runDetails .tab {
+  border-radius: 999px !important;
+  min-height: 40px;
+  padding-inline: 16px !important;
+  font-weight: 800;
+  color: rgb(82, 82, 82);
+}
+
+.runDetails .tab.active {
+  background: rgba(0, 172, 71, 0.12) !important;
+  border-color: rgba(0, 172, 71, 0.18) !important;
+  color: rgb(0, 172, 71) !important;
+}
+
+.runDetails .pToolbar {
+  gap: 20px !important;
+}
+
+.runDetails .pTitle h2,
+.runDetails .h1 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.runDetails .input,
+.runDetails select.input {
+  min-height: 46px;
+  border-radius: 14px !important;
+  border: 1px solid rgba(15, 23, 42, 0.10) !important;
+  background: #fff !important;
+}
+
+.runDetails .pGrid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+
+.runDetails .pCard {
+  width: 100% !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border-radius: 22px !important;
+  padding: 18px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.runDetails .pCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  border-color: rgba(0, 172, 71, 0.18) !important;
+}
+
+.runDetails .pHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.runDetails .pName {
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.runDetails .pMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.runDetails .metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 1);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  color: rgb(82, 82, 82);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.runDetails .pQuickStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.runDetails .pStatBlock {
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(248, 250, 252, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.runDetails .pStatBlock.primary {
+  background: rgba(0, 172, 71, 0.06);
+  border-color: rgba(0, 172, 71, 0.14);
+}
+
+.runDetails .pStatLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgb(82, 82, 82);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.runDetails .pStatValue {
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.runDetails .pStatValueSm {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.runDetails .pProgressWrap {
+  padding: 12px 0 0;
+  margin-top: 2px;
+}
+
+.runDetails .pProgressHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: rgb(82, 82, 82);
+  margin-bottom: 8px;
+}
+
+.runDetails .pBar {
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: rgba(15, 23, 42, 0.08) !important;
+  overflow: hidden;
+}
+
+.runDetails .pBar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgb(0, 172, 71);
+}
+
+.runDetails .pBarPartial span {
+  background: rgb(245, 158, 11);
+}
+
+.runDetails .pBarUnpaid span {
+  background: rgb(239, 68, 68);
+}
+
+.runDetails .pBarFree span {
+  background: rgb(148, 163, 184);
+}
+
+.runDetails .pMiniFacts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.runDetails .pMiniFact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.92);
+  color: rgb(82, 82, 82);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.runDetails .pMiniFact b {
+  margin-inline-start: auto;
+  color: rgb(24, 24, 24);
+}
+
+.runDetails .pActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.runDetails .pActionsLeft {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.runDetails .pActionHint {
+  font-size: 12px;
+}
+
+.runDetails .sessionRow {
+  border-radius: 18px !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.runDetails .tableWrap.inCard {
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.runDetails .table thead th {
+  background: rgba(248, 250, 252, 1);
+  color: rgb(82, 82, 82);
+  font-weight: 800;
+}
+
+.runDetails .table tbody tr:hover {
+  background: rgba(248, 250, 252, 0.75);
+}
+
+@media (max-width: 1100px) {
+  .runInfoGrid,
+  .summaryGridSoft {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .runHeroActions,
+  .runDetails .topActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .runHeroActions .btn,
+  .runDetails .topActions .btn {
+    flex: 1 1 0;
+  }
+
+  .runInfoGrid,
+  .summaryGridSoft,
+  .runDetails .pQuickStats,
+  .runDetails .pMiniFacts {
+    grid-template-columns: 1fr;
+  }
+
+  .runDetails .sessionRow {
+    grid-template-columns: 1fr !important;
+    justify-items: stretch;
+  }
+
+  .runDetails .sessionActions {
+    justify-items: stretch !important;
+    justify-self: stretch !important;
+  }
+}
+`;
+
 export default function RunDetails() {
   const { runId } = useParams();
   const navigate = useNavigate();
@@ -1502,14 +2009,14 @@ export default function RunDetails() {
 
       if (u.error) throw u.error;
 
-      toast("Enrollment updated.", "ok");
+      toast("تم تحديث الاشتراك.", "ok");
       setOpenPrice(false);
       setPricePackageId(null);
       setPriceValue("");
       await loadFixed();
     } catch (e) {
       setError(e);
-      toast("Failed to edit enrollment.", "danger");
+      toast("فشل تعديل الاشتراك.", "danger");
     }
   }
 
@@ -1686,7 +2193,7 @@ export default function RunDetails() {
           .update(payload)
           .eq("id", sessionForm.id);
         if (u.error) throw u.error;
-        toast("Enrollment updated.", "ok");
+        toast("تم تحديث الاشتراك.", "ok");
       } else {
         const ins = await supabase.from("course_sessions").insert([payload]);
         if (ins.error) throw ins.error;
@@ -1908,7 +2415,7 @@ export default function RunDetails() {
       await loadFixed();
     } catch (e) {
       setError(e);
-      toast("Failed to edit enrollment.", "danger");
+      toast("فشل تعديل الاشتراك.", "danger");
     }
   }
 
@@ -1961,13 +2468,13 @@ export default function RunDetails() {
         if (rpc2.error) throw rpc2.error;
       }
 
-      toast("Enrollment updated.", "ok");
+      toast("تم تحديث الاشتراك.", "ok");
       setOpenAdjust(false);
       await loadFixed();
       setTab("participants");
     } catch (e) {
       setError(e);
-      toast("Failed to edit enrollment.", "danger");
+      toast("فشل تعديل الاشتراك.", "danger");
     } finally {
       setAdjSaving(false);
     }
@@ -1995,54 +2502,57 @@ export default function RunDetails() {
 
   return (
     <div className="page page--runs" dir="rtl" lang="ar" style={{ background: "linear-gradient(180deg, rgba(0,172,71,0.10) 0%, rgba(255,255,255,0) 320px)" }}>
+      <style>{RUN_DETAILS_SOFT_UI_STYLES}</style>
       <div className="container runDetails">
-        <div className="topbar">
-          <div>
-            <div className="h1">
-              {summary.title} —{" "}
-              <span className="muted" style={{ fontWeight: 700 }}>
-                {summary.label}
+        <div className="runHero">
+          <div className="runHeroMain">
+            <div className="runHeroEyebrow">تفاصيل الدفعة</div>
+            <div className="runHeroTitle">{summary.title}</div>
+
+            <div className="runHeroSubline">
+              <span className="runHeroBadge">
+                <Tag size={14} className="ico" />
+                <span>{summary.label || "—"}</span>
+              </span>
+              <span className="runHeroBadge">
+                <Clock size={14} className="ico" />
+                <span>{scheduleInfo.weekday}</span>
+                <b className="ltrIso">{scheduleInfo.timeRange}</b>
               </span>
             </div>
 
-            <div className="statRow" style={{ marginTop: 10 }}>
-              <span className="statChip" title="">
+            <div className="statRow">
+              <span className="statChip" title="المشاركون النشطون">
                 <Users size={16} className="ico" />
                 <span className="statLabel">المشاركون</span>
                 <b className="ltrIso">{fmtNum(totals.activeCount)}</b>
               </span>
-              <span className="statChip" title="">
+
+              <span className="statChip" title="عدد الجلسات الكلي">
                 <CalendarDays size={16} className="ico" />
                 <span className="statLabel">الجلسات</span>
                 <b className="ltrIso">{fmtNum(summary.sessions_count)}</b>
               </span>
-              <span className="statChip" title=" ">
+
+              <span className="statChip" title="نسبة الدفع الحالية">
                 <CreditCard size={16} className="ico" />
                 <span className="statLabel">نسبة الدفع</span>
                 <b className="ltrIso">
                   {fmtNum((totals.paidRatio * 100).toFixed(0))}%
                 </b>
               </span>
-            {expFeatureAvailable ? (
-  <span className="statChip" title="">
-    <Receipt size={16} className="ico" />
-    <span className="statLabel">المصاريف</span>
-    <b className="ltrIso">{fmtILS(runExpensesTotal, 0)}</b>
-  </span>
-) : null}
-{expFeatureAvailable ? (
-  <span className="statChip" title="">
-    <Ticket size={16} className="ico" />
-    <span className="statLabel">الصافي</span>
-    <b className="ltrIso">
-      {fmtILS(totals.paid - runExpensesTotal, 0)}
-    </b>
-  </span>
-) : null}
-</div>
+
+              <span className="statChip" title="الصافي بعد خصم المصاريف">
+                <Ticket size={16} className="ico" />
+                <span className="statLabel">الصافي</span>
+                <b className="ltrIso">
+                  {fmtILS(totals.paid - runExpensesTotal, 0)}
+                </b>
+              </span>
+            </div>
           </div>
 
-          <div className="topActions">
+          <div className="topActions runHeroActions">
             <button
               type="button"
               className="btn"
@@ -2070,260 +2580,115 @@ export default function RunDetails() {
         </div>
         {error ? <ErrorBanner error={error} /> : null}
 
-        <div className="card" style={{ marginBottom: 12 }}>
-          <div className="runStrip">
-            <div className="runItem">
-              <div className="runIcon" aria-hidden="true">
-                <Tag />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="runLabel">الدفعة</div>
-                <div className="runValue">{summary.label || "—"}</div>
+        <div className="runInfoGrid">
+          <div className="card runInfoItemSoft">
+            <div className="runInfoIcon" aria-hidden="true">
+              <Tag size={18} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div className="runInfoLabel">الدفعة</div>
+              <div className="runInfoValue">{summary.label || "—"}</div>
+            </div>
+          </div>
+
+          <div className="card runInfoItemSoft">
+            <div className="runInfoIcon" aria-hidden="true">
+              <Clock size={18} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div className="runInfoLabel">الجدول</div>
+              <div className="runInfoValue">
+                {scheduleInfo.weekday} <span className="ltrIso">{scheduleInfo.timeRange}</span>
               </div>
             </div>
+          </div>
 
-            <div className="runItem">
-              <div className="runIcon" aria-hidden="true">
-                <Clock />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="runLabel">الجدول</div>
-                <div className="runValue">
-                  {scheduleInfo.weekday}{" "}
-                  <span className="ltrIso">{scheduleInfo.timeRange}</span>
-                </div>
+          <div className="card runInfoItemSoft">
+            <div className="runInfoIcon" aria-hidden="true">
+              <CalendarClock size={18} />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div className="runInfoLabel">الجلسة القادمة</div>
+              <div className="runInfoValue">
+                <span className="ltrIso">{fmtDT(summary.next_session_at)}</span>
               </div>
             </div>
+          </div>
 
-            <div className="runItem">
-              <div className="runIcon" aria-hidden="true">
-                <CalendarClock />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="runLabel">الجلسة القادمة</div>
-                <div className="runValue">
-                  <span className="ltrIso">
-                    {fmtDT(summary.next_session_at)}
-                  </span>
-                </div>
-              </div>
+          <div className="card runInfoItemSoft">
+            <div className="runInfoIcon" aria-hidden="true">
+              <CalendarPlus size={18} />
             </div>
-
-            <div className="runItem">
-              <div className="runIcon" aria-hidden="true">
-                <CalendarPlus />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="runLabel">جلسات قادمة</div>
-                <div className="runValue">
-                  <span className="ltrIso">
-                    {fmtNum(runFutureSessionsCount)}
-                  </span>
-                </div>
+            <div style={{ minWidth: 0 }}>
+              <div className="runInfoLabel">جلسات قادمة</div>
+              <div className="runInfoValue">
+                <span className="ltrIso">{fmtNum(runFutureSessionsCount)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="grid" style={{ marginBottom: 12 }}>
-  <div
-    className="card"
-    style={{
-      gridColumn: "span 3",
-      border: "1px solid rgba(122, 92, 255, 0.22)",
-      background:
-        "linear-gradient(180deg, rgba(122, 92, 255, 0.10) 0%, rgba(255,255,255,1) 72%)",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div className="muted">المتفق عليه</div>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>
-          <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
-        </div>
-      </div>
+        <div className="summaryGridSoft">
+          <div className="card summaryCardSoft is-agreed">
+            <div className="summaryCardTop">
+              <span className="summaryLabel">المتفق عليه</span>
+              <span className="summaryIcon" aria-hidden="true">
+                <Tag size={18} />
+              </span>
+            </div>
+            <div className="summaryValue">
+              <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
+            </div>
+            <div className="summaryNote">إجمالي المبلغ المتفق عليه للمشاركين النشطين.</div>
+          </div>
 
-      <div
-        aria-hidden="true"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(122, 92, 255, 0.14)",
-          border: "1px solid rgba(122, 92, 255, 0.18)",
-        }}
-      >
-        <Tag size={18} />
-      </div>
-    </div>
-  </div>
+          <div className="card summaryCardSoft is-paid">
+            <div className="summaryCardTop">
+              <span className="summaryLabel">المدفوع</span>
+              <span className="summaryIcon" aria-hidden="true">
+                <CreditCard size={18} />
+              </span>
+            </div>
+            <div className="summaryValue">
+              <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
+            </div>
+            <div className="summaryNote">
+              نسبة الدفع الحالية <b className="ltrIso">{fmtNum((totals.paidRatio * 100).toFixed(0))}%</b>
+            </div>
+          </div>
 
-  <div
-    className="card"
-    style={{
-      gridColumn: "span 3",
-      border: "1px solid rgba(0, 172, 71, 0.24)",
-      background:
-        "linear-gradient(180deg, rgba(0, 172, 71, 0.12) 0%, rgba(255,255,255,1) 72%)",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div className="muted">المدفوع</div>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>
-          <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
-        </div>
-        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-          نسبة الدفع:{" "}
-          <b className="ltrIso">{fmtNum((totals.paidRatio * 100).toFixed(0))}%</b>
-        </div>
-      </div>
+          <div className="card summaryCardSoft is-expenses">
+            <div className="summaryCardTop">
+              <span className="summaryLabel">المصاريف</span>
+              <span className="summaryIcon" aria-hidden="true">
+                <Receipt size={18} />
+              </span>
+            </div>
+            <div className="summaryValue">
+              <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
+            </div>
+            <div className="summaryNote">
+              {expFeatureAvailable
+                ? `عدد العمليات ${fmtNum(expenses.length)}`
+                : "ميزة المصاريف غير مفعّلة"}
+            </div>
+          </div>
 
-      <div
-        aria-hidden="true"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(0, 172, 71, 0.14)",
-          border: "1px solid rgba(0, 172, 71, 0.18)",
-        }}
-      >
-        <CreditCard size={18} />
-      </div>
-    </div>
-  </div>
-
-  <div
-    className="card"
-    style={{
-      gridColumn: "span 3",
-      border: "1px solid rgba(255, 153, 0, 0.28)",
-      background:
-        "linear-gradient(180deg, rgba(255, 153, 0, 0.12) 0%, rgba(255,255,255,1) 72%)",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div className="muted">مجموع المصاريف</div>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>
-          <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
+          <div className={`card summaryCardSoft is-balance ${totals.balance <= 0 ? "is-good" : ""}`}>
+            <div className="summaryCardTop">
+              <span className="summaryLabel">المتبقي</span>
+              <span className="summaryIcon" aria-hidden="true">
+                <Hourglass size={18} />
+              </span>
+            </div>
+            <div className="summaryValue">
+              <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
+            </div>
+            <div className="summaryNote">
+              الصافي بعد المصاريف <b className="ltrIso">{fmtILS(totals.paid - runExpensesTotal, 0)}</b>
+            </div>
+          </div>
         </div>
-        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-          {expFeatureAvailable
-            ? `عدد العمليات: ${fmtNum(expenses.length)}`
-            : "ميزة المصاريف غير مفعّلة"}
-        </div>
-      </div>
-
-      <div
-        aria-hidden="true"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(255, 153, 0, 0.14)",
-          border: "1px solid rgba(255, 153, 0, 0.18)",
-        }}
-      >
-        <Receipt size={18} />
-      </div>
-    </div>
-  </div>
-
-  <div
-    className="card"
-    style={{
-      gridColumn: "span 3",
-      border:
-        totals.balance <= 0
-          ? "1px solid rgba(0, 172, 71, 0.24)"
-          : "1px solid rgba(255, 77, 77, 0.24)",
-      background:
-        totals.balance <= 0
-          ? "linear-gradient(180deg, rgba(0, 172, 71, 0.10) 0%, rgba(255,255,255,1) 72%)"
-          : "linear-gradient(180deg, rgba(255, 77, 77, 0.10) 0%, rgba(255,255,255,1) 72%)",
-      overflow: "hidden",
-    }}
-  >
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div className="muted">المتبقي</div>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>
-          <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
-        </div>
-        <div className="muted" style={{ marginTop: 6, fontSize: 12 }}>
-          الصافي بعد المصاريف:{" "}
-          <b className="ltrIso">
-            {fmtILS(totals.paid - runExpensesTotal, 0)}
-          </b>
-        </div>
-      </div>
-
-      <div
-        aria-hidden="true"
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background:
-            totals.balance <= 0
-              ? "rgba(0, 172, 71, 0.14)"
-              : "rgba(255, 77, 77, 0.14)",
-          border:
-            totals.balance <= 0
-              ? "1px solid rgba(0, 172, 71, 0.18)"
-              : "1px solid rgba(255, 77, 77, 0.18)",
-        }}
-      >
-        <Hourglass size={18} />
-      </div>
-    </div>
-  </div>
-</div>
 
 <div className="tabs" style={{ marginBottom: 10 }}>
           <button
@@ -2539,11 +2904,11 @@ export default function RunDetails() {
                         <div style={{ minWidth: 0 }}>
                           <div className="pName">{p.child_name}</div>
                           <div className="pMeta">
-                            <span className="metaItem" title="/">
+                            <span className="metaItem" title="الصف">
                               <GraduationCap size={14} className="ico" />
                               <span>{p.class ?? "-"}</span>
                             </span>
-                            <span className="metaItem" title="">
+                            <span className="metaItem" title="العمر">
                               <Cake size={14} className="ico" />
                               <span className="ltrIso">
                                 {p.age == null ? "—" : fmtNum(p.age)}
@@ -2555,125 +2920,73 @@ export default function RunDetails() {
                         <div>{badgePayment(p.payment_status)}</div>
                       </div>
 
-                      <div className="pMain">
-                        <div className="pBig" title="Amount ">
-                          <div className="pBigTop">
-                            <div
-                              className="pBigValue"
-                              dir="ltr"
-                              style={{
-                                overflow: "visible",
-                                textOverflow: "clip",
-                                whiteSpace: "nowrap",
-                              }}
-                              title={fmtILS(balance)}
-                            >
-                              {fmtILS(balance)}
-                            </div>
-                            <div className="pBigLabel">
-                              <Hourglass size={14} className="ico" />{" "}
-                              <span>المتبقي</span>
-                            </div>
+                      <div className="pQuickStats">
+                        <div className="pStatBlock primary">
+                          <div className="pStatLabel">
+                            <Hourglass size={14} className="ico" />
+                            <span>المتبقي</span>
                           </div>
-
-                          <div className={barClass} aria-hidden="true">
-                            <span style={{ width: `${pct}%`, backgroundColor: status === "paid" ? "rgb(0,172,71)" : undefined }} />
-                          </div>
-
-                          <div
-                            className="muted"
-                            style={{ fontSize: 12, display: "grid", gap: 4 }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <CreditCard size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>مدفوع</span>
-                              <b dir="ltr">{fmtILS(paid)}</b>
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <Tag size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>المتفق عليه</span>
-                              <b dir="ltr">{fmtILS(agreed)}</b>
-                            </div>
-                          </div>
+                          <div className="pStatValue ltrIso" dir="ltr">{fmtILS(balance)}</div>
                         </div>
 
-                        <div className="pBig" title=" ">
-                          <div className="pBigTop">
-                            <div className="pBigValue" dir="ltr">
-                              {fmtNum(pkgRemain)}
-                            </div>
-                            <div className="pBigLabel">
-                              <Ticket size={14} className="ico" />{" "}
-                              <span>رصيد الجلسات</span>
-                            </div>
+                        <div className="pStatBlock">
+                          <div className="pStatLabel">
+                            <CreditCard size={14} className="ico" />
+                            <span>المدفوع</span>
                           </div>
-                          <div
-                            className="muted"
-                            style={{ fontSize: 12, display: "grid", gap: 4 }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <CheckCircle2 size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>مستخدم</span>
-                              <b dir="ltr">{fmtNum(pkgمستخدم)}</b>
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <Ticket size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>بهذه الدفعة</span>
-                              <b dir="ltr">{fmtNum(pkgTotal)}</b>
-                            </div>
-                          </div>
+                          <div className="pStatValueSm ltrIso" dir="ltr">{fmtILS(paid)}</div>
+                        </div>
 
-                          <div
-                            className="muted"
-                            style={{ fontSize: 12, display: "grid", gap: 4 }}
-                          >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <CalendarDays size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>حضر</span>
-                              <b dir="ltr">{fmtNum(attended)}</b>
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                            >
-                              <Hourglass size={14} className="ico" />
-                              <span style={{ opacity: 0.75 }}>المتبقي</span>
-                              <b dir="ltr">{fmtNum(runSessions)}</b>
-                            </div>
+                        <div className="pStatBlock">
+                          <div className="pStatLabel">
+                            <Ticket size={14} className="ico" />
+                            <span>رصيد الجلسات</span>
                           </div>
+                          <div className="pStatValueSm ltrIso" dir="ltr">{fmtNum(pkgRemain)}</div>
+                        </div>
+
+                        <div className="pStatBlock">
+                          <div className="pStatLabel">
+                            <CalendarDays size={14} className="ico" />
+                            <span>حضر</span>
+                          </div>
+                          <div className="pStatValueSm ltrIso" dir="ltr">{fmtNum(attended)}</div>
+                        </div>
+                      </div>
+
+                      <div className="pProgressWrap">
+                        <div className="pProgressHead">
+                          <span>نسبة الدفع</span>
+                          <b className="ltrIso">{fmtNum(pct.toFixed(0))}%</b>
+                        </div>
+                        <div className={barClass} aria-hidden="true">
+                          <span style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+
+                      <div className="pMiniFacts">
+                        <div className="pMiniFact">
+                          <Tag size={14} className="ico" />
+                          <span>المتفق عليه</span>
+                          <b className="ltrIso" dir="ltr">{fmtILS(agreed)}</b>
+                        </div>
+
+                        <div className="pMiniFact">
+                          <CheckCircle2 size={14} className="ico" />
+                          <span>مستخدم</span>
+                          <b className="ltrIso" dir="ltr">{fmtNum(pkgمستخدم)}</b>
+                        </div>
+
+                        <div className="pMiniFact">
+                          <Ticket size={14} className="ico" />
+                          <span>بهذه الدفعة</span>
+                          <b className="ltrIso" dir="ltr">{fmtNum(pkgTotal)}</b>
+                        </div>
+
+                        <div className="pMiniFact">
+                          <Hourglass size={14} className="ico" />
+                          <span>جلسات الدفعة</span>
+                          <b className="ltrIso" dir="ltr">{fmtNum(runSessions)}</b>
                         </div>
                       </div>
 
@@ -2684,28 +2997,28 @@ export default function RunDetails() {
                         <div className="pActionsLeft">
                           <IconButton
                             icon={<CreditCard size={16} className="ico" />}
-                            title="Add "
+                            title="إضافة دفعة"
                             variant="soft"
                             size="sm"
                             onClick={() => openPaymentModalFor(p, "remaining")}
                           />
                           <IconButton
                             icon={<Receipt size={16} className="ico" />}
-                            title=" "
+                            title="سجل الدفعات"
                             variant="soft"
                             size="sm"
                             onClick={() => openPaymentHistory(p)}
                           />
                           <IconButton
                             icon={<Plus size={16} className="ico" />}
-                            title="Add "
+                            title="إضافة جلسات"
                             variant="soft"
                             size="sm"
                             onClick={() => openSingleTopup(p)}
                           />
                           <IconButton
                             icon={<Settings2 size={16} className="ico" />}
-                            title=""
+                            title="إدارة"
                             variant="solid"
                             size="sm"
                             onClick={() => openإدارةFor(p)}
@@ -2713,7 +3026,7 @@ export default function RunDetails() {
                         </div>
 
                         <div className="pActionHint muted">
-                          تفاصيل أكثر داخل "إدارة"
+                          اضغط للإدارة والتفاصيل
                         </div>
                       </div>
                     </div>
@@ -2724,7 +3037,7 @@ export default function RunDetails() {
 
             {!nextSession && (
               <div className="muted" style={{ marginTop: 12 }}>
-                No upcoming sessions.
+                لا توجد جلسات قادمة.
               </div>
             )}
           </div>
@@ -2798,7 +3111,7 @@ export default function RunDetails() {
                     </div>
 
                     <div style={{ display: "grid", gap: 6 }}>
-                      <div className="muted">Number من sessions</div>
+                      <div className="muted">عدد الجلسات</div>
                       <input
                         className="input"
                         type="number"
@@ -2819,7 +3132,7 @@ export default function RunDetails() {
                       onChange={(e) => setIntervalDays(e.target.value)}
                     />
                     <div className="muted" style={{ marginTop: -2 }}>
-                      الجدول الحالي: every <b>{intervalDays}</b> days
+                      الجدول الحالي: كل <b>{intervalDays}</b> أيام
                     </div>
                   </div>
 
@@ -2830,7 +3143,7 @@ export default function RunDetails() {
                     disabled={genLoading || !firstStart}
                     onClick={generateSessions}
                   >
-                    {genLoading ? "Generating..." : "إنشاء الجلسات"}
+                    {genLoading ? "جاري الإنشاء..." : "إنشاء الجلسات"}
                   </button>
 
                   <hr className="sep" />
@@ -2852,16 +3165,15 @@ export default function RunDetails() {
               className="card"
               style={{ gridColumn: "span 8", overflow: "hidden" }}
             >
-              <div className="h1">Session list</div>
+              <div className="h1">قائمة الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                إدارة sessions for this run. Edit times, mark done/canceled, or
-                delete.
+                إدارة جلسات هذه الدفعة وتعديل مواعيدها أو حالتها أو حذفها.
               </div>
 
               <hr className="sep" />
 
               {!sessions?.length ? (
-                <div className="muted">No sessions yet.</div>
+                <div className="muted">لا توجد جلسات بعد.</div>
               ) : (
                 <div style={{ width: "100%" }}>
                   <div
@@ -2975,8 +3287,8 @@ export default function RunDetails() {
                               <button
                                 type="button"
                                 className="btn"
-                                title="Edit"
-                                aria-label="Edit"
+                                title="تعديل"
+                                aria-label="تعديل"
                                 style={{
                                   width: 36,
                                   height: 36,
@@ -3002,8 +3314,8 @@ export default function RunDetails() {
                               <button
                                 type="button"
                                 className="btn"
-                                title={isDone ? "Reopen" : "Mark done"}
-                                aria-label={isDone ? "Reopen" : "Mark done"}
+                                title={isDone ? "إعادة فتح" : "تعيين كمكتملة"}
+                                aria-label={isDone ? "إعادة فتح" : "تعيين كمكتملة"}
                                 style={{
                                   width: 36,
                                   height: 36,
@@ -3033,8 +3345,8 @@ export default function RunDetails() {
                               <button
                                 type="button"
                                 className="btn danger"
-                                title={isCanceled ? "Restore" : "Cancel"}
-                                aria-label={isCanceled ? "Restore" : "Cancel"}
+                                title={isCanceled ? "استعادة" : "إلغاء"}
+                                aria-label={isCanceled ? "استعادة" : "إلغاء"}
                                 style={{
                                   width: 36,
                                   height: 36,
@@ -3064,8 +3376,8 @@ export default function RunDetails() {
                               <button
                                 type="button"
                                 className="btn danger"
-                                title="Delete"
-                                aria-label="Delete"
+                                title="حذف"
+                                aria-label="حذف"
                                 style={{
                                   width: 36,
                                   height: 36,
@@ -3971,7 +4283,7 @@ export default function RunDetails() {
                 className="btn"
                 onClick={() => setOpenEnroll(false)}
               >
-                Cancel
+                إلغاء
               </button>
             </div>
           </div>
@@ -4160,7 +4472,7 @@ export default function RunDetails() {
                 onClick={() => setOpenNewChild(false)}
                 disabled={newChildSaving}
               >
-                Cancel
+                إلغاء
               </button>
               <button
                 type="button"
@@ -4415,7 +4727,7 @@ export default function RunDetails() {
                 className="btn"
                 onClick={() => setOpenPrice(false)}
               >
-                Cancel
+                إلغاء
               </button>
             </div>
           </div>
@@ -4509,7 +4821,7 @@ export default function RunDetails() {
                   setPayLocked(false);
                 }}
               >
-                Cancel
+                إلغاء
               </button>
             </div>
           </div>
@@ -4643,7 +4955,7 @@ export default function RunDetails() {
                 className="btn"
                 onClick={() => setOpenSession(false)}
               >
-                Cancel
+                إلغاء
               </button>
             </div>
           </div>
@@ -4708,14 +5020,14 @@ export default function RunDetails() {
                 disabled={adjSaving}
                 onClick={saveAdjustments}
               >
-                {adjSaving ? " Save..." : "Save"}
+                {adjSaving ? "جاري الحفظ..." : "حفظ"}
               </button>
               <button
                 type="button"
                 className="btn"
                 onClick={() => setOpenAdjust(false)}
               >
-                Cancel
+                إلغاء
               </button>
             </div>
           </div>
@@ -4873,8 +5185,8 @@ export default function RunDetails() {
           open={confirm.open}
           title=""
           message={confirm.text}
-          confirmText="Yes"
-          cancelText="Cancel"
+          confirmText="نعم"
+          cancelText="إلغاء"
           danger
           onCancel={() =>
             setConfirm({ open: false, type: null, id: null, text: "" })
