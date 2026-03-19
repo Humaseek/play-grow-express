@@ -1937,35 +1937,7 @@ CREATE TRIGGER trg_enrollments_updated_at BEFORE UPDATE ON public.enrollments FO
 
 CREATE TRIGGER trg_payments_fill_package_id BEFORE INSERT ON public.payments FOR EACH ROW EXECUTE FUNCTION public.payments_fill_package_id();
 
-DO $$
-BEGIN
-  -- في بعض نسخ Supabase الدالة غير موجودة
-  IF EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON n.oid = p.pronamespace
-    WHERE n.nspname = 'storage' AND p.proname = 'protect_delete'
-  ) THEN
-    EXECUTE 'CREATE TRIGGER protect_buckets_delete
-             BEFORE DELETE ON storage.buckets
-             FOR EACH STATEMENT
-             EXECUTE FUNCTION storage.protect_delete()';
-  END IF;
-END $$;
 
-
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM pg_proc p
-    JOIN pg_namespace n ON n.oid = p.pronamespace
-    WHERE n.nspname = 'storage' AND p.proname = 'protect_delete'
-  ) THEN
-    EXECUTE 'CREATE TRIGGER protect_objects_delete
-             BEFORE DELETE ON storage.objects
-             FOR EACH STATEMENT
-             EXECUTE FUNCTION storage.protect_delete()';
-  END IF;
-END $$;
 
 
 

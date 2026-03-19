@@ -1528,22 +1528,6 @@ export default function RunDetails() {
     fetchPkg();
   }, [openEnroll, selectedChildId, summary]);
 
-  const singlePreview = useMemo(() => {
-    const runFuture = runFutureSessionsCount;
-
-    if (enrollMode === "use_existing" && pkgInfo) {
-      const rem = Number(pkgInfo.sessions_remaining || 0);
-      const allocNow = Math.min(rem > 0 ? rem : 0, runFuture);
-      const carry = rem > 0 ? Math.max(0, rem - allocNow) : rem;
-      return { runFuture, allocNow, carry, mode: "existing" };
-    }
-
-    const s = Number(buySessions || 0);
-    const allocNow = Math.min(s > 0 ? s : 0, runFuture);
-    const carry = s > 0 ? Math.max(0, s - allocNow) : s;
-    return { runFuture, allocNow, carry, mode: "buy" };
-  }, [enrollMode, pkgInfo, buySessions, runFutureSessionsCount]);
-
   function initEnrollBuyNew({
     childId = "",
     locked = false,
@@ -4264,35 +4248,6 @@ export default function RunDetails() {
                   ),
                 ]}
               />
-            </div>
-
-            <div style={{ gridColumn: "span 12" }} className="card">
-              {pkgLoading ? (
-                <div>جاري التحقق من الرصيد السابق...</div>
-              ) : pkgInfo ? (
-                <div className="muted">
-                  رصيد الجلسات السابق:{" "}
-                  <b
-                    style={
-                      pkgInfo.sessions_remaining < 0 ? { color: "#dc2626" } : {}
-                    }
-                  >
-                    {Number(pkgInfo.sessions_remaining || 0)}
-                  </b>{" "}
-                  — المتبقي للدفع:{" "}
-                  <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
-                </div>
-              ) : (
-                <div className="muted">
-                  لم يتم العثور على رصيد سابق (أو لم يتم التحقق بعد).
-                </div>
-              )}
-
-              <div className="muted" style={{ marginTop: 8 }}>
-                الجلسات القادمة في هذه الدورة: <b>{singlePreview.runFuture}</b>{" "}
-                — ما سيتم حجزه الآن: <b>{singlePreview.allocNow}</b> — سيرحل:{" "}
-                <b>{singlePreview.carry}</b>
-              </div>
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
