@@ -1110,7 +1110,7 @@ export default function RunDetails() {
     });
     if (rpc2.error) throw rpc2.error;
 
-    toast("Child enrolled successfully.", "ok");
+    toast("تم التسجيل بنجاح.", "ok");
     setOpenEnroll(false);
     await loadFixed();
     setTab("participants");
@@ -1798,9 +1798,9 @@ export default function RunDetails() {
       // 3) Allocate sessions for THIS run enrollment (so run balance matches)
       if (sessionsToBuy > 0) {
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToBuy);
-        toast("Child re-enrolled successfully.", "ok");
+        toast("تمت إعادة التسجيل بنجاح.", "ok");
       } else {
-        toast("Enrollment re-activated. إضافة جلسةs then click Save.", "ok");
+        toast("تمت إعادة تفعيل التسجيل. أضف جلسات ثم احفظ.", "ok");
       }
 
       setOpenEnroll(false);
@@ -1809,7 +1809,7 @@ export default function RunDetails() {
       return true;
     } catch (e) {
       setError(e);
-      toast("Failed to re-enroll child.", "danger");
+      toast("فشلت إعادة التسجيل.", "danger");
       return true;
     }
   }
@@ -1874,7 +1874,7 @@ export default function RunDetails() {
   async function purchaseAndEnrollSingle() {
     if (!summary) return;
     if (!selectedChildId) {
-      toast("Select a child.", "warn");
+      toast("الرجاء اختيار طفل.", "warn");
       return;
     }
 
@@ -1882,11 +1882,15 @@ export default function RunDetails() {
     setError(null);
 
     try {
+      const existing = participants.find(
+        (p) => Number(p.child_id) === Number(selectedChildId),
+      );
+
       if (enrollMode === "use_existing") {
         const remaining = Number(pkgInfo?.sessions_remaining ?? 0);
         if (remaining <= 0) {
           toast(
-            "This child has no existing credits. Please choose ‘Buy new sessions’.",
+            "هذا الطفل لا يملك رصيد جلسات سابق. الرجاء اختيار إضافة جلسات جديدة.",
             "warn",
           );
           setEnrollSaving(false);
@@ -1906,38 +1910,79 @@ export default function RunDetails() {
             return;
           }
 
-          toast("No remaining sessions found for this child.", "warn");
+          toast("لم يتم العثور على جلسات متبقية لهذا الطفل.", "warn");
           setError(rpc.error);
           return;
         } else {
-          toast("Enrolled using existing balance.", "ok");
+          toast("تم التسجيل باستخدام الرصيد السابق.", "ok");
           setOpenEnroll(false);
           await loadFixed();
           setTab("participants");
           return;
         }
       }
-      // buy_new
-      // If previously removed (withdrawn), re-activate instead من inserting a new enrollment.
-      const handled = await reactivateWithdrawnEnrollment(selectedChildId);
-      if (handled) return;
 
+      // --- Buy New (إضافة جلسات جديدة أو شحن رصيد) ---
+
+      // ✅ 1. في حال كان الطفل مسجل ونشط (عملية شحن/إضافة رصيد جلسات)
+      if (existing && existing.enrollment_status === "active") {
+        const sessionsToAdd = Number(buySessions) || 0;
+        const priceToAdd = Number(buyPriceTotal) || 0;
+
+        if (sessionsToAdd <= 0) {
+          toast("عدد الجلسات يجب أن يكون أكبر من 0.", "warn");
+          setEnrollSaving(false);
+          return;
+        }
+
+        // 1) إضافة الجلسات للاشتراك في هذه الدورة
+        await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
+
+        // 2) إضافة السعر والجلسات للباقة الشاملة
+        if (existing.package_id) {
+          const newPriceTotal = Number(existing.agreed_price || 0) + priceToAdd;
+          const pkgUpd = await supabase
+            .from("course_packages")
+            .update({ price_total: newPriceTotal })
+            .eq("id", existing.package_id);
+
+          if (pkgUpd.error) throw pkgUpd.error;
+
+          const rpcPkg = await supabase.rpc("adjust_package_sessions_total", {
+            p_package_id: Number(existing.package_id),
+            p_delta: sessionsToAdd,
+          });
+          if (rpcPkg.error) throw rpcPkg.error;
+        }
+
+        toast("تم شحن رصيد الجلسات للطفل بنجاح.", "ok");
+        setOpenEnroll(false);
+        await loadFixed();
+        setTab("participants");
+        return;
+      }
+
+      // ✅ 2. في حال كان الطفل منسحب (إعادة تفعيل)
+      if (existing && existing.enrollment_status === "withdrawn") {
+        const handled = await reactivateWithdrawnEnrollment(selectedChildId);
+        if (handled) return;
+      }
+
+      // ✅ 3. تسجيل جديد تماماً
       await purchaseAndEnrollSpecificChild(selectedChildId);
     } catch (e) {
       const msg = String(e?.message || e || "");
-      // ✅
       if (msg.includes("uq_run_child") || msg.includes("duplicate key value")) {
         const existing = participants.find(
           (x) => Number(x.child_id) === Number(selectedChildId),
         );
 
-        // If the existing enrollment is withdrawn, allow re-enroll
         if (existing?.enrollment_status === "withdrawn") {
           await reactivateWithdrawnEnrollment(selectedChildId);
           return;
         }
 
-        toast("This child is already enrolled in this run.", "warn");
+        toast("هذا الطفل مسجل بالفعل في هذه الدورة.", "warn");
 
         if (existing) {
           setOpenEnroll(false);
@@ -1945,14 +1990,13 @@ export default function RunDetails() {
           return;
         }
 
-        // Local list may be stale; refresh and stop here (avoid generic failure toast)
         setOpenEnroll(false);
         await loadFixed();
         return;
       }
 
       setError(e);
-      toast("Operation failed.", "danger");
+      toast("فشلت العملية.", "danger");
     } finally {
       setEnrollSaving(false);
     }
@@ -4307,32 +4351,32 @@ export default function RunDetails() {
         <Modal
           open={openEnroll}
           title={
-            enrollLocked ? `إضافة جلسةs — ${enrollLockedName}` : "Enroll child"
+            enrollLocked ? `إضافة جلسات — ${enrollLockedName}` : "تسجيل طفل"
           }
           onClose={() => setOpenEnroll(false)}
         >
           <div className="muted">
-            If the child has an existing balance, you can choose “Use existing
-            balance”.
+            إذا كان الطفل يملك رصيدًا مسبقًا، يمكنك اختيار "استخدام الرصيد
+            السابق".
           </div>
 
           <hr className="sep" />
 
           <div className="grid">
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Child</div>
+              <div className="muted">الطفل</div>
               <ModernSelect
                 value={selectedChildId}
                 onChange={setSelectedChildId}
                 menuWidth="trigger"
                 disabled={enrollLocked}
-                placeholder="— Select child —"
+                placeholder="— اختر طفل —"
                 options={[
-                  { value: "", label: "— Select child —" },
+                  { value: "", label: "— اختر طفل —" },
                   ...((enrollLocked ? children : availableChildren) || []).map(
                     (c) => ({
                       value: c.id,
-                      label: `${c.name} — ${c.class ?? "-"} — Age: ${c.age ?? "-"}`,
+                      label: `${c.name} — ${c.class ?? "-"} — العمر: ${c.age ?? "-"}`,
                     }),
                   ),
                 ]}
@@ -4341,44 +4385,44 @@ export default function RunDetails() {
 
             <div style={{ gridColumn: "span 12" }} className="card">
               {pkgLoading ? (
-                <div>Checking existing balance...</div>
+                <div>جاري التحقق من الرصيد السابق...</div>
               ) : pkgInfo ? (
                 <div className="muted">
-                  Existing sessions balance:{" "}
-                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي to
-                  pay: <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
+                  رصيد الجلسات السابق:{" "}
+                  <b>{Number(pkgInfo.sessions_remaining || 0)}</b> — المتبقي
+                  للدفع: <b>{Number(pkgInfo.balance_amount || 0).toFixed(2)}</b>
                 </div>
               ) : (
                 <div className="muted">
-                  No existing balance found (or not checked yet).
+                  لم يتم العثور على رصيد سابق (أو لم يتم التحقق بعد).
                 </div>
               )}
 
               <div className="muted" style={{ marginTop: 8 }}>
-                Upcoming sessions in this run: <b>{singlePreview.runFuture}</b>{" "}
-                — Allocated now: <b>{singlePreview.allocNow}</b> — Carry:{" "}
+                الجلسات القادمة في هذه الدورة: <b>{singlePreview.runFuture}</b>{" "}
+                — ما سيتم حجزه الآن: <b>{singlePreview.allocNow}</b> — سيرحل:{" "}
                 <b>{singlePreview.carry}</b>
               </div>
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">Enrollment method</div>
+              <div className="muted">طريقة التسجيل</div>
               <ModernSelect
                 value={enrollMode}
                 onChange={setEnrollMode}
                 menuWidth="trigger"
                 disabled={enrollLocked}
                 options={[
-                  { value: "use_existing", label: "Use existing balance" },
-                  { value: "buy_new", label: "إضافة جلسةs (new)" },
+                  { value: "use_existing", label: "استخدام الرصيد السابق" },
+                  { value: "buy_new", label: "إضافة جلسات (شراء/شحن)" },
                 ]}
               />
             </div>
             {enrollMode === "use_existing" && (
               <div style={{ gridColumn: "span 12" }} className="card">
                 <div className="muted">
-                  <b>Use existing balance</b> / No . “Enrollment method”{" "}
-                  <b>Buy new sessions</b>.
+                  سيتم <b>استخدام الرصيد السابق</b> / لن يتم إضافة تكلفة جديدة.
+                  لشراء المزيد، غيّر "طريقة التسجيل" إلى <b>إضافة جلسات</b>.
                 </div>
               </div>
             )}
@@ -4386,7 +4430,7 @@ export default function RunDetails() {
             {(enrollMode === "buy_new" || enrollLocked) && (
               <>
                 <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted">Sessions to add</div>
+                  <div className="muted">الجلسات المضافة</div>
                   <input
                     className="input"
                     type="number"
@@ -4414,7 +4458,7 @@ export default function RunDetails() {
                 </div>
 
                 <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted">Unit price</div>
+                  <div className="muted">سعر الجلسة</div>
                   <input
                     className="input"
                     type="number"
@@ -4442,7 +4486,7 @@ export default function RunDetails() {
                 </div>
 
                 <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted">Total price</div>
+                  <div className="muted">المبلغ الإجمالي</div>
                   <input
                     className="input"
                     type="number"
@@ -4462,7 +4506,7 @@ export default function RunDetails() {
                     placeholder={String(defaultPrice)}
                   />
                   <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>
-                    Unit price — .
+                    السعر الكلي للجلسات المضافة فقط.
                   </div>
                 </div>
               </>
@@ -4475,7 +4519,7 @@ export default function RunDetails() {
                 disabled={enrollSaving || !selectedChildId}
                 onClick={purchaseAndEnrollSingle}
               >
-                {enrollSaving ? " Save..." : "Save"}
+                {enrollSaving ? " جاري الحفظ..." : "حفظ"}
               </button>
               <button
                 type="button"
