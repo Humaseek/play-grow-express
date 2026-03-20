@@ -135,6 +135,15 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   padding-block: 22px 40px;
 }
 
+/* توسيع الـ Modal ليأخذ مساحة عريضة */
+.modal-content {
+  width: 95% !important;
+  max-width: 1400px !important; 
+  padding: 30px !important;
+  border-radius: 28px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important;
+}
+
 .runDetails .card {
   background: #ffffff !important;
   border: 1px solid rgba(15, 23, 42, 0.08) !important;
@@ -461,85 +470,42 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   background: rgba(255, 255, 255, 0.94);
 }
 
+/* تعديل الجداول لمنع السكرول */
 .runDetails .tableWrap.inCard {
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 18px;
-  /* منع السكرول الأفقي تماماً */
-  overflow-x: hidden !important; 
+  overflow: visible !important; 
 }
 
-.runDetails .table thead th {
-  background: rgba(248, 250, 252, 1);
-  color: rgb(82, 82, 82);
-  font-weight: 800;
+.modal-compact-table {
+  width: 100% !important;
+  min-width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 8px !important;
+  table-layout: auto !important;
 }
-.runDetails .table tbody tr:hover { background: rgba(248, 250, 252, 0.75); }
 
-/* --- كود السحر لمنع السكرول الأفقي على الموبايل وترتيب الداتا تحت بعض --- */
-@media (max-width: 768px) {
-  /* الجداول المستهدفة بالتغيير (يجب إضافة هذا الكلاس للجدول المراد جعله responsive) */
-  .stackable-table thead {
-    display: none; /* إخفاء العناوين الرئيسية */
-  }
-
-  .stackable-table, 
-  .stackable-table tbody, 
-  .stackable-table tr, 
-  .stackable-table td {
-    display: block !important;
-    width: 100% !important;
-  }
-
-  .stackable-table tbody tr {
-    margin-bottom: 16px; /* مسافة بين كل "بطاقة" (سطر سابقاً) */
-    border: 1px solid rgba(15, 23, 42, 0.1);
-    border-radius: 16px;
-    padding: 12px;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-  }
-
-  .stackable-table tbody td {
-    border: none;
-    padding: 8px 0 !important;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    text-align: left; /* جعل القيمة محاذية لليسار */
-    border-bottom: 1px solid rgba(15, 23, 42, 0.05) !important;
-  }
-  
-  .stackable-table tbody td:last-child {
-    border-bottom: none !important;
-    padding-bottom: 0 !important;
-  }
-
-  /* إضافة اسم العمود قبل القيمة باستخدام data-label */
-  .stackable-table tbody td::before {
-    content: attr(data-label);
-    font-weight: bold;
-    color: #64748b;
-    margin-inline-end: 12px;
-    text-align: right; /* اسم العمود محاذي لليمين */
-    flex-shrink: 0;
-  }
-
-  /* تنسيق خاص لعامود الإجراءات (الكبسات) */
-  .stackable-table td.tableActions,
-  .stackable-table td[style*="text-align: center"],
-  .stackable-table td[style*="justify-content: flex-end"] {
-    justify-content: flex-start !important; /* محاذاة الكبسات لليمين */
-    padding-top: 12px !important;
-    gap: 8px;
-  }
-
-  .stackable-table td.tableActions::before,
-  .stackable-table td[style*="text-align: center"]::before,
-  .stackable-table td[style*="justify-content: flex-end"]::before {
-    display: none; /* إخفاء الليبل في عامود الكبسات */
-  }
+.modal-compact-table th {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-weight: 800 !important;
+  padding: 16px 15px !important;
+  text-align: right !important;
+  font-size: 15px;
+  border-bottom: 2px solid #edf2f7;
 }
-/* --------------------------------------------------------------------- */
+
+.modal-compact-table td {
+  padding: 18px 15px !important;
+  background: #fff !important;
+  border-top: 1px solid #f1f5f9 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  white-space: nowrap; 
+  font-size: 15px;
+}
+
+.modal-compact-table tr td:first-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+.modal-compact-table tr td:last-child { border-left: 1px solid #f1f5f9; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
 
 @media (max-width: 1100px) {
   .runInfoGrid, .summaryGridSoft { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1699,7 +1665,6 @@ export default function RunDetails() {
           .insert([{ enrollment_id: Number(payEnrollmentId), ...p }]);
       setOpenPay(false);
       await loadFixed();
-      // إذا فتحنا الدفع من خارج كرت الطالب، منروح على تبويبة المدفوعات
       if (!payLocked) setTab("payments");
     } catch {
       toast("Failed.", "danger");
@@ -2535,8 +2500,7 @@ export default function RunDetails() {
                 <div className="muted">لا يوجد عناصر.</div>
               ) : (
                 <div className="tableWrap inCard">
-                  {/* أضفت كلاس stackable-table */}
-                  <table className="table stackable-table">
+                  <table className="table">
                     <thead>
                       <tr>
                         <th>الطفل</th>
@@ -2550,27 +2514,14 @@ export default function RunDetails() {
                     <tbody>
                       {payments.map((p) => (
                         <tr key={p.id}>
-                          {/* أضفت data-label لكل خلية */}
-                          <td data-label="الطفل" style={{ fontWeight: 800 }}>
-                            {p.child_name}
-                          </td>
-                          <td data-label="المبلغ (₪)">
-                            {Number(p.amount).toFixed(2)}
-                          </td>
-                          <td data-label="الطريقة" className="muted">
+                          <td style={{ fontWeight: 800 }}>{p.child_name}</td>
+                          <td>{Number(p.amount).toFixed(2)}</td>
+                          <td className="muted">
                             {paymentMethodLabel(p.method)}
                           </td>
-                          <td data-label="التاريخ" className="muted">
-                            {fmtDT(p.created_at)}
-                          </td>
-                          <td data-label="ملاحظة" className="muted">
-                            {p.note ?? "-"}
-                          </td>
-                          {/* كلاس خاص لعامود الكبسات */}
-                          <td
-                            className="tableActions"
-                            style={{ textAlign: "center" }}
-                          >
+                          <td className="muted">{fmtDT(p.created_at)}</td>
+                          <td className="muted">{p.note ?? "-"}</td>
+                          <td style={{ textAlign: "center" }}>
                             <button
                               className="btn iconOnly"
                               onClick={() => openEditPayment(p)}
@@ -2709,8 +2660,7 @@ export default function RunDetails() {
                   <div className="muted">ما في مصاريف.</div>
                 ) : (
                   <div className="tableWrap inCard">
-                    {/* أضفت كلاس stackable-table */}
-                    <table className="table stackable-table">
+                    <table className="table">
                       <thead>
                         <tr>
                           <th style={{ width: 140 }}>التاريخ</th>
@@ -2724,34 +2674,22 @@ export default function RunDetails() {
                       <tbody>
                         {expensesFiltered.map((r) => (
                           <tr key={r.id}>
-                            {/* أضفت data-label لكل خلية */}
-                            <td data-label="التاريخ" className="muted">
+                            <td className="muted">
                               <span className="ltrIso">
                                 {r.spent_on || "-"}
                               </span>
                             </td>
-                            <td
-                              data-label="التصنيف"
-                              style={{ fontWeight: 800 }}
-                            >
+                            <td style={{ fontWeight: 800 }}>
                               {r.category || "—"}
                             </td>
-                            <td data-label="الشخص" className="muted">
-                              {r.party || "—"}
-                            </td>
-                            <td data-label="الوصف" className="muted">
-                              {r.description || "—"}
-                            </td>
-                            <td data-label="المبلغ">
+                            <td className="muted">{r.party || "—"}</td>
+                            <td className="muted">{r.description || "—"}</td>
+                            <td>
                               <span className="ltrIso">
                                 {fmtILS(r.amount, 2)}
                               </span>
                             </td>
-                            {/* تنسيق خاص لعامود الإجراءات */}
-                            <td
-                              className="tableActions"
-                              style={{ textAlign: "center" }}
-                            >
+                            <td style={{ textAlign: "center" }}>
                               <div className="tableActions">
                                 <IconButton
                                   title="تعديل"
@@ -2787,7 +2725,7 @@ export default function RunDetails() {
         )}
 
         {/* ------------------------------------------------------------------------------------------------ */}
-        {/* نافذة إدارة الطالب (التي لن تُغلق عند فتح النوافذ المنبثقة الأخرى بداخلها) */}
+        {/* نافذة إدارة الطالب */}
         {/* ------------------------------------------------------------------------------------------------ */}
         <Modal open={openإدارة} title="" onClose={() => setOpenإدارة(false)}>
           {!manageP ? (
@@ -3222,6 +3160,8 @@ export default function RunDetails() {
           )}
         </Modal>
 
+        {/* -------------------- جداول النوافذ المنبثقة (العريضة) -------------------- */}
+
         <Modal
           open={openPkgHistory}
           title="سجل الباقات"
@@ -3236,8 +3176,7 @@ export default function RunDetails() {
             <div className="card">لا يوجد باقات.</div>
           ) : (
             <div className="tableWrap inCard">
-              {/* كلاس stackable-table وداتا ليبل */}
-              <table className="table stackable-table">
+              <table className="table modal-compact-table">
                 <thead>
                   <tr>
                     <th>تاريخ الشراء</th>
@@ -3250,26 +3189,19 @@ export default function RunDetails() {
                 <tbody>
                   {pkgHistoryRows.map((pkg) => (
                     <tr key={pkg.id}>
-                      <td data-label="تاريخ الشراء" className="muted">
-                        {fmtDT(pkg.created_at)}
-                      </td>
-                      <td data-label="عدد الجلسات" style={{ fontWeight: 800 }}>
-                        {pkg.sessions_total}
-                      </td>
-                      <td data-label="السعر (₪)" className="ltrIso">
+                      <td className="muted">{fmtDT(pkg.created_at)}</td>
+                      <td style={{ fontWeight: 800 }}>{pkg.sessions_total}</td>
+                      <td className="ltrIso">
                         {Number(pkg.price_total).toFixed(2)}
                       </td>
-                      <td data-label="الحالة">
+                      <td>
                         <Badge
                           variant={pkg.status === "active" ? "ok" : "default"}
                         >
                           {pkg.status}
                         </Badge>
                       </td>
-                      <td
-                        className="tableActions"
-                        style={{ textAlign: "center" }}
-                      >
+                      <td style={{ textAlign: "center" }}>
                         <div
                           style={{
                             display: "flex",
@@ -3393,8 +3325,7 @@ export default function RunDetails() {
             <div className="card">لا يوجد سجل حضور.</div>
           ) : (
             <div className="tableWrap inCard">
-              {/* كلاس stackable-table وداتا ليبل */}
-              <table className="table stackable-table">
+              <table className="table modal-compact-table">
                 <thead>
                   <tr>
                     <th>تاريخ الجلسة</th>
@@ -3419,23 +3350,14 @@ export default function RunDetails() {
                           : "warn";
                     return (
                       <tr key={att.id}>
-                        <td
-                          data-label="تاريخ الجلسة"
-                          style={{ fontWeight: 800 }}
-                        >
+                        <td style={{ fontWeight: 800 }}>
                           {fmtDT(att.start_at)}
                         </td>
-                        <td data-label="الحالة">
+                        <td>
                           <Badge variant={badgeVar}>{statusAr}</Badge>
                         </td>
-                        <td data-label="ملاحظة" className="muted">
-                          {att.note || "-"}
-                        </td>
-                        <td
-                          data-label="تاريخ التسجيل"
-                          className="muted"
-                          style={{ fontSize: 12 }}
-                        >
+                        <td className="muted">{att.note || "-"}</td>
+                        <td className="muted" style={{ fontSize: 12 }}>
                           {fmtDT(att.created_at)}
                         </td>
                       </tr>
@@ -3461,13 +3383,12 @@ export default function RunDetails() {
             <div className="card">لا يوجد دفعات.</div>
           ) : (
             <div className="tableWrap inCard">
-              {/* كلاس stackable-table وداتا ليبل */}
-              <table className="table stackable-table">
+              <table className="table modal-compact-table">
                 <thead>
                   <tr>
                     <th>المبلغ (₪)</th>
-                    <th style={{ width: 140 }}>الطريقة</th>
-                    <th style={{ width: 170 }}>التاريخ</th>
+                    <th>الطريقة</th>
+                    <th>التاريخ</th>
                     <th>ملاحظة</th>
                     <th style={{ textAlign: "center" }}>الإجراءات</th>
                   </tr>
@@ -3475,22 +3396,13 @@ export default function RunDetails() {
                 <tbody>
                   {historyRows.map((x) => (
                     <tr key={x.id}>
-                      <td data-label="المبلغ (₪)" style={{ fontWeight: 800 }}>
+                      <td style={{ fontWeight: 800 }}>
                         {Number(x.amount).toFixed(2)}
                       </td>
-                      <td data-label="الطريقة" className="muted">
-                        {paymentMethodLabel(x.method)}
-                      </td>
-                      <td data-label="التاريخ" className="muted">
-                        {fmtDT(x.created_at)}
-                      </td>
-                      <td data-label="ملاحظة" className="muted">
-                        {x.note ?? "-"}
-                      </td>
-                      <td
-                        className="tableActions"
-                        style={{ textAlign: "center" }}
-                      >
+                      <td className="muted">{paymentMethodLabel(x.method)}</td>
+                      <td className="muted">{fmtDT(x.created_at)}</td>
+                      <td className="muted">{x.note ?? "-"}</td>
+                      <td style={{ textAlign: "center" }}>
                         <button
                           className="btn danger iconOnly"
                           onClick={() =>
@@ -4038,306 +3950,6 @@ export default function RunDetails() {
                   إغلاق
                 </button>
               </div>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openSession}
-          title={sessionForm.id ? "تعديل الجلسة" : "إضافة جلسة"}
-          onClose={() => setOpenSession(false)}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">
-                {isWorkshop ? "تاريخ الورشة" : "تاريخ ووقت الجلسة"}
-              </div>
-              <input
-                className="input"
-                type="datetime-local"
-                value={sessionForm.start_at}
-                onChange={(e) =>
-                  setSessionForm((p) => ({ ...p, start_at: e.target.value }))
-                }
-              />
-            </div>
-            {isWorkshop && (
-              <div style={{ gridColumn: "span 6" }}>
-                <div className="muted">المدة (دقائق)</div>
-                <input
-                  className="input"
-                  type="number"
-                  min={1}
-                  step={5}
-                  value={sessionForm.duration_min ?? 60}
-                  onChange={(e) =>
-                    setSessionForm((p) => ({
-                      ...p,
-                      duration_min: Number(e.target.value),
-                    }))
-                  }
-                />
-              </div>
-            )}
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الحالة</div>
-              <ModernSelect
-                value={sessionForm.status}
-                onChange={(v) => setSessionForm((p) => ({ ...p, status: v }))}
-                menuWidth="trigger"
-                options={[
-                  { value: "scheduled", label: "مجدولة" },
-                  { value: "done", label: "مكتملة" },
-                  { value: "canceled", label: "ملغاة" },
-                ]}
-              />
-            </div>
-            <div className="row" style={{ gridColumn: "span 12" }}>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={sessionSaving}
-                onClick={saveSession}
-              >
-                {sessionSaving ? "جاري الحفظ..." : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setOpenSession(false)}
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openExpenseModal}
-          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
-          onClose={() => {
-            setOpenExpenseModal(false);
-            resetExpenseForm();
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">التاريخ</div>
-              <input
-                className="input"
-                type="date"
-                value={expDate}
-                onChange={(e) => setExpDate(e.target.value)}
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">المبلغ</div>
-              <input
-                className="input"
-                type="number"
-                step="0.01"
-                min="0"
-                value={expAmount}
-                onChange={(e) => setExpAmount(e.target.value)}
-                placeholder="مثال: 50"
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">التصنيف</div>
-              {expHasPicklists ? (
-                <ModernSelect
-                  value={expCategory || ""}
-                  onChange={(v) => setExpCategory(v)}
-                  options={[
-                    { value: "", label: "—" },
-                    ...expCategories.map((x) => ({ value: x, label: x })),
-                  ]}
-                />
-              ) : (
-                <input
-                  className="input"
-                  value={expCategory}
-                  onChange={(e) => setExpCategory(e.target.value)}
-                  placeholder="مثال: معاشات"
-                />
-              )}
-              {expHasPicklists && (
-                <div className="row" style={{ marginTop: 8, gap: 8 }}>
-                  <input
-                    className="input"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="إضافة تصنيف جديد..."
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => addPicklistValue("category", newCatName)}
-                  >
-                    إضافة
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">الشخص</div>
-              {expHasPicklists ? (
-                <ModernSelect
-                  value={expParty || ""}
-                  onChange={(v) => setExpParty(v)}
-                  options={[
-                    { value: "", label: "—" },
-                    ...expParties.map((x) => ({ value: x, label: x })),
-                  ]}
-                />
-              ) : (
-                <input
-                  className="input"
-                  value={expParty}
-                  onChange={(e) => setExpParty(e.target.value)}
-                  placeholder="مثال: سامر"
-                />
-              )}
-              {expHasPicklists && (
-                <div className="row" style={{ marginTop: 8, gap: 8 }}>
-                  <input
-                    className="input"
-                    value={newPartyName}
-                    onChange={(e) => setNewPartyName(e.target.value)}
-                    placeholder="إضافة شخص جديد..."
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => addPicklistValue("party", newPartyName)}
-                  >
-                    إضافة
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الوصف</div>
-              <input
-                className="input"
-                value={expDesc}
-                onChange={(e) => setExpDesc(e.target.value)}
-                placeholder="اختياري..."
-              />
-            </div>
-            <div className="row" style={{ gridColumn: "span 12" }}>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={saveExpense}
-                disabled={expSaving}
-              >
-                {expSaving ? "حفظ..." : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setOpenExpenseModal(false);
-                  resetExpenseForm();
-                }}
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openPay}
-          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
-          onClose={() => {
-            setOpenPay(false);
-            setPayEditId(null);
-            setPayLocked(false);
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الطفل</div>
-              <ModernSelect
-                value={payEnrollmentId}
-                onChange={setPayEnrollmentId}
-                menuWidth="trigger"
-                disabled={paySaving || !!payEditId || payLocked}
-                placeholder="— اختر طفل —"
-                options={[
-                  { value: "", label: "— اختر طفل —" },
-                  ...participants
-                    .filter((p) => p.enrollment_status === "active")
-                    .map((p) => ({
-                      value: p.enrollment_id,
-                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
-                    })),
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">المبلغ (₪)</div>
-              <input
-                className="input"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">طريقة الدفع</div>
-              <ModernSelect
-                value={payMethod}
-                onChange={setPayMethod}
-                menuWidth="trigger"
-                options={[
-                  { value: "cash", label: "نقداً" },
-                  { value: "card", label: "بطاقة ائتمان" },
-                  { value: "transfer", label: "حوالة بنكية" },
-                  { value: "other", label: "أخرى" },
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">ملاحظات</div>
-              <input
-                className="input"
-                placeholder="اختياري"
-                value={payNote}
-                onChange={(e) => setPayNote(e.target.value)}
-              />
-            </div>
-
-            <div className="row" style={{ gridColumn: "span 12" }}>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={paySaving || !payEnrollmentId || !payAmount}
-                onClick={addPayment}
-              >
-                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setOpenPay(false);
-                  setPayEditId(null);
-                  setPayLocked(false);
-                }}
-              >
-                إلغاء
-              </button>
             </div>
           </div>
         </Modal>
