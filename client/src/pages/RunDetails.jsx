@@ -474,6 +474,43 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 }
 .runDetails .table tbody tr:hover { background: rgba(248, 250, 252, 0.75); }
 
+/* ستايلات الجداول المصغرة للنوافذ (لمنع السكرول الأفقي بالكامل على الجوال) */
+@media (max-width: 768px) {
+  .modal-compact-table { border: none !important; }
+  .modal-compact-table thead { display: none; }
+  .modal-compact-table, 
+  .modal-compact-table tbody, 
+  .modal-compact-table tr, 
+  .modal-compact-table td { display: block; width: 100%; box-sizing: border-box; }
+  .modal-compact-table tr { 
+    margin-bottom: 12px; 
+    border: 1px solid rgba(15,23,42,0.08); 
+    border-radius: 12px; 
+    padding: 12px; 
+    background: #fff; 
+  }
+  .modal-compact-table td { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 8px 0 !important; 
+    border-bottom: 1px solid rgba(15,23,42,0.04); 
+    text-align: left !important; 
+    gap: 12px; 
+    overflow-wrap: anywhere; 
+  }
+  .modal-compact-table td:last-child { border-bottom: none; padding-bottom: 0 !important; }
+  .modal-compact-table td:first-child { padding-top: 0 !important; }
+  .modal-compact-table td::before { 
+    content: attr(data-label); 
+    font-weight: 800; 
+    color: #64748b; 
+    font-size: 13px; 
+    white-space: nowrap; 
+    margin-left: 12px; 
+  }
+}
+
 @media (max-width: 1100px) {
   .runInfoGrid, .summaryGridSoft { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -3141,78 +3178,77 @@ export default function RunDetails() {
           ) : pkgHistoryRows.length === 0 ? (
             <div className="card">لا يوجد باقات.</div>
           ) : (
-            <div className="tableWrap inCard">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>تاريخ الشراء</th>
-                    <th>عدد الجلسات</th>
-                    <th>السعر (₪)</th>
-                    <th>الحالة</th>
-                    <th style={{ width: 90, textAlign: "center" }}>إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pkgHistoryRows.map((pkg) => (
-                    <tr key={pkg.id}>
-                      <td className="muted">{fmtDT(pkg.created_at)}</td>
-                      <td style={{ fontWeight: 800 }}>{pkg.sessions_total}</td>
-                      <td className="ltrIso">
-                        {Number(pkg.price_total).toFixed(2)}
-                      </td>
-                      <td>
-                        <Badge
-                          variant={pkg.status === "active" ? "ok" : "default"}
-                        >
-                          {pkg.status}
-                        </Badge>
-                      </td>
-                      <td style={{ textAlign: "center" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 8,
-                            justifyContent: "center",
+            <table className="table modal-compact-table">
+              <thead>
+                <tr>
+                  <th>تاريخ الشراء</th>
+                  <th>عدد الجلسات</th>
+                  <th>السعر (₪)</th>
+                  <th>الحالة</th>
+                  <th style={{ textAlign: "center" }}>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pkgHistoryRows.map((pkg) => (
+                  <tr key={pkg.id}>
+                    <td data-label="تاريخ الشراء" className="muted">
+                      {fmtDT(pkg.created_at)}
+                    </td>
+                    <td data-label="عدد الجلسات" style={{ fontWeight: 800 }}>
+                      {pkg.sessions_total}
+                    </td>
+                    <td data-label="السعر (₪)" className="ltrIso">
+                      {Number(pkg.price_total).toFixed(2)}
+                    </td>
+                    <td data-label="الحالة">
+                      <Badge
+                        variant={pkg.status === "active" ? "ok" : "default"}
+                      >
+                        {pkg.status}
+                      </Badge>
+                    </td>
+                    <td
+                      data-label="إجراءات"
+                      style={{ justifyContent: "flex-end" }}
+                    >
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          className="btn iconOnly"
+                          title="تعديل الباقة"
+                          onClick={() => {
+                            setEditPkgData({
+                              id: pkg.id,
+                              sessions_total: pkg.sessions_total,
+                              price_total: pkg.price_total,
+                            });
+                            setOpenEditPkg(true);
                           }}
                         >
-                          <button
-                            className="btn iconOnly"
-                            title="تعديل الباقة"
-                            onClick={() => {
-                              setEditPkgData({
-                                id: pkg.id,
-                                sessions_total: pkg.sessions_total,
-                                price_total: pkg.price_total,
-                              });
-                              setOpenEditPkg(true);
-                            }}
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button
-                            className="btn danger iconOnly"
-                            title="حذف الباقة"
-                            onClick={() =>
-                              setConfirm({
-                                open: true,
-                                type: "deletePackage",
-                                id: {
-                                  packageId: pkg.id,
-                                  enrollmentId: historyEnrollment.enrollment_id,
-                                },
-                                text: "هل أنت متأكد من حذف هذه الباقة؟ سيتم خصم جلساتها من رصيد الطالب.",
-                              })
-                            }
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          className="btn danger iconOnly"
+                          title="حذف الباقة"
+                          onClick={() =>
+                            setConfirm({
+                              open: true,
+                              type: "deletePackage",
+                              id: {
+                                packageId: pkg.id,
+                                enrollmentId: historyEnrollment.enrollment_id,
+                              },
+                              text: "هل أنت متأكد من حذف هذه الباقة؟ سيتم خصم جلساتها من رصيد الطالب.",
+                            })
+                          }
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </Modal>
 
@@ -3290,48 +3326,52 @@ export default function RunDetails() {
           ) : attHistoryRows.length === 0 ? (
             <div className="card">لا يوجد سجل حضور.</div>
           ) : (
-            <div className="tableWrap inCard">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>تاريخ الجلسة</th>
-                    <th>الحالة</th>
-                    <th>ملاحظة</th>
-                    <th>تاريخ التسجيل</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attHistoryRows.map((att) => {
-                    const statusAr =
-                      att.status === "present"
-                        ? "حاضر"
-                        : att.status === "absent"
-                          ? "غائب"
-                          : "بعذر";
-                    const badgeVar =
-                      att.status === "present"
-                        ? "ok"
-                        : att.status === "absent"
-                          ? "danger"
-                          : "warn";
-                    return (
-                      <tr key={att.id}>
-                        <td style={{ fontWeight: 800 }}>
-                          {fmtDT(att.start_at)}
-                        </td>
-                        <td>
-                          <Badge variant={badgeVar}>{statusAr}</Badge>
-                        </td>
-                        <td className="muted">{att.note || "-"}</td>
-                        <td className="muted" style={{ fontSize: 12 }}>
-                          {fmtDT(att.created_at)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <table className="table modal-compact-table">
+              <thead>
+                <tr>
+                  <th>تاريخ الجلسة</th>
+                  <th>الحالة</th>
+                  <th>ملاحظة</th>
+                  <th>تاريخ التسجيل</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attHistoryRows.map((att) => {
+                  const statusAr =
+                    att.status === "present"
+                      ? "حاضر"
+                      : att.status === "absent"
+                        ? "غائب"
+                        : "بعذر";
+                  const badgeVar =
+                    att.status === "present"
+                      ? "ok"
+                      : att.status === "absent"
+                        ? "danger"
+                        : "warn";
+                  return (
+                    <tr key={att.id}>
+                      <td data-label="تاريخ الجلسة" style={{ fontWeight: 800 }}>
+                        {fmtDT(att.start_at)}
+                      </td>
+                      <td data-label="الحالة">
+                        <Badge variant={badgeVar}>{statusAr}</Badge>
+                      </td>
+                      <td data-label="ملاحظة" className="muted">
+                        {att.note || "-"}
+                      </td>
+                      <td
+                        data-label="تاريخ التسجيل"
+                        className="muted"
+                        style={{ fontSize: 12 }}
+                      >
+                        {fmtDT(att.created_at)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </Modal>
 
@@ -3348,26 +3388,35 @@ export default function RunDetails() {
           ) : historyRows.length === 0 ? (
             <div className="card">لا يوجد دفعات.</div>
           ) : (
-            <table className="table">
+            <table className="table modal-compact-table">
               <thead>
                 <tr>
                   <th>المبلغ (₪)</th>
-                  <th style={{ width: 140 }}>الطريقة</th>
-                  <th style={{ width: 170 }}>التاريخ</th>
+                  <th>الطريقة</th>
+                  <th>التاريخ</th>
                   <th>ملاحظة</th>
-                  <th style={{ width: 72, textAlign: "center" }}></th>
+                  <th style={{ textAlign: "center" }}>إجراءات</th>
                 </tr>
               </thead>
               <tbody>
                 {historyRows.map((x) => (
                   <tr key={x.id}>
-                    <td style={{ fontWeight: 800 }}>
+                    <td data-label="المبلغ (₪)" style={{ fontWeight: 800 }}>
                       {Number(x.amount).toFixed(2)}
                     </td>
-                    <td className="muted">{paymentMethodLabel(x.method)}</td>
-                    <td className="muted">{fmtDT(x.created_at)}</td>
-                    <td className="muted">{x.note ?? "-"}</td>
-                    <td style={{ textAlign: "center" }}>
+                    <td data-label="الطريقة" className="muted">
+                      {paymentMethodLabel(x.method)}
+                    </td>
+                    <td data-label="التاريخ" className="muted">
+                      {fmtDT(x.created_at)}
+                    </td>
+                    <td data-label="ملاحظة" className="muted">
+                      {x.note ?? "-"}
+                    </td>
+                    <td
+                      data-label="إجراءات"
+                      style={{ justifyContent: "flex-end" }}
+                    >
                       <button
                         className="btn danger iconOnly"
                         onClick={() =>
