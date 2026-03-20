@@ -307,6 +307,12 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   margin-bottom: 8px;
 }
 
+.summaryNote {
+  color: rgb(82, 82, 82);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .runDetails .tabs {
   display: inline-flex;
   flex-wrap: wrap;
@@ -330,6 +336,10 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   background: rgba(0, 172, 71, 0.12) !important;
   border-color: rgba(0, 172, 71, 0.18) !important;
   color: rgb(0, 172, 71) !important;
+}
+
+.runDetails .pToolbar {
+  gap: 20px !important;
 }
 
 .runDetails .pTitle h2,
@@ -434,6 +444,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 .runDetails .pStatBlock.stat-yellow .pStatValue { color: rgb(217, 119, 6); }
 .runDetails .pStatBlock.stat-red { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.15); }
 .runDetails .pStatBlock.stat-red .pStatValue { color: rgb(220, 38, 38) !important; }
+.runDetails .pStatBlock.stat-red .pStatLabel span { color: rgb(220, 38, 38) !important; }
 
 .runDetails .pStatLabel {
   display: flex;
@@ -488,6 +499,10 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 
 @media (max-width: 1100px) {
   .runInfoGrid, .summaryGridSoft { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 980px) {
+  .runDetails .pQuickStats { grid-template-columns: 1fr; }
 }
 `;
 
@@ -655,7 +670,7 @@ export default function RunDetails() {
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
-  // هذه الـ State هي السحر اللي بيرجعنا لكرت الطالب بدل إغلاق كل شيء
+  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -720,7 +735,7 @@ export default function RunDetails() {
     return tryTable.data ?? [];
   }
 
-  // Helper لإغلاق النافذة الفرعية وإعادة فتح نافذة الإدارة إن لزم الأمر
+  // دالة ذكية لإغلاق المودال الفرعي وفتح مودال إدارة الطالب مجدداً
   const closeSubModalAndReopen = (setterFunc) => {
     setterFunc(false);
     if (shouldReopenManage && manageP) {
@@ -1746,7 +1761,6 @@ export default function RunDetails() {
       toast("تم التعديل", "ok");
 
       setOpenEditPkg(false);
-      // بعد ما عدلنا الباقة بنحدث سجل الباقات ونحدث البيانات
       fetchPkgHistory(historyEnrollment);
       loadFixed();
     } catch {
@@ -2320,7 +2334,7 @@ export default function RunDetails() {
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيت المحلي.
+                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيتك المحلي.
               </div>
               <hr className="sep" />
               <div style={{ display: "grid", gap: 12 }}>
@@ -2515,7 +2529,7 @@ export default function RunDetails() {
                               {paymentMethodLabel(p.method)}
                             </Badge>
                           </td>
-                          <td className="muted">{fmtDT(p.created_at)}</td>
+                          <td className="muted">{fmtDate(p.created_at)}</td>
                           <td className="muted">{p.note ?? "-"}</td>
                           <td style={{ textAlign: "center" }}>
                             <button
@@ -2722,7 +2736,7 @@ export default function RunDetails() {
         )}
 
         {/* ------------------------------------------------------------------------------------------------ */}
-        {/* نافذة إدارة الطالب (هنا قمنا بحل مشكلة الستاكينج) */}
+        {/* نافذة إدارة الطالب */}
         {/* ------------------------------------------------------------------------------------------------ */}
         <Modal open={openإدارة} title="" onClose={() => setOpenإدارة(false)}>
           {!manageP ? (
@@ -3181,7 +3195,7 @@ export default function RunDetails() {
           )}
         </Modal>
 
-        {/* -------------------- جداول النوافذ المنبثقة -------------------- */}
+        {/* -------------------- جداول النوافذ المنبثقة (العريضة) -------------------- */}
 
         <Modal
           open={openPkgHistory}
@@ -3211,7 +3225,7 @@ export default function RunDetails() {
                   <tbody>
                     {pkgHistoryRows.map((pkg) => (
                       <tr key={pkg.id}>
-                        <td className="muted">{fmtDT(pkg.created_at)}</td>
+                        <td className="muted">{fmtDate(pkg.created_at)}</td>
                         <td style={{ fontWeight: 800 }}>
                           {pkg.sessions_total}
                         </td>
@@ -3381,14 +3395,14 @@ export default function RunDetails() {
                       return (
                         <tr key={att.id}>
                           <td style={{ fontWeight: 800 }}>
-                            {fmtDT(att.start_at)}
+                            {fmtDate(att.start_at)}
                           </td>
                           <td>
                             <Badge variant={badgeVar}>{statusAr}</Badge>
                           </td>
                           <td className="muted">{att.note || "-"}</td>
                           <td className="muted" style={{ fontSize: 12 }}>
-                            {fmtDT(att.created_at)}
+                            {fmtDate(att.created_at)}
                           </td>
                         </tr>
                       );
@@ -3438,7 +3452,7 @@ export default function RunDetails() {
                             {paymentMethodLabel(x.method)}
                           </Badge>
                         </td>
-                        <td className="muted">{fmtDT(x.created_at)}</td>
+                        <td className="muted">{fmtDate(x.created_at)}</td>
                         <td className="muted">{x.note ?? "-"}</td>
                         <td style={{ textAlign: "center" }}>
                           <button
@@ -4201,101 +4215,6 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        <Modal
-          open={openPay}
-          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
-          onClose={() => {
-            setPayEditId(null);
-            setPayLocked(false);
-            closeSubModalAndReopen(setOpenPay);
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الطفل</div>
-              <ModernSelect
-                value={payEnrollmentId}
-                onChange={setPayEnrollmentId}
-                menuWidth="trigger"
-                disabled={paySaving || !!payEditId || payLocked}
-                placeholder="— اختر طفل —"
-                options={[
-                  { value: "", label: "— اختر طفل —" },
-                  ...participants
-                    .filter((p) => p.enrollment_status === "active")
-                    .map((p) => ({
-                      value: p.enrollment_id,
-                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
-                    })),
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">المبلغ (₪)</div>
-              <input
-                className="input"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">طريقة الدفع</div>
-              <ModernSelect
-                value={payMethod}
-                onChange={setPayMethod}
-                menuWidth="trigger"
-                options={[
-                  { value: "cash", label: "نقداً" },
-                  { value: "card", label: "بطاقة ائتمان" },
-                  { value: "transfer", label: "حوالة بنكية" },
-                  { value: "other", label: "أخرى" },
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">ملاحظات</div>
-              <input
-                className="input"
-                placeholder="اختياري"
-                value={payNote}
-                onChange={(e) => setPayNote(e.target.value)}
-              />
-            </div>
-
-            <div
-              className="row"
-              style={{ gridColumn: "span 12", marginTop: 10 }}
-            >
-              <button
-                type="button"
-                className="btn primary"
-                disabled={paySaving || !payEnrollmentId || !payAmount}
-                onClick={addPayment}
-              >
-                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setPayEditId(null);
-                  setPayLocked(false);
-                  closeSubModalAndReopen(setOpenPay);
-                }}
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
         <ConfirmDialog
           open={confirm.open}
           title=""
@@ -4322,6 +4241,8 @@ export default function RunDetails() {
                 id.childName,
                 id.packageId,
               );
+              // نقوم بإغلاق كرت الطالب فقط إذا تم حذفه بالكامل بنجاح
+              setOpenإدارة(false);
             }
 
             // Delete specific package
