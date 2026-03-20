@@ -126,6 +126,20 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   padding-block: 22px 40px;
 }
 
+/* إجبار الـ Modal الداخلي على التمدد لعرض أكبر بكثير (1200px)
+   بحيث تأخذ الجداول راحتها.
+*/
+.runDetails :global(.modal-content), 
+.modal-content,
+[role="dialog"] > div,
+[data-reach-dialog-content] {
+  width: 98% !important;
+  max-width: 1300px !important; 
+  padding: 30px !important;
+  border-radius: 28px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important;
+}
+
 .runDetails .card {
   background: #ffffff !important;
   border: 1px solid rgba(15, 23, 42, 0.08) !important;
@@ -452,30 +466,18 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   background: rgba(255, 255, 255, 0.94);
 }
 
-/* إلغاء السكرول وإظهار الجدول بكامل عرضه */
 .runDetails .tableWrap.inCard {
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 18px;
   overflow: visible !important; 
 }
 
 .table {
-  /* تمديد الجدول ليأخذ كل المساحة العريضة الجديدة */
   width: 100% !important;
   min-width: 100% !important;
-  table-layout: auto !important; /* السماح بتوزيع الأعمدة تلقائياً حسب المحتوى */
+  table-layout: auto !important; 
 }
 
-/* تكبير عرض البوب أب بشكل جذري ومريح */
-.modal-content {
-  width: 95% !important;
-  max-width: 1400px !important; /* عرض واسع ليتناسب مع الجداول */
-  padding: 30px !important;
-  border-radius: 28px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important;
-}
-
-/* تنسيق الجداول داخل الـ Pop-up لتكون واضحة ومريحة */
 .modal-compact-table th {
   background: #f8fafc !important;
   color: #64748b !important;
@@ -491,7 +493,6 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   background: #fff !important;
   border-top: 1px solid #f1f5f9 !important;
   border-bottom: 1px solid #f1f5f9 !important;
-  /* منع انكسار السطر لعرض داتا احترافية بسطر واحد */
   white-space: nowrap; 
   font-size: 15px;
 }
@@ -2492,7 +2493,7 @@ export default function RunDetails() {
                 <div className="muted">لا يوجد عناصر.</div>
               ) : (
                 <div className="tableWrap inCard">
-                  <table className="table stackable-table">
+                  <table className="table modal-compact-table">
                     <thead>
                       <tr>
                         <th>الطفل</th>
@@ -2500,33 +2501,27 @@ export default function RunDetails() {
                         <th>الطريقة</th>
                         <th>التاريخ</th>
                         <th>ملاحظة</th>
-                        <th>الإجراءات</th>
+                        <th style={{ textAlign: "center" }}>الإجراءات</th>
                       </tr>
                     </thead>
                     <tbody>
                       {payments.map((p) => (
                         <tr key={p.id}>
-                          <td data-label="الطفل" style={{ fontWeight: 800 }}>
-                            {p.child_name}
-                          </td>
-                          <td data-label="المبلغ (₪)">
+                          <td style={{ fontWeight: 800 }}>{p.child_name}</td>
+                          <td style={{ fontWeight: 900, color: "#00ac47" }}>
                             {Number(p.amount).toFixed(2)}
                           </td>
-                          <td data-label="الطريقة" className="muted">
-                            {paymentMethodLabel(p.method)}
+                          <td className="muted">
+                            <Badge variant="default">
+                              {paymentMethodLabel(p.method)}
+                            </Badge>
                           </td>
-                          <td data-label="التاريخ" className="muted">
-                            {fmtDT(p.created_at)}
-                          </td>
-                          <td data-label="ملاحظة" className="muted">
-                            {p.note ?? "-"}
-                          </td>
-                          <td
-                            data-label="الإجراءات"
-                            style={{ textAlign: "center" }}
-                          >
+                          <td className="muted">{fmtDT(p.created_at)}</td>
+                          <td className="muted">{p.note ?? "-"}</td>
+                          <td style={{ textAlign: "center" }}>
                             <button
                               className="btn iconOnly"
+                              style={{ marginRight: 5 }}
                               onClick={() => openEditPayment(p)}
                             >
                               <Pencil size={16} />
@@ -2663,7 +2658,7 @@ export default function RunDetails() {
                   <div className="muted">ما في مصاريف.</div>
                 ) : (
                   <div className="tableWrap inCard">
-                    <table className="table stackable-table">
+                    <table className="table modal-compact-table">
                       <thead>
                         <tr>
                           <th style={{ width: 140 }}>التاريخ</th>
@@ -2677,32 +2672,22 @@ export default function RunDetails() {
                       <tbody>
                         {expensesFiltered.map((r) => (
                           <tr key={r.id}>
-                            <td data-label="التاريخ" className="muted">
+                            <td className="muted">
                               <span className="ltrIso">
                                 {r.spent_on || "-"}
                               </span>
                             </td>
-                            <td
-                              data-label="التصنيف"
-                              style={{ fontWeight: 800 }}
-                            >
+                            <td style={{ fontWeight: 800 }}>
                               {r.category || "—"}
                             </td>
-                            <td data-label="الشخص" className="muted">
-                              {r.party || "—"}
-                            </td>
-                            <td data-label="الوصف" className="muted">
-                              {r.description || "—"}
-                            </td>
-                            <td data-label="المبلغ">
+                            <td className="muted">{r.party || "—"}</td>
+                            <td className="muted">{r.description || "—"}</td>
+                            <td style={{ fontWeight: 900 }}>
                               <span className="ltrIso">
                                 {fmtILS(r.amount, 2)}
                               </span>
                             </td>
-                            <td
-                              data-label="الإجراءات"
-                              style={{ textAlign: "center" }}
-                            >
+                            <td style={{ textAlign: "center" }}>
                               <div className="tableActions">
                                 <IconButton
                                   title="تعديل"
@@ -3173,7 +3158,7 @@ export default function RunDetails() {
           )}
         </Modal>
 
-        {/* --- جداول النوافذ المنبثقة (Responsive) --- */}
+        {/* -------------------- جداول النوافذ المنبثقة (العريضة) -------------------- */}
 
         <Modal
           open={openPkgHistory}
@@ -3189,7 +3174,7 @@ export default function RunDetails() {
             <div className="card">لا يوجد باقات.</div>
           ) : (
             <div className="tableWrap inCard">
-              <table className="table stackable-table">
+              <table className="table modal-compact-table">
                 <thead>
                   <tr>
                     <th>تاريخ الشراء</th>
@@ -3202,23 +3187,22 @@ export default function RunDetails() {
                 <tbody>
                   {pkgHistoryRows.map((pkg) => (
                     <tr key={pkg.id}>
-                      <td data-label="تاريخ الشراء" className="muted">
-                        {fmtDT(pkg.created_at)}
-                      </td>
-                      <td data-label="عدد الجلسات" style={{ fontWeight: 800 }}>
-                        {pkg.sessions_total}
-                      </td>
-                      <td data-label="السعر (₪)" className="ltrIso">
+                      <td className="muted">{fmtDT(pkg.created_at)}</td>
+                      <td style={{ fontWeight: 800 }}>{pkg.sessions_total}</td>
+                      <td
+                        className="ltrIso"
+                        style={{ fontWeight: 900, color: "#00ac47" }}
+                      >
                         {Number(pkg.price_total).toFixed(2)}
                       </td>
-                      <td data-label="الحالة">
+                      <td>
                         <Badge
                           variant={pkg.status === "active" ? "ok" : "default"}
                         >
                           {pkg.status}
                         </Badge>
                       </td>
-                      <td data-label="إجراءات" style={{ textAlign: "center" }}>
+                      <td style={{ textAlign: "center" }}>
                         <div
                           style={{
                             display: "flex",
@@ -3342,7 +3326,7 @@ export default function RunDetails() {
             <div className="card">لا يوجد سجل حضور.</div>
           ) : (
             <div className="tableWrap inCard">
-              <table className="table stackable-table">
+              <table className="table modal-compact-table">
                 <thead>
                   <tr>
                     <th>تاريخ الجلسة</th>
@@ -3367,23 +3351,14 @@ export default function RunDetails() {
                           : "warn";
                     return (
                       <tr key={att.id}>
-                        <td
-                          data-label="تاريخ الجلسة"
-                          style={{ fontWeight: 800 }}
-                        >
+                        <td style={{ fontWeight: 800 }}>
                           {fmtDT(att.start_at)}
                         </td>
-                        <td data-label="الحالة">
+                        <td>
                           <Badge variant={badgeVar}>{statusAr}</Badge>
                         </td>
-                        <td data-label="ملاحظة" className="muted">
-                          {att.note || "-"}
-                        </td>
-                        <td
-                          data-label="تاريخ التسجيل"
-                          className="muted"
-                          style={{ fontSize: 12 }}
-                        >
+                        <td className="muted">{att.note || "-"}</td>
+                        <td className="muted" style={{ fontSize: 12 }}>
                           {fmtDT(att.created_at)}
                         </td>
                       </tr>
@@ -3401,7 +3376,9 @@ export default function RunDetails() {
           onClose={() => setOpenHistory(false)}
         >
           <div className="muted" style={{ marginBottom: 10 }}>
-            {historyEnrollment ? `${historyEnrollment.child_name}` : ""}
+            {historyEnrollment
+              ? `سجل العمليات لـ: ${historyEnrollment.child_name}`
+              : ""}
           </div>
           {historyLoading ? (
             <div className="card">جاري التحميل...</div>
@@ -3409,7 +3386,7 @@ export default function RunDetails() {
             <div className="card">لا يوجد دفعات.</div>
           ) : (
             <div className="tableWrap inCard">
-              <table className="table stackable-table">
+              <table className="table modal-compact-table">
                 <thead>
                   <tr>
                     <th>المبلغ (₪)</th>
@@ -3422,22 +3399,17 @@ export default function RunDetails() {
                 <tbody>
                   {historyRows.map((x) => (
                     <tr key={x.id}>
-                      <td data-label="المبلغ (₪)" style={{ fontWeight: 800 }}>
+                      <td style={{ fontWeight: 900, color: "#00ac47" }}>
                         {Number(x.amount).toFixed(2)}
                       </td>
-                      <td data-label="الطريقة" className="muted">
-                        {paymentMethodLabel(x.method)}
+                      <td className="muted">
+                        <Badge variant="default">
+                          {paymentMethodLabel(x.method)}
+                        </Badge>
                       </td>
-                      <td data-label="التاريخ" className="muted">
-                        {fmtDT(x.created_at)}
-                      </td>
-                      <td data-label="ملاحظة" className="muted">
-                        {x.note ?? "-"}
-                      </td>
-                      <td
-                        data-label="الإجراءات"
-                        style={{ textAlign: "center" }}
-                      >
+                      <td className="muted">{fmtDT(x.created_at)}</td>
+                      <td className="muted">{x.note ?? "-"}</td>
+                      <td style={{ textAlign: "center" }}>
                         <button
                           className="btn danger iconOnly"
                           onClick={() =>
