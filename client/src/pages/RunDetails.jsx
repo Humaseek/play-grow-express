@@ -794,7 +794,7 @@ export default function RunDetails() {
     toast("تم التسجيل بنجاح.", "ok");
     setOpenEnroll(false);
     await loadFixed();
-    setTab("participants");
+    if (!enrollLocked) setTab("participants");
   }
 
   function resetExpenseForm() {
@@ -1309,7 +1309,7 @@ export default function RunDetails() {
       toast("تمت إعادة التسجيل بنجاح.", "ok");
       setOpenEnroll(false);
       await loadFixed();
-      setTab("participants");
+      if (!enrollLocked) setTab("participants");
       return true;
     } catch {
       toast("فشلت إعادة التسجيل.", "danger");
@@ -1348,7 +1348,7 @@ export default function RunDetails() {
         toast("تم التسجيل باستخدام الرصيد السابق.", "ok");
         setOpenEnroll(false);
         await loadFixed();
-        setTab("participants");
+        if (!enrollLocked) setTab("participants");
         return;
       }
 
@@ -1372,7 +1372,7 @@ export default function RunDetails() {
         toast("تم شحن رصيد الجلسات.", "ok");
         setOpenEnroll(false);
         await loadFixed();
-        setTab("participants");
+        if (!enrollLocked) setTab("participants");
         return;
       }
 
@@ -1632,7 +1632,8 @@ export default function RunDetails() {
           .insert([{ enrollment_id: Number(payEnrollmentId), ...p }]);
       setOpenPay(false);
       await loadFixed();
-      setTab("payments");
+      // إذا فتحنا الدفع من خارج كرت الطالب، منروح على تبويبة المدفوعات
+      if (!payLocked) setTab("payments");
     } catch {
       toast("Failed.", "danger");
     } finally {
@@ -2691,6 +2692,9 @@ export default function RunDetails() {
           </div>
         )}
 
+        {/* ------------------------------------------------------------------------------------------------ */}
+        {/* نافذة إدارة الطالب (التي لن تُغلق عند فتح النوافذ المنبثقة الأخرى بداخلها) */}
+        {/* ------------------------------------------------------------------------------------------------ */}
         <Modal open={openإدارة} title="" onClose={() => setOpenإدارة(false)}>
           {!manageP ? (
             <div className="muted">—</div>
@@ -2909,7 +2913,6 @@ export default function RunDetails() {
                       className="actionSquare"
                       disabled={Number(manageP.balance || 0) <= 0}
                       onClick={() => {
-                        setOpenإدارة(false);
                         openPaymentModalFor(manageP, "remaining");
                       }}
                     >
@@ -2927,7 +2930,6 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        setOpenإدارة(false);
                         openPaymentModalFor(manageP, "custom");
                       }}
                     >
@@ -2937,7 +2939,6 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        setOpenإدارة(false);
                         openPaymentHistory(manageP);
                       }}
                     >
@@ -2972,7 +2973,6 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        setOpenإدارة(false);
                         openSingleTopup(manageP);
                       }}
                     >
@@ -2982,7 +2982,6 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        setOpenإدارة(false);
                         fetchPkgHistory(manageP);
                       }}
                     >
@@ -2992,7 +2991,6 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        setOpenإدارة(false);
                         fetchAttHistory(manageP);
                       }}
                     >
@@ -3064,7 +3062,6 @@ export default function RunDetails() {
                         border: "1px solid #fee2e2",
                       }}
                       onClick={() => {
-                        setOpenإدارة(false);
                         setConfirm({
                           open: true,
                           type: "inactive",
@@ -3085,7 +3082,6 @@ export default function RunDetails() {
                         color: "#16a34a",
                       }}
                       onClick={() => {
-                        setOpenإدارة(false);
                         setConfirm({
                           open: true,
                           type: "active",
@@ -3112,7 +3108,6 @@ export default function RunDetails() {
                         toast("لا يمكن حذفه لوجود دفعات مسجلة.", "warn");
                         return;
                       }
-                      setOpenإدارة(false);
                       setConfirm({
                         open: true,
                         type: "deleteEnroll",
@@ -3339,9 +3334,6 @@ export default function RunDetails() {
             </div>
           )}
         </Modal>
-
-        {/* ========= HERE ARE ALL THE PREVIOUS MODALS FULLY RESTORED =========
-         */}
 
         <Modal
           open={openHistory}
@@ -4252,6 +4244,8 @@ export default function RunDetails() {
                 id.childName,
                 id.packageId,
               );
+              // نقوم بإغلاق كرت الطالب فقط إذا تم حذفه بالكامل بنجاح
+              setOpenإدارة(false);
             }
 
             // Delete specific package
@@ -4264,7 +4258,7 @@ export default function RunDetails() {
                 toast(error.message, "danger");
               } else {
                 toast("تم حذف الباقة بنجاح", "ok");
-                setOpenPkgHistory(false);
+                fetchPkgHistory(historyEnrollment);
                 loadFixed();
               }
             }
