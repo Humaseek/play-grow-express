@@ -163,15 +163,21 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   table-layout: auto !important; 
 }
 
+/* التعديل الجوهري للترتيب والمحاذاة داخل الجدول */
+.modal-compact-table th,
+.modal-compact-table td {
+  text-align: center !important; /* توسيط أفقي */
+  vertical-align: middle !important; /* توسيط عمودي */
+  white-space: nowrap !important; /* منع انكسار السطر */
+}
+
 .modal-compact-table th {
   background: #f8fafc !important;
   color: #64748b !important;
   font-weight: 800 !important;
   padding: 16px 15px !important;
-  text-align: right !important;
   font-size: 15px;
   border-bottom: 2px solid #edf2f7;
-  vertical-align: middle !important;
 }
 
 .modal-compact-table td {
@@ -179,9 +185,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   background: #fff !important;
   border-top: 1px solid #f1f5f9 !important;
   border-bottom: 1px solid #f1f5f9 !important;
-  white-space: nowrap; 
   font-size: 15px;
-  vertical-align: middle !important;
 }
 
 .modal-compact-table tr td:first-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
@@ -3204,7 +3208,6 @@ export default function RunDetails() {
                         color: "#16a34a",
                       }}
                       onClick={() => {
-                        setOpenإدارة(false);
                         setConfirm({
                           open: true,
                           type: "active",
@@ -3231,7 +3234,6 @@ export default function RunDetails() {
                         toast("لا يمكن حذفه لوجود دفعات مسجلة.", "warn");
                         return;
                       }
-                      setOpenإدارة(false);
                       setConfirm({
                         open: true,
                         type: "deleteEnroll",
