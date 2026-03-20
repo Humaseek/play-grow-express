@@ -117,15 +117,6 @@ function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
 
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 const RUN_DETAILS_SOFT_UI_STYLES = `
 .page.page--runs {
   background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
@@ -135,14 +126,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   padding-block: 22px 40px;
 }
 
-/* --- هنا الحل الجذري: استهداف كلاس modalCard وتوسيعه --- */
-.modalCard {
-  width: 95% !important;
-  max-width: 1400px !important; 
-  padding: 30px !important;
-  border-radius: 28px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important;
-}
+/* إلغاء الستايل الجلوبال اللي كان بيكبر كل البوب أب، التحكم الآن من داخل المكون */
 
 .runDetails .card {
   background: #ffffff !important;
@@ -470,7 +454,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   background: rgba(255, 255, 255, 0.94);
 }
 
-/* منع السكرول داخل البطاقة لعرض الجدول كامل */
+/* منع السكرول الأفقي وإظهار الجداول بالكامل */
 .runDetails .tableWrap.inCard {
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 18px;
@@ -489,17 +473,17 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   font-weight: 800 !important;
   padding: 16px 15px !important;
   text-align: right !important;
-  font-size: 15px;
+  font-size: 14px;
   border-bottom: 2px solid #edf2f7;
 }
 
 .modal-compact-table td {
-  padding: 18px 15px !important;
+  padding: 16px 15px !important;
   background: #fff !important;
   border-top: 1px solid #f1f5f9 !important;
   border-bottom: 1px solid #f1f5f9 !important;
   white-space: nowrap; 
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .modal-compact-table tr td:first-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
@@ -647,7 +631,7 @@ export default function RunDetails() {
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
-  // السجلات
+  // السجلات الجديدة
   const [openHistory, setOpenHistory] = useState(false);
   const [historyEnrollment, setHistoryEnrollment] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
@@ -3962,214 +3946,6 @@ export default function RunDetails() {
                   إغلاق
                 </button>
               </div>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openSession}
-          title={sessionForm.id ? "تعديل الجلسة" : "إضافة جلسة"}
-          onClose={() => setOpenSession(false)}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">
-                {isWorkshop ? "تاريخ الورشة" : "تاريخ ووقت الجلسة"}
-              </div>
-              <input
-                className="input"
-                type="datetime-local"
-                value={sessionForm.start_at}
-                onChange={(e) =>
-                  setSessionForm((p) => ({ ...p, start_at: e.target.value }))
-                }
-              />
-            </div>
-            {isWorkshop && (
-              <div style={{ gridColumn: "span 6" }}>
-                <div className="muted">المدة (دقائق)</div>
-                <input
-                  className="input"
-                  type="number"
-                  min={1}
-                  step={5}
-                  value={sessionForm.duration_min ?? 60}
-                  onChange={(e) =>
-                    setSessionForm((p) => ({
-                      ...p,
-                      duration_min: Number(e.target.value),
-                    }))
-                  }
-                />
-              </div>
-            )}
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الحالة</div>
-              <ModernSelect
-                value={sessionForm.status}
-                onChange={(v) => setSessionForm((p) => ({ ...p, status: v }))}
-                menuWidth="trigger"
-                options={[
-                  { value: "scheduled", label: "مجدولة" },
-                  { value: "done", label: "مكتملة" },
-                  { value: "canceled", label: "ملغاة" },
-                ]}
-              />
-            </div>
-            <div className="row" style={{ gridColumn: "span 12" }}>
-              <button
-                type="button"
-                className="btn primary"
-                disabled={sessionSaving}
-                onClick={saveSession}
-              >
-                {sessionSaving ? "جاري الحفظ..." : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setOpenSession(false)}
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openExpenseModal}
-          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
-          onClose={() => {
-            setOpenExpenseModal(false);
-            resetExpenseForm();
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">التاريخ</div>
-              <input
-                className="input"
-                type="date"
-                value={expDate}
-                onChange={(e) => setExpDate(e.target.value)}
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">المبلغ</div>
-              <input
-                className="input"
-                type="number"
-                step="0.01"
-                min="0"
-                value={expAmount}
-                onChange={(e) => setExpAmount(e.target.value)}
-                placeholder="مثال: 50"
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">التصنيف</div>
-              {expHasPicklists ? (
-                <ModernSelect
-                  value={expCategory || ""}
-                  onChange={(v) => setExpCategory(v)}
-                  options={[
-                    { value: "", label: "—" },
-                    ...expCategories.map((x) => ({ value: x, label: x })),
-                  ]}
-                />
-              ) : (
-                <input
-                  className="input"
-                  value={expCategory}
-                  onChange={(e) => setExpCategory(e.target.value)}
-                  placeholder="مثال: معاشات"
-                />
-              )}
-              {expHasPicklists && (
-                <div className="row" style={{ marginTop: 8, gap: 8 }}>
-                  <input
-                    className="input"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="إضافة تصنيف جديد..."
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => addPicklistValue("category", newCatName)}
-                  >
-                    إضافة
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">الشخص</div>
-              {expHasPicklists ? (
-                <ModernSelect
-                  value={expParty || ""}
-                  onChange={(v) => setExpParty(v)}
-                  options={[
-                    { value: "", label: "—" },
-                    ...expParties.map((x) => ({ value: x, label: x })),
-                  ]}
-                />
-              ) : (
-                <input
-                  className="input"
-                  value={expParty}
-                  onChange={(e) => setExpParty(e.target.value)}
-                  placeholder="مثال: سامر"
-                />
-              )}
-              {expHasPicklists && (
-                <div className="row" style={{ marginTop: 8, gap: 8 }}>
-                  <input
-                    className="input"
-                    value={newPartyName}
-                    onChange={(e) => setNewPartyName(e.target.value)}
-                    placeholder="إضافة شخص جديد..."
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => addPicklistValue("party", newPartyName)}
-                  >
-                    إضافة
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الوصف</div>
-              <input
-                className="input"
-                value={expDesc}
-                onChange={(e) => setExpDesc(e.target.value)}
-                placeholder="اختياري..."
-              />
-            </div>
-            <div className="row" style={{ gridColumn: "span 12" }}>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={saveExpense}
-                disabled={expSaving}
-              >
-                {expSaving ? "حفظ..." : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setOpenExpenseModal(false);
-                  resetExpenseForm();
-                }}
-              >
-                إلغاء
-              </button>
             </div>
           </div>
         </Modal>

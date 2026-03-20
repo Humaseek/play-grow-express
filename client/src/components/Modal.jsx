@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 
-export default function Modal({ open, title, children, onClose }) {
+export default function Modal({ open, title, children, onClose, maxWidth }) {
   useEffect(() => {
     if (!open) return;
 
@@ -26,7 +26,13 @@ export default function Modal({ open, title, children, onClose }) {
       className="modalOverlay"
       onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}
     >
-      <div className="modalCard" role="dialog" aria-modal="true">
+      <div
+        className="modalCard"
+        role="dialog"
+        aria-modal="true"
+        // السطر السحري: إذا مررنا عرض معين بياخذه، وإلا بياخد الحجم الطبيعي الصغير
+        style={maxWidth ? { maxWidth: maxWidth, width: "95%" } : {}}
+      >
         <button
           type="button"
           className="modalClose"
