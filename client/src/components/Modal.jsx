@@ -30,7 +30,7 @@ export default function Modal({ open, title, children, onClose, maxWidth }) {
         className="modalCard"
         role="dialog"
         aria-modal="true"
-        // السطر السحري: إذا مررنا عرض معين بياخذه، وإلا بياخد الحجم الطبيعي الصغير
+        // هذا السطر السحري اللي رح يخلينا نكبر النوافذ اللي بدنا إياها بس
         style={maxWidth ? { maxWidth: maxWidth, width: "95%" } : {}}
       >
         <button
