@@ -3784,287 +3784,337 @@ export default function RunDetails() {
         )}
 
         {/* -------------------------------------------------------------
-            نافذة إدارة الطالب الجديدة 
+            النافذة الجديدة النظيفة لإدارة الطالب
         ------------------------------------------------------------- */}
-        <Modal
-          open={openإدارة}
-          title={manageP ? `إدارة: ${manageP.child_name}` : "إدارة"}
-          onClose={() => setOpenإدارة(false)}
-        >
+        <Modal open={openإدارة} title="" onClose={() => setOpenإدارة(false)}>
           {!manageP ? (
             <div className="muted">—</div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              {/* القسم الأول: نظرة عامة (مربعات إحصائيات) */}
+            <div style={{ padding: "8px 0" }}>
+              {/* Header (Clean, big text, no heavy borders) */}
               <div
                 style={{
-                  background: "#f8fafc",
-                  border: "1px solid rgba(15,23,42,0.06)",
-                  borderRadius: 16,
-                  padding: 16,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: 24,
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: 16,
-                    flexWrap: "wrap",
-                    gap: 10,
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", gap: 8, alignItems: "center" }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: 800,
-                        color: "#0f172a",
-                        fontSize: 16,
-                      }}
-                    >
-                      نظرة عامة
-                    </div>
-                    {manageP.enrollment_status === "active" ? (
-                      <Badge variant="ok">نشط</Badge>
-                    ) : (
-                      <Badge variant="warn">غير نشط</Badge>
-                    )}
-                    {manageP.is_free ? (
-                      <Badge variant="info">مجاني</Badge>
-                    ) : null}
-                  </div>
-                  <button
-                    type="button"
-                    className="btn"
+                <div>
+                  <h2
                     style={{
-                      minHeight: 32,
-                      padding: "4px 12px",
-                      borderRadius: 999,
+                      fontSize: 24,
+                      fontWeight: 900,
+                      marginBottom: 8,
+                      color: "#0f172a",
                     }}
-                    onClick={() => navigate(`/children/${manageP.child_id}`)}
                   >
-                    <ExternalLink size={14} className="ico" /> ملف الطالب
-                  </button>
-                </div>
-
-                <div
-                  className="pQuickStats"
-                  style={{
-                    gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-                    gap: 12,
-                    marginBottom: 0,
-                  }}
-                >
-                  <div className="pStatBlock">
-                    <div className="pStatLabel">
-                      <Tag size={14} />
-                      <span>المتفق عليه</span>
-                    </div>
-                    <div className="pStatValue ltrIso">
-                      {fmtILS(manageP.agreed_price)}
-                    </div>
-                  </div>
-                  <div className="pStatBlock">
-                    <div className="pStatLabel">
-                      <CreditCard size={14} />
-                      <span>المدفوع</span>
-                    </div>
-                    <div className="pStatValue ltrIso">
-                      {fmtILS(manageP.paid_amount)}
-                    </div>
-                  </div>
+                    {manageP.child_name}
+                  </h2>
                   <div
-                    className={`pStatBlock ${manageP.balance <= 0 ? "stat-green" : "stat-red"}`}
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                    }}
                   >
-                    <div className="pStatLabel">
-                      <Hourglass size={14} />
-                      <span>المتبقي ماليًا</span>
-                    </div>
-                    <div className="pStatValue ltrIso">
-                      {fmtILS(manageP.balance)}
-                    </div>
-                  </div>
-                  <div className="pStatBlock">
-                    <div className="pStatLabel">
-                      <Ticket size={14} />
-                      <span>إجمالي الجلسات</span>
-                    </div>
-                    <div className="pStatValue ltrIso">
-                      {fmtNum(manageP.package_sessions_total)}
-                    </div>
-                  </div>
-                  <div
-                    className={`pStatBlock ${manageP.package_sessions_remaining < 0 ? "stat-red" : ""}`}
-                  >
-                    <div className="pStatLabel">
-                      <Ticket size={14} />
-                      <span>الرصيد المتبقي</span>
-                    </div>
-                    <div
-                      className="pStatValue ltrIso"
-                      style={
-                        manageP.package_sessions_remaining < 0
-                          ? { color: "#dc2626" }
-                          : {}
+                    <Badge
+                      variant={
+                        manageP.enrollment_status === "active" ? "ok" : "warn"
                       }
                     >
-                      {fmtNum(manageP.package_sessions_remaining)}
-                    </div>
+                      {manageP.enrollment_status === "active"
+                        ? "نشط"
+                        : "غير نشط"}
+                    </Badge>
+                    {manageP.is_free && <Badge variant="info">مجاني</Badge>}
+                    <span className="muted" style={{ fontSize: 13 }}>
+                      {manageP.class ? `الصف: ${manageP.class}` : ""}{" "}
+                      {manageP.age ? `• العمر: ${manageP.age}` : ""}
+                    </span>
                   </div>
-                  <div className="pStatBlock">
-                    <div className="pStatLabel">
-                      <CalendarDays size={14} />
-                      <span>حضر بالدورة</span>
-                    </div>
-                    <div className="pStatValue ltrIso">
-                      {fmtNum(manageP.sessions_attended_in_run)}
-                    </div>
+                </div>
+                <IconButton
+                  icon={<ExternalLink size={18} />}
+                  onClick={() => navigate(`/children/${manageP.child_id}`)}
+                  title="ملف الطالب"
+                  variant="ghost"
+                />
+              </div>
+
+              {/* Minimal Stats Row (Soft background, no inner borders) */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+                  gap: 16,
+                  background: "#f8fafc",
+                  padding: "20px",
+                  borderRadius: "20px",
+                  marginBottom: 32,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748b",
+                      fontWeight: 700,
+                      marginBottom: 4,
+                    }}
+                  >
+                    المتفق عليه
+                  </div>
+                  <div
+                    style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}
+                    className="ltrIso"
+                  >
+                    {fmtILS(manageP.agreed_price)}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748b",
+                      fontWeight: 700,
+                      marginBottom: 4,
+                    }}
+                  >
+                    المدفوع
+                  </div>
+                  <div
+                    style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}
+                    className="ltrIso"
+                  >
+                    {fmtILS(manageP.paid_amount)}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748b",
+                      fontWeight: 700,
+                      marginBottom: 4,
+                    }}
+                  >
+                    المتبقي
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 900,
+                      color: manageP.balance <= 0 ? "#16a34a" : "#dc2626",
+                    }}
+                    className="ltrIso"
+                  >
+                    {fmtILS(manageP.balance)}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748b",
+                      fontWeight: 700,
+                      marginBottom: 4,
+                    }}
+                  >
+                    الباقة (حصة)
+                  </div>
+                  <div
+                    style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}
+                    className="ltrIso"
+                  >
+                    {fmtNum(manageP.package_sessions_total)}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748b",
+                      fontWeight: 700,
+                      marginBottom: 4,
+                    }}
+                  >
+                    الرصيد المتبقي
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 900,
+                      color:
+                        manageP.package_sessions_remaining < 0
+                          ? "#dc2626"
+                          : "#0f172a",
+                    }}
+                    className="ltrIso"
+                  >
+                    {fmtNum(manageP.package_sessions_remaining)}
+                  </div>
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#64748b",
+                      fontWeight: 700,
+                      marginBottom: 4,
+                    }}
+                  >
+                    حضر
+                  </div>
+                  <div
+                    style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}
+                    className="ltrIso"
+                  >
+                    {fmtNum(manageP.sessions_attended_in_run)}
                   </div>
                 </div>
               </div>
 
-              {/* القسم الثاني: أزرار التحكم (مقسمة لعمودين) */}
+              {/* Action Rows (Flow naturally, no boxes) */}
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                  gap: 16,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 24,
+                  marginBottom: 32,
                 }}
               >
-                {/* الإدارة المالية */}
-                <div
-                  style={{
-                    border: "1px solid rgba(15,23,42,0.08)",
-                    borderRadius: 16,
-                    padding: 16,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 10,
-                  }}
-                >
-                  <div
+                {/* Finance Row */}
+                <div>
+                  <h3
                     style={{
+                      fontSize: 15,
                       fontWeight: 800,
                       color: "#334155",
+                      marginBottom: 12,
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      marginBottom: 4,
                     }}
                   >
-                    <CreditCard size={18} style={{ color: "#00ac47" }} />{" "}
-                    الإدارة المالية
+                    <CreditCard size={16} /> المالية
+                  </h3>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className="btn primary"
+                      disabled={Number(manageP.balance || 0) <= 0}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        openPaymentModalFor(manageP, "remaining");
+                      }}
+                    >
+                      دفع المتبقي ({fmtILS(manageP.balance)})
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        openPaymentModalFor(manageP, "custom");
+                      }}
+                    >
+                      إضافة دفعة
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        openPaymentHistory(manageP);
+                      }}
+                    >
+                      سجل الدفعات
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={!manageP.package_id}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        setPricePackageId(manageP.package_id);
+                        setPriceValue(
+                          String(Number(manageP.agreed_price || 0)),
+                        );
+                        setOpenPrice(true);
+                      }}
+                    >
+                      تعديل السعر
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="btn primary"
-                    disabled={Number(manageP.balance || 0) <= 0}
-                    onClick={() => {
-                      setOpenإدارة(false);
-                      openPaymentModalFor(manageP, "remaining");
-                    }}
-                  >
-                    دفع المتبقي ({fmtILS(manageP.balance)})
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setOpenإدارة(false);
-                      openPaymentModalFor(manageP, "custom");
-                    }}
-                  >
-                    إضافة دفعة مخصصة
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setOpenإدارة(false);
-                      openPaymentHistory(manageP);
-                    }}
-                  >
-                    سجل الدفعات
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    disabled={!manageP.package_id}
-                    onClick={() => {
-                      setOpenإدارة(false);
-                      setPricePackageId(manageP.package_id);
-                      setPriceValue(String(Number(manageP.agreed_price || 0)));
-                      setOpenPrice(true);
-                    }}
-                  >
-                    تعديل السعر المتفق عليه
-                  </button>
                 </div>
 
-                {/* إدارة الجلسات والحساب */}
-                <div
-                  style={{
-                    border: "1px solid rgba(15,23,42,0.08)",
-                    borderRadius: 16,
-                    padding: 16,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 10,
-                  }}
-                >
-                  <div
+                {/* Sessions Row */}
+                <div>
+                  <h3
                     style={{
+                      fontSize: 15,
                       fontWeight: 800,
                       color: "#334155",
+                      marginBottom: 12,
                       display: "flex",
                       alignItems: "center",
                       gap: 6,
-                      marginBottom: 4,
                     }}
                   >
-                    <Ticket size={18} style={{ color: "#7a5cff" }} /> الجلسات
-                    والحساب
-                  </div>
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setOpenإدارة(false);
-                      openSingleTopup(manageP);
-                    }}
-                  >
-                    شراء / إضافة جلسات
-                  </button>
-
-                  {/* Quick Adjust Inline */}
+                    <Ticket size={16} /> الجلسات
+                  </h3>
                   <div
                     style={{
                       display: "flex",
+                      gap: 10,
+                      flexWrap: "wrap",
                       alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "4px 12px",
-                      background: "#f8fafc",
-                      borderRadius: 12,
-                      border: "1px solid rgba(15,23,42,0.05)",
                     }}
                   >
-                    <span
-                      className="muted"
-                      style={{ fontSize: 13, fontWeight: 600 }}
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        openSingleTopup(manageP);
+                      }}
                     >
-                      تعديل الجلسات الكلي:
-                    </span>
-                    <div style={{ display: "flex", gap: 4 }}>
+                      شراء / إضافة جلسات
+                    </button>
+
+                    {/* Seamless +/- */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        background: "#f1f5f9",
+                        borderRadius: 12,
+                        padding: "2px",
+                      }}
+                    >
+                      <span
+                        className="muted"
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          padding: "0 10px",
+                        }}
+                      >
+                        تعديل الجلسات:
+                      </span>
                       <button
                         type="button"
                         className="btn iconOnly"
                         style={{
-                          width: 34,
-                          height: 34,
-                          minHeight: 34,
+                          width: 32,
+                          height: 32,
+                          minHeight: 32,
                           padding: 0,
+                          background: "transparent",
+                          border: "none",
+                          boxShadow: "none",
                         }}
                         onClick={() => quickAdjustFromإدارة(-1)}
                         title="تنقيص"
@@ -4075,10 +4125,13 @@ export default function RunDetails() {
                         type="button"
                         className="btn iconOnly"
                         style={{
-                          width: 34,
-                          height: 34,
-                          minHeight: 34,
+                          width: 32,
+                          height: 32,
+                          minHeight: 32,
                           padding: 0,
+                          background: "transparent",
+                          border: "none",
+                          boxShadow: "none",
                         }}
                         onClick={() => quickAdjustFromإدارة(1)}
                         title="زيادة"
@@ -4087,195 +4140,179 @@ export default function RunDetails() {
                       </button>
                     </div>
                   </div>
-
-                  <div style={{ marginTop: "auto", display: "flex", gap: 10 }}>
-                    {manageP.enrollment_status === "active" ? (
-                      <button
-                        type="button"
-                        className="btn danger"
-                        style={{ flex: 1 }}
-                        onClick={() => {
-                          setOpenإدارة(false);
-                          setConfirm({
-                            open: true,
-                            type: "inactive",
-                            id: manageP.enrollment_id,
-                            text: `إلغاء تنشيط تسجيل: ${manageP.child_name}`,
-                          });
-                        }}
-                      >
-                        إيقاف
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn primary"
-                        style={{ flex: 1 }}
-                        onClick={() => {
-                          setOpenإدارة(false);
-                          setConfirm({
-                            open: true,
-                            type: "active",
-                            id: manageP.enrollment_id,
-                            text: `تنشيط تسجيل: ${manageP.child_name}`,
-                          });
-                        }}
-                      >
-                        تنشيط
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="btn danger"
-                      style={{ flex: 1 }}
-                      disabled={manageHasPayments}
-                      onClick={() => {
-                        if (manageHasPayments) {
-                          toast(
-                            "لا يمكن حذف هذا الطفل من الدورة لأنه توجد له دفعات مسجّلة داخل هذه الدورة.",
-                            "warn",
-                          );
-                          return;
-                        }
-                        setOpenإدارة(false);
-                        setConfirm({
-                          open: true,
-                          type: "deleteEnroll",
-                          id: {
-                            enrollmentId: manageP.enrollment_id,
-                            packageId: manageP.package_id,
-                            childName: manageP.child_name,
-                          },
-                          text: `حذف الاشتراك: ${manageP.child_name}`,
-                        });
-                      }}
-                    >
-                      حذف
-                    </button>
-                  </div>
                 </div>
               </div>
 
-              {/* القسم الثالث: معلومات التواصل */}
+              {/* Footer: Contacts (Left) & Danger Zone (Right) */}
               <div
                 style={{
-                  border: "1px solid rgba(15,23,42,0.06)",
-                  borderRadius: 16,
-                  padding: "12px 16px",
-                  background: "#fff",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-end",
+                  flexWrap: "wrap",
+                  gap: 20,
+                  borderTop: "1px solid #e2e8f0",
+                  paddingTop: 20,
                 }}
               >
-                <div className="grid">
-                  <div style={{ gridColumn: "span 6" }}>
+                {/* Contacts Info */}
+                <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+                  <div>
                     <div
                       className="muted"
                       style={{ fontSize: 12, marginBottom: 2 }}
                     >
-                      الأم
+                      هاتف الأم ({manageChild?.mother_name || "-"})
                     </div>
                     <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        flexWrap: "wrap",
-                      }}
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >
-                      <div style={{ fontWeight: 800 }}>
-                        {manageChild?.mother_name || "-"}
-                      </div>
+                      <span
+                        className="ltrIso"
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {manageChild?.mother_phone || "-"}
+                      </span>
                       {manageChild?.mother_phone && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            background: "#f1f5f9",
-                            padding: "2px 8px",
-                            borderRadius: 999,
+                        <button
+                          type="button"
+                          className="iconBtn"
+                          style={{ width: 22, height: 22, padding: 0 }}
+                          onClick={async () => {
+                            const ok = await copyText(manageChild.mother_phone);
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
                           }}
                         >
-                          <span
-                            className="ltrIso"
-                            style={{ fontSize: 13, fontWeight: 700 }}
-                          >
-                            {manageChild.mother_phone}
-                          </span>
-                          <button
-                            type="button"
-                            className="iconBtn"
-                            style={{ width: 20, height: 20, padding: 0 }}
-                            onClick={async () => {
-                              const ok = await copyText(
-                                manageChild.mother_phone,
-                              );
-                              toast(
-                                ok ? "Copied" : "Copy failed",
-                                ok ? "ok" : "danger",
-                              );
-                            }}
-                          >
-                            <Copy size={12} />
-                          </button>
-                        </div>
+                          <Copy size={12} />
+                        </button>
                       )}
                     </div>
                   </div>
-                  <div style={{ gridColumn: "span 6" }}>
+                  <div>
                     <div
                       className="muted"
                       style={{ fontSize: 12, marginBottom: 2 }}
                     >
-                      الأب
+                      هاتف الأب ({manageChild?.father_name || "-"})
                     </div>
                     <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        flexWrap: "wrap",
-                      }}
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >
-                      <div style={{ fontWeight: 800 }}>
-                        {manageChild?.father_name || "-"}
-                      </div>
+                      <span
+                        className="ltrIso"
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 700,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {manageChild?.father_phone || "-"}
+                      </span>
                       {manageChild?.father_phone && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            background: "#f1f5f9",
-                            padding: "2px 8px",
-                            borderRadius: 999,
+                        <button
+                          type="button"
+                          className="iconBtn"
+                          style={{ width: 22, height: 22, padding: 0 }}
+                          onClick={async () => {
+                            const ok = await copyText(manageChild.father_phone);
+                            toast(
+                              ok ? "Copied" : "Copy failed",
+                              ok ? "ok" : "danger",
+                            );
                           }}
                         >
-                          <span
-                            className="ltrIso"
-                            style={{ fontSize: 13, fontWeight: 700 }}
-                          >
-                            {manageChild.father_phone}
-                          </span>
-                          <button
-                            type="button"
-                            className="iconBtn"
-                            style={{ width: 20, height: 20, padding: 0 }}
-                            onClick={async () => {
-                              const ok = await copyText(
-                                manageChild.father_phone,
-                              );
-                              toast(
-                                ok ? "Copied" : "Copy failed",
-                                ok ? "ok" : "danger",
-                              );
-                            }}
-                          >
-                            <Copy size={12} />
-                          </button>
-                        </div>
+                          <Copy size={12} />
+                        </button>
                       )}
                     </div>
                   </div>
+                </div>
+
+                {/* Status / Delete */}
+                <div style={{ display: "flex", gap: 10 }}>
+                  {manageP.enrollment_status === "active" ? (
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{
+                        background: "#fff",
+                        border: "1px solid #e2e8f0",
+                        color: "#dc2626",
+                      }}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        setConfirm({
+                          open: true,
+                          type: "inactive",
+                          id: manageP.enrollment_id,
+                          text: `إلغاء تنشيط تسجيل: ${manageP.child_name}`,
+                        });
+                      }}
+                    >
+                      إيقاف الطالب
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn"
+                      style={{
+                        background: "#fff",
+                        border: "1px solid #e2e8f0",
+                        color: "#16a34a",
+                      }}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        setConfirm({
+                          open: true,
+                          type: "active",
+                          id: manageP.enrollment_id,
+                          text: `تنشيط تسجيل: ${manageP.child_name}`,
+                        });
+                      }}
+                    >
+                      تنشيط الطالب
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="btn"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#dc2626",
+                      boxShadow: "none",
+                    }}
+                    disabled={manageHasPayments}
+                    onClick={() => {
+                      if (manageHasPayments) {
+                        toast(
+                          "لا يمكن حذف هذا الطفل من الدورة لأنه توجد له دفعات مسجّلة داخل هذه الدورة.",
+                          "warn",
+                        );
+                        return;
+                      }
+                      setOpenإدارة(false);
+                      setConfirm({
+                        open: true,
+                        type: "deleteEnroll",
+                        id: {
+                          enrollmentId: manageP.enrollment_id,
+                          packageId: manageP.package_id,
+                          childName: manageP.child_name,
+                        },
+                        text: `حذف الاشتراك نهائياً: ${manageP.child_name}`,
+                      });
+                    }}
+                  >
+                    حذف التسجيل
+                  </button>
                 </div>
               </div>
             </div>
