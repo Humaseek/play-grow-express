@@ -30,7 +30,7 @@ export default function Modal({ open, title, children, onClose, maxWidth }) {
         className="modalCard"
         role="dialog"
         aria-modal="true"
-        // هذا السطر السحري اللي رح يخلينا نكبر النوافذ اللي بدنا إياها بس
+        /* هنا نتحكم بعرض كل مودال بشكل فردي */
         style={maxWidth ? { maxWidth: maxWidth, width: "95%" } : {}}
       >
         <button

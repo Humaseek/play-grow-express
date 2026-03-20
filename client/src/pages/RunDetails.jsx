@@ -117,21 +117,14 @@ function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
 
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 const RUN_DETAILS_SOFT_UI_STYLES = `
 .page.page--runs {
   background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
 }
 
-.runDetails { padding-block: 22px 40px; }
+.runDetails {
+  padding-block: 22px 40px;
+}
 
 .runDetails .card {
   background: #ffffff !important;
@@ -459,7 +452,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   background: rgba(255, 255, 255, 0.94);
 }
 
-/* تنسيقات الجدول لضمان ظهوره بشكل ممتاز داخل المودال العريض */
+/* جداول النوافذ المنبثقة: نلغي السكرول تماماً ونظهر الجدول بالكامل */
 .runDetails .tableWrap.inCard {
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 18px;
@@ -2719,7 +2712,13 @@ export default function RunDetails() {
         {/* ------------------------------------------------------------------------------------------------ */}
         {/* نافذة إدارة الطالب */}
         {/* ------------------------------------------------------------------------------------------------ */}
-        <Modal open={openإدارة} title="" onClose={() => setOpenإدارة(false)}>
+        {/* هنا نمرر maxWidth للتحكم بحجمه الفردي */}
+        <Modal
+          open={openإدارة}
+          title=""
+          onClose={() => setOpenإدارة(false)}
+          maxWidth="1100px"
+        >
           {!manageP ? (
             <div className="muted">—</div>
           ) : (
@@ -3154,10 +3153,12 @@ export default function RunDetails() {
 
         {/* -------------------- جداول النوافذ المنبثقة (العريضة) -------------------- */}
 
+        {/* تمرير maxWidth هنا ليكبر الجدول براحته */}
         <Modal
           open={openPkgHistory}
           title="سجل الباقات"
           onClose={() => setOpenPkgHistory(false)}
+          maxWidth="1000px"
         >
           <div className="muted" style={{ marginBottom: 16 }}>
             {historyEnrollment && `الطالب: ${historyEnrollment.child_name}`}
@@ -3306,10 +3307,12 @@ export default function RunDetails() {
           </div>
         </Modal>
 
+        {/* تمرير maxWidth هنا ليكبر الجدول براحته */}
         <Modal
           open={openAttHistory}
           title="سجل الحضور"
           onClose={() => setOpenAttHistory(false)}
+          maxWidth="900px"
         >
           <div className="muted" style={{ marginBottom: 16 }}>
             {historyEnrollment && `الطالب: ${historyEnrollment.child_name}`}
@@ -3364,10 +3367,12 @@ export default function RunDetails() {
           )}
         </Modal>
 
+        {/* تمرير maxWidth هنا ليكبر الجدول براحته */}
         <Modal
           open={openHistory}
           title="سجل الدفعات"
           onClose={() => setOpenHistory(false)}
+          maxWidth="1000px"
         >
           <div className="muted" style={{ marginBottom: 10 }}>
             {historyEnrollment
@@ -3739,6 +3744,7 @@ export default function RunDetails() {
           open={openBulk}
           title="إضافة مجموعة"
           onClose={() => setOpenBulk(false)}
+          maxWidth="1000px" // تمرير لتكبير جدول إضافة مجموعة
         >
           <div dir="rtl" lang="ar">
             <div className="muted" style={{ lineHeight: 1.5 }}>
@@ -4018,6 +4024,144 @@ export default function RunDetails() {
                 type="button"
                 className="btn"
                 onClick={() => setOpenSession(false)}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
+          open={openExpenseModal}
+          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
+          onClose={() => {
+            setOpenExpenseModal(false);
+            resetExpenseForm();
+          }}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">التاريخ</div>
+              <input
+                className="input"
+                type="date"
+                value={expDate}
+                onChange={(e) => setExpDate(e.target.value)}
+              />
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">المبلغ</div>
+              <input
+                className="input"
+                type="number"
+                step="0.01"
+                min="0"
+                value={expAmount}
+                onChange={(e) => setExpAmount(e.target.value)}
+                placeholder="مثال: 50"
+              />
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">التصنيف</div>
+              {expHasPicklists ? (
+                <ModernSelect
+                  value={expCategory || ""}
+                  onChange={(v) => setExpCategory(v)}
+                  options={[
+                    { value: "", label: "—" },
+                    ...expCategories.map((x) => ({ value: x, label: x })),
+                  ]}
+                />
+              ) : (
+                <input
+                  className="input"
+                  value={expCategory}
+                  onChange={(e) => setExpCategory(e.target.value)}
+                  placeholder="مثال: معاشات"
+                />
+              )}
+              {expHasPicklists && (
+                <div className="row" style={{ marginTop: 8, gap: 8 }}>
+                  <input
+                    className="input"
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="إضافة تصنيف جديد..."
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => addPicklistValue("category", newCatName)}
+                  >
+                    إضافة
+                  </button>
+                </div>
+              )}
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">الشخص</div>
+              {expHasPicklists ? (
+                <ModernSelect
+                  value={expParty || ""}
+                  onChange={(v) => setExpParty(v)}
+                  options={[
+                    { value: "", label: "—" },
+                    ...expParties.map((x) => ({ value: x, label: x })),
+                  ]}
+                />
+              ) : (
+                <input
+                  className="input"
+                  value={expParty}
+                  onChange={(e) => setExpParty(e.target.value)}
+                  placeholder="مثال: سامر"
+                />
+              )}
+              {expHasPicklists && (
+                <div className="row" style={{ marginTop: 8, gap: 8 }}>
+                  <input
+                    className="input"
+                    value={newPartyName}
+                    onChange={(e) => setNewPartyName(e.target.value)}
+                    placeholder="إضافة شخص جديد..."
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => addPicklistValue("party", newPartyName)}
+                  >
+                    إضافة
+                  </button>
+                </div>
+              )}
+            </div>
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الوصف</div>
+              <input
+                className="input"
+                value={expDesc}
+                onChange={(e) => setExpDesc(e.target.value)}
+                placeholder="اختياري..."
+              />
+            </div>
+            <div className="row" style={{ gridColumn: "span 12" }}>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={saveExpense}
+                disabled={expSaving}
+              >
+                {expSaving ? "حفظ..." : "حفظ"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setOpenExpenseModal(false);
+                  resetExpenseForm();
+                }}
               >
                 إلغاء
               </button>
