@@ -126,6 +126,56 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   padding-block: 22px 40px;
 }
 
+/* --- الحل السحري للتحكم بحجم كل مودال على حدة بدون التأثير على المودالات الصغيرة --- */
+.modalCard:has(.modal-wide-1000) {
+  width: 95% !important;
+  max-width: 1000px !important;
+}
+
+.modalCard:has(.modal-wide-900) {
+  width: 95% !important;
+  max-width: 900px !important;
+}
+
+/* جداول النوافذ المنبثقة: إظهار كامل الداتا بدون سكرول أفقي */
+.runDetails .tableWrap.inCard {
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 18px;
+  overflow: visible !important; 
+}
+
+.modal-compact-table {
+  width: 100% !important;
+  min-width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 8px !important;
+  table-layout: auto !important; 
+}
+
+.modal-compact-table th {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-weight: 800 !important;
+  padding: 16px 15px !important;
+  text-align: right !important;
+  font-size: 15px;
+  border-bottom: 2px solid #edf2f7;
+}
+
+.modal-compact-table td {
+  padding: 18px 15px !important;
+  background: #fff !important;
+  border-top: 1px solid #f1f5f9 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  white-space: nowrap; 
+  font-size: 15px;
+}
+
+.modal-compact-table tr td:first-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+.modal-compact-table tr td:last-child { border-left: 1px solid #f1f5f9; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+
+/* ---------------------------------------------------- */
+
 .runDetails .card {
   background: #ffffff !important;
   border: 1px solid rgba(15, 23, 42, 0.08) !important;
@@ -257,12 +307,6 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   margin-bottom: 8px;
 }
 
-.summaryNote {
-  color: rgb(82, 82, 82);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
 .runDetails .tabs {
   display: inline-flex;
   flex-wrap: wrap;
@@ -286,10 +330,6 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   background: rgba(0, 172, 71, 0.12) !important;
   border-color: rgba(0, 172, 71, 0.18) !important;
   color: rgb(0, 172, 71) !important;
-}
-
-.runDetails .pToolbar {
-  gap: 20px !important;
 }
 
 .runDetails .pTitle h2,
@@ -394,7 +434,6 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 .runDetails .pStatBlock.stat-yellow .pStatValue { color: rgb(217, 119, 6); }
 .runDetails .pStatBlock.stat-red { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.15); }
 .runDetails .pStatBlock.stat-red .pStatValue { color: rgb(220, 38, 38) !important; }
-.runDetails .pStatBlock.stat-red .pStatLabel span { color: rgb(220, 38, 38) !important; }
 
 .runDetails .pStatLabel {
   display: flex;
@@ -441,58 +480,14 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 .runDetails .pBarUnpaid span { background: rgb(239, 68, 68); }
 .runDetails .pBarFree span { background: rgb(148, 163, 184); }
 
-.runDetails .pActions {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(15, 23, 42, 0.06);
-}
-
 .runDetails .sessionRow {
   border-radius: 18px !important;
   border: 1px solid rgba(15, 23, 42, 0.08) !important;
   background: rgba(255, 255, 255, 0.94);
 }
 
-/* جداول النوافذ المنبثقة: نلغي السكرول تماماً ونظهر الجدول بالكامل */
-.runDetails .tableWrap.inCard {
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 18px;
-  overflow: visible !important; 
-}
-
-.table {
-  width: 100% !important;
-  min-width: 100% !important;
-  table-layout: auto !important; 
-}
-
-.modal-compact-table th {
-  background: #f8fafc !important;
-  color: #64748b !important;
-  font-weight: 800 !important;
-  padding: 16px 15px !important;
-  text-align: right !important;
-  font-size: 15px;
-  border-bottom: 2px solid #edf2f7;
-}
-
-.modal-compact-table td {
-  padding: 18px 15px !important;
-  background: #fff !important;
-  border-top: 1px solid #f1f5f9 !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  white-space: nowrap; 
-  font-size: 15px;
-}
-
-.modal-compact-table tr td:first-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
-.modal-compact-table tr td:last-child { border-left: 1px solid #f1f5f9; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-
 @media (max-width: 1100px) {
   .runInfoGrid, .summaryGridSoft { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (max-width: 980px) {
-  .runDetails .pQuickStats { grid-template-columns: 1fr; }
 }
 `;
 
@@ -660,6 +655,9 @@ export default function RunDetails() {
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
+  // هذه الـ State هي السحر اللي بيرجعنا لكرت الطالب بدل إغلاق كل شيء
+  const [shouldReopenManage, setShouldReopenManage] = useState(false);
+
   const [firstStart, setFirstStart] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [count, setCount] = useState(8);
@@ -721,6 +719,17 @@ export default function RunDetails() {
     if (tryTable.error) throw tryTable.error;
     return tryTable.data ?? [];
   }
+
+  // Helper لإغلاق النافذة الفرعية وإعادة فتح نافذة الإدارة إن لزم الأمر
+  const closeSubModalAndReopen = (setterFunc) => {
+    setterFunc(false);
+    if (shouldReopenManage && manageP) {
+      setTimeout(() => {
+        setOpenإدارة(true);
+      }, 100);
+      setShouldReopenManage(false);
+    }
+  };
 
   async function createChildInline({ enrollNow = false } = {}) {
     const name = (newChildForm.name || "").trim();
@@ -805,9 +814,9 @@ export default function RunDetails() {
     });
     if (rpc2.error) throw rpc2.error;
     toast("تم التسجيل بنجاح.", "ok");
-    setOpenEnroll(false);
+    closeSubModalAndReopen(setOpenEnroll);
     await loadFixed();
-    if (!enrollLocked) setTab("participants");
+    if (!enrollLocked && !shouldReopenManage) setTab("participants");
   }
 
   function resetExpenseForm() {
@@ -1320,9 +1329,9 @@ export default function RunDetails() {
       }
       if (s > 0) await bumpEnrollmentAllocated(existing.enrollment_id, s);
       toast("تمت إعادة التسجيل بنجاح.", "ok");
-      setOpenEnroll(false);
+      closeSubModalAndReopen(setOpenEnroll);
       await loadFixed();
-      if (!enrollLocked) setTab("participants");
+      if (!enrollLocked && !shouldReopenManage) setTab("participants");
       return true;
     } catch {
       toast("فشلت إعادة التسجيل.", "danger");
@@ -1359,9 +1368,9 @@ export default function RunDetails() {
           throw rpc.error;
         }
         toast("تم التسجيل باستخدام الرصيد السابق.", "ok");
-        setOpenEnroll(false);
+        closeSubModalAndReopen(setOpenEnroll);
         await loadFixed();
-        if (!enrollLocked) setTab("participants");
+        if (!enrollLocked && !shouldReopenManage) setTab("participants");
         return;
       }
 
@@ -1383,9 +1392,9 @@ export default function RunDetails() {
           });
         }
         toast("تم شحن رصيد الجلسات.", "ok");
-        setOpenEnroll(false);
+        closeSubModalAndReopen(setOpenEnroll);
         await loadFixed();
-        if (!enrollLocked) setTab("participants");
+        if (!enrollLocked && !shouldReopenManage) setTab("participants");
         return;
       }
 
@@ -1643,9 +1652,10 @@ export default function RunDetails() {
         await supabase
           .from("payments")
           .insert([{ enrollment_id: Number(payEnrollmentId), ...p }]);
-      setOpenPay(false);
+
+      closeSubModalAndReopen(setOpenPay);
       await loadFixed();
-      if (!payLocked) setTab("payments");
+      if (!payLocked && !shouldReopenManage) setTab("payments");
     } catch {
       toast("Failed.", "danger");
     } finally {
@@ -1734,7 +1744,9 @@ export default function RunDetails() {
       });
       if (error) throw error;
       toast("تم التعديل", "ok");
+
       setOpenEditPkg(false);
+      // بعد ما عدلنا الباقة بنحدث سجل الباقات ونحدث البيانات
       fetchPkgHistory(historyEnrollment);
       loadFixed();
     } catch {
@@ -2308,7 +2320,7 @@ export default function RunDetails() {
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيتك المحلي.
+                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيت المحلي.
               </div>
               <hr className="sep" />
               <div style={{ display: "grid", gap: 12 }}>
@@ -2710,15 +2722,9 @@ export default function RunDetails() {
         )}
 
         {/* ------------------------------------------------------------------------------------------------ */}
-        {/* نافذة إدارة الطالب */}
+        {/* نافذة إدارة الطالب (هنا قمنا بحل مشكلة الستاكينج) */}
         {/* ------------------------------------------------------------------------------------------------ */}
-        {/* هنا نمرر maxWidth للتحكم بحجمه الفردي */}
-        <Modal
-          open={openإدارة}
-          title=""
-          onClose={() => setOpenإدارة(false)}
-          maxWidth="1100px"
-        >
+        <Modal open={openإدارة} title="" onClose={() => setOpenإدارة(false)}>
           {!manageP ? (
             <div className="muted">—</div>
           ) : (
@@ -2936,7 +2942,11 @@ export default function RunDetails() {
                       className="actionSquare"
                       disabled={Number(manageP.balance || 0) <= 0}
                       onClick={() => {
-                        openPaymentModalFor(manageP, "remaining");
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          openPaymentModalFor(manageP, "remaining");
+                        }, 100);
                       }}
                     >
                       <Banknote
@@ -2953,7 +2963,11 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        openPaymentModalFor(manageP, "custom");
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          openPaymentModalFor(manageP, "custom");
+                        }, 100);
                       }}
                     >
                       <PlusCircle size={26} style={{ color: "#16a34a" }} />
@@ -2962,7 +2976,11 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        openPaymentHistory(manageP);
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          openPaymentHistory(manageP);
+                        }, 100);
                       }}
                     >
                       <History size={26} style={{ color: "#475569" }} />
@@ -2996,7 +3014,11 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        openSingleTopup(manageP);
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          openSingleTopup(manageP);
+                        }, 100);
                       }}
                     >
                       <ShoppingCart size={26} style={{ color: "#7a5cff" }} />
@@ -3005,7 +3027,11 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        fetchPkgHistory(manageP);
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          fetchPkgHistory(manageP);
+                        }, 100);
                       }}
                     >
                       <List size={26} style={{ color: "#475569" }} />
@@ -3014,7 +3040,11 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
-                        fetchAttHistory(manageP);
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          fetchAttHistory(manageP);
+                        }, 100);
                       }}
                     >
                       <CalendarCheck size={26} style={{ color: "#475569" }} />
@@ -3151,99 +3181,102 @@ export default function RunDetails() {
           )}
         </Modal>
 
-        {/* -------------------- جداول النوافذ المنبثقة (العريضة) -------------------- */}
+        {/* -------------------- جداول النوافذ المنبثقة -------------------- */}
 
-        {/* تمرير maxWidth هنا ليكبر الجدول براحته */}
         <Modal
           open={openPkgHistory}
           title="سجل الباقات"
-          onClose={() => setOpenPkgHistory(false)}
-          maxWidth="1000px"
+          onClose={() => closeSubModalAndReopen(setOpenPkgHistory)}
         >
-          <div className="muted" style={{ marginBottom: 16 }}>
-            {historyEnrollment && `الطالب: ${historyEnrollment.child_name}`}
-          </div>
-          {pkgHistoryLoading ? (
-            <div className="card">جاري التحميل...</div>
-          ) : pkgHistoryRows.length === 0 ? (
-            <div className="card">لا يوجد باقات.</div>
-          ) : (
-            <div className="tableWrap inCard">
-              <table className="table modal-compact-table">
-                <thead>
-                  <tr>
-                    <th>تاريخ الشراء</th>
-                    <th>عدد الجلسات</th>
-                    <th>السعر (₪)</th>
-                    <th>الحالة</th>
-                    <th style={{ textAlign: "center" }}>إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pkgHistoryRows.map((pkg) => (
-                    <tr key={pkg.id}>
-                      <td className="muted">{fmtDT(pkg.created_at)}</td>
-                      <td style={{ fontWeight: 800 }}>{pkg.sessions_total}</td>
-                      <td
-                        className="ltrIso"
-                        style={{ fontWeight: 900, color: "#00ac47" }}
-                      >
-                        {Number(pkg.price_total).toFixed(2)}
-                      </td>
-                      <td>
-                        <Badge
-                          variant={pkg.status === "active" ? "ok" : "default"}
+          <div className="modal-wide-1000">
+            <div className="muted" style={{ marginBottom: 16 }}>
+              {historyEnrollment && `الطالب: ${historyEnrollment.child_name}`}
+            </div>
+            {pkgHistoryLoading ? (
+              <div className="card">جاري التحميل...</div>
+            ) : pkgHistoryRows.length === 0 ? (
+              <div className="card">لا يوجد باقات.</div>
+            ) : (
+              <div className="tableWrap inCard">
+                <table className="table modal-compact-table">
+                  <thead>
+                    <tr>
+                      <th>تاريخ الشراء</th>
+                      <th>عدد الجلسات</th>
+                      <th>السعر (₪)</th>
+                      <th>الحالة</th>
+                      <th style={{ textAlign: "center" }}>إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pkgHistoryRows.map((pkg) => (
+                      <tr key={pkg.id}>
+                        <td className="muted">{fmtDT(pkg.created_at)}</td>
+                        <td style={{ fontWeight: 800 }}>
+                          {pkg.sessions_total}
+                        </td>
+                        <td
+                          className="ltrIso"
+                          style={{ fontWeight: 900, color: "#00ac47" }}
                         >
-                          {pkg.status}
-                        </Badge>
-                      </td>
-                      <td style={{ textAlign: "center" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 8,
-                            justifyContent: "center",
-                          }}
-                        >
-                          <button
-                            className="btn iconOnly"
-                            title="تعديل الباقة"
-                            onClick={() => {
-                              setEditPkgData({
-                                id: pkg.id,
-                                sessions_total: pkg.sessions_total,
-                                price_total: pkg.price_total,
-                              });
-                              setOpenEditPkg(true);
+                          {Number(pkg.price_total).toFixed(2)}
+                        </td>
+                        <td>
+                          <Badge
+                            variant={pkg.status === "active" ? "ok" : "default"}
+                          >
+                            {pkg.status}
+                          </Badge>
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              justifyContent: "center",
                             }}
                           >
-                            <Pencil size={16} />
-                          </button>
-                          <button
-                            className="btn danger iconOnly"
-                            title="حذف الباقة"
-                            onClick={() =>
-                              setConfirm({
-                                open: true,
-                                type: "deletePackage",
-                                id: {
-                                  packageId: pkg.id,
-                                  enrollmentId: historyEnrollment.enrollment_id,
-                                },
-                                text: "هل أنت متأكد من حذف هذه الباقة؟ سيتم خصم جلساتها من رصيد الطالب.",
-                              })
-                            }
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                            <button
+                              className="btn iconOnly"
+                              title="تعديل الباقة"
+                              onClick={() => {
+                                setEditPkgData({
+                                  id: pkg.id,
+                                  sessions_total: pkg.sessions_total,
+                                  price_total: pkg.price_total,
+                                });
+                                setOpenEditPkg(true);
+                              }}
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              className="btn danger iconOnly"
+                              title="حذف الباقة"
+                              onClick={() =>
+                                setConfirm({
+                                  open: true,
+                                  type: "deletePackage",
+                                  id: {
+                                    packageId: pkg.id,
+                                    enrollmentId:
+                                      historyEnrollment.enrollment_id,
+                                  },
+                                  text: "هل أنت متأكد من حذف هذه الباقة؟ سيتم خصم جلساتها من رصيد الطالب.",
+                                })
+                              }
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </Modal>
 
         <Modal
@@ -3307,128 +3340,128 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* تمرير maxWidth هنا ليكبر الجدول براحته */}
         <Modal
           open={openAttHistory}
           title="سجل الحضور"
-          onClose={() => setOpenAttHistory(false)}
-          maxWidth="900px"
+          onClose={() => closeSubModalAndReopen(setOpenAttHistory)}
         >
-          <div className="muted" style={{ marginBottom: 16 }}>
-            {historyEnrollment && `الطالب: ${historyEnrollment.child_name}`}
-          </div>
-          {attHistoryLoading ? (
-            <div className="card">جاري التحميل...</div>
-          ) : attHistoryRows.length === 0 ? (
-            <div className="card">لا يوجد سجل حضور.</div>
-          ) : (
-            <div className="tableWrap inCard">
-              <table className="table modal-compact-table">
-                <thead>
-                  <tr>
-                    <th>تاريخ الجلسة</th>
-                    <th>الحالة</th>
-                    <th>ملاحظة</th>
-                    <th>تاريخ التسجيل</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attHistoryRows.map((att) => {
-                    const statusAr =
-                      att.status === "present"
-                        ? "حاضر"
-                        : att.status === "absent"
-                          ? "غائب"
-                          : "بعذر";
-                    const badgeVar =
-                      att.status === "present"
-                        ? "ok"
-                        : att.status === "absent"
-                          ? "danger"
-                          : "warn";
-                    return (
-                      <tr key={att.id}>
-                        <td style={{ fontWeight: 800 }}>
-                          {fmtDT(att.start_at)}
-                        </td>
-                        <td>
-                          <Badge variant={badgeVar}>{statusAr}</Badge>
-                        </td>
-                        <td className="muted">{att.note || "-"}</td>
-                        <td className="muted" style={{ fontSize: 12 }}>
-                          {fmtDT(att.created_at)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          <div className="modal-wide-900">
+            <div className="muted" style={{ marginBottom: 16 }}>
+              {historyEnrollment && `الطالب: ${historyEnrollment.child_name}`}
             </div>
-          )}
+            {attHistoryLoading ? (
+              <div className="card">جاري التحميل...</div>
+            ) : attHistoryRows.length === 0 ? (
+              <div className="card">لا يوجد سجل حضور.</div>
+            ) : (
+              <div className="tableWrap inCard">
+                <table className="table modal-compact-table">
+                  <thead>
+                    <tr>
+                      <th>تاريخ الجلسة</th>
+                      <th>الحالة</th>
+                      <th>ملاحظة</th>
+                      <th>تاريخ التسجيل</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attHistoryRows.map((att) => {
+                      const statusAr =
+                        att.status === "present"
+                          ? "حاضر"
+                          : att.status === "absent"
+                            ? "غائب"
+                            : "بعذر";
+                      const badgeVar =
+                        att.status === "present"
+                          ? "ok"
+                          : att.status === "absent"
+                            ? "danger"
+                            : "warn";
+                      return (
+                        <tr key={att.id}>
+                          <td style={{ fontWeight: 800 }}>
+                            {fmtDT(att.start_at)}
+                          </td>
+                          <td>
+                            <Badge variant={badgeVar}>{statusAr}</Badge>
+                          </td>
+                          <td className="muted">{att.note || "-"}</td>
+                          <td className="muted" style={{ fontSize: 12 }}>
+                            {fmtDT(att.created_at)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </Modal>
 
-        {/* تمرير maxWidth هنا ليكبر الجدول براحته */}
         <Modal
           open={openHistory}
           title="سجل الدفعات"
-          onClose={() => setOpenHistory(false)}
-          maxWidth="1000px"
+          onClose={() => closeSubModalAndReopen(setOpenHistory)}
         >
-          <div className="muted" style={{ marginBottom: 10 }}>
-            {historyEnrollment
-              ? `سجل العمليات لـ: ${historyEnrollment.child_name}`
-              : ""}
-          </div>
-          {historyLoading ? (
-            <div className="card">جاري التحميل...</div>
-          ) : historyRows.length === 0 ? (
-            <div className="card">لا يوجد دفعات.</div>
-          ) : (
-            <div className="tableWrap inCard">
-              <table className="table modal-compact-table">
-                <thead>
-                  <tr>
-                    <th>المبلغ (₪)</th>
-                    <th>الطريقة</th>
-                    <th>التاريخ</th>
-                    <th>ملاحظة</th>
-                    <th style={{ textAlign: "center" }}>الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyRows.map((x) => (
-                    <tr key={x.id}>
-                      <td style={{ fontWeight: 900, color: "#00ac47" }}>
-                        {Number(x.amount).toFixed(2)}
-                      </td>
-                      <td className="muted">
-                        <Badge variant="default">
-                          {paymentMethodLabel(x.method)}
-                        </Badge>
-                      </td>
-                      <td className="muted">{fmtDT(x.created_at)}</td>
-                      <td className="muted">{x.note ?? "-"}</td>
-                      <td style={{ textAlign: "center" }}>
-                        <button
-                          className="btn danger iconOnly"
-                          onClick={() =>
-                            setConfirm({
-                              open: true,
-                              type: "deletePayment",
-                              id: x.id,
-                              text: "حذف دفعة",
-                            })
-                          }
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="modal-wide-1000">
+            <div className="muted" style={{ marginBottom: 10 }}>
+              {historyEnrollment
+                ? `سجل العمليات لـ: ${historyEnrollment.child_name}`
+                : ""}
             </div>
-          )}
+            {historyLoading ? (
+              <div className="card">جاري التحميل...</div>
+            ) : historyRows.length === 0 ? (
+              <div className="card">لا يوجد دفعات.</div>
+            ) : (
+              <div className="tableWrap inCard">
+                <table className="table modal-compact-table">
+                  <thead>
+                    <tr>
+                      <th>المبلغ (₪)</th>
+                      <th>الطريقة</th>
+                      <th>التاريخ</th>
+                      <th>ملاحظة</th>
+                      <th style={{ textAlign: "center" }}>الإجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyRows.map((x) => (
+                      <tr key={x.id}>
+                        <td style={{ fontWeight: 900, color: "#00ac47" }}>
+                          {Number(x.amount).toFixed(2)}
+                        </td>
+                        <td className="muted">
+                          <Badge variant="default">
+                            {paymentMethodLabel(x.method)}
+                          </Badge>
+                        </td>
+                        <td className="muted">{fmtDT(x.created_at)}</td>
+                        <td className="muted">{x.note ?? "-"}</td>
+                        <td style={{ textAlign: "center" }}>
+                          <button
+                            className="btn danger iconOnly"
+                            onClick={() =>
+                              setConfirm({
+                                open: true,
+                                type: "deletePayment",
+                                id: x.id,
+                                text: "حذف دفعة",
+                              })
+                            }
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </Modal>
 
         <Modal
@@ -3436,7 +3469,7 @@ export default function RunDetails() {
           title={
             enrollLocked ? `إضافة جلسات — ${enrollLockedName}` : "تسجيل طفل"
           }
-          onClose={() => setOpenEnroll(false)}
+          onClose={() => closeSubModalAndReopen(setOpenEnroll)}
         >
           <div className="muted">
             إذا كان الطفل يملك رصيدًا مسبقًا، يمكنك اختيار "استخدام الرصيد
@@ -3545,7 +3578,7 @@ export default function RunDetails() {
               <button
                 type="button"
                 className="btn"
-                onClick={() => setOpenEnroll(false)}
+                onClick={() => closeSubModalAndReopen(setOpenEnroll)}
               >
                 إلغاء
               </button>
@@ -3744,9 +3777,8 @@ export default function RunDetails() {
           open={openBulk}
           title="إضافة مجموعة"
           onClose={() => setOpenBulk(false)}
-          maxWidth="1000px" // تمرير لتكبير جدول إضافة مجموعة
         >
-          <div dir="rtl" lang="ar">
+          <div dir="rtl" lang="ar" className="modal-wide-1000">
             <div className="muted" style={{ lineHeight: 1.5 }}>
               اختر الأطفال ثم اضغط <b>إضافة</b>.
             </div>
@@ -4169,6 +4201,101 @@ export default function RunDetails() {
           </div>
         </Modal>
 
+        <Modal
+          open={openPay}
+          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
+          onClose={() => {
+            setPayEditId(null);
+            setPayLocked(false);
+            closeSubModalAndReopen(setOpenPay);
+          }}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الطفل</div>
+              <ModernSelect
+                value={payEnrollmentId}
+                onChange={setPayEnrollmentId}
+                menuWidth="trigger"
+                disabled={paySaving || !!payEditId || payLocked}
+                placeholder="— اختر طفل —"
+                options={[
+                  { value: "", label: "— اختر طفل —" },
+                  ...participants
+                    .filter((p) => p.enrollment_status === "active")
+                    .map((p) => ({
+                      value: p.enrollment_id,
+                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
+                    })),
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">المبلغ (₪)</div>
+              <input
+                className="input"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">طريقة الدفع</div>
+              <ModernSelect
+                value={payMethod}
+                onChange={setPayMethod}
+                menuWidth="trigger"
+                options={[
+                  { value: "cash", label: "نقداً" },
+                  { value: "card", label: "بطاقة ائتمان" },
+                  { value: "transfer", label: "حوالة بنكية" },
+                  { value: "other", label: "أخرى" },
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">ملاحظات</div>
+              <input
+                className="input"
+                placeholder="اختياري"
+                value={payNote}
+                onChange={(e) => setPayNote(e.target.value)}
+              />
+            </div>
+
+            <div
+              className="row"
+              style={{ gridColumn: "span 12", marginTop: 10 }}
+            >
+              <button
+                type="button"
+                className="btn primary"
+                disabled={paySaving || !payEnrollmentId || !payAmount}
+                onClick={addPayment}
+              >
+                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setPayEditId(null);
+                  setPayLocked(false);
+                  closeSubModalAndReopen(setOpenPay);
+                }}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </Modal>
+
         <ConfirmDialog
           open={confirm.open}
           title=""
@@ -4195,8 +4322,6 @@ export default function RunDetails() {
                 id.childName,
                 id.packageId,
               );
-              // نقوم بإغلاق كرت الطالب فقط إذا تم حذفه بالكامل بنجاح
-              setOpenإدارة(false);
             }
 
             // Delete specific package
