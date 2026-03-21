@@ -685,6 +685,7 @@ export default function RunDetails() {
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
+  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -1242,6 +1243,15 @@ export default function RunDetails() {
     initEnrollBuyNew();
   }
   function openSingleTopup(participantRow) {
+    // ----------------------------------------------------
+    // إضافة حماية: يمنع شراء جلسات جديدة إذا كان الرصيد أكثر من صفر
+    // ----------------------------------------------------
+    const remaining = Number(participantRow.package_sessions_remaining || 0);
+    if (remaining > 0) {
+      toast("لا يمكن إضافة جلسات جديدة حتى يتم إنهاء الجلسات الحالية.", "warn");
+      return;
+    }
+
     setEnrollLocked(true);
     setEnrollLockedName(participantRow.child_name);
     setSelectedChildId(String(participantRow.child_id));
@@ -1403,6 +1413,19 @@ export default function RunDetails() {
       }
 
       if (existing && existing.enrollment_status === "active") {
+        // ----------------------------------------------------
+        // حماية إضافية من نافذة اختيار طفل (إضافة طفل للدورة)
+        // ----------------------------------------------------
+        const remaining = Number(existing.package_sessions_remaining || 0);
+        if (remaining > 0) {
+          toast(
+            "لا يمكن إضافة جلسات. الطالب يمتلك رصيد جلسات حالي غير منتهي.",
+            "warn",
+          );
+          setEnrollSaving(false);
+          return;
+        }
+
         const sessionsToAdd = Number(buySessions) || 0;
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
         if (existing.package_id) {
@@ -1489,7 +1512,10 @@ export default function RunDetails() {
     }
   }
 
-  async function deleteEnrollment(enrollmentId, childName, packageId) {
+  // ----------------------------------------------------
+  // دالة حذف الطالب المحدثة - تمسح جميع باقاته الخاصة بالدورة
+  // ----------------------------------------------------
+  async function deleteEnrollment(enrollmentId, childId, courseId) {
     try {
       const payCheck = await supabase
         .from("payments")
@@ -1499,25 +1525,30 @@ export default function RunDetails() {
         toast("لا يمكن حذفه لوجود دفعات مسجلة.", "warn");
         return;
       }
-      await supabase
-        .from("enrollments")
-        .update({ status: "withdrawn", sessions_allocated: 0 })
-        .eq("id", enrollmentId);
-      if (packageId) {
-        const bal = await supabase
-          .from("package_balance_view")
-          .select("sessions_used")
-          .eq("package_id", packageId)
-          .maybeSingle();
-        if (bal.data)
-          await supabase
-            .from("course_packages")
-            .update({
-              sessions_total: Number(bal.data.sessions_used),
-              status: "closed",
-            })
-            .eq("id", packageId);
+
+      // 1. مسح جميع الباقات المرتبطة بالطالب داخل هذه الدورة
+      if (childId && courseId) {
+        await supabase
+          .from("course_packages")
+          .delete()
+          .eq("child_id", childId)
+          .eq("course_id", courseId);
       }
+
+      // 2. محاولة مسح التسجيل نهائياً
+      const delRes = await supabase
+        .from("enrollments")
+        .delete()
+        .eq("id", enrollmentId);
+
+      // في حال كان الطالب لديه سجل حضور يمنع حذفه نهائياً، نحوله لـ (منسحب) كبديل آمن
+      if (delRes.error) {
+        await supabase
+          .from("enrollments")
+          .update({ status: "withdrawn", sessions_allocated: 0 })
+          .eq("id", enrollmentId);
+      }
+
       toast("تم الحذف بنجاح.", "ok");
       await loadFixed();
     } catch {
@@ -3149,10 +3180,10 @@ export default function RunDetails() {
                         type: "deleteEnroll",
                         id: {
                           enrollmentId: manageP.enrollment_id,
-                          packageId: manageP.package_id,
-                          childName: manageP.child_name,
+                          childId: manageP.child_id,
+                          courseId: summary.template_id,
                         },
-                        text: `حذف الاشتراك نهائياً؟`,
+                        text: `هل أنت متأكد من حذف الاشتراك نهائياً؟ سيتم حذف كافة باقات هذا الطفل المرتبطة بهذه الدورة.`,
                       });
                     }}
                   >
@@ -4336,11 +4367,9 @@ export default function RunDetails() {
 
             // Delete Full Enrollment
             if (type === "deleteEnroll") {
-              await deleteEnrollment(
-                id.enrollmentId,
-                id.childName,
-                id.packageId,
-              );
+              await deleteEnrollment(id.enrollmentId, id.childId, id.courseId);
+              // نقوم بإغلاق كرت الطالب فقط إذا تم حذفه بالكامل بنجاح
+              setOpenإدارة(false);
             }
 
             // Delete specific package
