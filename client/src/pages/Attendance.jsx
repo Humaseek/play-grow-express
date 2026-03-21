@@ -12,8 +12,9 @@ import {
   ArrowRight,
   CheckCircle2,
   XCircle,
-  Eraser,
   CircleSlash2,
+  MinusCircle,
+  MousePointerClick,
 } from "lucide-react";
 
 // --- دوال تنسيق التاريخ والوقت لتنظيف العنوان ---
@@ -36,12 +37,10 @@ function fmtTimeHM(dt) {
 const STATUS = ["present", "absent", "excused", "none"];
 
 function statusMeta(s) {
-  if (s === "present")
-    return { label: "حاضر", Icon: CheckCircle2, color: "#00ac47" };
-  if (s === "absent") return { label: "غائب", Icon: XCircle, color: "#dc2626" };
-  if (s === "excused")
-    return { label: "معذور", Icon: CircleSlash2, color: "#f59e0b" };
-  return { label: "مسح التحديد", Icon: Eraser, color: "#64748b" };
+  if (s === "present") return { label: "حاضر", className: "att-btn-present" };
+  if (s === "absent") return { label: "غائب", className: "att-btn-absent" };
+  if (s === "excused") return { label: "معذور", className: "att-btn-excused" };
+  return { label: "تصفير", className: "att-btn-none" };
 }
 
 function statusBadge(s) {
@@ -65,12 +64,100 @@ const ATTENDANCE_STYLES = `
   border: 1px solid rgba(15, 23, 42, 0.08) !important;
   border-radius: 22px !important;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
-  padding: 24px !important;
 }
 
-.attendancePage .tableWrap.inCard {
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 18px;
+/* --- ملخص الحضور --- */
+.att-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 16px;
+}
+.att-stat-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  transition: transform 0.2s ease;
+}
+.att-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+}
+.att-stat-val { 
+  font-size: 26px; 
+  font-weight: 900; 
+  color: #0f172a; 
+  line-height: 1; 
+  margin-top: 6px; 
+}
+.att-stat-label { 
+  font-size: 13px; 
+  font-weight: 800; 
+  color: #64748b; 
+}
+
+/* --- أزرار التحكم السريع --- */
+.att-quick-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  border-radius: 999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.att-quick-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* --- أزرار الحضور بالجدول (Pills) --- */
+.att-action-btn {
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center;
+  padding: 8px 18px; 
+  border-radius: 999px;
+  font-size: 13px; 
+  font-weight: 800; 
+  cursor: pointer;
+  transition: all 0.15s ease-in-out; 
+  border: 1px solid transparent;
+  min-width: 76px;
+}
+
+/* Present */
+.att-btn-present { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.att-btn-present:hover { background: #dcfce7; }
+.att-btn-present.active { background: #16a34a; color: #fff; border-color: #16a34a; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); }
+
+/* Absent */
+.att-btn-absent { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.att-btn-absent:hover { background: #fee2e2; }
+.att-btn-absent.active { background: #dc2626; color: #fff; border-color: #dc2626; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); }
+
+/* Excused */
+.att-btn-excused { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+.att-btn-excused:hover { background: #fef3c7; }
+.att-btn-excused.active { background: #f59e0b; color: #fff; border-color: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); }
+
+/* None / Clear */
+.att-btn-none { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+.att-btn-none:hover { background: #f1f5f9; }
+.att-btn-none.active { background: #64748b; color: #fff; border-color: #64748b; box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2); }
+
+/* --- الجدول --- */
+.attendancePage .tableWrap {
+  border-radius: 0 0 22px 22px;
   overflow: visible !important; 
   background: #fff;
 }
@@ -86,41 +173,32 @@ const ATTENDANCE_STYLES = `
   color: #64748b !important;
   font-weight: 800 !important;
   padding: 16px 15px !important;
-  font-size: 15px;
+  font-size: 14px;
   border-bottom: 2px solid #edf2f7;
 }
 
 .attendancePage .table td {
-  padding: 18px 15px !important;
+  padding: 16px 15px !important;
   background: #fff !important;
-  border-top: 1px solid #f1f5f9 !important;
   border-bottom: 1px solid #f1f5f9 !important;
   font-size: 15px;
 }
 
-.attendancePage .table tr td:first-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
-.attendancePage .table tr td:last-child { border-left: 1px solid #f1f5f9; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-
-.attendancePage .btn {
-  border-radius: 14px !important;
-  min-height: 42px;
-  padding-inline: 16px !important;
-  box-shadow: none !important;
+.attendancePage .table tr:last-child td {
+  border-bottom: none !important;
 }
 
 .attendancePage .btn.primary {
   background: rgb(0, 172, 71) !important;
   border-color: rgb(0, 172, 71) !important;
-  opacity: 1 !important; /* منع الزر من أن يكون شفافاً */
+  opacity: 1 !important;
+  border-radius: 14px !important;
+  min-height: 42px;
+  padding-inline: 16px !important;
 }
 .attendancePage .btn.primary:disabled {
   opacity: 0.7 !important;
   cursor: not-allowed;
-}
-
-.attendancePage .statBadge {
-  font-size: 14px;
-  padding: 8px 12px;
 }
 `;
 
@@ -194,11 +272,10 @@ export default function Attendance() {
 
     const participantsData = p.data || [];
 
-    // --- الفلترة الذكية: استبعاد الطلاب الذين اشتروا الباقة بعد تاريخ هذه الجلسة ---
+    // --- الفلترة الذكية ---
     const sessionDate = new Date(s.data.start_at);
-    sessionDate.setHours(23, 59, 59, 999); // نعتمد نهاية اليوم للمقارنة لضمان الدقة
+    sessionDate.setHours(23, 59, 59, 999);
 
-    // جلب تواريخ الباقات
     const pkgIds = participantsData.map((x) => x.package_id).filter(Boolean);
     const { data: pkgs } =
       pkgIds.length > 0
@@ -213,7 +290,6 @@ export default function Attendance() {
       pkgDates[pkg.id] = new Date(pkg.created_at);
     });
 
-    // جلب تواريخ التسجيل الأساسية (احتياطياً لمن ليس لديه باقة)
     const enrollIds = participantsData
       .map((x) => x.enrollment_id)
       .filter(Boolean);
@@ -230,7 +306,6 @@ export default function Attendance() {
       enrollDates[e.id] = new Date(e.created_at);
     });
 
-    // تطبيق الفلتر
     const validParticipants = participantsData.filter((row) => {
       const joinDate =
         row.package_id && pkgDates[row.package_id]
@@ -245,7 +320,7 @@ export default function Attendance() {
 
     setRows(validParticipants);
 
-    // 4. جلب الحضور المسجل سابقاً في قاعدة البيانات
+    // 4. جلب الحضور المسجل سابقاً
     const a = await supabase
       .from("attendance")
       .select("enrollment_id,status")
@@ -262,7 +337,6 @@ export default function Attendance() {
       map[x.enrollment_id] = x.status;
     });
 
-    // تجهيز حالة الحضور النهائية للطلاب المسموح لهم فقط
     const final = {};
     validParticipants.forEach((r) => {
       final[r.enrollment_id] = map[r.enrollment_id] ?? "none";
@@ -333,7 +407,6 @@ export default function Attendance() {
         if (del.error) throw del.error;
       }
 
-      // تحديث حالة الجلسة إلى "مكتملة" تلقائياً
       await supabase
         .from("course_sessions")
         .update({ status: "done" })
@@ -360,7 +433,6 @@ export default function Attendance() {
       </div>
     );
 
-  // إعداد العنوان الفرعي بشكل مرتب
   const headerSubtitle =
     session && summary
       ? `${summary.title} • تاريخ: ${fmtDate(session.start_at)} • الوقت: ${fmtTimeHM(session.start_at)} - ${fmtTimeHM(session.end_at)}`
@@ -378,6 +450,12 @@ export default function Attendance() {
               {summary && (
                 <button
                   className="btn"
+                  style={{
+                    borderRadius: "14px",
+                    background: "#fff",
+                    border: "none",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                  }}
                   onClick={() => navigate(`/runs/${summary.run_id}`)}
                 >
                   العودة للدورة{" "}
@@ -386,6 +464,12 @@ export default function Attendance() {
               )}
               <button
                 className="btn"
+                style={{
+                  borderRadius: "14px",
+                  background: "#fff",
+                  border: "none",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                }}
                 onClick={load}
                 aria-label="تحديث"
                 title="تحديث البيانات"
@@ -393,7 +477,6 @@ export default function Attendance() {
                 <RefreshCw size={18} /> تحديث
               </button>
 
-              {/* زر الحفظ معدل ليكون دائماً واضح (غير شفاف) ومكتوب عليه كلام منطقي */}
               <button
                 className="btn primary"
                 disabled={saving}
@@ -409,54 +492,69 @@ export default function Attendance() {
 
         <ErrorBanner error={error} />
 
-        {/* شريط الإحصائيات */}
+        {/* --- قسم ملخص الحضور الجميل --- */}
         <div
-          className="row"
-          style={{ flexWrap: "wrap", gap: 10, marginBottom: 16 }}
+          className="card mainCard"
+          style={{ marginBottom: 20, padding: 24 }}
         >
-          <Badge variant="info" className="statBadge">
-            المتوقع: {stats.expected}
-          </Badge>
-          <Badge variant="ok" className="statBadge">
-            حاضر: {stats.present}
-          </Badge>
-          <Badge variant="danger" className="statBadge">
-            غائب: {stats.absent}
-          </Badge>
-          <Badge variant="warn" className="statBadge">
-            معذور: {stats.excused}
-          </Badge>
-          <Badge variant="default" className="statBadge">
-            غير مسجل: {stats.none}
-          </Badge>
-        </div>
-
-        {/* أزرار التحكم السريع (الجميع) */}
-        <div className="toolbar" style={{ marginBottom: 20, gap: 10 }}>
-          <button
-            className="btn"
-            title="تعيين الجميع: حاضر"
-            aria-label="تعيين الجميع: حاضر"
-            onClick={() => setAll("present")}
+          <h3
+            style={{
+              marginTop: 0,
+              marginBottom: 16,
+              fontSize: 16,
+              color: "#0f172a",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
           >
-            <CheckCircle2 size={18} color="#00ac47" /> حاضر للكل
-          </button>
-          <button
-            className="btn"
-            title="تعيين الجميع: غائب"
-            aria-label="تعيين الجميع: غائب"
-            onClick={() => setAll("absent")}
-          >
-            <XCircle size={18} color="#dc2626" /> غائب للكل
-          </button>
-          <button
-            className="btn"
-            title="مسح الجميع"
-            aria-label="مسح الجميع"
-            onClick={() => setAll("none")}
-          >
-            <Eraser size={18} color="#64748b" /> تصفير
-          </button>
+            ملخص الحضور
+          </h3>
+          <div className="att-summary-grid">
+            <div className="att-stat-card">
+              <div>
+                <div className="att-stat-label">مسجل</div>
+                <div className="att-stat-val">{stats.expected}</div>
+              </div>
+              <Users size={28} color="#3b82f6" opacity={0.5} />
+            </div>
+            <div className="att-stat-card">
+              <div>
+                <div className="att-stat-label">حاضر</div>
+                <div className="att-stat-val" style={{ color: "#16a34a" }}>
+                  {stats.present}
+                </div>
+              </div>
+              <CheckCircle2 size={28} color="#16a34a" opacity={0.5} />
+            </div>
+            <div className="att-stat-card">
+              <div>
+                <div className="att-stat-label">غائب</div>
+                <div className="att-stat-val" style={{ color: "#dc2626" }}>
+                  {stats.absent}
+                </div>
+              </div>
+              <XCircle size={28} color="#dc2626" opacity={0.5} />
+            </div>
+            <div className="att-stat-card">
+              <div>
+                <div className="att-stat-label">معذور</div>
+                <div className="att-stat-val" style={{ color: "#d97706" }}>
+                  {stats.excused}
+                </div>
+              </div>
+              <CircleSlash2 size={28} color="#d97706" opacity={0.5} />
+            </div>
+            <div className="att-stat-card">
+              <div>
+                <div className="att-stat-label">غير مسجل</div>
+                <div className="att-stat-val" style={{ color: "#64748b" }}>
+                  {stats.none}
+                </div>
+              </div>
+              <MinusCircle size={28} color="#64748b" opacity={0.5} />
+            </div>
+          </div>
         </div>
 
         {rows.length === 0 ? (
@@ -468,103 +566,118 @@ export default function Attendance() {
             onAction={() => summary && navigate(`/runs/${summary.run_id}`)}
           />
         ) : (
-          <div className="tableWrap inCard">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "center", width: "30%" }}>الطفل</th>
-                  <th style={{ textAlign: "center", width: "20%" }}>الحالة</th>
-                  <th style={{ textAlign: "center", width: "50%" }}>
-                    تسجيل الحضور
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => {
-                  const v = att[r.enrollment_id] ?? "none";
-                  return (
-                    <tr key={r.enrollment_id}>
-                      <td
-                        style={{
-                          fontWeight: 800,
-                          textAlign: "center",
-                          verticalAlign: "middle",
-                          fontSize: "15px",
-                        }}
-                      >
-                        {r.child_name}
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "center",
-                          verticalAlign: "middle",
-                        }}
-                      >
-                        {statusBadge(v)}
-                      </td>
-                      <td
-                        style={{
-                          textAlign: "center",
-                          verticalAlign: "middle",
-                        }}
-                      >
-                        <div
-                          className="row"
+          <div
+            className="card mainCard"
+            style={{ padding: 0, overflow: "hidden" }}
+          >
+            {/* --- قسم التحكم السريع فوق الجدول --- */}
+            <div
+              style={{
+                padding: "16px 24px",
+                borderBottom: "1px solid #f1f5f9",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: "12px",
+                background: "#f8fafc",
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 16,
+                  color: "#0f172a",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <MousePointerClick size={18} color="#64748b" /> التحكم السريع
+              </h3>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <button
+                  className="att-quick-btn"
+                  onClick={() => setAll("present")}
+                >
+                  حاضر للكل
+                </button>
+                <button
+                  className="att-quick-btn"
+                  onClick={() => setAll("absent")}
+                >
+                  غائب للكل
+                </button>
+                <button
+                  className="att-quick-btn"
+                  onClick={() => setAll("none")}
+                >
+                  تصفير للكل
+                </button>
+              </div>
+            </div>
+
+            {/* --- الجدول النظيف --- */}
+            <div className="tableWrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th style={{ width: "30%" }}>الطفل</th>
+                    <th style={{ width: "20%" }}>الحالة</th>
+                    <th style={{ width: "50%" }}>الإجراء</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const v = att[r.enrollment_id] ?? "none";
+                    return (
+                      <tr key={r.enrollment_id}>
+                        <td
                           style={{
-                            flexWrap: "nowrap",
-                            gap: 12,
-                            justifyContent: "center",
-                            alignItems: "center",
+                            fontWeight: 900,
+                            color: "#0f172a",
                           }}
                         >
-                          {STATUS.map((s) => {
-                            const meta = statusMeta(s);
-                            const ActiveIcon = meta.Icon;
-                            const active = v === s;
-                            return (
-                              <button
-                                key={s}
-                                type="button"
-                                title={meta.label}
-                                aria-label={meta.label}
-                                onClick={() =>
-                                  setAtt((p) => ({
-                                    ...p,
-                                    [r.enrollment_id]: s,
-                                  }))
-                                }
-                                className="btn"
-                                style={{
-                                  width: 44,
-                                  height: 44,
-                                  padding: 0,
-                                  borderRadius: 14,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  background: active ? meta.color : "#fff",
-                                  color: active ? "#fff" : "#64748b",
-                                  border: active
-                                    ? `1px solid ${meta.color}`
-                                    : "1px solid rgba(0,0,0,0.12)",
-                                  boxShadow: active
-                                    ? `0 4px 12px ${meta.color}40`
-                                    : "0 2px 4px rgba(0,0,0,0.02)",
-                                  transition: "all 0.15s ease",
-                                  opacity: active ? 1 : 0.8,
-                                }}
-                              >
-                                <ActiveIcon size={20} />
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                          {r.child_name}
+                        </td>
+                        <td>{statusBadge(v)}</td>
+                        <td>
+                          <div
+                            className="row"
+                            style={{
+                              flexWrap: "nowrap",
+                              gap: 12,
+                              justifyContent: "center",
+                              alignItems: "center",
+                            }}
+                          >
+                            {STATUS.map((s) => {
+                              const meta = statusMeta(s);
+                              const active = v === s;
+                              return (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onClick={() =>
+                                    setAtt((p) => ({
+                                      ...p,
+                                      [r.enrollment_id]: s,
+                                    }))
+                                  }
+                                  className={`att-action-btn ${meta.className} ${active ? "active" : ""}`}
+                                >
+                                  {meta.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
