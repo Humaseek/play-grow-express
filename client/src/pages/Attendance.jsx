@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
-import Badge from "../components/Badge";
 import PageHeader from "../components/PageHeader";
 import EmptyState from "../components/EmptyState";
 import {
@@ -13,6 +12,7 @@ import {
   CheckCircle2,
   XCircle,
   CircleSlash2,
+  Eraser,
   MinusCircle,
   MousePointerClick,
 } from "lucide-react";
@@ -37,10 +37,13 @@ function fmtTimeHM(dt) {
 const STATUS = ["present", "absent", "excused", "none"];
 
 function statusMeta(s) {
-  if (s === "present") return { label: "حاضر", className: "att-btn-present" };
-  if (s === "absent") return { label: "غائب", className: "att-btn-absent" };
-  if (s === "excused") return { label: "معذور", className: "att-btn-excused" };
-  return { label: "تصفير", className: "att-btn-none" };
+  if (s === "present")
+    return { label: "حاضر", Icon: CheckCircle2, className: "att-btn-present" };
+  if (s === "absent")
+    return { label: "غائب", Icon: XCircle, className: "att-btn-absent" };
+  if (s === "excused")
+    return { label: "معذور", Icon: CircleSlash2, className: "att-btn-excused" };
+  return { label: "تصفير", Icon: Eraser, className: "att-btn-none" };
 }
 
 const ATTENDANCE_STYLES = `
@@ -113,57 +116,55 @@ const ATTENDANCE_STYLES = `
   color: #0f172a;
 }
 
-/* --- أزرار الحضور بالجدول (هدوء بصري) --- */
+/* --- أزرار الحضور بالجدول (أيقونات هادئة) --- */
 .att-action-btn {
   display: inline-flex; 
   align-items: center; 
   justify-content: center;
-  padding: 8px 22px; 
-  border-radius: 999px;
-  font-size: 13px; 
-  font-weight: 800; 
+  width: 44px;
+  height: 44px;
+  padding: 0; 
+  border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
   
-  /* الوضع الافتراضي الهادي (محايد) */
-  background: #f8fafc;
-  color: #64748b;
-  border: 1px solid #e2e8f0;
-  min-width: 80px;
+  /* الوضع الافتراضي الهادي جداً */
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid transparent;
 }
 .att-action-btn:hover {
   background: #f1f5f9;
-  color: #334155;
-  border-color: #cbd5e1;
+  color: #64748b;
 }
 
 /* الألوان تظهر فقط عندما يكون الزر نشط (Active) */
 .att-btn-present.active { 
-  background: #16a34a; 
-  color: #fff; 
+  background: #f0fdf4; 
+  color: #16a34a; 
   border-color: #16a34a; 
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); 
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15); 
 }
 
 .att-btn-absent.active { 
-  background: #dc2626; 
-  color: #fff; 
+  background: #fef2f2; 
+  color: #dc2626; 
   border-color: #dc2626; 
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); 
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15); 
 }
 
 .att-btn-excused.active { 
-  background: #f59e0b; 
-  color: #fff; 
+  background: #fffbeb; 
+  color: #f59e0b; 
   border-color: #f59e0b; 
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); 
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15); 
 }
 
 .att-btn-none.active { 
-  background: #64748b; 
-  color: #fff; 
+  background: #f8fafc; 
+  color: #64748b; 
   border-color: #64748b; 
-  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2); 
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.1); 
 }
 
 /* --- الجدول --- */
@@ -188,7 +189,7 @@ const ATTENDANCE_STYLES = `
 }
 
 .attendancePage .table td {
-  padding: 14px 24px !important;
+  padding: 10px 24px !important;
   background: #fff !important;
   border-bottom: 1px solid #f1f5f9 !important;
   font-size: 15px;
@@ -631,21 +632,21 @@ export default function Attendance() {
               </div>
             </div>
 
-            {/* --- الجدول النظيف الهادي بصرياً --- */}
+            {/* --- الجدول النظيف الهادي بصرياً مع أيقونات --- */}
             <div className="tableWrap">
               <table className="table">
                 <thead>
                   <tr>
                     <th
                       style={{
-                        width: "35%",
+                        width: "40%",
                         textAlign: "right",
                         paddingRight: "30px",
                       }}
                     >
                       الطفل
                     </th>
-                    <th style={{ width: "65%", textAlign: "center" }}>
+                    <th style={{ width: "60%", textAlign: "center" }}>
                       الإجراء
                     </th>
                   </tr>
@@ -671,18 +672,20 @@ export default function Attendance() {
                             className="row"
                             style={{
                               flexWrap: "nowrap",
-                              gap: 10,
+                              gap: 16, // مسافة مريحة بين الأيقونات
                               justifyContent: "center",
                               alignItems: "center",
                             }}
                           >
                             {STATUS.map((s) => {
                               const meta = statusMeta(s);
+                              const ActiveIcon = meta.Icon;
                               const active = v === s;
                               return (
                                 <button
                                   key={s}
                                   type="button"
+                                  title={meta.label}
                                   onClick={() =>
                                     setAtt((p) => ({
                                       ...p,
@@ -691,7 +694,10 @@ export default function Attendance() {
                                   }
                                   className={`att-action-btn ${meta.className} ${active ? "active" : ""}`}
                                 >
-                                  {meta.label}
+                                  <ActiveIcon
+                                    size={20}
+                                    strokeWidth={active ? 2.5 : 2}
+                                  />
                                 </button>
                               );
                             })}
