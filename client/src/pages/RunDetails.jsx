@@ -3602,7 +3602,7 @@ export default function RunDetails() {
           title={
             enrollLocked ? `إضافة جلسات — ${enrollLockedName}` : "تسجيل طفل"
           }
-          onClose={() => setOpenEnroll(false)}
+          onClose={() => closeSubModalAndReopen(setOpenEnroll)}
         >
           <div className="muted">
             إذا كان الطفل يملك رصيدًا مسبقًا، يمكنك اختيار "استخدام الرصيد
@@ -3711,7 +3711,7 @@ export default function RunDetails() {
               <button
                 type="button"
                 className="btn"
-                onClick={() => setOpenEnroll(false)}
+                onClick={() => closeSubModalAndReopen(setOpenEnroll)}
               >
                 إلغاء
               </button>
@@ -4122,6 +4122,253 @@ export default function RunDetails() {
                   إغلاق
                 </button>
               </div>
+            </div>
+          </div>
+        </Modal>
+
+        {/* =========================================================================
+            نوافذ المصاريف والدفعات المستعادة (لا تحذفها أبدًا)
+        ========================================================================= */}
+
+        <Modal
+          open={openExpenseModal}
+          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
+          onClose={() => {
+            setOpenExpenseModal(false);
+            resetExpenseForm();
+          }}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">التاريخ</div>
+              <input
+                className="input"
+                type="date"
+                value={expDate}
+                onChange={(e) => setExpDate(e.target.value)}
+              />
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">المبلغ</div>
+              <input
+                className="input"
+                type="number"
+                step="0.01"
+                min="0"
+                value={expAmount}
+                onChange={(e) => setExpAmount(e.target.value)}
+                placeholder="مثال: 50"
+              />
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">التصنيف</div>
+              {expHasPicklists ? (
+                <ModernSelect
+                  value={expCategory || ""}
+                  onChange={(v) => setExpCategory(v)}
+                  options={[
+                    { value: "", label: "—" },
+                    ...expCategories.map((x) => ({ value: x, label: x })),
+                  ]}
+                />
+              ) : (
+                <input
+                  className="input"
+                  value={expCategory}
+                  onChange={(e) => setExpCategory(e.target.value)}
+                  placeholder="مثال: معاشات"
+                />
+              )}
+              {expHasPicklists && (
+                <div className="row" style={{ marginTop: 8, gap: 8 }}>
+                  <input
+                    className="input"
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="إضافة تصنيف جديد..."
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => addPicklistValue("category", newCatName)}
+                  >
+                    إضافة
+                  </button>
+                </div>
+              )}
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">الشخص</div>
+              {expHasPicklists ? (
+                <ModernSelect
+                  value={expParty || ""}
+                  onChange={(v) => setExpParty(v)}
+                  options={[
+                    { value: "", label: "—" },
+                    ...expParties.map((x) => ({ value: x, label: x })),
+                  ]}
+                />
+              ) : (
+                <input
+                  className="input"
+                  value={expParty}
+                  onChange={(e) => setExpParty(e.target.value)}
+                  placeholder="مثال: سامر"
+                />
+              )}
+              {expHasPicklists && (
+                <div className="row" style={{ marginTop: 8, gap: 8 }}>
+                  <input
+                    className="input"
+                    value={newPartyName}
+                    onChange={(e) => setNewPartyName(e.target.value)}
+                    placeholder="إضافة شخص جديد..."
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => addPicklistValue("party", newPartyName)}
+                  >
+                    إضافة
+                  </button>
+                </div>
+              )}
+            </div>
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الوصف</div>
+              <input
+                className="input"
+                value={expDesc}
+                onChange={(e) => setExpDesc(e.target.value)}
+                placeholder="اختياري..."
+              />
+            </div>
+            <div className="row" style={{ gridColumn: "span 12" }}>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={saveExpense}
+                disabled={expSaving}
+              >
+                {expSaving ? "حفظ..." : "حفظ"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setOpenExpenseModal(false);
+                  resetExpenseForm();
+                }}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
+          open={openPay}
+          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
+          onClose={() => {
+            setPayEditId(null);
+            setPayLocked(false);
+            setOpenPay(false);
+          }}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الطفل</div>
+              <ModernSelect
+                value={payEnrollmentId}
+                onChange={setPayEnrollmentId}
+                menuWidth="trigger"
+                disabled={paySaving || !!payEditId || payLocked}
+                placeholder="— اختر طفل —"
+                options={[
+                  { value: "", label: "— اختر طفل —" },
+                  ...participants
+                    .filter((p) => p.enrollment_status === "active")
+                    .map((p) => ({
+                      value: p.enrollment_id,
+                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
+                    })),
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">المبلغ (₪)</div>
+              <input
+                className="input"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">طريقة الدفع</div>
+              <ModernSelect
+                value={payMethod}
+                onChange={setPayMethod}
+                menuWidth="trigger"
+                options={[
+                  { value: "cash", label: "نقداً" },
+                  { value: "card", label: "بطاقة ائتمان" },
+                  { value: "transfer", label: "حوالة بنكية" },
+                  { value: "other", label: "أخرى" },
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">تاريخ الدفعة</div>
+              <input
+                className="input"
+                type="date"
+                value={payDate}
+                onChange={(e) => setPayDate(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">ملاحظات</div>
+              <input
+                className="input"
+                placeholder="اختياري"
+                value={payNote}
+                onChange={(e) => setPayNote(e.target.value)}
+              />
+            </div>
+
+            <div
+              className="row"
+              style={{ gridColumn: "span 12", marginTop: 10 }}
+            >
+              <button
+                type="button"
+                className="btn primary"
+                disabled={paySaving || !payEnrollmentId || !payAmount}
+                onClick={addPayment}
+              >
+                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setPayEditId(null);
+                  setPayLocked(false);
+                  setOpenPay(false);
+                }}
+              >
+                إلغاء
+              </button>
             </div>
           </div>
         </Modal>
