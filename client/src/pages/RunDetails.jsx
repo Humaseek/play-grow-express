@@ -3215,7 +3215,6 @@ export default function RunDetails() {
                       <th>تاريخ الشراء</th>
                       <th>عدد الجلسات</th>
                       <th>السعر (₪)</th>
-                      <th>الحالة</th>
                       <th style={{ textAlign: "center" }}>إجراءات</th>
                     </tr>
                   </thead>
