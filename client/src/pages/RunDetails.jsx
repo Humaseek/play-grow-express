@@ -128,6 +128,14 @@ function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
 
+// دالة مساعدة لترجمة حالة الجلسة
+function sessionStatusLabel(st) {
+  if (st === "scheduled") return "مجدولة";
+  if (st === "done") return "مكتملة";
+  if (st === "canceled") return "ملغاة";
+  return st;
+}
+
 const RUN_DETAILS_SOFT_UI_STYLES = `
 .page.page--runs {
   background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
@@ -508,6 +516,23 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   border-radius: 18px !important;
   border: 1px solid rgba(15, 23, 42, 0.08) !important;
   background: rgba(255, 255, 255, 0.94);
+  transition: all 0.2s ease;
+}
+.runDetails .sessionRow:hover {
+  background: #fff;
+  border-color: rgba(0, 172, 71, 0.15) !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+}
+
+.runDetails .sectionHeader {
+  font-size: 18px;
+  font-weight: 900;
+  color: #0f172a;
+  margin-top: 30px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 @media (max-width: 1100px) {
@@ -652,7 +677,6 @@ export default function RunDetails() {
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
-  // السجلات الجديدة
   const [openHistory, setOpenHistory] = useState(false);
   const [historyEnrollment, setHistoryEnrollment] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
@@ -671,7 +695,7 @@ export default function RunDetails() {
     id: null,
     sessions_total: "",
     price_total: "",
-    created_at: "", // لحفظ وتعديل تاريخ الباقة
+    created_at: "",
   });
   const [editPkgSaving, setEditPkgSaving] = useState(false);
 
@@ -679,13 +703,12 @@ export default function RunDetails() {
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
-  const [payDate, setPayDate] = useState(isoDate(new Date())); // التاريخ كمدخل منفصل
+  const [payDate, setPayDate] = useState(isoDate(new Date()));
   const [payNote, setPayNote] = useState("");
   const [paySaving, setPaySaving] = useState(false);
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
-  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -1082,22 +1105,29 @@ export default function RunDetails() {
     () => expenses.reduce((acc, r) => acc + Number(r.amount || 0), 0),
     [expenses],
   );
-  const runFutureSessionsCount = useMemo(
-    () =>
-      sessions.filter(
-        (s) => s.status === "scheduled" && new Date(s.start_at) >= new Date(),
-      ).length,
-    [sessions],
-  );
-  const nextSession = useMemo(
-    () =>
-      sessions.find(
-        (s) => s.status === "scheduled" && new Date(s.start_at) >= new Date(),
-      ) ||
-      sessions.find((s) => s.status === "scheduled") ||
-      null,
-    [sessions],
-  );
+
+  // تقسيم الجلسات إلى قادمة وسابقة
+  const { upcomingSessions, pastSessions } = useMemo(() => {
+    const now = new Date();
+    const upcoming = [];
+    const past = [];
+
+    sessions.forEach((s) => {
+      if (new Date(s.start_at) >= now) {
+        upcoming.push(s);
+      } else {
+        past.push(s);
+      }
+    });
+
+    // ترتيب القادمة من الأقرب للأبعد
+    upcoming.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+    // ترتيب السابقة من الأحدث للأقدم
+    past.sort((a, b) => new Date(b.start_at) - new Date(a.start_at));
+
+    return { upcomingSessions: upcoming, pastSessions: past };
+  }, [sessions]);
+
   const scheduleInfo = useMemo(
     () =>
       sessions.length
@@ -1706,12 +1736,9 @@ export default function RunDetails() {
           .from("payments")
           .insert([{ enrollment_id: Number(payEnrollmentId), ...p }]);
 
-      setOpenPay(false);
+      closeSubModalAndReopen(setOpenPay);
       await loadFixed();
-      // تحديث نافذة سجل الدفعات إذا كنا بنعدل من داخلها لتبين الداتا الجديدة مباشرة
-      if (shouldReopenManage && manageP) {
-        openPaymentHistory(manageP);
-      }
+      if (!payLocked && !shouldReopenManage) setTab("payments");
     } catch {
       toast("Failed.", "danger");
     } finally {
@@ -1733,10 +1760,9 @@ export default function RunDetails() {
       setHistoryLoading(false);
       return;
     }
-    // التعديل السحري: جبنا الـ enrollment_id عشان نقدر نعدل الدفعة من جوا السجل
     const { data } = await supabase
       .from("payments")
-      .select("id,enrollment_id,amount,method,note,created_at")
+      .select("id,amount,method,note,created_at")
       .eq("package_id", pRow.package_id)
       .order("created_at", { ascending: false });
     setHistoryRows(data ?? []);
@@ -1819,40 +1845,6 @@ export default function RunDetails() {
       toast("فشل التعديل. تأكد من إضافة دالة الـ SQL أولاً.", "danger");
     } finally {
       setEditPkgSaving(false);
-    }
-  }
-
-  function quickAdjustFromإدارة(delta) {
-    if (!manageP) return;
-    if (!manageP.package_id) {
-      toast("No package linked.", "warn");
-      return;
-    }
-    if (delta < 0) {
-      setConfirm({
-        open: true,
-        type: "pkgDelta",
-        id: { packageId: manageP.package_id, delta },
-        text: `تأكيد خصم ${Math.abs(delta)} جلسة من باقة ${manageP.child_name}`,
-      });
-      return;
-    }
-    doAdjustPackageTotal(manageP.package_id, delta);
-  }
-
-  async function doAdjustPackageTotal(packageId, delta) {
-    try {
-      await supabase.rpc("adjust_package_sessions_total", {
-        p_package_id: Number(packageId),
-        p_delta: Number(delta),
-      });
-      toast(
-        delta > 0 ? ` Add ${Math.abs(delta)} .` : ` ${Math.abs(delta)} .`,
-        "ok",
-      );
-      await loadFixed();
-    } catch {
-      toast("فشل التعديل.", "danger");
     }
   }
 
@@ -2384,7 +2376,7 @@ export default function RunDetails() {
         {tab === "sessions" && (
           <div className="grid">
             <div className="card" style={{ gridColumn: "span 4" }}>
-              <div className="h1">الجلسات</div>
+              <div className="h1">إعداد الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
                 حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيتك المحلي.
               </div>
@@ -2457,81 +2449,218 @@ export default function RunDetails() {
             </div>
 
             <div className="card" style={{ gridColumn: "span 8" }}>
-              <div className="h1">قائمة الجلسات</div>
-              <hr className="sep" />
               {!sessions?.length ? (
-                <div className="muted">لا توجد جلسات بعد.</div>
+                <>
+                  <div className="h1">قائمة الجلسات</div>
+                  <hr className="sep" />
+                  <div className="muted">لا توجد جلسات بعد.</div>
+                </>
               ) : (
                 <div
-                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                  style={{ display: "flex", flexDirection: "column", gap: 20 }}
                 >
-                  {sessions.map((s) => (
-                    <div
-                      key={s.id}
-                      className="sessionRow"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
-                        gap: 12,
-                        padding: "12px 14px",
-                        alignItems: "center",
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 700 }}>
-                          {fmtDate(s.start_at)}
-                        </div>
-                        <div className="muted">{fmtWeekday(s.start_at)}</div>
+                  {/* الجلسات القادمة */}
+                  <div>
+                    <h2 className="sectionHeader" style={{ color: "#00ac47" }}>
+                      <CalendarClock size={20} /> الجلسات القادمة
+                    </h2>
+                    {upcomingSessions.length === 0 ? (
+                      <div className="muted" style={{ padding: "10px 0" }}>
+                        لا يوجد جلسات قادمة.
                       </div>
-                      <div>
-                        <div style={{ fontWeight: 600 }}>
-                          {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
-                        </div>
-                      </div>
-                      <div>
-                        <Badge
-                          variant={
-                            s.status === "done"
-                              ? "ok"
-                              : s.status === "canceled"
-                                ? "danger"
-                                : "default"
-                          }
-                        >
-                          {s.status}
-                        </Badge>
-                      </div>
+                    ) : (
                       <div
                         style={{
                           display: "flex",
-                          gap: 8,
-                          justifyContent: "flex-end",
+                          flexDirection: "column",
+                          gap: 12,
                         }}
                       >
-                        <button
-                          className="btn primary iconOnly"
-                          onClick={() =>
-                            navigate(`/sessions/${s.id}/attendance`)
-                          }
-                        >
-                          <Settings2 size={16} />
-                        </button>
-                        <button
-                          className="btn iconOnly"
-                          onClick={() => openEditSession(s)}
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          className="btn danger iconOnly"
-                          onClick={() => deleteSession(s.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {upcomingSessions.map((s) => (
+                          <div
+                            key={s.id}
+                            className="sessionRow"
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns:
+                                "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
+                              gap: 12,
+                              padding: "12px 14px",
+                              alignItems: "center",
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 700 }}>
+                                {fmtDate(s.start_at)}
+                              </div>
+                              <div className="muted">
+                                {fmtWeekday(s.start_at)}
+                              </div>
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600 }}>
+                                {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
+                              </div>
+                            </div>
+                            <div>
+                              <Badge
+                                variant={
+                                  s.status === "done"
+                                    ? "ok"
+                                    : s.status === "canceled"
+                                      ? "danger"
+                                      : "info" // لون مميز للجلسات المجدولة
+                                }
+                              >
+                                {sessionStatusLabel(s.status)}
+                              </Badge>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <button
+                                className="btn primary iconOnly"
+                                title="تسجيل الحضور"
+                                onClick={() =>
+                                  navigate(`/sessions/${s.id}/attendance`)
+                                }
+                              >
+                                <Settings2 size={16} />
+                              </button>
+                              <button
+                                className="btn iconOnly"
+                                title="تعديل الجلسة"
+                                onClick={() => openEditSession(s)}
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button
+                                className="btn danger iconOnly"
+                                title="حذف الجلسة"
+                                onClick={() =>
+                                  setConfirm({
+                                    open: true,
+                                    type: "deleteSession",
+                                    id: s.id,
+                                    text: "هل تريد حذف هذه الجلسة؟",
+                                  })
+                                }
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
+
+                  <hr className="sep" />
+
+                  {/* الجلسات السابقة */}
+                  <div>
+                    <h2 className="sectionHeader" style={{ color: "#475569" }}>
+                      <History size={20} /> الجلسات السابقة
+                    </h2>
+                    {pastSessions.length === 0 ? (
+                      <div className="muted" style={{ padding: "10px 0" }}>
+                        لا يوجد جلسات سابقة.
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
+                        {pastSessions.map((s) => (
+                          <div
+                            key={s.id}
+                            className="sessionRow"
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns:
+                                "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
+                              gap: 12,
+                              padding: "12px 14px",
+                              alignItems: "center",
+                              opacity: s.status === "canceled" ? 0.6 : 0.9, // شكل باهت للسابقة
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 700 }}>
+                                {fmtDate(s.start_at)}
+                              </div>
+                              <div className="muted">
+                                {fmtWeekday(s.start_at)}
+                              </div>
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600 }}>
+                                {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
+                              </div>
+                            </div>
+                            <div>
+                              <Badge
+                                variant={
+                                  s.status === "done"
+                                    ? "ok"
+                                    : s.status === "canceled"
+                                      ? "danger"
+                                      : "default"
+                                }
+                              >
+                                {sessionStatusLabel(s.status)}
+                              </Badge>
+                            </div>
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 8,
+                                justifyContent: "flex-end",
+                              }}
+                            >
+                              <button
+                                className="btn primary iconOnly"
+                                title="عرض الحضور"
+                                onClick={() =>
+                                  navigate(`/sessions/${s.id}/attendance`)
+                                }
+                              >
+                                <Settings2 size={16} />
+                              </button>
+                              <button
+                                className="btn iconOnly"
+                                title="تعديل الجلسة"
+                                onClick={() => openEditSession(s)}
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button
+                                className="btn danger iconOnly"
+                                title="حذف الجلسة"
+                                onClick={() =>
+                                  setConfirm({
+                                    open: true,
+                                    type: "deleteSession",
+                                    id: s.id,
+                                    text: "هل تريد حذف هذه الجلسة؟",
+                                  })
+                                }
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -3021,10 +3150,7 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       disabled={Number(manageP.balance || 0) <= 0}
-                      onClick={() => {
-                        setShouldReopenManage(true);
-                        openPaymentModalFor(manageP, "remaining");
-                      }}
+                      onClick={() => openPaymentModalFor(manageP, "remaining")}
                     >
                       <Banknote
                         size={26}
@@ -3039,20 +3165,14 @@ export default function RunDetails() {
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        setShouldReopenManage(true);
-                        openPaymentModalFor(manageP, "custom");
-                      }}
+                      onClick={() => openPaymentModalFor(manageP, "custom")}
                     >
                       <PlusCircle size={26} style={{ color: "#16a34a" }} />
                       <span>إضافة دفعة</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        setShouldReopenManage(true);
-                        openPaymentHistory(manageP);
-                      }}
+                      onClick={() => openPaymentHistory(manageP)}
                     >
                       <History size={26} style={{ color: "#475569" }} />
                       <span>سجل الدفعات</span>
@@ -3084,35 +3204,65 @@ export default function RunDetails() {
                   >
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        setShouldReopenManage(true);
-                        openSingleTopup(manageP);
-                      }}
+                      onClick={() => openSingleTopup(manageP)}
                     >
                       <ShoppingCart size={26} style={{ color: "#7a5cff" }} />
                       <span>شراء جلسات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        setShouldReopenManage(true);
-                        fetchPkgHistory(manageP);
-                      }}
+                      onClick={() => fetchPkgHistory(manageP)}
                     >
                       <List size={26} style={{ color: "#475569" }} />
                       <span>سجل الباقات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        setShouldReopenManage(true);
-                        fetchAttHistory(manageP);
-                      }}
+                      onClick={() => fetchAttHistory(manageP)}
                     >
                       <CalendarCheck size={26} style={{ color: "#475569" }} />
                       <span>سجل الحضور</span>
                     </button>
                   </div>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-end",
+                  flexWrap: "wrap",
+                  gap: 20,
+                  borderTop: "1px solid #e2e8f0",
+                  paddingTop: 20,
+                }}
+              >
+                <div style={{ display: "flex", gap: 10 }}>
+                  <IconButton
+                    title="حذف التسجيل"
+                    danger
+                    disabled={manageHasPayments}
+                    variant="ghost"
+                    onClick={() => {
+                      if (manageHasPayments) {
+                        toast("لا يمكن حذفه لوجود دفعات مسجلة.", "warn");
+                        return;
+                      }
+                      setConfirm({
+                        open: true,
+                        type: "deleteEnroll",
+                        id: {
+                          enrollmentId: manageP.enrollment_id,
+                          childId: manageP.child_id,
+                          courseId: summary.template_id,
+                        },
+                        text: `هل أنت متأكد من حذف الاشتراك نهائياً؟ سيتم حذف كافة باقات هذا الطفل المرتبطة بهذه الدورة.`,
+                      });
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </IconButton>
                 </div>
               </div>
             </div>
@@ -3124,7 +3274,7 @@ export default function RunDetails() {
         <Modal
           open={openPkgHistory}
           title="سجل الباقات"
-          onClose={() => setOpenPkgHistory(false)}
+          onClose={() => closeSubModalAndReopen(setOpenPkgHistory)}
         >
           <div className="modal-wide-1000">
             <div className="muted" style={{ marginBottom: 16 }}>
@@ -3295,7 +3445,7 @@ export default function RunDetails() {
         <Modal
           open={openAttHistory}
           title="سجل الحضور"
-          onClose={() => setOpenAttHistory(false)}
+          onClose={() => closeSubModalAndReopen(setOpenAttHistory)}
         >
           <div className="modal-wide-900">
             <div className="muted" style={{ marginBottom: 16 }}>
@@ -3353,7 +3503,7 @@ export default function RunDetails() {
         <Modal
           open={openHistory}
           title="سجل الدفعات"
-          onClose={() => setOpenHistory(false)}
+          onClose={() => closeSubModalAndReopen(setOpenHistory)}
         >
           <div className="modal-wide-1000">
             <div className="muted" style={{ marginBottom: 10 }}>
@@ -3446,7 +3596,7 @@ export default function RunDetails() {
           title={
             enrollLocked ? `إضافة جلسات — ${enrollLockedName}` : "تسجيل طفل"
           }
-          onClose={() => setOpenEnroll(false)}
+          onClose={() => closeSubModalAndReopen(setOpenEnroll)}
         >
           <div className="muted">
             إذا كان الطفل يملك رصيدًا مسبقًا، يمكنك اختيار "استخدام الرصيد
@@ -3555,7 +3705,7 @@ export default function RunDetails() {
               <button
                 type="button"
                 className="btn"
-                onClick={() => setOpenEnroll(false)}
+                onClick={() => closeSubModalAndReopen(setOpenEnroll)}
               >
                 إلغاء
               </button>
