@@ -677,6 +677,7 @@ export default function RunDetails() {
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
+  // السجلات
   const [openHistory, setOpenHistory] = useState(false);
   const [historyEnrollment, setHistoryEnrollment] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
@@ -1762,7 +1763,7 @@ export default function RunDetails() {
     }
     const { data } = await supabase
       .from("payments")
-      .select("id,amount,method,note,created_at")
+      .select("id,enrollment_id,amount,method,note,created_at")
       .eq("package_id", pRow.package_id)
       .order("created_at", { ascending: false });
     setHistoryRows(data ?? []);
@@ -1845,6 +1846,40 @@ export default function RunDetails() {
       toast("فشل التعديل. تأكد من إضافة دالة الـ SQL أولاً.", "danger");
     } finally {
       setEditPkgSaving(false);
+    }
+  }
+
+  function quickAdjustFromإدارة(delta) {
+    if (!manageP) return;
+    if (!manageP.package_id) {
+      toast("No package linked.", "warn");
+      return;
+    }
+    if (delta < 0) {
+      setConfirm({
+        open: true,
+        type: "pkgDelta",
+        id: { packageId: manageP.package_id, delta },
+        text: `تأكيد خصم ${Math.abs(delta)} جلسة من باقة ${manageP.child_name}`,
+      });
+      return;
+    }
+    doAdjustPackageTotal(manageP.package_id, delta);
+  }
+
+  async function doAdjustPackageTotal(packageId, delta) {
+    try {
+      await supabase.rpc("adjust_package_sessions_total", {
+        p_package_id: Number(packageId),
+        p_delta: Number(delta),
+      });
+      toast(
+        delta > 0 ? ` Add ${Math.abs(delta)} .` : ` ${Math.abs(delta)} .`,
+        "ok",
+      );
+      await loadFixed();
+    } catch {
+      toast("فشل التعديل.", "danger");
     }
   }
 
@@ -2459,14 +2494,14 @@ export default function RunDetails() {
                 <div
                   style={{ display: "flex", flexDirection: "column", gap: 20 }}
                 >
-                  {/* الجلسات القادمة */}
+                  {/* الجلسات القادمة والحالية */}
                   <div>
                     <h2 className="sectionHeader" style={{ color: "#00ac47" }}>
-                      <CalendarClock size={20} /> الجلسات القادمة
+                      <CalendarClock size={20} /> الجلسات
                     </h2>
                     {upcomingSessions.length === 0 ? (
                       <div className="muted" style={{ padding: "10px 0" }}>
-                        لا يوجد جلسات قادمة.
+                        لا يوجد جلسات حالية أو قادمة.
                       </div>
                     ) : (
                       <div
@@ -2559,108 +2594,30 @@ export default function RunDetails() {
                     )}
                   </div>
 
-                  <hr className="sep" />
-
-                  {/* الجلسات السابقة */}
-                  <div>
-                    <h2 className="sectionHeader" style={{ color: "#475569" }}>
-                      <History size={20} /> الجلسات السابقة
-                    </h2>
-                    {pastSessions.length === 0 ? (
-                      <div className="muted" style={{ padding: "10px 0" }}>
-                        لا يوجد جلسات سابقة.
-                      </div>
-                    ) : (
-                      <div
+                  {/* الجلسات السابقة - تم تحويلها لزر ينقل لصفحة أخرى */}
+                  {pastSessions.length > 0 && (
+                    <div style={{ marginTop: 24 }}>
+                      <button
+                        className="btn"
                         style={{
+                          width: "100%",
+                          minHeight: 54,
                           display: "flex",
-                          flexDirection: "column",
-                          gap: 12,
+                          justifyContent: "center",
+                          alignItems: "center",
+                          gap: 10,
+                          fontSize: 16,
+                          background: "#f8fafc",
+                          border: "1px solid #e2e8f0",
+                          color: "#475569",
                         }}
+                        onClick={() => navigate(`/runs/${runId}/past-sessions`)}
                       >
-                        {pastSessions.map((s) => (
-                          <div
-                            key={s.id}
-                            className="sessionRow"
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns:
-                                "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
-                              gap: 12,
-                              padding: "12px 14px",
-                              alignItems: "center",
-                              opacity: s.status === "canceled" ? 0.6 : 0.9, // شكل باهت للسابقة
-                            }}
-                          >
-                            <div>
-                              <div style={{ fontWeight: 700 }}>
-                                {fmtDate(s.start_at)}
-                              </div>
-                              <div className="muted">
-                                {fmtWeekday(s.start_at)}
-                              </div>
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 600 }}>
-                                {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
-                              </div>
-                            </div>
-                            <div>
-                              <Badge
-                                variant={
-                                  s.status === "done"
-                                    ? "ok"
-                                    : s.status === "canceled"
-                                      ? "danger"
-                                      : "default"
-                                }
-                              >
-                                {sessionStatusLabel(s.status)}
-                              </Badge>
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: 8,
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <button
-                                className="btn primary iconOnly"
-                                title="عرض الحضور"
-                                onClick={() =>
-                                  navigate(`/sessions/${s.id}/attendance`)
-                                }
-                              >
-                                <Settings2 size={16} />
-                              </button>
-                              <button
-                                className="btn iconOnly"
-                                title="تعديل الجلسة"
-                                onClick={() => openEditSession(s)}
-                              >
-                                <Pencil size={16} />
-                              </button>
-                              <button
-                                className="btn danger iconOnly"
-                                title="حذف الجلسة"
-                                onClick={() =>
-                                  setConfirm({
-                                    open: true,
-                                    type: "deleteSession",
-                                    id: s.id,
-                                    text: "هل تريد حذف هذه الجلسة؟",
-                                  })
-                                }
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                        <History size={20} />
+                        عرض الجلسات السابقة ({pastSessions.length})
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -3150,7 +3107,13 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       disabled={Number(manageP.balance || 0) <= 0}
-                      onClick={() => openPaymentModalFor(manageP, "remaining")}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          openPaymentModalFor(manageP, "remaining");
+                        }, 150);
+                      }}
                     >
                       <Banknote
                         size={26}
@@ -3165,14 +3128,26 @@ export default function RunDetails() {
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => openPaymentModalFor(manageP, "custom")}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          openPaymentModalFor(manageP, "custom");
+                        }, 150);
+                      }}
                     >
                       <PlusCircle size={26} style={{ color: "#16a34a" }} />
                       <span>إضافة دفعة</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => openPaymentHistory(manageP)}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          openPaymentHistory(manageP);
+                        }, 150);
+                      }}
                     >
                       <History size={26} style={{ color: "#475569" }} />
                       <span>سجل الدفعات</span>
@@ -3204,21 +3179,39 @@ export default function RunDetails() {
                   >
                     <button
                       className="actionSquare"
-                      onClick={() => openSingleTopup(manageP)}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          openSingleTopup(manageP);
+                        }, 150);
+                      }}
                     >
                       <ShoppingCart size={26} style={{ color: "#7a5cff" }} />
                       <span>شراء جلسات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => fetchPkgHistory(manageP)}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          fetchPkgHistory(manageP);
+                        }, 150);
+                      }}
                     >
                       <List size={26} style={{ color: "#475569" }} />
                       <span>سجل الباقات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => fetchAttHistory(manageP)}
+                      onClick={() => {
+                        setOpenإدارة(false);
+                        setShouldReopenManage(true);
+                        setTimeout(() => {
+                          fetchAttHistory(manageP);
+                        }, 150);
+                      }}
                     >
                       <CalendarCheck size={26} style={{ color: "#475569" }} />
                       <span>سجل الحضور</span>
@@ -4183,249 +4176,6 @@ export default function RunDetails() {
                 type="button"
                 className="btn"
                 onClick={() => setOpenSession(false)}
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openExpenseModal}
-          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
-          onClose={() => {
-            setOpenExpenseModal(false);
-            resetExpenseForm();
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">التاريخ</div>
-              <input
-                className="input"
-                type="date"
-                value={expDate}
-                onChange={(e) => setExpDate(e.target.value)}
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">المبلغ</div>
-              <input
-                className="input"
-                type="number"
-                step="0.01"
-                min="0"
-                value={expAmount}
-                onChange={(e) => setExpAmount(e.target.value)}
-                placeholder="مثال: 50"
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">التصنيف</div>
-              {expHasPicklists ? (
-                <ModernSelect
-                  value={expCategory || ""}
-                  onChange={(v) => setExpCategory(v)}
-                  options={[
-                    { value: "", label: "—" },
-                    ...expCategories.map((x) => ({ value: x, label: x })),
-                  ]}
-                />
-              ) : (
-                <input
-                  className="input"
-                  value={expCategory}
-                  onChange={(e) => setExpCategory(e.target.value)}
-                  placeholder="مثال: معاشات"
-                />
-              )}
-              {expHasPicklists && (
-                <div className="row" style={{ marginTop: 8, gap: 8 }}>
-                  <input
-                    className="input"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="إضافة تصنيف جديد..."
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => addPicklistValue("category", newCatName)}
-                  >
-                    إضافة
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">الشخص</div>
-              {expHasPicklists ? (
-                <ModernSelect
-                  value={expParty || ""}
-                  onChange={(v) => setExpParty(v)}
-                  options={[
-                    { value: "", label: "—" },
-                    ...expParties.map((x) => ({ value: x, label: x })),
-                  ]}
-                />
-              ) : (
-                <input
-                  className="input"
-                  value={expParty}
-                  onChange={(e) => setExpParty(e.target.value)}
-                  placeholder="مثال: سامر"
-                />
-              )}
-              {expHasPicklists && (
-                <div className="row" style={{ marginTop: 8, gap: 8 }}>
-                  <input
-                    className="input"
-                    value={newPartyName}
-                    onChange={(e) => setNewPartyName(e.target.value)}
-                    placeholder="إضافة شخص جديد..."
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => addPicklistValue("party", newPartyName)}
-                  >
-                    إضافة
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الوصف</div>
-              <input
-                className="input"
-                value={expDesc}
-                onChange={(e) => setExpDesc(e.target.value)}
-                placeholder="اختياري..."
-              />
-            </div>
-            <div className="row" style={{ gridColumn: "span 12" }}>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={saveExpense}
-                disabled={expSaving}
-              >
-                {expSaving ? "حفظ..." : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setOpenExpenseModal(false);
-                  resetExpenseForm();
-                }}
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openPay}
-          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
-          onClose={() => {
-            setPayEditId(null);
-            setPayLocked(false);
-            setOpenPay(false);
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الطفل</div>
-              <ModernSelect
-                value={payEnrollmentId}
-                onChange={setPayEnrollmentId}
-                menuWidth="trigger"
-                disabled={paySaving || !!payEditId || payLocked}
-                placeholder="— اختر طفل —"
-                options={[
-                  { value: "", label: "— اختر طفل —" },
-                  ...participants
-                    .filter((p) => p.enrollment_status === "active")
-                    .map((p) => ({
-                      value: p.enrollment_id,
-                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
-                    })),
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">المبلغ (₪)</div>
-              <input
-                className="input"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">طريقة الدفع</div>
-              <ModernSelect
-                value={payMethod}
-                onChange={setPayMethod}
-                menuWidth="trigger"
-                options={[
-                  { value: "cash", label: "نقداً" },
-                  { value: "card", label: "بطاقة ائتمان" },
-                  { value: "transfer", label: "حوالة بنكية" },
-                  { value: "other", label: "أخرى" },
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">تاريخ الدفعة</div>
-              <input
-                className="input"
-                type="date"
-                value={payDate}
-                onChange={(e) => setPayDate(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">ملاحظات</div>
-              <input
-                className="input"
-                placeholder="اختياري"
-                value={payNote}
-                onChange={(e) => setPayNote(e.target.value)}
-              />
-            </div>
-
-            <div
-              className="row"
-              style={{ gridColumn: "span 12", marginTop: 10 }}
-            >
-              <button
-                type="button"
-                className="btn primary"
-                disabled={paySaving || !payEnrollmentId || !payAmount}
-                onClick={addPayment}
-              >
-                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setPayEditId(null);
-                  setPayLocked(false);
-                  setOpenPay(false);
-                }}
               >
                 إلغاء
               </button>
