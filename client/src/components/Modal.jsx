@@ -5,7 +5,7 @@ export default function Modal({ open, title, children, onClose, maxWidth }) {
   useEffect(() => {
     if (!open) return;
 
-    const prevOverflow = document.body.style.overflow;
+    // 1. عند فتح المودال، بنقفل سكرول الصفحة الرئيسية
     document.body.style.overflow = "hidden";
 
     const onKey = (e) => {
@@ -15,7 +15,15 @@ export default function Modal({ open, title, children, onClose, maxWidth }) {
 
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
+
+      // 2. الحل السحري: عند الإغلاق ننتظر جزء من الثانية
+      // ونتأكد إذا ما ظل أي مودال ثاني فاتح بالصفحة، بنرجع السكرول طبيعي
+      setTimeout(() => {
+        const openModals = document.querySelectorAll(".modalOverlay");
+        if (openModals.length === 0) {
+          document.body.style.overflow = "";
+        }
+      }, 50);
     };
   }, [open, onClose]);
 
@@ -30,7 +38,6 @@ export default function Modal({ open, title, children, onClose, maxWidth }) {
         className="modalCard"
         role="dialog"
         aria-modal="true"
-        /* هنا نتحكم بعرض كل مودال بشكل فردي */
         style={maxWidth ? { maxWidth: maxWidth, width: "95%" } : {}}
       >
         <button
