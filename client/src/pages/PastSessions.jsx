@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import PageHeader from "../components/PageHeader";
-import Badge from "../components/Badge";
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
 import {
@@ -58,14 +57,12 @@ const PAST_SESSIONS_SOFT_UI_STYLES = `
 
 .pastSessionsPage .sessionRow {
   border-radius: 18px !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
   background: rgba(255, 255, 255, 0.94);
   transition: all 0.2s ease;
 }
 .pastSessionsPage .sessionRow:hover {
-  background: #fff;
-  border-color: rgba(0, 172, 71, 0.15) !important;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+  background: #fff !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.04);
 }
 
 .pastSessionsPage .sectionHeader {
@@ -149,13 +146,6 @@ export default function PastSessions() {
     if (runId) loadData();
   }, [runId]);
 
-  function sessionStatusLabel(st) {
-    if (st === "scheduled") return "مجدولة";
-    if (st === "done") return "مكتملة";
-    if (st === "canceled") return "ملغاة";
-    return st;
-  }
-
   async function deleteSession(id) {
     try {
       await supabase.from("course_sessions").delete().eq("id", id);
@@ -222,7 +212,21 @@ export default function PastSessions() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {pastSessions.map((s) => {
-                const isCanceled = s.status === "canceled";
+                // تحديد لون الجلسة حسب الحالة
+                let rowBg = "#fff";
+                let rowBorder = "1px solid rgba(15, 23, 42, 0.08)";
+
+                if (s.status === "done") {
+                  rowBg = "rgba(0, 172, 71, 0.08)";
+                  rowBorder = "1px solid rgba(0, 172, 71, 0.25)";
+                } else if (s.status === "canceled") {
+                  rowBg = "rgba(239, 68, 68, 0.06)";
+                  rowBorder = "1px solid rgba(239, 68, 68, 0.25)";
+                } else {
+                  // scheduled
+                  rowBg = "rgba(14, 165, 233, 0.06)";
+                  rowBorder = "1px solid rgba(14, 165, 233, 0.25)";
+                }
 
                 return (
                   <div
@@ -231,22 +235,21 @@ export default function PastSessions() {
                     style={{
                       display: "grid",
                       gridTemplateColumns:
-                        "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
+                        "minmax(120px, 1fr) minmax(140px, 1fr) auto",
                       gap: 12,
-                      // exact replica of RunDetails padding
                       padding: "12px 14px",
                       alignItems: "center",
-                      // Canceled session styling
-                      background: isCanceled
-                        ? "rgba(239, 68, 68, 0.08)"
-                        : "rgba(255, 255, 255, 0.94)",
-                      borderColor: isCanceled
-                        ? "rgba(239, 68, 68, 0.15)"
-                        : "rgba(15, 23, 42, 0.08)",
-                      opacity: isCanceled ? 0.75 : 1,
+                      background: rowBg,
+                      border: rowBorder,
+                      borderRight:
+                        s.status === "done"
+                          ? "4px solid #00ac47"
+                          : s.status === "canceled"
+                            ? "4px solid #ef4444"
+                            : "4px solid #0ea5e9",
                     }}
                   >
-                    {/* Column 1: Date - With RTL alignment fix */}
+                    {/* عمود التاريخ */}
                     <div style={{ textAlign: "right", paddingRight: 8 }}>
                       <div
                         style={{
@@ -259,7 +262,8 @@ export default function PastSessions() {
                       </div>
                       <div className="muted">{fmtWeekday(s.start_at)}</div>
                     </div>
-                    {/* Column 2: Time */}
+
+                    {/* عمود الوقت */}
                     <div>
                       <div
                         style={{
@@ -275,21 +279,8 @@ export default function PastSessions() {
                         </span>
                       </div>
                     </div>
-                    {/* Column 3: Badge */}
-                    <div>
-                      <Badge
-                        variant={
-                          s.status === "done"
-                            ? "ok"
-                            : isCanceled
-                              ? "danger"
-                              : "default"
-                        }
-                      >
-                        {sessionStatusLabel(s.status)}
-                      </Badge>
-                    </div>
-                    {/* Column 4: Actions - Exact Replica of RunDetails */}
+
+                    {/* عمود الإجراءات */}
                     <div
                       style={{
                         display: "flex",
@@ -297,28 +288,25 @@ export default function PastSessions() {
                         justifyContent: "flex-end",
                       }}
                     >
-                      {/* Attendance button: Settings2 */}
                       <button
                         className="btn primary iconOnly"
-                        title="تسجيل الحضور" // consistent title
+                        title="تسجيل الحضور"
                         onClick={() => navigate(`/sessions/${s.id}/attendance`)}
                       >
                         <Settings2 size={16} />
                       </button>
 
-                      {/* Edit button: Pencil */}
                       <button
                         className="btn iconOnly"
-                        title="تعديل الجلسة" // User might need this
-                        onClick={() => navigate(`/runs/${runId}`)} // Just navigate back to main page
+                        title="تعديل الجلسة"
+                        onClick={() => navigate(`/runs/${runId}`)}
                       >
                         <Pencil size={16} />
                       </button>
 
-                      {/* Delete button: Trash2 */}
                       <button
                         className="btn danger iconOnly"
-                        title="حذف الجلسة" // consistent title
+                        title="حذف الجلسة"
                         onClick={() =>
                           setConfirm({
                             open: true,
