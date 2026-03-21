@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
+import Badge from "../components/Badge";
 import PageHeader from "../components/PageHeader";
 import EmptyState from "../components/EmptyState";
 import {
@@ -15,6 +16,8 @@ import {
   Eraser,
   MinusCircle,
   MousePointerClick,
+  CalendarDays,
+  Clock,
 } from "lucide-react";
 
 // --- دوال تنسيق التاريخ والوقت لتنظيف العنوان ---
@@ -37,10 +40,13 @@ function fmtTimeHM(dt) {
 const STATUS = ["present", "absent", "excused", "none"];
 
 function statusMeta(s) {
-  if (s === "present") return { label: "حاضر", className: "att-btn-present" };
-  if (s === "absent") return { label: "غائب", className: "att-btn-absent" };
-  if (s === "excused") return { label: "معذور", className: "att-btn-excused" };
-  return { label: "تصفير", className: "att-btn-none" };
+  if (s === "present")
+    return { label: "حاضر", Icon: CheckCircle2, className: "att-btn-present" };
+  if (s === "absent")
+    return { label: "غائب", Icon: XCircle, className: "att-btn-absent" };
+  if (s === "excused")
+    return { label: "معذور", Icon: CircleSlash2, className: "att-btn-excused" };
+  return { label: "تصفير", Icon: Eraser, className: "att-btn-none" };
 }
 
 const ATTENDANCE_STYLES = `
@@ -113,19 +119,18 @@ const ATTENDANCE_STYLES = `
   color: #0f172a;
 }
 
-/* --- أزرار الحضور بالجدول (Pills ملونة وواضحة) --- */
+/* --- أزرار الحضور بالجدول (أيقونات دائرية ملونة) --- */
 .att-action-btn {
   display: inline-flex; 
   align-items: center; 
   justify-content: center;
-  padding: 8px 24px; 
-  border-radius: 999px; /* شكل بيضاوي Pill */
-  font-size: 14px; 
-  font-weight: 800; 
+  width: 44px;
+  height: 44px;
+  padding: 0; 
+  border-radius: 50%; /* شكل دائري */
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
   border: 1px solid transparent;
-  min-width: 85px;
 }
 
 /* الوضع غير المفعل (ألوان فاتحة) - Inactive State */
@@ -168,7 +173,7 @@ const ATTENDANCE_STYLES = `
 }
 
 .attendancePage .table td {
-  padding: 12px 24px !important; /* مسافات عمودية مريحة */
+  padding: 12px 24px !important; 
   background: #fff !important;
   border-bottom: 1px solid #f1f5f9 !important;
   font-size: 15px;
@@ -427,10 +432,55 @@ export default function Attendance() {
       </div>
     );
 
+  // إعداد العنوان الفرعي بشكل احترافي لتجنب مشاكل الاتجاهات (RTL/LTR)
   const headerSubtitle =
-    session && summary
-      ? `${summary.title} • تاريخ: ${fmtDate(session.start_at)} • الوقت: ${fmtTimeHM(session.start_at)} - ${fmtTimeHM(session.end_at)}`
-      : (summary?.title ?? "");
+    session && summary ? (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          flexWrap: "wrap",
+          marginTop: "6px",
+        }}
+      >
+        <span style={{ fontWeight: 800, color: "#334155", fontSize: "15px" }}>
+          {summary.title}
+        </span>
+        <span style={{ color: "#cbd5e1" }}>|</span>
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            color: "#64748b",
+            fontSize: "14px",
+            direction: "ltr",
+          }}
+        >
+          <CalendarDays size={16} />
+          <span style={{ fontWeight: 700 }}>{fmtDate(session.start_at)}</span>
+        </span>
+        <span style={{ color: "#cbd5e1" }}>|</span>
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            color: "#64748b",
+            fontSize: "14px",
+            direction: "ltr",
+          }}
+        >
+          <Clock size={16} />
+          <span style={{ fontWeight: 700 }}>
+            {fmtTimeHM(session.start_at)} - {fmtTimeHM(session.end_at)}
+          </span>
+        </span>
+      </div>
+    ) : (
+      (summary?.title ?? "")
+    );
 
   return (
     <div className="page page--runs" dir="rtl" lang="ar">
@@ -611,21 +661,21 @@ export default function Attendance() {
               </div>
             </div>
 
-            {/* --- الجدول النظيف بألوان واضحة --- */}
+            {/* --- الجدول النظيف بالأيقونات الدائرية --- */}
             <div className="tableWrap">
               <table className="table">
                 <thead>
                   <tr>
                     <th
                       style={{
-                        width: "35%",
+                        width: "40%",
                         textAlign: "right",
                         paddingRight: "30px",
                       }}
                     >
                       الطفل
                     </th>
-                    <th style={{ width: "65%", textAlign: "center" }}>
+                    <th style={{ width: "60%", textAlign: "center" }}>
                       الإجراء
                     </th>
                   </tr>
@@ -651,18 +701,20 @@ export default function Attendance() {
                             className="row"
                             style={{
                               flexWrap: "nowrap",
-                              gap: 12, // مسافة مريحة بين الأزرار
+                              gap: 14, // مسافة مريحة بين الأيقونات
                               justifyContent: "center",
                               alignItems: "center",
                             }}
                           >
                             {STATUS.map((s) => {
                               const meta = statusMeta(s);
+                              const ActiveIcon = meta.Icon;
                               const active = v === s;
                               return (
                                 <button
                                   key={s}
                                   type="button"
+                                  title={meta.label}
                                   onClick={() =>
                                     setAtt((p) => ({
                                       ...p,
@@ -671,7 +723,10 @@ export default function Attendance() {
                                   }
                                   className={`att-action-btn ${meta.className} ${active ? "active" : ""}`}
                                 >
-                                  {meta.label}
+                                  <ActiveIcon
+                                    size={20}
+                                    strokeWidth={active ? 2.5 : 2}
+                                  />
                                 </button>
                               );
                             })}
