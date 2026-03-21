@@ -104,7 +104,7 @@ function isoDate(d) {
   return `${y}-${m}-${da}`;
 }
 
-// دالة لتحديث التاريخ مع الحفاظ على وقت النظام (حتى ما يتلخبط الترتيب)
+// دالة لتحديث التاريخ مع الحفاظ على وقت النظام
 function updateDateKeepTime(dateStr) {
   if (!dateStr) return new Date().toISOString();
   const d = new Date();
@@ -137,7 +137,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   padding-block: 22px 40px;
 }
 
-/* --- الحل السحري للتحكم بحجم كل مودال على حدة بدون التأثير على المودالات الصغيرة --- */
+/* --- التحكم بحجم المودال الفردي --- */
 .modalCard:has(.modal-wide-1000) {
   width: 95% !important;
   max-width: 1000px !important;
@@ -148,50 +148,11 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   max-width: 900px !important;
 }
 
-/* جداول النوافذ المنبثقة: إظهار كامل الداتا بدون سكرول أفقي ومحاذاة بالمنتصف */
 .runDetails .tableWrap.inCard {
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 18px;
   overflow: visible !important; 
 }
-
-.modal-compact-table {
-  width: 100% !important;
-  min-width: 100% !important;
-  border-collapse: separate !important;
-  border-spacing: 0 8px !important;
-  table-layout: auto !important; 
-}
-
-/* التعديل الجوهري للترتيب والمحاذاة داخل الجدول */
-.modal-compact-table th,
-.modal-compact-table td {
-  text-align: center !important; /* توسيط أفقي */
-  vertical-align: middle !important; /* توسيط عمودي */
-  white-space: nowrap !important; /* منع انكسار السطر */
-}
-
-.modal-compact-table th {
-  background: #f8fafc !important;
-  color: #64748b !important;
-  font-weight: 800 !important;
-  padding: 16px 15px !important;
-  font-size: 15px;
-  border-bottom: 2px solid #edf2f7;
-}
-
-.modal-compact-table td {
-  padding: 18px 15px !important;
-  background: #fff !important;
-  border-top: 1px solid #f1f5f9 !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  font-size: 15px;
-}
-
-.modal-compact-table tr td:first-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
-.modal-compact-table tr td:last-child { border-left: 1px solid #f1f5f9; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-
-/* ---------------------------------------------------- */
 
 .runDetails .card {
   background: #ffffff !important;
@@ -3479,7 +3440,7 @@ export default function RunDetails() {
                           </td>
                           <td className="muted">{att.note || "-"}</td>
                           <td className="muted" style={{ fontSize: 12 }}>
-                            {fmtDT(att.created_at)}
+                            {fmtDate(att.created_at)}
                           </td>
                         </tr>
                       );
@@ -4293,111 +4254,6 @@ export default function RunDetails() {
                 onClick={() => {
                   setOpenExpenseModal(false);
                   resetExpenseForm();
-                }}
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openPay}
-          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
-          onClose={() => {
-            setPayEditId(null);
-            setPayLocked(false);
-            closeSubModalAndReopen(setOpenPay);
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الطفل</div>
-              <ModernSelect
-                value={payEnrollmentId}
-                onChange={setPayEnrollmentId}
-                menuWidth="trigger"
-                disabled={paySaving || !!payEditId || payLocked}
-                placeholder="— اختر طفل —"
-                options={[
-                  { value: "", label: "— اختر طفل —" },
-                  ...participants
-                    .filter((p) => p.enrollment_status === "active")
-                    .map((p) => ({
-                      value: p.enrollment_id,
-                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
-                    })),
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">المبلغ (₪)</div>
-              <input
-                className="input"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">طريقة الدفع</div>
-              <ModernSelect
-                value={payMethod}
-                onChange={setPayMethod}
-                menuWidth="trigger"
-                options={[
-                  { value: "cash", label: "نقداً" },
-                  { value: "card", label: "بطاقة ائتمان" },
-                  { value: "transfer", label: "حوالة بنكية" },
-                  { value: "other", label: "أخرى" },
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">تاريخ الدفعة</div>
-              <input
-                className="input"
-                type="date"
-                value={payDate}
-                onChange={(e) => setPayDate(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">ملاحظات</div>
-              <input
-                className="input"
-                placeholder="اختياري"
-                value={payNote}
-                onChange={(e) => setPayNote(e.target.value)}
-              />
-            </div>
-
-            <div
-              className="row"
-              style={{ gridColumn: "span 12", marginTop: 10 }}
-            >
-              <button
-                type="button"
-                className="btn primary"
-                disabled={paySaving || !payEnrollmentId || !payAmount}
-                onClick={addPayment}
-              >
-                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setPayEditId(null);
-                  setPayLocked(false);
-                  closeSubModalAndReopen(setOpenPay);
                 }}
               >
                 إلغاء

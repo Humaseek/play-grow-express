@@ -811,6 +811,54 @@ textarea {
 }
 
 /* ============================ Tables ============================ */
+.tableWrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: auto;
+}
+.table {
+  min-width: 720px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* إجبار المحاذاة للمنتصف في جميع الجداول */
+.table th,
+.table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  text-align: center !important; /* توسيط أفقي */
+  vertical-align: middle !important; /* توسيط عمودي */
+}
+
+.table th {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 950;
+  background: rgba(0, 0, 0, 0.02); /* خلفية خفيفة للهيدر */
+}
+
+/* تعديل خاص لأزرار الأكشن داخل الجداول لتكون بمنتصف الخلية */
+.table td .tableActions,
+.table td > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .table {
+    min-width: 640px;
+  }
+}
+@media (max-width: 680px) {
+  .table {
+    min-width: 560px;
+  }
+}
 
 .rowPaid {
   background: rgba(0, 172, 71, 0.06);
@@ -925,46 +973,6 @@ textarea {
   .modalBody {
     padding: 8px 16px 18px;
   }
-}
-
-.modal-content {
-  width: 95% !important;
-  max-width: 1400px !important; /* عرض واسع ليتناسب مع الجداول */
-  padding: 30px !important;
-  border-radius: 28px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important;
-}
-
-.modal-compact-table th {
-  background: #f8fafc !important;
-  color: #64748b !important;
-  font-weight: 800 !important;
-  padding: 16px 15px !important;
-  text-align: right !important;
-  font-size: 15px;
-  border-bottom: 2px solid #edf2f7;
-}
-
-.modal-compact-table td {
-  padding: 18px 15px !important;
-  background: #fff !important;
-  border-top: 1px solid #f1f5f9 !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  /* منع انكسار السطر لعرض داتا احترافية بسطر واحد */
-  white-space: nowrap;
-  font-size: 15px;
-}
-
-.modal-compact-table tr td:first-child {
-  border-right: 1px solid #f1f5f9;
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-}
-
-.modal-compact-table tr td:last-child {
-  border-left: 1px solid #f1f5f9;
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
 }
 
 /* ============================ Toasts ============================ */
