@@ -685,6 +685,9 @@ export default function RunDetails() {
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
+  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
+  const [shouldReopenManage, setShouldReopenManage] = useState(false);
+
   const [firstStart, setFirstStart] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [count, setCount] = useState(8);
@@ -746,6 +749,17 @@ export default function RunDetails() {
     if (tryTable.error) throw tryTable.error;
     return tryTable.data ?? [];
   }
+
+  // دالة ذكية لإغلاق المودال الفرعي وفتح مودال إدارة الطالب مجدداً
+  const closeSubModalAndReopen = (setterFunc) => {
+    setterFunc(false);
+    if (shouldReopenManage && manageP) {
+      setTimeout(() => {
+        setOpenإدارة(true);
+      }, 150);
+      setShouldReopenManage(false);
+    }
+  };
 
   async function createChildInline({ enrollNow = false } = {}) {
     const name = (newChildForm.name || "").trim();
@@ -830,9 +844,9 @@ export default function RunDetails() {
     });
     if (rpc2.error) throw rpc2.error;
     toast("تم التسجيل بنجاح.", "ok");
-    setOpenEnroll(false);
+    closeSubModalAndReopen(setOpenEnroll);
     await loadFixed();
-    if (!enrollLocked) setTab("participants");
+    if (!enrollLocked && !shouldReopenManage) setTab("participants");
   }
 
   function resetExpenseForm() {
@@ -1345,9 +1359,9 @@ export default function RunDetails() {
       }
       if (s > 0) await bumpEnrollmentAllocated(existing.enrollment_id, s);
       toast("تمت إعادة التسجيل بنجاح.", "ok");
-      setOpenEnroll(false);
+      closeSubModalAndReopen(setOpenEnroll);
       await loadFixed();
-      if (!enrollLocked) setTab("participants");
+      if (!enrollLocked && !shouldReopenManage) setTab("participants");
       return true;
     } catch {
       toast("فشلت إعادة التسجيل.", "danger");
@@ -1384,9 +1398,9 @@ export default function RunDetails() {
           throw rpc.error;
         }
         toast("تم التسجيل باستخدام الرصيد السابق.", "ok");
-        setOpenEnroll(false);
+        closeSubModalAndReopen(setOpenEnroll);
         await loadFixed();
-        if (!enrollLocked) setTab("participants");
+        if (!enrollLocked && !shouldReopenManage) setTab("participants");
         return;
       }
 
@@ -1408,9 +1422,9 @@ export default function RunDetails() {
           });
         }
         toast("تم شحن رصيد الجلسات.", "ok");
-        setOpenEnroll(false);
+        closeSubModalAndReopen(setOpenEnroll);
         await loadFixed();
-        if (!enrollLocked) setTab("participants");
+        if (!enrollLocked && !shouldReopenManage) setTab("participants");
         return;
       }
 
@@ -1677,9 +1691,9 @@ export default function RunDetails() {
           .from("payments")
           .insert([{ enrollment_id: Number(payEnrollmentId), ...p }]);
 
-      setOpenPay(false);
+      closeSubModalAndReopen(setOpenPay);
       await loadFixed();
-      if (!payLocked) setTab("payments");
+      if (!payLocked && !shouldReopenManage) setTab("payments");
     } catch {
       toast("Failed.", "danger");
     } finally {
@@ -2988,7 +3002,9 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       disabled={Number(manageP.balance || 0) <= 0}
-                      onClick={() => openPaymentModalFor(manageP, "remaining")}
+                      onClick={() => {
+                        openPaymentModalFor(manageP, "remaining");
+                      }}
                     >
                       <Banknote
                         size={26}
@@ -3003,14 +3019,18 @@ export default function RunDetails() {
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => openPaymentModalFor(manageP, "custom")}
+                      onClick={() => {
+                        openPaymentModalFor(manageP, "custom");
+                      }}
                     >
                       <PlusCircle size={26} style={{ color: "#16a34a" }} />
                       <span>إضافة دفعة</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => openPaymentHistory(manageP)}
+                      onClick={() => {
+                        openPaymentHistory(manageP);
+                      }}
                     >
                       <History size={26} style={{ color: "#475569" }} />
                       <span>سجل الدفعات</span>
@@ -3042,21 +3062,27 @@ export default function RunDetails() {
                   >
                     <button
                       className="actionSquare"
-                      onClick={() => openSingleTopup(manageP)}
+                      onClick={() => {
+                        openSingleTopup(manageP);
+                      }}
                     >
                       <ShoppingCart size={26} style={{ color: "#7a5cff" }} />
                       <span>شراء جلسات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => fetchPkgHistory(manageP)}
+                      onClick={() => {
+                        fetchPkgHistory(manageP);
+                      }}
                     >
                       <List size={26} style={{ color: "#475569" }} />
                       <span>سجل الباقات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => fetchAttHistory(manageP)}
+                      onClick={() => {
+                        fetchAttHistory(manageP);
+                      }}
                     >
                       <CalendarCheck size={26} style={{ color: "#475569" }} />
                       <span>سجل الحضور</span>
@@ -3215,7 +3241,6 @@ export default function RunDetails() {
                       <th>تاريخ الشراء</th>
                       <th>عدد الجلسات</th>
                       <th>السعر (₪)</th>
-                      <th>الحالة</th>
                       <th style={{ textAlign: "center" }}>إجراءات</th>
                     </tr>
                   </thead>
@@ -3235,13 +3260,6 @@ export default function RunDetails() {
                           <span dir="ltr">
                             {Number(pkg.price_total).toFixed(2)}
                           </span>
-                        </td>
-                        <td>
-                          <Badge
-                            variant={pkg.status === "active" ? "ok" : "default"}
-                          >
-                            {pkg.status}
-                          </Badge>
                         </td>
                         <td>
                           <div
@@ -4240,111 +4258,6 @@ export default function RunDetails() {
                 onClick={() => {
                   setOpenExpenseModal(false);
                   resetExpenseForm();
-                }}
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openPay}
-          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
-          onClose={() => {
-            setPayEditId(null);
-            setPayLocked(false);
-            setOpenPay(false);
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الطفل</div>
-              <ModernSelect
-                value={payEnrollmentId}
-                onChange={setPayEnrollmentId}
-                menuWidth="trigger"
-                disabled={paySaving || !!payEditId || payLocked}
-                placeholder="— اختر طفل —"
-                options={[
-                  { value: "", label: "— اختر طفل —" },
-                  ...participants
-                    .filter((p) => p.enrollment_status === "active")
-                    .map((p) => ({
-                      value: p.enrollment_id,
-                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
-                    })),
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">المبلغ (₪)</div>
-              <input
-                className="input"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">طريقة الدفع</div>
-              <ModernSelect
-                value={payMethod}
-                onChange={setPayMethod}
-                menuWidth="trigger"
-                options={[
-                  { value: "cash", label: "نقداً" },
-                  { value: "card", label: "بطاقة ائتمان" },
-                  { value: "transfer", label: "حوالة بنكية" },
-                  { value: "other", label: "أخرى" },
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">تاريخ الدفعة</div>
-              <input
-                className="input"
-                type="date"
-                value={payDate}
-                onChange={(e) => setPayDate(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">ملاحظات</div>
-              <input
-                className="input"
-                placeholder="اختياري"
-                value={payNote}
-                onChange={(e) => setPayNote(e.target.value)}
-              />
-            </div>
-
-            <div
-              className="row"
-              style={{ gridColumn: "span 12", marginTop: 10 }}
-            >
-              <button
-                type="button"
-                className="btn primary"
-                disabled={paySaving || !payEnrollmentId || !payAmount}
-                onClick={addPayment}
-              >
-                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setPayEditId(null);
-                  setPayLocked(false);
-                  setOpenPay(false);
                 }}
               >
                 إلغاء
