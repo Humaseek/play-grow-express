@@ -671,7 +671,7 @@ export default function RunDetails() {
     id: null,
     sessions_total: "",
     price_total: "",
-    created_at: "",
+    created_at: "", // لحفظ وتعديل تاريخ الباقة
   });
   const [editPkgSaving, setEditPkgSaving] = useState(false);
 
@@ -679,7 +679,7 @@ export default function RunDetails() {
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
-  const [payDate, setPayDate] = useState(isoDate(new Date()));
+  const [payDate, setPayDate] = useState(isoDate(new Date())); // التاريخ كمدخل منفصل
   const [payNote, setPayNote] = useState("");
   const [paySaving, setPaySaving] = useState(false);
   const [payEditId, setPayEditId] = useState(null);
@@ -1410,9 +1410,6 @@ export default function RunDetails() {
       }
 
       if (existing && existing.enrollment_status === "active") {
-        // ----------------------------------------------------
-        // حماية إضافية من نافذة اختيار طفل (إضافة طفل للدورة)
-        // ----------------------------------------------------
         const remaining = Number(existing.package_sessions_remaining || 0);
         if (remaining > 0) {
           toast(
@@ -1509,9 +1506,6 @@ export default function RunDetails() {
     }
   }
 
-  // ----------------------------------------------------
-  // دالة حذف الطالب المحدثة - تمسح جميع باقاته الخاصة بالدورة
-  // ----------------------------------------------------
   async function deleteEnrollment(enrollmentId, childId, courseId) {
     try {
       const payCheck = await supabase
@@ -1523,7 +1517,6 @@ export default function RunDetails() {
         return;
       }
 
-      // 1. مسح جميع الباقات المرتبطة بالطالب داخل هذه الدورة
       if (childId && courseId) {
         await supabase
           .from("course_packages")
@@ -1532,13 +1525,11 @@ export default function RunDetails() {
           .eq("course_id", courseId);
       }
 
-      // 2. محاولة مسح التسجيل نهائياً
       const delRes = await supabase
         .from("enrollments")
         .delete()
         .eq("id", enrollmentId);
 
-      // في حال كان الطالب لديه سجل حضور يمنع حذفه نهائياً، نحوله لـ (منسحب) كبديل آمن
       if (delRes.error) {
         await supabase
           .from("enrollments")
@@ -1687,13 +1678,11 @@ export default function RunDetails() {
   }
 
   function paymentMethodLabel(v) {
-    return v === "cash"
-      ? "Cash"
-      : v === "card"
-        ? "Card"
-        : v === "transfer"
-          ? "Bank transfer"
-          : v || "-";
+    if (v === "cash") return "نقداً";
+    if (v === "card") return "بطاقة ائتمان";
+    if (v === "transfer") return "حوالة بنكية";
+    if (v === "other") return "أخرى";
+    return v || "-";
   }
 
   async function addPayment() {
@@ -1717,9 +1706,12 @@ export default function RunDetails() {
           .from("payments")
           .insert([{ enrollment_id: Number(payEnrollmentId), ...p }]);
 
-      closeSubModalAndReopen(setOpenPay);
+      setOpenPay(false);
       await loadFixed();
-      if (!payLocked && !shouldReopenManage) setTab("payments");
+      // تحديث نافذة سجل الدفعات إذا كنا بنعدل من داخلها لتبين الداتا الجديدة مباشرة
+      if (shouldReopenManage && manageP) {
+        openPaymentHistory(manageP);
+      }
     } catch {
       toast("Failed.", "danger");
     } finally {
@@ -1741,9 +1733,10 @@ export default function RunDetails() {
       setHistoryLoading(false);
       return;
     }
+    // التعديل السحري: جبنا الـ enrollment_id عشان نقدر نعدل الدفعة من جوا السجل
     const { data } = await supabase
       .from("payments")
-      .select("id,amount,method,note,created_at")
+      .select("id,enrollment_id,amount,method,note,created_at")
       .eq("package_id", pRow.package_id)
       .order("created_at", { ascending: false });
     setHistoryRows(data ?? []);
@@ -3028,7 +3021,10 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       disabled={Number(manageP.balance || 0) <= 0}
-                      onClick={() => openPaymentModalFor(manageP, "remaining")}
+                      onClick={() => {
+                        setShouldReopenManage(true);
+                        openPaymentModalFor(manageP, "remaining");
+                      }}
                     >
                       <Banknote
                         size={26}
@@ -3043,14 +3039,20 @@ export default function RunDetails() {
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => openPaymentModalFor(manageP, "custom")}
+                      onClick={() => {
+                        setShouldReopenManage(true);
+                        openPaymentModalFor(manageP, "custom");
+                      }}
                     >
                       <PlusCircle size={26} style={{ color: "#16a34a" }} />
                       <span>إضافة دفعة</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => openPaymentHistory(manageP)}
+                      onClick={() => {
+                        setShouldReopenManage(true);
+                        openPaymentHistory(manageP);
+                      }}
                     >
                       <History size={26} style={{ color: "#475569" }} />
                       <span>سجل الدفعات</span>
@@ -3082,65 +3084,35 @@ export default function RunDetails() {
                   >
                     <button
                       className="actionSquare"
-                      onClick={() => openSingleTopup(manageP)}
+                      onClick={() => {
+                        setShouldReopenManage(true);
+                        openSingleTopup(manageP);
+                      }}
                     >
                       <ShoppingCart size={26} style={{ color: "#7a5cff" }} />
                       <span>شراء جلسات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => fetchPkgHistory(manageP)}
+                      onClick={() => {
+                        setShouldReopenManage(true);
+                        fetchPkgHistory(manageP);
+                      }}
                     >
                       <List size={26} style={{ color: "#475569" }} />
                       <span>سجل الباقات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => fetchAttHistory(manageP)}
+                      onClick={() => {
+                        setShouldReopenManage(true);
+                        fetchAttHistory(manageP);
+                      }}
                     >
                       <CalendarCheck size={26} style={{ color: "#475569" }} />
                       <span>سجل الحضور</span>
                     </button>
                   </div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-end",
-                  flexWrap: "wrap",
-                  gap: 20,
-                  borderTop: "1px solid #e2e8f0",
-                  paddingTop: 20,
-                }}
-              >
-                <div style={{ display: "flex", gap: 10 }}>
-                  <IconButton
-                    title="حذف التسجيل"
-                    danger
-                    disabled={manageHasPayments}
-                    variant="ghost"
-                    onClick={() => {
-                      if (manageHasPayments) {
-                        toast("لا يمكن حذفه لوجود دفعات مسجلة.", "warn");
-                        return;
-                      }
-                      setConfirm({
-                        open: true,
-                        type: "deleteEnroll",
-                        id: {
-                          enrollmentId: manageP.enrollment_id,
-                          childId: manageP.child_id,
-                          courseId: summary.template_id,
-                        },
-                        text: `هل أنت متأكد من حذف الاشتراك نهائياً؟ سيتم حذف كافة باقات هذا الطفل المرتبطة بهذه الدورة.`,
-                      });
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </IconButton>
                 </div>
               </div>
             </div>
@@ -3432,6 +3404,19 @@ export default function RunDetails() {
                               alignItems: "center",
                             }}
                           >
+                            <button
+                              className="btn iconOnly"
+                              title="تعديل الدفعة"
+                              onClick={() => {
+                                setOpenHistory(false);
+                                setShouldReopenManage(true);
+                                setTimeout(() => {
+                                  openEditPayment(x);
+                                }, 50);
+                              }}
+                            >
+                              <Pencil size={16} />
+                            </button>
                             <button
                               className="btn danger iconOnly"
                               onClick={() =>
@@ -4320,8 +4305,6 @@ export default function RunDetails() {
             // Delete Full Enrollment
             if (type === "deleteEnroll") {
               await deleteEnrollment(id.enrollmentId, id.childId, id.courseId);
-              // نقوم بإغلاق كرت الطالب فقط إذا تم حذفه بالكامل بنجاح
-              setOpenإدارة(false);
             }
 
             // Delete specific package
