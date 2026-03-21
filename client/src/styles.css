@@ -811,31 +811,6 @@ textarea {
 }
 
 /* ============================ Tables ============================ */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  overflow: hidden;
-}
-
-.table {
-  /* تمديد الجدول ليأخذ كل المساحة العريضة الجديدة */
-  width: 100% !important;
-  min-width: 100% !important;
-  table-layout: auto !important; /* السماح بتوزيع الأعمدة تلقائياً حسب المحتوى */
-}
-
-.table th,
-.table td {
-  padding: 10px 10px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  text-align: right;
-  vertical-align: middle;
-}
-.table th {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 950;
-}
 
 .rowPaid {
   background: rgba(0, 172, 71, 0.06);
@@ -1872,26 +1847,6 @@ textarea {
 }
 
 /* ============================ Tables responsive ============================ */
-.tableWrap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-sm);
-  overflow: auto;
-}
-.table {
-  min-width: 720px;
-}
-@media (max-width: 760px) {
-  .table {
-    min-width: 640px;
-  }
-}
-@media (max-width: 680px) {
-  .table {
-    min-width: 560px;
-  }
-}
 
 /* ============================ Card grids (enterprise lists) ============================ */
 .cardsGrid {
@@ -2386,4 +2341,132 @@ textarea {
   border-radius: 18px;
   /* منع السكرول تماماً وإظهار الداتا كاملة */
   overflow: visible !important;
+}
+
+/* ============================ Tables ============================ */
+.tableWrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: auto;
+}
+.table {
+  min-width: 720px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* إجبار المحاذاة للمنتصف في جميع الجداول */
+.table th,
+.table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  text-align: center !important; /* توسيط أفقي */
+  vertical-align: middle !important; /* توسيط عمودي */
+}
+
+.table th {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 950;
+  background: rgba(0, 0, 0, 0.02); /* خلفية خفيفة للهيدر */
+}
+
+/* تعديل خاص لأزرار الأكشن داخل الجداول لتكون بمنتصف الخلية */
+.table td .tableActions,
+.table td > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .table {
+    min-width: 640px;
+  }
+}
+@media (max-width: 680px) {
+  .table {
+    min-width: 560px;
+  }
+}
+
+.rowPaid {
+  background: rgba(0, 172, 71, 0.06);
+}
+.rowPartial {
+  background: rgba(255, 213, 2, 0.08);
+}
+.rowUnpaid {
+  background: rgba(220, 38, 38, 0.06);
+}
+
+/* ============================ Modal Compact Tables ============================ */
+/* تعديل جذري لضمان إظهار الجداول العريضة في النوافذ المنبثقة بشكل أنيق */
+
+.modal-content {
+  width: 95% !important;
+  max-width: 1400px !important;
+  padding: 30px !important;
+  border-radius: 28px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.modal-compact-table {
+  width: 100% !important;
+  min-width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 8px !important;
+  table-layout: auto !important;
+}
+
+.modal-compact-table th {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-weight: 800 !important;
+  padding: 16px 15px !important;
+  font-size: 15px;
+  border-bottom: 2px solid #edf2f7;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.modal-compact-table td {
+  padding: 18px 15px !important;
+  background: #fff !important;
+  border-top: 1px solid #f1f5f9 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  white-space: nowrap !important;
+  font-size: 15px;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.modal-compact-table tr td:first-child {
+  border-right: 1px solid #f1f5f9;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.modal-compact-table tr td:last-child {
+  border-left: 1px solid #f1f5f9;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+/* تنسيق خاص لأزرار الحذف والتعديل لتكون بخط مستقيم */
+.modal-compact-table td > div,
+.modal-compact-table td .btn,
+.modal-compact-table td .iconButton {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+}
+
+/* لون المبلغ الأسود */
+.modal-compact-table td .ltrIso {
+  color: #0f172a !important;
+  font-weight: 900 !important;
 }
