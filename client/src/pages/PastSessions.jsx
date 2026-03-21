@@ -5,7 +5,16 @@ import PageHeader from "../components/PageHeader";
 import Badge from "../components/Badge";
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { Clock, History, Pencil, Trash2, ArrowRight } from "lucide-react";
+import {
+  Clock,
+  History,
+  Settings2,
+  Pencil,
+  Trash2,
+  ArrowRight,
+} from "lucide-react";
+
+const LOCALE_LATN = "en-IL";
 
 // --- دوال تنسيق التاريخ والوقت ---
 function fmtDate(dt) {
@@ -30,7 +39,7 @@ function fmtWeekday(dt) {
 }
 // ---------------------------------
 
-const PAST_SESSIONS_STYLES = `
+const PAST_SESSIONS_SOFT_UI_STYLES = `
 .page.page--runs {
   background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
 }
@@ -80,6 +89,11 @@ const PAST_SESSIONS_STYLES = `
 .pastSessionsPage .btn.primary {
   background: rgb(0, 172, 71) !important;
   border-color: rgb(0, 172, 71) !important;
+}
+
+/* Israeli Latn Locale handling for white-space */
+.pastSessionsPage .ltrIso {
+  white-space: nowrap !important;
 }
 `;
 
@@ -154,7 +168,7 @@ export default function PastSessions() {
   if (loading) {
     return (
       <div className="container page page--runs" dir="rtl">
-        <style>{PAST_SESSIONS_STYLES}</style>
+        <style>{PAST_SESSIONS_SOFT_UI_STYLES}</style>
         <div
           className="card mainCard pastSessionsPage"
           style={{ textAlign: "center" }}
@@ -167,7 +181,7 @@ export default function PastSessions() {
 
   return (
     <div className="page page--runs" dir="rtl" lang="ar">
-      <style>{PAST_SESSIONS_STYLES}</style>
+      <style>{PAST_SESSIONS_SOFT_UI_STYLES}</style>
       <div className="container pastSessionsPage">
         <PageHeader
           title="الجلسات السابقة"
@@ -219,9 +233,10 @@ export default function PastSessions() {
                       gridTemplateColumns:
                         "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
                       gap: 12,
-                      padding: "18px 20px",
+                      // exact replica of RunDetails padding
+                      padding: "12px 14px",
                       alignItems: "center",
-                      // تلوين الجلسة الملغاة
+                      // Canceled session styling
                       background: isCanceled
                         ? "rgba(239, 68, 68, 0.08)"
                         : "rgba(255, 255, 255, 0.94)",
@@ -231,7 +246,8 @@ export default function PastSessions() {
                       opacity: isCanceled ? 0.75 : 1,
                     }}
                   >
-                    <div>
+                    {/* Column 1: Date - With RTL alignment fix */}
+                    <div style={{ textAlign: "right", paddingRight: 8 }}>
                       <div
                         style={{
                           fontWeight: 800,
@@ -243,21 +259,23 @@ export default function PastSessions() {
                       </div>
                       <div className="muted">{fmtWeekday(s.start_at)}</div>
                     </div>
+                    {/* Column 2: Time */}
                     <div>
                       <div
                         style={{
                           fontWeight: 700,
                           display: "flex",
                           alignItems: "center",
-                          gap: 8,
+                          gap: 6,
                         }}
                       >
                         <Clock size={16} color="#64748b" />
-                        <span dir="ltr">
+                        <span dir="ltr" className="ltrIso">
                           {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
                         </span>
                       </div>
                     </div>
+                    {/* Column 3: Badge */}
                     <div>
                       <Badge
                         variant={
@@ -271,6 +289,7 @@ export default function PastSessions() {
                         {sessionStatusLabel(s.status)}
                       </Badge>
                     </div>
+                    {/* Column 4: Actions - Exact Replica of RunDetails */}
                     <div
                       style={{
                         display: "flex",
@@ -278,19 +297,28 @@ export default function PastSessions() {
                         justifyContent: "flex-end",
                       }}
                     >
-                      {/* زر أخذ الحضور - لونه أخضر ومع أيقونة Pencil */}
+                      {/* Attendance button: Settings2 */}
                       <button
                         className="btn primary iconOnly"
-                        title="أخذ الحضور"
+                        title="تسجيل الحضور" // consistent title
                         onClick={() => navigate(`/sessions/${s.id}/attendance`)}
                       >
-                        <Pencil size={18} />
+                        <Settings2 size={16} />
                       </button>
 
-                      {/* زر الحذف - لونه أحمر ومع أيقونة Trash2 */}
+                      {/* Edit button: Pencil */}
+                      <button
+                        className="btn iconOnly"
+                        title="تعديل الجلسة" // User might need this
+                        onClick={() => navigate(`/runs/${runId}`)} // Just navigate back to main page
+                      >
+                        <Pencil size={16} />
+                      </button>
+
+                      {/* Delete button: Trash2 */}
                       <button
                         className="btn danger iconOnly"
-                        title="حذف الجلسة"
+                        title="حذف الجلسة" // consistent title
                         onClick={() =>
                           setConfirm({
                             open: true,
@@ -300,7 +328,7 @@ export default function PastSessions() {
                           })
                         }
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
