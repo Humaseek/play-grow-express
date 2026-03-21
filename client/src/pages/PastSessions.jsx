@@ -13,7 +13,29 @@ import {
   Trash2,
   ArrowRight,
 } from "lucide-react";
-import { fmtDate, fmtTimeHM, fmtWeekday } from "../utils/datetime"; // تأكد من استيراد الدوال الصحيحة للتاريخ
+
+// --- دوال تنسيق التاريخ والوقت ---
+function fmtDate(dt) {
+  if (!dt) return "-";
+  const d = new Date(dt);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function fmtTimeHM(dt) {
+  if (!dt) return "-";
+  const d = new Date(dt);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fmtWeekday(dt) {
+  if (!dt) return "—";
+  return new Intl.DateTimeFormat("ar", { weekday: "long" }).format(
+    new Date(dt),
+  );
+}
+// ---------------------------------
 
 export default function PastSessions() {
   const { runId } = useParams();
