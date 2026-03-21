@@ -5,14 +5,7 @@ import PageHeader from "../components/PageHeader";
 import Badge from "../components/Badge";
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
-import {
-  Clock,
-  History,
-  Pencil,
-  Settings2,
-  Trash2,
-  ArrowRight,
-} from "lucide-react";
+import { Clock, History, Pencil, Trash2, ArrowRight } from "lucide-react";
 
 // --- دوال تنسيق التاريخ والوقت ---
 function fmtDate(dt) {
@@ -36,6 +29,59 @@ function fmtWeekday(dt) {
   );
 }
 // ---------------------------------
+
+const PAST_SESSIONS_STYLES = `
+.page.page--runs {
+  background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
+}
+
+.pastSessionsPage {
+  padding-block: 22px 40px;
+}
+
+.pastSessionsPage .mainCard {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+  padding: 24px !important;
+}
+
+.pastSessionsPage .sessionRow {
+  border-radius: 18px !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  background: rgba(255, 255, 255, 0.94);
+  transition: all 0.2s ease;
+}
+.pastSessionsPage .sessionRow:hover {
+  background: #fff;
+  border-color: rgba(0, 172, 71, 0.15) !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+}
+
+.pastSessionsPage .sectionHeader {
+  font-size: 20px;
+  font-weight: 900;
+  color: #0f172a;
+  margin-top: 0;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pastSessionsPage .btn {
+  border-radius: 14px !important;
+  min-height: 42px;
+  padding-inline: 16px !important;
+  box-shadow: none !important;
+}
+
+.pastSessionsPage .btn.primary {
+  background: rgb(0, 172, 71) !important;
+  border-color: rgb(0, 172, 71) !important;
+}
+`;
 
 export default function PastSessions() {
   const { runId } = useParams();
@@ -108,7 +154,11 @@ export default function PastSessions() {
   if (loading) {
     return (
       <div className="container page page--runs" dir="rtl">
-        <div className="card" style={{ padding: 20, textAlign: "center" }}>
+        <style>{PAST_SESSIONS_STYLES}</style>
+        <div
+          className="card mainCard pastSessionsPage"
+          style={{ textAlign: "center" }}
+        >
           جاري تحميل الجلسات السابقة...
         </div>
       </div>
@@ -116,146 +166,170 @@ export default function PastSessions() {
   }
 
   return (
-    <div className="container" dir="rtl" lang="ar">
-      <PageHeader
-        title="الجلسات السابقة"
-        subtitle={summary ? `${summary.title} - ${summary.label}` : ""}
-        actions={
-          <button className="btn" onClick={() => navigate(`/runs/${runId}`)}>
-            العودة للدورة <ArrowRight size={18} style={{ marginRight: 6 }} />
-          </button>
-        }
-      />
+    <div className="page page--runs" dir="rtl" lang="ar">
+      <style>{PAST_SESSIONS_STYLES}</style>
+      <div className="container pastSessionsPage">
+        <PageHeader
+          title="الجلسات السابقة"
+          subtitle={summary ? `${summary.title} - ${summary.label}` : ""}
+          actions={
+            <button
+              className="btn"
+              style={{
+                borderRadius: "999px",
+                background: "#fff",
+                border: "none",
+                fontWeight: "bold",
+                padding: "8px 24px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              }}
+              onClick={() => navigate(`/runs/${runId}`)}
+            >
+              العودة للدورة <ArrowRight size={18} style={{ marginRight: 6 }} />
+            </button>
+          }
+        />
 
-      <ErrorBanner error={error} />
+        <ErrorBanner error={error} />
 
-      <div className="card" style={{ marginTop: 24 }}>
-        <h2
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 20,
-            fontSize: 20,
-          }}
-        >
-          <History size={24} color="#475569" /> قائمة الجلسات السابقة (
-          {pastSessions.length})
-        </h2>
+        <div className="card mainCard" style={{ marginTop: 24 }}>
+          <h2 className="sectionHeader">
+            <History size={24} color="#475569" /> قائمة الجلسات السابقة (
+            {pastSessions.length})
+          </h2>
 
-        {pastSessions.length === 0 ? (
-          <div
-            className="muted"
-            style={{ textAlign: "center", padding: "40px 0" }}
-          >
-            لا يوجد أي جلسات سابقة مسجلة.
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {pastSessions.map((s) => (
-              <div
-                key={s.id}
-                className="card"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns:
-                    "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
-                  gap: 12,
-                  padding: "16px",
-                  alignItems: "center",
-                  background: s.status === "canceled" ? "#f8fafc" : "#ffffff",
-                  opacity: s.status === "canceled" ? 0.7 : 1,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: 16 }}>
-                    {fmtDate(s.start_at)}
-                  </div>
-                  <div className="muted">{fmtWeekday(s.start_at)}</div>
-                </div>
-                <div>
+          {pastSessions.length === 0 ? (
+            <div
+              className="muted"
+              style={{ textAlign: "center", padding: "40px 0" }}
+            >
+              لا يوجد أي جلسات سابقة مسجلة.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {pastSessions.map((s) => {
+                const isCanceled = s.status === "canceled";
+
+                return (
                   <div
+                    key={s.id}
+                    className="sessionRow"
                     style={{
-                      fontWeight: 700,
-                      display: "flex",
+                      display: "grid",
+                      gridTemplateColumns:
+                        "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
+                      gap: 12,
+                      padding: "18px 20px",
                       alignItems: "center",
-                      gap: 6,
+                      // تلوين الجلسة الملغاة
+                      background: isCanceled
+                        ? "rgba(239, 68, 68, 0.08)"
+                        : "rgba(255, 255, 255, 0.94)",
+                      borderColor: isCanceled
+                        ? "rgba(239, 68, 68, 0.15)"
+                        : "rgba(15, 23, 42, 0.08)",
+                      opacity: isCanceled ? 0.75 : 1,
                     }}
                   >
-                    <Clock size={16} color="#64748b" />
-                    <span dir="ltr">
-                      {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
-                    </span>
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 800,
+                          fontSize: 16,
+                          color: "#0f172a",
+                        }}
+                      >
+                        {fmtDate(s.start_at)}
+                      </div>
+                      <div className="muted">{fmtWeekday(s.start_at)}</div>
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <Clock size={16} color="#64748b" />
+                        <span dir="ltr">
+                          {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <Badge
+                        variant={
+                          s.status === "done"
+                            ? "ok"
+                            : isCanceled
+                              ? "danger"
+                              : "default"
+                        }
+                      >
+                        {sessionStatusLabel(s.status)}
+                      </Badge>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        justifyContent: "flex-end",
+                      }}
+                    >
+                      {/* زر أخذ الحضور - لونه أخضر ومع أيقونة Pencil */}
+                      <button
+                        className="btn primary iconOnly"
+                        title="أخذ الحضور"
+                        onClick={() => navigate(`/sessions/${s.id}/attendance`)}
+                      >
+                        <Pencil size={18} />
+                      </button>
+
+                      {/* زر الحذف - لونه أحمر ومع أيقونة Trash2 */}
+                      <button
+                        className="btn danger iconOnly"
+                        title="حذف الجلسة"
+                        onClick={() =>
+                          setConfirm({
+                            open: true,
+                            type: "deleteSession",
+                            id: s.id,
+                            text: "هل تريد حذف هذه الجلسة؟",
+                          })
+                        }
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <Badge
-                    variant={
-                      s.status === "done"
-                        ? "ok"
-                        : s.status === "canceled"
-                          ? "danger"
-                          : "default"
-                    }
-                  >
-                    {sessionStatusLabel(s.status)}
-                  </Badge>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <button
-                    className="btn primary iconOnly"
-                    title="عرض الحضور"
-                    onClick={() => navigate(`/sessions/${s.id}/attendance`)}
-                  >
-                    <Settings2 size={16} />
-                  </button>
-                  <button
-                    className="btn danger iconOnly"
-                    title="حذف الجلسة"
-                    onClick={() =>
-                      setConfirm({
-                        open: true,
-                        type: "deleteSession",
-                        id: s.id,
-                        text: "هل تريد حذف هذه الجلسة؟",
-                      })
-                    }
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-      <ConfirmDialog
-        open={confirm.open}
-        title=""
-        message={confirm.text}
-        confirmText="نعم"
-        cancelText="إلغاء"
-        danger
-        onCancel={() =>
-          setConfirm({ open: false, type: null, id: null, text: "" })
-        }
-        onConfirm={async () => {
-          const { type, id } = confirm;
-          setConfirm({ open: false, type: null, id: null, text: "" });
-
-          if (type === "deleteSession") {
-            await deleteSession(id);
+        <ConfirmDialog
+          open={confirm.open}
+          title=""
+          message={confirm.text}
+          confirmText="نعم"
+          cancelText="إلغاء"
+          danger
+          onCancel={() =>
+            setConfirm({ open: false, type: null, id: null, text: "" })
           }
-        }}
-      />
+          onConfirm={async () => {
+            const { type, id } = confirm;
+            setConfirm({ open: false, type: null, id: null, text: "" });
+
+            if (type === "deleteSession") {
+              await deleteSession(id);
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }
