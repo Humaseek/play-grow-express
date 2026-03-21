@@ -104,6 +104,7 @@ function isoDate(d) {
   return `${y}-${m}-${da}`;
 }
 
+// دالة لتحديث التاريخ مع الحفاظ على وقت النظام
 function updateDateKeepTime(dateStr) {
   if (!dateStr) return new Date().toISOString();
   const d = new Date();
@@ -136,6 +137,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   padding-block: 22px 40px;
 }
 
+/* --- التحكم بحجم المودال الفردي --- */
 .modalCard:has(.modal-wide-1000) {
   width: 95% !important;
   max-width: 1000px !important;
@@ -160,6 +162,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   table-layout: auto !important; 
 }
 
+/* المحاذاة الإجبارية للمنتصف بخط مستقيم */
 .modal-compact-table th,
 .modal-compact-table td {
   text-align: center !important;
@@ -318,6 +321,12 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   margin-bottom: 8px;
 }
 
+.summaryNote {
+  color: rgb(82, 82, 82);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .runDetails .tabs {
   display: inline-flex;
   flex-wrap: wrap;
@@ -341,6 +350,24 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   background: rgba(0, 172, 71, 0.12) !important;
   border-color: rgba(0, 172, 71, 0.18) !important;
   color: rgb(0, 172, 71) !important;
+}
+
+.runDetails .pToolbar {
+  gap: 20px !important;
+}
+
+.runDetails .pTitle h2,
+.runDetails .h1 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.runDetails .input,
+.runDetails select.input {
+  min-height: 46px;
+  border-radius: 14px !important;
+  border: 1px solid rgba(15, 23, 42, 0.10) !important;
+  background: #fff !important;
 }
 
 .runDetails .pGrid {
@@ -625,7 +652,7 @@ export default function RunDetails() {
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
-  // السجلات
+  // السجلات الجديدة
   const [openHistory, setOpenHistory] = useState(false);
   const [historyEnrollment, setHistoryEnrollment] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
@@ -644,7 +671,7 @@ export default function RunDetails() {
     id: null,
     sessions_total: "",
     price_total: "",
-    created_at: "",
+    created_at: "", // لحفظ وتعديل تاريخ الباقة
   });
   const [editPkgSaving, setEditPkgSaving] = useState(false);
 
@@ -652,7 +679,7 @@ export default function RunDetails() {
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
-  const [payDate, setPayDate] = useState(isoDate(new Date()));
+  const [payDate, setPayDate] = useState(isoDate(new Date())); // التاريخ كمدخل منفصل
   const [payNote, setPayNote] = useState("");
   const [paySaving, setPaySaving] = useState(false);
   const [payEditId, setPayEditId] = useState(null);
@@ -2513,13 +2540,7 @@ export default function RunDetails() {
                       {payments.map((p) => (
                         <tr key={p.id}>
                           <td style={{ fontWeight: 800 }}>{p.child_name}</td>
-                          <td
-                            style={{
-                              fontWeight: 900,
-                              color: "#0f172a",
-                              verticalAlign: "middle",
-                            }}
-                          >
+                          <td style={{ fontWeight: 900, color: "#0f172a" }}>
                             <span dir="ltr">{Number(p.amount).toFixed(2)}</span>
                           </td>
                           <td className="muted">
@@ -2529,12 +2550,7 @@ export default function RunDetails() {
                           </td>
                           <td className="muted">{fmtDate(p.created_at)}</td>
                           <td className="muted">{p.note ?? "-"}</td>
-                          <td
-                            style={{
-                              textAlign: "center",
-                              verticalAlign: "middle",
-                            }}
-                          >
+                          <td style={{ textAlign: "center" }}>
                             <div
                               style={{
                                 display: "flex",
@@ -2706,21 +2722,10 @@ export default function RunDetails() {
                             </td>
                             <td className="muted">{r.party || "—"}</td>
                             <td className="muted">{r.description || "—"}</td>
-                            <td
-                              style={{
-                                fontWeight: 900,
-                                color: "#0f172a",
-                                verticalAlign: "middle",
-                              }}
-                            >
+                            <td style={{ fontWeight: 900, color: "#0f172a" }}>
                               <span dir="ltr">{fmtILS(r.amount, 2)}</span>
                             </td>
-                            <td
-                              style={{
-                                textAlign: "center",
-                                verticalAlign: "middle",
-                              }}
-                            >
+                            <td style={{ textAlign: "center" }}>
                               <div
                                 className="tableActions"
                                 style={{
@@ -2983,9 +2988,7 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       disabled={Number(manageP.balance || 0) <= 0}
-                      onClick={() => {
-                        openPaymentModalFor(manageP, "remaining");
-                      }}
+                      onClick={() => openPaymentModalFor(manageP, "remaining")}
                     >
                       <Banknote
                         size={26}
@@ -3000,18 +3003,14 @@ export default function RunDetails() {
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        openPaymentModalFor(manageP, "custom");
-                      }}
+                      onClick={() => openPaymentModalFor(manageP, "custom")}
                     >
                       <PlusCircle size={26} style={{ color: "#16a34a" }} />
                       <span>إضافة دفعة</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        openPaymentHistory(manageP);
-                      }}
+                      onClick={() => openPaymentHistory(manageP)}
                     >
                       <History size={26} style={{ color: "#475569" }} />
                       <span>سجل الدفعات</span>
@@ -3043,27 +3042,21 @@ export default function RunDetails() {
                   >
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        openSingleTopup(manageP);
-                      }}
+                      onClick={() => openSingleTopup(manageP)}
                     >
                       <ShoppingCart size={26} style={{ color: "#7a5cff" }} />
                       <span>شراء جلسات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        fetchPkgHistory(manageP);
-                      }}
+                      onClick={() => fetchPkgHistory(manageP)}
                     >
                       <List size={26} style={{ color: "#475569" }} />
                       <span>سجل الباقات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        fetchAttHistory(manageP);
-                      }}
+                      onClick={() => fetchAttHistory(manageP)}
                     >
                       <CalendarCheck size={26} style={{ color: "#475569" }} />
                       <span>سجل الحضور</span>
@@ -3237,7 +3230,6 @@ export default function RunDetails() {
                           style={{
                             fontWeight: 900,
                             color: "#0f172a",
-                            verticalAlign: "middle",
                           }}
                         >
                           <span dir="ltr">
@@ -3251,12 +3243,7 @@ export default function RunDetails() {
                             {pkg.status}
                           </Badge>
                         </td>
-                        <td
-                          style={{
-                            textAlign: "center",
-                            verticalAlign: "middle",
-                          }}
-                        >
+                        <td>
                           <div
                             style={{
                               display: "flex",
@@ -3434,7 +3421,7 @@ export default function RunDetails() {
                           </td>
                           <td className="muted">{att.note || "-"}</td>
                           <td className="muted" style={{ fontSize: 12 }}>
-                            {fmtDate(att.created_at)}
+                            {fmtDT(att.created_at)}
                           </td>
                         </tr>
                       );
@@ -3480,7 +3467,6 @@ export default function RunDetails() {
                           style={{
                             fontWeight: 900,
                             color: "#0f172a",
-                            verticalAlign: "middle",
                           }}
                         >
                           <span dir="ltr">{Number(x.amount).toFixed(2)}</span>
@@ -3492,12 +3478,7 @@ export default function RunDetails() {
                         </td>
                         <td className="muted">{fmtDate(x.created_at)}</td>
                         <td className="muted">{x.note ?? "-"}</td>
-                        <td
-                          style={{
-                            textAlign: "center",
-                            verticalAlign: "middle",
-                          }}
-                        >
+                        <td>
                           <div
                             style={{
                               display: "flex",
@@ -4129,6 +4110,249 @@ export default function RunDetails() {
           </div>
         </Modal>
 
+        <Modal
+          open={openExpenseModal}
+          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
+          onClose={() => {
+            setOpenExpenseModal(false);
+            resetExpenseForm();
+          }}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">التاريخ</div>
+              <input
+                className="input"
+                type="date"
+                value={expDate}
+                onChange={(e) => setExpDate(e.target.value)}
+              />
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">المبلغ</div>
+              <input
+                className="input"
+                type="number"
+                step="0.01"
+                min="0"
+                value={expAmount}
+                onChange={(e) => setExpAmount(e.target.value)}
+                placeholder="مثال: 50"
+              />
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">التصنيف</div>
+              {expHasPicklists ? (
+                <ModernSelect
+                  value={expCategory || ""}
+                  onChange={(v) => setExpCategory(v)}
+                  options={[
+                    { value: "", label: "—" },
+                    ...expCategories.map((x) => ({ value: x, label: x })),
+                  ]}
+                />
+              ) : (
+                <input
+                  className="input"
+                  value={expCategory}
+                  onChange={(e) => setExpCategory(e.target.value)}
+                  placeholder="مثال: معاشات"
+                />
+              )}
+              {expHasPicklists && (
+                <div className="row" style={{ marginTop: 8, gap: 8 }}>
+                  <input
+                    className="input"
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    placeholder="إضافة تصنيف جديد..."
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => addPicklistValue("category", newCatName)}
+                  >
+                    إضافة
+                  </button>
+                </div>
+              )}
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">الشخص</div>
+              {expHasPicklists ? (
+                <ModernSelect
+                  value={expParty || ""}
+                  onChange={(v) => setExpParty(v)}
+                  options={[
+                    { value: "", label: "—" },
+                    ...expParties.map((x) => ({ value: x, label: x })),
+                  ]}
+                />
+              ) : (
+                <input
+                  className="input"
+                  value={expParty}
+                  onChange={(e) => setExpParty(e.target.value)}
+                  placeholder="مثال: سامر"
+                />
+              )}
+              {expHasPicklists && (
+                <div className="row" style={{ marginTop: 8, gap: 8 }}>
+                  <input
+                    className="input"
+                    value={newPartyName}
+                    onChange={(e) => setNewPartyName(e.target.value)}
+                    placeholder="إضافة شخص جديد..."
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => addPicklistValue("party", newPartyName)}
+                  >
+                    إضافة
+                  </button>
+                </div>
+              )}
+            </div>
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الوصف</div>
+              <input
+                className="input"
+                value={expDesc}
+                onChange={(e) => setExpDesc(e.target.value)}
+                placeholder="اختياري..."
+              />
+            </div>
+            <div className="row" style={{ gridColumn: "span 12" }}>
+              <button
+                type="button"
+                className="btn primary"
+                onClick={saveExpense}
+                disabled={expSaving}
+              >
+                {expSaving ? "حفظ..." : "حفظ"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setOpenExpenseModal(false);
+                  resetExpenseForm();
+                }}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
+          open={openPay}
+          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
+          onClose={() => {
+            setPayEditId(null);
+            setPayLocked(false);
+            setOpenPay(false);
+          }}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الطفل</div>
+              <ModernSelect
+                value={payEnrollmentId}
+                onChange={setPayEnrollmentId}
+                menuWidth="trigger"
+                disabled={paySaving || !!payEditId || payLocked}
+                placeholder="— اختر طفل —"
+                options={[
+                  { value: "", label: "— اختر طفل —" },
+                  ...participants
+                    .filter((p) => p.enrollment_status === "active")
+                    .map((p) => ({
+                      value: p.enrollment_id,
+                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
+                    })),
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">المبلغ (₪)</div>
+              <input
+                className="input"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">طريقة الدفع</div>
+              <ModernSelect
+                value={payMethod}
+                onChange={setPayMethod}
+                menuWidth="trigger"
+                options={[
+                  { value: "cash", label: "نقداً" },
+                  { value: "card", label: "بطاقة ائتمان" },
+                  { value: "transfer", label: "حوالة بنكية" },
+                  { value: "other", label: "أخرى" },
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">تاريخ الدفعة</div>
+              <input
+                className="input"
+                type="date"
+                value={payDate}
+                onChange={(e) => setPayDate(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">ملاحظات</div>
+              <input
+                className="input"
+                placeholder="اختياري"
+                value={payNote}
+                onChange={(e) => setPayNote(e.target.value)}
+              />
+            </div>
+
+            <div
+              className="row"
+              style={{ gridColumn: "span 12", marginTop: 10 }}
+            >
+              <button
+                type="button"
+                className="btn primary"
+                disabled={paySaving || !payEnrollmentId || !payAmount}
+                onClick={addPayment}
+              >
+                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setPayEditId(null);
+                  setPayLocked(false);
+                  setOpenPay(false);
+                }}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </Modal>
+
         <ConfirmDialog
           open={confirm.open}
           title=""
@@ -4155,6 +4379,8 @@ export default function RunDetails() {
                 id.childName,
                 id.packageId,
               );
+              // نقوم بإغلاق كرت الطالب فقط إذا تم حذفه بالكامل بنجاح
+              setOpenإدارة(false);
             }
 
             // Delete specific package
