@@ -504,11 +504,6 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 .runDetails .pBarUnpaid span { background: rgb(239, 68, 68); }
 .runDetails .pBarFree span { background: rgb(148, 163, 184); }
 
-.runDetails .pActions {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(15, 23, 42, 0.06);
-}
-
 .runDetails .sessionRow {
   border-radius: 18px !important;
   border: 1px solid rgba(15, 23, 42, 0.08) !important;
@@ -676,7 +671,7 @@ export default function RunDetails() {
     id: null,
     sessions_total: "",
     price_total: "",
-    created_at: "", // لحفظ وتعديل تاريخ الباقة
+    created_at: "",
   });
   const [editPkgSaving, setEditPkgSaving] = useState(false);
 
@@ -684,13 +679,12 @@ export default function RunDetails() {
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
-  const [payDate, setPayDate] = useState(isoDate(new Date())); // التاريخ كمدخل منفصل
+  const [payDate, setPayDate] = useState(isoDate(new Date()));
   const [payNote, setPayNote] = useState("");
   const [paySaving, setPaySaving] = useState(false);
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
-  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -755,7 +749,6 @@ export default function RunDetails() {
     return tryTable.data ?? [];
   }
 
-  // دالة ذكية لإغلاق المودال الفرعي وفتح مودال إدارة الطالب مجدداً
   const closeSubModalAndReopen = (setterFunc) => {
     setterFunc(false);
     if (shouldReopenManage && manageP) {
@@ -3081,46 +3074,6 @@ export default function RunDetails() {
                       <span>سجل الحضور</span>
                     </button>
                   </div>
-
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      background: "#f8fafc",
-                      borderRadius: 12,
-                      padding: "8px 16px",
-                      marginTop: 16,
-                      border: "1px solid #f1f5f9",
-                    }}
-                  >
-                    <span
-                      className="muted"
-                      style={{ fontSize: 13, fontWeight: 700 }}
-                    >
-                      تعديل الجلسات المتبقية سريعاً:
-                    </span>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        type="button"
-                        className="btn iconOnly"
-                        style={{ width: 34, height: 34, padding: 0 }}
-                        onClick={() => quickAdjustFromإدارة(-1)}
-                        title="خصم حصة"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn iconOnly"
-                        style={{ width: 34, height: 34, padding: 0 }}
-                        onClick={() => quickAdjustFromإدارة(1)}
-                        title="إضافة حصة"
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -3245,7 +3198,12 @@ export default function RunDetails() {
                         <td style={{ fontWeight: 800 }}>
                           {pkg.sessions_total}
                         </td>
-                        <td style={{ fontWeight: 900, color: "#0f172a" }}>
+                        <td
+                          style={{
+                            fontWeight: 900,
+                            color: "#0f172a",
+                          }}
+                        >
                           <span dir="ltr">
                             {Number(pkg.price_total).toFixed(2)}
                           </span>
@@ -3257,7 +3215,7 @@ export default function RunDetails() {
                             {pkg.status}
                           </Badge>
                         </td>
-                        <td style={{ textAlign: "center" }}>
+                        <td>
                           <div
                             style={{
                               display: "flex",
@@ -3475,7 +3433,12 @@ export default function RunDetails() {
                   <tbody>
                     {historyRows.map((x) => (
                       <tr key={x.id}>
-                        <td style={{ fontWeight: 900, color: "#0f172a" }}>
+                        <td
+                          style={{
+                            fontWeight: 900,
+                            color: "#0f172a",
+                          }}
+                        >
                           <span dir="ltr">{Number(x.amount).toFixed(2)}</span>
                         </td>
                         <td className="muted">
@@ -3485,7 +3448,7 @@ export default function RunDetails() {
                         </td>
                         <td className="muted">{fmtDate(x.created_at)}</td>
                         <td className="muted">{x.note ?? "-"}</td>
-                        <td style={{ textAlign: "center" }}>
+                        <td>
                           <div
                             style={{
                               display: "flex",
