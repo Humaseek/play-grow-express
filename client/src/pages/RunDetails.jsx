@@ -128,14 +128,6 @@ function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
 }
 
-// دالة مساعدة لترجمة حالة الجلسة
-function sessionStatusLabel(st) {
-  if (st === "scheduled") return "مجدولة";
-  if (st === "done") return "مكتملة";
-  if (st === "canceled") return "ملغاة";
-  return st;
-}
-
 const RUN_DETAILS_SOFT_UI_STYLES = `
 .page.page--runs {
   background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
@@ -514,21 +506,22 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 
 .runDetails .sessionRow {
   border-radius: 18px !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
   background: rgba(255, 255, 255, 0.94);
   transition: all 0.2s ease;
+  border-left: 1px solid transparent;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
 }
 .runDetails .sessionRow:hover {
-  background: #fff;
-  border-color: rgba(0, 172, 71, 0.15) !important;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+  background: #fff !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.04);
 }
 
 .runDetails .sectionHeader {
   font-size: 18px;
   font-weight: 900;
   color: #0f172a;
-  margin-top: 30px;
+  margin-top: 10px;
   margin-bottom: 16px;
   display: flex;
   align-items: center;
@@ -677,7 +670,7 @@ export default function RunDetails() {
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
-  // السجلات
+  // السجلات الجديدة
   const [openHistory, setOpenHistory] = useState(false);
   const [historyEnrollment, setHistoryEnrollment] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
@@ -696,7 +689,7 @@ export default function RunDetails() {
     id: null,
     sessions_total: "",
     price_total: "",
-    created_at: "",
+    created_at: "", // لحفظ وتعديل تاريخ الباقة
   });
   const [editPkgSaving, setEditPkgSaving] = useState(false);
 
@@ -704,12 +697,13 @@ export default function RunDetails() {
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
-  const [payDate, setPayDate] = useState(isoDate(new Date()));
+  const [payDate, setPayDate] = useState(isoDate(new Date())); // التاريخ كمدخل منفصل
   const [payNote, setPayNote] = useState("");
   const [paySaving, setPaySaving] = useState(false);
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
+  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -1737,9 +1731,11 @@ export default function RunDetails() {
           .from("payments")
           .insert([{ enrollment_id: Number(payEnrollmentId), ...p }]);
 
-      closeSubModalAndReopen(setOpenPay);
+      setOpenPay(false);
       await loadFixed();
-      if (!payLocked && !shouldReopenManage) setTab("payments");
+      if (shouldReopenManage && manageP) {
+        openPaymentHistory(manageP);
+      }
     } catch {
       toast("Failed.", "danger");
     } finally {
@@ -2494,109 +2490,9 @@ export default function RunDetails() {
                 <div
                   style={{ display: "flex", flexDirection: "column", gap: 20 }}
                 >
-                  {/* الجلسات القادمة والحالية */}
-                  <div>
-                    <h2 className="sectionHeader" style={{ color: "#00ac47" }}>
-                      <CalendarClock size={20} /> الجلسات
-                    </h2>
-                    {upcomingSessions.length === 0 ? (
-                      <div className="muted" style={{ padding: "10px 0" }}>
-                        لا يوجد جلسات حالية أو قادمة.
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 12,
-                        }}
-                      >
-                        {upcomingSessions.map((s) => (
-                          <div
-                            key={s.id}
-                            className="sessionRow"
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns:
-                                "minmax(120px, 1fr) minmax(140px, 1fr) minmax(110px, 140px) auto",
-                              gap: 12,
-                              padding: "12px 14px",
-                              alignItems: "center",
-                            }}
-                          >
-                            <div>
-                              <div style={{ fontWeight: 700 }}>
-                                {fmtDate(s.start_at)}
-                              </div>
-                              <div className="muted">
-                                {fmtWeekday(s.start_at)}
-                              </div>
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 600 }}>
-                                {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
-                              </div>
-                            </div>
-                            <div>
-                              <Badge
-                                variant={
-                                  s.status === "done"
-                                    ? "ok"
-                                    : s.status === "canceled"
-                                      ? "danger"
-                                      : "info" // لون مميز للجلسات المجدولة
-                                }
-                              >
-                                {sessionStatusLabel(s.status)}
-                              </Badge>
-                            </div>
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: 8,
-                                justifyContent: "flex-end",
-                              }}
-                            >
-                              <button
-                                className="btn primary iconOnly"
-                                title="تسجيل الحضور"
-                                onClick={() =>
-                                  navigate(`/sessions/${s.id}/attendance`)
-                                }
-                              >
-                                <Settings2 size={16} />
-                              </button>
-                              <button
-                                className="btn iconOnly"
-                                title="تعديل الجلسة"
-                                onClick={() => openEditSession(s)}
-                              >
-                                <Pencil size={16} />
-                              </button>
-                              <button
-                                className="btn danger iconOnly"
-                                title="حذف الجلسة"
-                                onClick={() =>
-                                  setConfirm({
-                                    open: true,
-                                    type: "deleteSession",
-                                    id: s.id,
-                                    text: "هل تريد حذف هذه الجلسة؟",
-                                  })
-                                }
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* الجلسات السابقة - تم تحويلها لزر ينقل لصفحة أخرى */}
+                  {/* زر عرض الجلسات السابقة (المنقول لأعلى) */}
                   {pastSessions.length > 0 && (
-                    <div style={{ marginTop: 24 }}>
+                    <div>
                       <button
                         className="btn"
                         style={{
@@ -2618,6 +2514,123 @@ export default function RunDetails() {
                       </button>
                     </div>
                   )}
+
+                  {/* الجلسات القادمة والحالية */}
+                  <div>
+                    <h2 className="sectionHeader" style={{ color: "#00ac47" }}>
+                      <CalendarClock size={20} /> الجلسات
+                    </h2>
+                    {upcomingSessions.length === 0 ? (
+                      <div className="muted" style={{ padding: "10px 0" }}>
+                        لا يوجد جلسات حالية أو قادمة.
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                        }}
+                      >
+                        {upcomingSessions.map((s) => {
+                          // تحديد لون الجلسة حسب الحالة (بدون كلمات)
+                          let rowBg = "#fff";
+                          let rowBorder = "1px solid rgba(15, 23, 42, 0.08)";
+
+                          if (s.status === "done") {
+                            rowBg = "rgba(0, 172, 71, 0.08)";
+                            rowBorder = "1px solid rgba(0, 172, 71, 0.25)";
+                          } else if (s.status === "canceled") {
+                            rowBg = "rgba(239, 68, 68, 0.06)";
+                            rowBorder = "1px solid rgba(239, 68, 68, 0.25)";
+                          } else {
+                            // scheduled
+                            rowBg = "rgba(14, 165, 233, 0.06)";
+                            rowBorder = "1px solid rgba(14, 165, 233, 0.25)";
+                          }
+
+                          return (
+                            <div
+                              key={s.id}
+                              className="sessionRow"
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "minmax(120px, 1fr) minmax(140px, 1fr) auto",
+                                gap: 12,
+                                padding: "12px 14px",
+                                alignItems: "center",
+                                background: rowBg,
+                                border: rowBorder,
+                                // إضافة خط ملون جانبي عشان يبين الحالة بوضوح أكبر
+                                borderRight:
+                                  s.status === "done"
+                                    ? "4px solid #00ac47"
+                                    : s.status === "canceled"
+                                      ? "4px solid #ef4444"
+                                      : "4px solid #0ea5e9",
+                              }}
+                            >
+                              <div>
+                                <div style={{ fontWeight: 700 }}>
+                                  {fmtDate(s.start_at)}
+                                </div>
+                                <div className="muted">
+                                  {fmtWeekday(s.start_at)}
+                                </div>
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 600 }}>
+                                  <span dir="ltr">
+                                    {fmtTimeHM(s.start_at)} →{" "}
+                                    {fmtTimeHM(s.end_at)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: 8,
+                                  justifyContent: "flex-end",
+                                }}
+                              >
+                                <button
+                                  className="btn primary iconOnly"
+                                  title="تسجيل الحضور"
+                                  onClick={() =>
+                                    navigate(`/sessions/${s.id}/attendance`)
+                                  }
+                                >
+                                  <Settings2 size={16} />
+                                </button>
+                                <button
+                                  className="btn iconOnly"
+                                  title="تعديل الجلسة"
+                                  onClick={() => openEditSession(s)}
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                                <button
+                                  className="btn danger iconOnly"
+                                  title="حذف الجلسة"
+                                  onClick={() =>
+                                    setConfirm({
+                                      open: true,
+                                      type: "deleteSession",
+                                      id: s.id,
+                                      text: "هل تريد حذف هذه الجلسة؟",
+                                    })
+                                  }
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -3589,7 +3602,7 @@ export default function RunDetails() {
           title={
             enrollLocked ? `إضافة جلسات — ${enrollLockedName}` : "تسجيل طفل"
           }
-          onClose={() => closeSubModalAndReopen(setOpenEnroll)}
+          onClose={() => setOpenEnroll(false)}
         >
           <div className="muted">
             إذا كان الطفل يملك رصيدًا مسبقًا، يمكنك اختيار "استخدام الرصيد
@@ -3698,7 +3711,7 @@ export default function RunDetails() {
               <button
                 type="button"
                 className="btn"
-                onClick={() => closeSubModalAndReopen(setOpenEnroll)}
+                onClick={() => setOpenEnroll(false)}
               >
                 إلغاء
               </button>
