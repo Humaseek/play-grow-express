@@ -15,12 +15,22 @@ import {
   Eraser,
   CircleSlash2,
 } from "lucide-react";
-import { fmtDateTime24 } from "../utils/datetime";
 
-function fmtDT(dt) {
-  if (!dt) return "—";
-  return fmtDateTime24(dt);
+// --- دوال تنسيق التاريخ والوقت لتنظيف العنوان ---
+function fmtDate(dt) {
+  if (!dt) return "-";
+  const d = new Date(dt);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
+
+function fmtTimeHM(dt) {
+  if (!dt) return "-";
+  const d = new Date(dt);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+// ------------------------------------------------
 
 // توحيد الألوان والحالات لتكون واضحة
 const STATUS = ["present", "absent", "excused", "none"];
@@ -40,6 +50,79 @@ function statusBadge(s) {
   if (s === "excused") return <Badge variant="warn">معذور</Badge>;
   return <Badge variant="default">غير مسجل</Badge>;
 }
+
+const ATTENDANCE_STYLES = `
+.page.page--runs {
+  background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
+}
+
+.attendancePage {
+  padding-block: 22px 40px;
+}
+
+.attendancePage .mainCard {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+  padding: 24px !important;
+}
+
+.attendancePage .tableWrap.inCard {
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 18px;
+  overflow: visible !important; 
+  background: #fff;
+}
+
+.attendancePage .table th,
+.attendancePage .table td {
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.attendancePage .table th {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-weight: 800 !important;
+  padding: 16px 15px !important;
+  font-size: 15px;
+  border-bottom: 2px solid #edf2f7;
+}
+
+.attendancePage .table td {
+  padding: 18px 15px !important;
+  background: #fff !important;
+  border-top: 1px solid #f1f5f9 !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  font-size: 15px;
+}
+
+.attendancePage .table tr td:first-child { border-right: 1px solid #f1f5f9; border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+.attendancePage .table tr td:last-child { border-left: 1px solid #f1f5f9; border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+
+.attendancePage .btn {
+  border-radius: 14px !important;
+  min-height: 42px;
+  padding-inline: 16px !important;
+  box-shadow: none !important;
+}
+
+.attendancePage .btn.primary {
+  background: rgb(0, 172, 71) !important;
+  border-color: rgb(0, 172, 71) !important;
+  opacity: 1 !important; /* منع الزر من أن يكون شفافاً */
+}
+.attendancePage .btn.primary:disabled {
+  opacity: 0.7 !important;
+  cursor: not-allowed;
+}
+
+.attendancePage .statBadge {
+  font-size: 14px;
+  padding: 8px 12px;
+}
+`;
 
 export default function Attendance() {
   const { sessionId } = useParams();
@@ -250,7 +333,7 @@ export default function Attendance() {
         if (del.error) throw del.error;
       }
 
-      // --- الميزة السحرية: تحديث حالة الجلسة إلى "مكتملة" تلقائياً ---
+      // تحديث حالة الجلسة إلى "مكتملة" تلقائياً
       await supabase
         .from("course_sessions")
         .update({ status: "done" })
@@ -268,196 +351,223 @@ export default function Attendance() {
 
   if (loading)
     return (
-      <div className="container page page--runs" dir="rtl">
-        <div className="card" style={{ padding: 20, textAlign: "center" }}>
-          جاري التحميل...
+      <div className="page page--runs" dir="rtl">
+        <div className="container attendancePage">
+          <div className="card mainCard" style={{ textAlign: "center" }}>
+            جاري التحميل...
+          </div>
         </div>
       </div>
     );
 
+  // إعداد العنوان الفرعي بشكل مرتب
+  const headerSubtitle =
+    session && summary
+      ? `${summary.title} • تاريخ: ${fmtDate(session.start_at)} • الوقت: ${fmtTimeHM(session.start_at)} - ${fmtTimeHM(session.end_at)}`
+      : (summary?.title ?? "");
+
   return (
-    <div className="container" dir="rtl" lang="ar">
-      <PageHeader
-        title="سجل الحضور"
-        subtitle={
-          session
-            ? `${summary?.title ?? ""} — ${summary?.label ?? ""} • ${fmtDT(session.start_at)} ← ${fmtDT(session.end_at)}`
-            : `${summary?.title ?? ""} — ${summary?.label ?? ""}`
-        }
-        actions={
-          <div className="toolbar">
-            {summary && (
+    <div className="page page--runs" dir="rtl" lang="ar">
+      <style>{ATTENDANCE_STYLES}</style>
+      <div className="container attendancePage">
+        <PageHeader
+          title="تسجيل الحضور"
+          subtitle={headerSubtitle}
+          actions={
+            <div className="toolbar">
+              {summary && (
+                <button
+                  className="btn"
+                  onClick={() => navigate(`/runs/${summary.run_id}`)}
+                >
+                  العودة للدورة{" "}
+                  <ArrowRight size={18} style={{ marginRight: 6 }} />
+                </button>
+              )}
               <button
                 className="btn"
-                onClick={() => navigate(`/runs/${summary.run_id}`)}
+                onClick={load}
+                aria-label="تحديث"
+                title="تحديث البيانات"
               >
-                العودة للدورة{" "}
-                <ArrowRight size={18} style={{ marginRight: 6 }} />
+                <RefreshCw size={18} /> تحديث
               </button>
-            )}
-            <button
-              className="btn"
-              onClick={load}
-              aria-label="تحديث"
-              title="تحديث البيانات"
-            >
-              <RefreshCw size={18} /> تحديث
-            </button>
-            <button
-              className="btn primary"
-              disabled={saving || !dirty}
-              onClick={saveAll}
-              title={dirty ? "حفظ التغييرات" : "لا توجد تغييرات"}
-              aria-label="حفظ"
-            >
-              <Save size={18} />{" "}
-              {saving ? "جاري الحفظ..." : dirty ? "حفظ" : "محفوظ"}
-            </button>
-          </div>
-        }
-      />
 
-      <ErrorBanner error={error} />
-
-      {/* شريط الإحصائيات */}
-      <div
-        className="row"
-        style={{ flexWrap: "wrap", gap: 8, marginBottom: 14 }}
-      >
-        <Badge variant="info">المتوقع: {stats.expected}</Badge>
-        <Badge variant="ok">حاضر: {stats.present}</Badge>
-        <Badge variant="danger">غائب: {stats.absent}</Badge>
-        <Badge variant="warn">معذور: {stats.excused}</Badge>
-        <Badge variant="default">غير مسجل: {stats.none}</Badge>
-      </div>
-
-      {/* أزرار التحكم السريع (الجميع) */}
-      <div className="toolbar" style={{ marginBottom: 16, gap: 8 }}>
-        <button
-          className="btn"
-          title="تعيين الجميع: حاضر"
-          aria-label="تعيين الجميع: حاضر"
-          onClick={() => setAll("present")}
-        >
-          <CheckCircle2 size={18} color="#00ac47" /> حاضر للكل
-        </button>
-        <button
-          className="btn"
-          title="تعيين الجميع: غائب"
-          aria-label="تعيين الجميع: غائب"
-          onClick={() => setAll("absent")}
-        >
-          <XCircle size={18} color="#dc2626" /> غائب للكل
-        </button>
-        <button
-          className="btn"
-          title="مسح الجميع"
-          aria-label="مسح الجميع"
-          onClick={() => setAll("none")}
-        >
-          <Eraser size={18} color="#64748b" /> تصفير
-        </button>
-      </div>
-
-      {rows.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="لا يوجد طلاب متاحين"
-          description="جميع الطلاب المسجلين بالدورة اشتروا باقاتهم بعد تاريخ هذه الجلسة، أو لا يوجد طلاب نشطين."
-          actionLabel="العودة للدورة"
-          onAction={() => summary && navigate(`/runs/${summary.run_id}`)}
+              {/* زر الحفظ معدل ليكون دائماً واضح (غير شفاف) ومكتوب عليه كلام منطقي */}
+              <button
+                className="btn primary"
+                disabled={saving}
+                onClick={saveAll}
+                title="حفظ واعتماد الجلسة"
+                aria-label="حفظ"
+              >
+                <Save size={18} /> {saving ? "جاري الحفظ..." : "حفظ الحضور"}
+              </button>
+            </div>
+          }
         />
-      ) : (
-        <div className="tableWrap inCard">
-          <table className="table">
-            <thead>
-              <tr>
-                <th style={{ textAlign: "center", width: "30%" }}>الطفل</th>
-                <th style={{ textAlign: "center", width: "20%" }}>الحالة</th>
-                <th style={{ textAlign: "center", width: "50%" }}>
-                  تسجيل الحضور
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => {
-                const v = att[r.enrollment_id] ?? "none";
-                return (
-                  <tr key={r.enrollment_id}>
-                    <td
-                      style={{
-                        fontWeight: 800,
-                        textAlign: "center",
-                        verticalAlign: "middle",
-                        fontSize: "15px",
-                      }}
-                    >
-                      {r.child_name}
-                    </td>
-                    <td
-                      style={{ textAlign: "center", verticalAlign: "middle" }}
-                    >
-                      {statusBadge(v)}
-                    </td>
-                    <td
-                      style={{ textAlign: "center", verticalAlign: "middle" }}
-                    >
-                      <div
-                        className="row"
+
+        <ErrorBanner error={error} />
+
+        {/* شريط الإحصائيات */}
+        <div
+          className="row"
+          style={{ flexWrap: "wrap", gap: 10, marginBottom: 16 }}
+        >
+          <Badge variant="info" className="statBadge">
+            المتوقع: {stats.expected}
+          </Badge>
+          <Badge variant="ok" className="statBadge">
+            حاضر: {stats.present}
+          </Badge>
+          <Badge variant="danger" className="statBadge">
+            غائب: {stats.absent}
+          </Badge>
+          <Badge variant="warn" className="statBadge">
+            معذور: {stats.excused}
+          </Badge>
+          <Badge variant="default" className="statBadge">
+            غير مسجل: {stats.none}
+          </Badge>
+        </div>
+
+        {/* أزرار التحكم السريع (الجميع) */}
+        <div className="toolbar" style={{ marginBottom: 20, gap: 10 }}>
+          <button
+            className="btn"
+            title="تعيين الجميع: حاضر"
+            aria-label="تعيين الجميع: حاضر"
+            onClick={() => setAll("present")}
+          >
+            <CheckCircle2 size={18} color="#00ac47" /> حاضر للكل
+          </button>
+          <button
+            className="btn"
+            title="تعيين الجميع: غائب"
+            aria-label="تعيين الجميع: غائب"
+            onClick={() => setAll("absent")}
+          >
+            <XCircle size={18} color="#dc2626" /> غائب للكل
+          </button>
+          <button
+            className="btn"
+            title="مسح الجميع"
+            aria-label="مسح الجميع"
+            onClick={() => setAll("none")}
+          >
+            <Eraser size={18} color="#64748b" /> تصفير
+          </button>
+        </div>
+
+        {rows.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="لا يوجد طلاب متاحين"
+            description="جميع الطلاب المسجلين بالدورة اشتروا باقاتهم بعد تاريخ هذه الجلسة، أو لا يوجد طلاب نشطين."
+            actionLabel="العودة للدورة"
+            onAction={() => summary && navigate(`/runs/${summary.run_id}`)}
+          />
+        ) : (
+          <div className="tableWrap inCard">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "center", width: "30%" }}>الطفل</th>
+                  <th style={{ textAlign: "center", width: "20%" }}>الحالة</th>
+                  <th style={{ textAlign: "center", width: "50%" }}>
+                    تسجيل الحضور
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => {
+                  const v = att[r.enrollment_id] ?? "none";
+                  return (
+                    <tr key={r.enrollment_id}>
+                      <td
                         style={{
-                          flexWrap: "nowrap",
-                          gap: 12,
-                          justifyContent: "center",
-                          alignItems: "center",
+                          fontWeight: 800,
+                          textAlign: "center",
+                          verticalAlign: "middle",
+                          fontSize: "15px",
                         }}
                       >
-                        {STATUS.map((s) => {
-                          const meta = statusMeta(s);
-                          const ActiveIcon = meta.Icon;
-                          const active = v === s;
-                          return (
-                            <button
-                              key={s}
-                              type="button"
-                              title={meta.label}
-                              aria-label={meta.label}
-                              onClick={() =>
-                                setAtt((p) => ({ ...p, [r.enrollment_id]: s }))
-                              }
-                              className="btn"
-                              style={{
-                                width: 44,
-                                height: 44,
-                                padding: 0,
-                                borderRadius: 14,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                background: active ? meta.color : "#fff",
-                                color: active ? "#fff" : "#64748b",
-                                border: active
-                                  ? `1px solid ${meta.color}`
-                                  : "1px solid rgba(0,0,0,0.12)",
-                                boxShadow: active
-                                  ? `0 4px 12px ${meta.color}40`
-                                  : "0 2px 4px rgba(0,0,0,0.02)",
-                                transition: "all 0.15s ease",
-                                opacity: active ? 1 : 0.8,
-                              }}
-                            >
-                              <ActiveIcon size={20} />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                        {r.child_name}
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "center",
+                          verticalAlign: "middle",
+                        }}
+                      >
+                        {statusBadge(v)}
+                      </td>
+                      <td
+                        style={{
+                          textAlign: "center",
+                          verticalAlign: "middle",
+                        }}
+                      >
+                        <div
+                          className="row"
+                          style={{
+                            flexWrap: "nowrap",
+                            gap: 12,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          {STATUS.map((s) => {
+                            const meta = statusMeta(s);
+                            const ActiveIcon = meta.Icon;
+                            const active = v === s;
+                            return (
+                              <button
+                                key={s}
+                                type="button"
+                                title={meta.label}
+                                aria-label={meta.label}
+                                onClick={() =>
+                                  setAtt((p) => ({
+                                    ...p,
+                                    [r.enrollment_id]: s,
+                                  }))
+                                }
+                                className="btn"
+                                style={{
+                                  width: 44,
+                                  height: 44,
+                                  padding: 0,
+                                  borderRadius: 14,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  background: active ? meta.color : "#fff",
+                                  color: active ? "#fff" : "#64748b",
+                                  border: active
+                                    ? `1px solid ${meta.color}`
+                                    : "1px solid rgba(0,0,0,0.12)",
+                                  boxShadow: active
+                                    ? `0 4px 12px ${meta.color}40`
+                                    : "0 2px 4px rgba(0,0,0,0.02)",
+                                  transition: "all 0.15s ease",
+                                  opacity: active ? 1 : 0.8,
+                                }}
+                              >
+                                <ActiveIcon size={20} />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
