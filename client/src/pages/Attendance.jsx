@@ -33,7 +33,7 @@ function fmtTimeHM(dt) {
 }
 // ------------------------------------------------
 
-// توحيد الألوان والحالات لتكون واضحة
+// توحيد الحالات
 const STATUS = ["present", "absent", "excused", "none"];
 
 function statusMeta(s) {
@@ -41,13 +41,6 @@ function statusMeta(s) {
   if (s === "absent") return { label: "غائب", className: "att-btn-absent" };
   if (s === "excused") return { label: "معذور", className: "att-btn-excused" };
   return { label: "تصفير", className: "att-btn-none" };
-}
-
-function statusBadge(s) {
-  if (s === "present") return <Badge variant="ok">حاضر</Badge>;
-  if (s === "absent") return <Badge variant="danger">غائب</Badge>;
-  if (s === "excused") return <Badge variant="warn">معذور</Badge>;
-  return <Badge variant="default">غير مسجل</Badge>;
 }
 
 const ATTENDANCE_STYLES = `
@@ -120,40 +113,58 @@ const ATTENDANCE_STYLES = `
   color: #0f172a;
 }
 
-/* --- أزرار الحضور بالجدول (Pills) --- */
+/* --- أزرار الحضور بالجدول (هدوء بصري) --- */
 .att-action-btn {
   display: inline-flex; 
   align-items: center; 
   justify-content: center;
-  padding: 8px 18px; 
+  padding: 8px 22px; 
   border-radius: 999px;
   font-size: 13px; 
   font-weight: 800; 
   cursor: pointer;
-  transition: all 0.15s ease-in-out; 
-  border: 1px solid transparent;
-  min-width: 76px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+  
+  /* الوضع الافتراضي الهادي (محايد) */
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  min-width: 80px;
+}
+.att-action-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
 }
 
-/* Present */
-.att-btn-present { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
-.att-btn-present:hover { background: #dcfce7; }
-.att-btn-present.active { background: #16a34a; color: #fff; border-color: #16a34a; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); }
+/* الألوان تظهر فقط عندما يكون الزر نشط (Active) */
+.att-btn-present.active { 
+  background: #16a34a; 
+  color: #fff; 
+  border-color: #16a34a; 
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); 
+}
 
-/* Absent */
-.att-btn-absent { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
-.att-btn-absent:hover { background: #fee2e2; }
-.att-btn-absent.active { background: #dc2626; color: #fff; border-color: #dc2626; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); }
+.att-btn-absent.active { 
+  background: #dc2626; 
+  color: #fff; 
+  border-color: #dc2626; 
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); 
+}
 
-/* Excused */
-.att-btn-excused { background: #fffbeb; color: #d97706; border-color: #fde68a; }
-.att-btn-excused:hover { background: #fef3c7; }
-.att-btn-excused.active { background: #f59e0b; color: #fff; border-color: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); }
+.att-btn-excused.active { 
+  background: #f59e0b; 
+  color: #fff; 
+  border-color: #f59e0b; 
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); 
+}
 
-/* None / Clear */
-.att-btn-none { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
-.att-btn-none:hover { background: #f1f5f9; }
-.att-btn-none.active { background: #64748b; color: #fff; border-color: #64748b; box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2); }
+.att-btn-none.active { 
+  background: #64748b; 
+  color: #fff; 
+  border-color: #64748b; 
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2); 
+}
 
 /* --- الجدول --- */
 .attendancePage .tableWrap {
@@ -164,7 +175,6 @@ const ATTENDANCE_STYLES = `
 
 .attendancePage .table th,
 .attendancePage .table td {
-  text-align: center !important;
   vertical-align: middle !important;
 }
 
@@ -172,16 +182,20 @@ const ATTENDANCE_STYLES = `
   background: #f8fafc !important;
   color: #64748b !important;
   font-weight: 800 !important;
-  padding: 16px 15px !important;
+  padding: 16px 24px !important;
   font-size: 14px;
   border-bottom: 2px solid #edf2f7;
 }
 
 .attendancePage .table td {
-  padding: 16px 15px !important;
+  padding: 14px 24px !important;
   background: #fff !important;
   border-bottom: 1px solid #f1f5f9 !important;
   font-size: 15px;
+}
+
+.attendancePage .table tr:hover td {
+  background: #f8fafc !important;
 }
 
 .attendancePage .table tr:last-child td {
@@ -617,14 +631,23 @@ export default function Attendance() {
               </div>
             </div>
 
-            {/* --- الجدول النظيف --- */}
+            {/* --- الجدول النظيف الهادي بصرياً --- */}
             <div className="tableWrap">
               <table className="table">
                 <thead>
                   <tr>
-                    <th style={{ width: "30%" }}>الطفل</th>
-                    <th style={{ width: "20%" }}>الحالة</th>
-                    <th style={{ width: "50%" }}>الإجراء</th>
+                    <th
+                      style={{
+                        width: "35%",
+                        textAlign: "right",
+                        paddingRight: "30px",
+                      }}
+                    >
+                      الطفل
+                    </th>
+                    <th style={{ width: "65%", textAlign: "center" }}>
+                      الإجراء
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -634,19 +657,21 @@ export default function Attendance() {
                       <tr key={r.enrollment_id}>
                         <td
                           style={{
-                            fontWeight: 900,
+                            fontWeight: 800,
+                            textAlign: "right",
+                            paddingRight: "30px",
                             color: "#0f172a",
+                            fontSize: "16px",
                           }}
                         >
                           {r.child_name}
                         </td>
-                        <td>{statusBadge(v)}</td>
-                        <td>
+                        <td style={{ textAlign: "center" }}>
                           <div
                             className="row"
                             style={{
                               flexWrap: "nowrap",
-                              gap: 12,
+                              gap: 10,
                               justifyContent: "center",
                               alignItems: "center",
                             }}
