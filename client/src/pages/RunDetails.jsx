@@ -3187,7 +3187,6 @@ export default function RunDetails() {
                       <th>تاريخ الشراء</th>
                       <th>عدد الجلسات</th>
                       <th>السعر (₪)</th>
-                      <th>الحالة</th>
                       <th style={{ textAlign: "center" }}>إجراءات</th>
                     </tr>
                   </thead>
@@ -3207,13 +3206,6 @@ export default function RunDetails() {
                           <span dir="ltr">
                             {Number(pkg.price_total).toFixed(2)}
                           </span>
-                        </td>
-                        <td>
-                          <Badge
-                            variant={pkg.status === "active" ? "ok" : "default"}
-                          >
-                            {pkg.status}
-                          </Badge>
                         </td>
                         <td>
                           <div
