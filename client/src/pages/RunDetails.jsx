@@ -1243,9 +1243,6 @@ export default function RunDetails() {
     initEnrollBuyNew();
   }
   function openSingleTopup(participantRow) {
-    // ----------------------------------------------------
-    // إضافة حماية: يمنع شراء جلسات جديدة إذا كان الرصيد أكثر من صفر
-    // ----------------------------------------------------
     const remaining = Number(participantRow.package_sessions_remaining || 0);
     if (remaining > 0) {
       toast("لا يمكن إضافة جلسات جديدة حتى يتم إنهاء الجلسات الحالية.", "warn");
@@ -3120,56 +3117,11 @@ export default function RunDetails() {
                 }}
               >
                 <div style={{ display: "flex", gap: 10 }}>
-                  {manageP.enrollment_status === "active" ? (
-                    <button
-                      type="button"
-                      className="btn danger"
-                      style={{
-                        background: "#fff",
-                        border: "1px solid #fee2e2",
-                      }}
-                      onClick={() => {
-                        setConfirm({
-                          open: true,
-                          type: "inactive",
-                          id: manageP.enrollment_id,
-                          text: `إلغاء تنشيط تسجيل: ${manageP.child_name}`,
-                        });
-                      }}
-                    >
-                      إيقاف
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn primary"
-                      style={{
-                        background: "#fff",
-                        border: "1px solid #dcfce7",
-                        color: "#16a34a",
-                      }}
-                      onClick={() => {
-                        setConfirm({
-                          open: true,
-                          type: "active",
-                          id: manageP.enrollment_id,
-                          text: `تنشيط تسجيل: ${manageP.child_name}`,
-                        });
-                      }}
-                    >
-                      تنشيط
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="btn"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: "#dc2626",
-                      boxShadow: "none",
-                    }}
+                  <IconButton
+                    title="حذف التسجيل"
+                    danger
                     disabled={manageHasPayments}
+                    variant="ghost"
                     onClick={() => {
                       if (manageHasPayments) {
                         toast("لا يمكن حذفه لوجود دفعات مسجلة.", "warn");
@@ -3187,8 +3139,8 @@ export default function RunDetails() {
                       });
                     }}
                   >
-                    حذف التسجيل
-                  </button>
+                    <Trash2 size={16} />
+                  </IconButton>
                 </div>
               </div>
             </div>
