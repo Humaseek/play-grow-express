@@ -1731,11 +1731,11 @@ export default function RunDetails() {
           .from("payments")
           .insert([{ enrollment_id: Number(payEnrollmentId), ...p }]);
 
-      setOpenPay(false);
+      // التعديل هنا:
+      setPayEditId(null);
+      setPayLocked(false);
+      closeSubModalAndReopen(setOpenPay);
       await loadFixed();
-      if (shouldReopenManage && manageP) {
-        openPaymentHistory(manageP);
-      }
     } catch {
       toast("Failed.", "danger");
     } finally {
@@ -4274,7 +4274,7 @@ export default function RunDetails() {
           onClose={() => {
             setPayEditId(null);
             setPayLocked(false);
-            setOpenPay(false);
+            closeSubModalAndReopen(setOpenPay);
           }}
         >
           <div className="grid">
@@ -4364,7 +4364,7 @@ export default function RunDetails() {
                 onClick={() => {
                   setPayEditId(null);
                   setPayLocked(false);
-                  setOpenPay(false);
+                  closeSubModalAndReopen(setOpenPay);
                 }}
               >
                 إلغاء
