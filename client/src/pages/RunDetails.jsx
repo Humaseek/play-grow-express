@@ -504,6 +504,11 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 .runDetails .pBarUnpaid span { background: rgb(239, 68, 68); }
 .runDetails .pBarFree span { background: rgb(148, 163, 184); }
 
+.runDetails .pActions {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
 .runDetails .sessionRow {
   border-radius: 18px !important;
   border: 1px solid rgba(15, 23, 42, 0.08) !important;
@@ -3002,9 +3007,7 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       disabled={Number(manageP.balance || 0) <= 0}
-                      onClick={() => {
-                        openPaymentModalFor(manageP, "remaining");
-                      }}
+                      onClick={() => openPaymentModalFor(manageP, "remaining")}
                     >
                       <Banknote
                         size={26}
@@ -3019,18 +3022,14 @@ export default function RunDetails() {
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        openPaymentModalFor(manageP, "custom");
-                      }}
+                      onClick={() => openPaymentModalFor(manageP, "custom")}
                     >
                       <PlusCircle size={26} style={{ color: "#16a34a" }} />
                       <span>إضافة دفعة</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        openPaymentHistory(manageP);
-                      }}
+                      onClick={() => openPaymentHistory(manageP)}
                     >
                       <History size={26} style={{ color: "#475569" }} />
                       <span>سجل الدفعات</span>
@@ -3062,27 +3061,21 @@ export default function RunDetails() {
                   >
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        openSingleTopup(manageP);
-                      }}
+                      onClick={() => openSingleTopup(manageP)}
                     >
                       <ShoppingCart size={26} style={{ color: "#7a5cff" }} />
                       <span>شراء جلسات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        fetchPkgHistory(manageP);
-                      }}
+                      onClick={() => fetchPkgHistory(manageP)}
                     >
                       <List size={26} style={{ color: "#475569" }} />
                       <span>سجل الباقات</span>
                     </button>
                     <button
                       className="actionSquare"
-                      onClick={() => {
-                        fetchAttHistory(manageP);
-                      }}
+                      onClick={() => fetchAttHistory(manageP)}
                     >
                       <CalendarCheck size={26} style={{ color: "#475569" }} />
                       <span>سجل الحضور</span>
@@ -3241,6 +3234,7 @@ export default function RunDetails() {
                       <th>تاريخ الشراء</th>
                       <th>عدد الجلسات</th>
                       <th>السعر (₪)</th>
+                      <th>الحالة</th>
                       <th style={{ textAlign: "center" }}>إجراءات</th>
                     </tr>
                   </thead>
@@ -3251,17 +3245,19 @@ export default function RunDetails() {
                         <td style={{ fontWeight: 800 }}>
                           {pkg.sessions_total}
                         </td>
-                        <td
-                          style={{
-                            fontWeight: 900,
-                            color: "#0f172a",
-                          }}
-                        >
+                        <td style={{ fontWeight: 900, color: "#0f172a" }}>
                           <span dir="ltr">
                             {Number(pkg.price_total).toFixed(2)}
                           </span>
                         </td>
                         <td>
+                          <Badge
+                            variant={pkg.status === "active" ? "ok" : "default"}
+                          >
+                            {pkg.status}
+                          </Badge>
+                        </td>
+                        <td style={{ textAlign: "center" }}>
                           <div
                             style={{
                               display: "flex",
@@ -3411,7 +3407,6 @@ export default function RunDetails() {
                     <tr>
                       <th>تاريخ الجلسة</th>
                       <th>الحالة</th>
-                      <th>ملاحظة</th>
                       <th>تاريخ التسجيل</th>
                     </tr>
                   </thead>
@@ -3437,7 +3432,6 @@ export default function RunDetails() {
                           <td>
                             <Badge variant={badgeVar}>{statusAr}</Badge>
                           </td>
-                          <td className="muted">{att.note || "-"}</td>
                           <td className="muted" style={{ fontSize: 12 }}>
                             {fmtDT(att.created_at)}
                           </td>
@@ -3481,12 +3475,7 @@ export default function RunDetails() {
                   <tbody>
                     {historyRows.map((x) => (
                       <tr key={x.id}>
-                        <td
-                          style={{
-                            fontWeight: 900,
-                            color: "#0f172a",
-                          }}
-                        >
+                        <td style={{ fontWeight: 900, color: "#0f172a" }}>
                           <span dir="ltr">{Number(x.amount).toFixed(2)}</span>
                         </td>
                         <td className="muted">
@@ -3496,7 +3485,7 @@ export default function RunDetails() {
                         </td>
                         <td className="muted">{fmtDate(x.created_at)}</td>
                         <td className="muted">{x.note ?? "-"}</td>
-                        <td>
+                        <td style={{ textAlign: "center" }}>
                           <div
                             style={{
                               display: "flex",
@@ -4266,6 +4255,111 @@ export default function RunDetails() {
           </div>
         </Modal>
 
+        <Modal
+          open={openPay}
+          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
+          onClose={() => {
+            setPayEditId(null);
+            setPayLocked(false);
+            setOpenPay(false);
+          }}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الطفل</div>
+              <ModernSelect
+                value={payEnrollmentId}
+                onChange={setPayEnrollmentId}
+                menuWidth="trigger"
+                disabled={paySaving || !!payEditId || payLocked}
+                placeholder="— اختر طفل —"
+                options={[
+                  { value: "", label: "— اختر طفل —" },
+                  ...participants
+                    .filter((p) => p.enrollment_status === "active")
+                    .map((p) => ({
+                      value: p.enrollment_id,
+                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
+                    })),
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">المبلغ (₪)</div>
+              <input
+                className="input"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">طريقة الدفع</div>
+              <ModernSelect
+                value={payMethod}
+                onChange={setPayMethod}
+                menuWidth="trigger"
+                options={[
+                  { value: "cash", label: "نقداً" },
+                  { value: "card", label: "بطاقة ائتمان" },
+                  { value: "transfer", label: "حوالة بنكية" },
+                  { value: "other", label: "أخرى" },
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">تاريخ الدفعة</div>
+              <input
+                className="input"
+                type="date"
+                value={payDate}
+                onChange={(e) => setPayDate(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">ملاحظات</div>
+              <input
+                className="input"
+                placeholder="اختياري"
+                value={payNote}
+                onChange={(e) => setPayNote(e.target.value)}
+              />
+            </div>
+
+            <div
+              className="row"
+              style={{ gridColumn: "span 12", marginTop: 10 }}
+            >
+              <button
+                type="button"
+                className="btn primary"
+                disabled={paySaving || !payEnrollmentId || !payAmount}
+                onClick={addPayment}
+              >
+                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setPayEditId(null);
+                  setPayLocked(false);
+                  setOpenPay(false);
+                }}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </Modal>
+
         <ConfirmDialog
           open={confirm.open}
           title=""
@@ -4292,8 +4386,6 @@ export default function RunDetails() {
                 id.childName,
                 id.packageId,
               );
-              // نقوم بإغلاق كرت الطالب فقط إذا تم حذفه بالكامل بنجاح
-              setOpenإدارة(false);
             }
 
             // Delete specific package
