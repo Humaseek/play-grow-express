@@ -37,13 +37,10 @@ function fmtTimeHM(dt) {
 const STATUS = ["present", "absent", "excused", "none"];
 
 function statusMeta(s) {
-  if (s === "present")
-    return { label: "حاضر", Icon: CheckCircle2, className: "att-btn-present" };
-  if (s === "absent")
-    return { label: "غائب", Icon: XCircle, className: "att-btn-absent" };
-  if (s === "excused")
-    return { label: "معذور", Icon: CircleSlash2, className: "att-btn-excused" };
-  return { label: "تصفير", Icon: Eraser, className: "att-btn-none" };
+  if (s === "present") return { label: "حاضر", className: "att-btn-present" };
+  if (s === "absent") return { label: "غائب", className: "att-btn-absent" };
+  if (s === "excused") return { label: "معذور", className: "att-btn-excused" };
+  return { label: "تصفير", className: "att-btn-none" };
 }
 
 const ATTENDANCE_STYLES = `
@@ -116,56 +113,38 @@ const ATTENDANCE_STYLES = `
   color: #0f172a;
 }
 
-/* --- أزرار الحضور بالجدول (أيقونات هادئة) --- */
+/* --- أزرار الحضور بالجدول (Pills ملونة وواضحة) --- */
 .att-action-btn {
   display: inline-flex; 
   align-items: center; 
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  padding: 0; 
-  border-radius: 50%;
+  padding: 8px 24px; 
+  border-radius: 999px; /* شكل بيضاوي Pill */
+  font-size: 14px; 
+  font-weight: 800; 
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
-  
-  /* الوضع الافتراضي الهادي جداً */
-  background: transparent;
-  color: #94a3b8;
   border: 1px solid transparent;
-}
-.att-action-btn:hover {
-  background: #f1f5f9;
-  color: #64748b;
+  min-width: 85px;
 }
 
-/* الألوان تظهر فقط عندما يكون الزر نشط (Active) */
-.att-btn-present.active { 
-  background: #f0fdf4; 
-  color: #16a34a; 
-  border-color: #16a34a; 
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15); 
-}
+/* الوضع غير المفعل (ألوان فاتحة) - Inactive State */
+.att-btn-present { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.att-btn-absent { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.att-btn-excused { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+.att-btn-none { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
 
-.att-btn-absent.active { 
-  background: #fef2f2; 
-  color: #dc2626; 
-  border-color: #dc2626; 
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15); 
-}
+/* تأثير المرور فوق الزر غير المفعل */
+.att-btn-present:hover { background: #dcfce7; }
+.att-btn-absent:hover { background: #fee2e2; }
+.att-btn-excused:hover { background: #fef3c7; }
+.att-btn-none:hover { background: #f1f5f9; }
 
-.att-btn-excused.active { 
-  background: #fffbeb; 
-  color: #f59e0b; 
-  border-color: #f59e0b; 
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15); 
-}
-
-.att-btn-none.active { 
-  background: #f8fafc; 
-  color: #64748b; 
-  border-color: #64748b; 
-  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.1); 
-}
+/* الوضع المفعل (ألوان قوية وصلبة) - Active State */
+.att-btn-present.active { background: #16a34a; color: #fff; border-color: #16a34a; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25); }
+.att-btn-absent.active { background: #dc2626; color: #fff; border-color: #dc2626; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25); }
+.att-btn-excused.active { background: #f59e0b; color: #fff; border-color: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); }
+.att-btn-none.active { background: #64748b; color: #fff; border-color: #64748b; box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2); }
 
 /* --- الجدول --- */
 .attendancePage .tableWrap {
@@ -189,7 +168,7 @@ const ATTENDANCE_STYLES = `
 }
 
 .attendancePage .table td {
-  padding: 10px 24px !important;
+  padding: 12px 24px !important; /* مسافات عمودية مريحة */
   background: #fff !important;
   border-bottom: 1px solid #f1f5f9 !important;
   font-size: 15px;
@@ -632,21 +611,21 @@ export default function Attendance() {
               </div>
             </div>
 
-            {/* --- الجدول النظيف الهادي بصرياً مع أيقونات --- */}
+            {/* --- الجدول النظيف بألوان واضحة --- */}
             <div className="tableWrap">
               <table className="table">
                 <thead>
                   <tr>
                     <th
                       style={{
-                        width: "40%",
+                        width: "35%",
                         textAlign: "right",
                         paddingRight: "30px",
                       }}
                     >
                       الطفل
                     </th>
-                    <th style={{ width: "60%", textAlign: "center" }}>
+                    <th style={{ width: "65%", textAlign: "center" }}>
                       الإجراء
                     </th>
                   </tr>
@@ -672,20 +651,18 @@ export default function Attendance() {
                             className="row"
                             style={{
                               flexWrap: "nowrap",
-                              gap: 16, // مسافة مريحة بين الأيقونات
+                              gap: 12, // مسافة مريحة بين الأزرار
                               justifyContent: "center",
                               alignItems: "center",
                             }}
                           >
                             {STATUS.map((s) => {
                               const meta = statusMeta(s);
-                              const ActiveIcon = meta.Icon;
                               const active = v === s;
                               return (
                                 <button
                                   key={s}
                                   type="button"
-                                  title={meta.label}
                                   onClick={() =>
                                     setAtt((p) => ({
                                       ...p,
@@ -694,10 +671,7 @@ export default function Attendance() {
                                   }
                                   className={`att-action-btn ${meta.className} ${active ? "active" : ""}`}
                                 >
-                                  <ActiveIcon
-                                    size={20}
-                                    strokeWidth={active ? 2.5 : 2}
-                                  />
+                                  {meta.label}
                                 </button>
                               );
                             })}
