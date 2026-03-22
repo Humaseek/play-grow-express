@@ -65,6 +65,31 @@ function formatTimeLocally(dt) {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function startOfMonth(d = new Date()) {
+  const x = new Date(d);
+  x.setDate(1);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function startOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+function addDays(d, n) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+
 // دالة لمعالجة فترات الفلتر الذكي
 function getRangeAndBins(preset, customStart, customEnd) {
   const now = new Date();
@@ -842,6 +867,13 @@ export default function Dashboard() {
   // Data Fetching Engine (Parallel Execution for Max Speed)
   // ============================================================================
   async function loadDashboard() {
+    // التأكد من صحة التواريخ المدخلة
+    if (!customStartDate || !customEndDate) return;
+    if (new Date(customStartDate) > new Date(customEndDate)) {
+      toast("تاريخ البداية يجب أن يكون قبل أو يساوي تاريخ النهاية", "warn");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
