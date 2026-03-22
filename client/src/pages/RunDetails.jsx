@@ -663,12 +663,7 @@ export default function RunDetails() {
   const [openBulk, setOpenBulk] = useState(false);
   const [bulkQ, setBulkQ] = useState("");
   const [bulkSelected, setBulkSelected] = useState({});
-  // حالات تخصيص الحصص والسعر للمجموعة
-  const [bulkSessionsMode, setBulkSessionsMode] = useState("unified");
-  const [bulkUnifiedSessions, setBulkUnifiedSessions] = useState(8);
   const [bulkPerChildSessions, setBulkPerChildSessions] = useState({});
-  const [bulkPriceMode, setBulkPriceMode] = useState("unified");
-  const [bulkUnifiedPrice, setBulkUnifiedPrice] = useState("");
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
@@ -1314,11 +1309,7 @@ export default function RunDetails() {
     setOpenBulk(true);
     setBulkQ("");
     setBulkSelected({});
-    setBulkSessionsMode("unified");
-    setBulkUnifiedSessions(defaultSessionsTotal);
     setBulkPerChildSessions({});
-    setBulkPriceMode("unified");
-    setBulkUnifiedPrice(String(defaultPrice));
     setBulkPerChildPrice({});
   }
   function toggleBulkChild(childId) {
@@ -1498,23 +1489,21 @@ export default function RunDetails() {
       for (const childId of bulkSelectedIds) {
         const cid = Number(childId);
 
-        let sessionsNum =
-          bulkSessionsMode === "unified"
-            ? Number(bulkUnifiedSessions)
-            : Number(bulkPerChildSessions[cid]);
+        let sessionsNum = Number(
+          bulkPerChildSessions[cid] ?? defaultSessionsTotal,
+        );
         if (isNaN(sessionsNum) || sessionsNum < 0)
           sessionsNum = Number(defaultSessionsTotal) || 0;
 
-        let priceNum =
-          bulkPriceMode === "unified"
-            ? Number(bulkUnifiedPrice)
-            : Number(bulkPerChildPrice[cid]);
+        let priceNum = Number(bulkPerChildPrice[cid] ?? defaultPrice);
+        if (isNaN(priceNum) || priceNum < 0)
+          priceNum = Number(defaultPrice) || 0;
 
         const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
           p_run_id: Number(runId),
           p_child_id: cid,
           p_sessions: sessionsNum,
-          p_price_total: Number(priceNum) || 0,
+          p_price_total: priceNum,
         });
         if (rpc2.error) failed += 1;
         else added += 1;
@@ -3994,16 +3983,12 @@ export default function RunDetails() {
                         <th style={{ textAlign: "right" }}>الصف</th>
                         <th style={{ textAlign: "right" }}>الجنس</th>
                         <th style={{ textAlign: "right" }}>هاتف الأم</th>
-                        {bulkSessionsMode === "perChild" && (
-                          <th style={{ width: 120, textAlign: "right" }}>
-                            الحصص
-                          </th>
-                        )}
-                        {bulkPriceMode === "perChild" && (
-                          <th style={{ width: 120, textAlign: "right" }}>
-                            السعر
-                          </th>
-                        )}
+                        <th style={{ width: 100, textAlign: "center" }}>
+                          الحصص
+                        </th>
+                        <th style={{ width: 120, textAlign: "center" }}>
+                          السعر
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -4039,45 +4024,57 @@ export default function RunDetails() {
                                 {c.mother_phone ?? "-"}
                               </span>
                             </td>
-                            {bulkSessionsMode === "perChild" && (
-                              <td>
-                                <input
-                                  className="input"
-                                  style={{ minWidth: 90 }}
-                                  type="number"
-                                  min="0"
-                                  value={bulkPerChildSessions[c.id] ?? ""}
-                                  onChange={(e) =>
-                                    setBulkPerChildSessions((prev) => ({
-                                      ...prev,
-                                      [c.id]: e.target.value,
-                                    }))
-                                  }
-                                  placeholder={String(defaultSessionsTotal)}
-                                  disabled={!checked}
-                                />
-                              </td>
-                            )}
-                            {bulkPriceMode === "perChild" && (
-                              <td>
-                                <input
-                                  className="input"
-                                  style={{ minWidth: 120 }}
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={bulkPerChildPrice[c.id] ?? ""}
-                                  onChange={(e) =>
-                                    setBulkPerChildPrice((prev) => ({
-                                      ...prev,
-                                      [c.id]: e.target.value,
-                                    }))
-                                  }
-                                  placeholder={String(defaultPrice)}
-                                  disabled={!checked}
-                                />
-                              </td>
-                            )}
+                            <td>
+                              <input
+                                className="input"
+                                style={{
+                                  width: "100%",
+                                  minWidth: 70,
+                                  height: 38,
+                                  textAlign: "center",
+                                }}
+                                type="number"
+                                min="0"
+                                value={
+                                  bulkPerChildSessions[c.id] !== undefined
+                                    ? bulkPerChildSessions[c.id]
+                                    : defaultSessionsTotal
+                                }
+                                onChange={(e) =>
+                                  setBulkPerChildSessions((prev) => ({
+                                    ...prev,
+                                    [c.id]: e.target.value,
+                                  }))
+                                }
+                                disabled={!checked}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                className="input"
+                                style={{
+                                  width: "100%",
+                                  minWidth: 90,
+                                  height: 38,
+                                  textAlign: "center",
+                                }}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={
+                                  bulkPerChildPrice[c.id] !== undefined
+                                    ? bulkPerChildPrice[c.id]
+                                    : defaultPrice
+                                }
+                                onChange={(e) =>
+                                  setBulkPerChildPrice((prev) => ({
+                                    ...prev,
+                                    [c.id]: e.target.value,
+                                  }))
+                                }
+                                disabled={!checked}
+                              />
+                            </td>
                           </tr>
                         );
                       })}
@@ -4086,104 +4083,31 @@ export default function RunDetails() {
                 </div>
               )}
             </div>
-            <hr className="sep" />
-            <div className="grid">
-              <div style={{ gridColumn: "span 3" }}>
-                <div className="muted">توزيع الحصص</div>
-                <ModernSelect
-                  value={bulkSessionsMode}
-                  onChange={(v) => {
-                    setBulkSessionsMode(v);
-                    if (v === "unified") setBulkPerChildSessions({});
-                  }}
-                  menuWidth="trigger"
-                  options={[
-                    { value: "unified", label: "موحّد للجميع" },
-                    { value: "perChild", label: "تخصيص لكل طفل" },
-                  ]}
-                />
-              </div>
-              <div style={{ gridColumn: "span 3" }}>
-                <div className="muted">
-                  {bulkSessionsMode === "unified"
-                    ? "عدد الحصص (الباقة)"
-                    : "الحصص"}
-                </div>
-                {bulkSessionsMode === "unified" ? (
-                  <input
-                    className="input"
-                    type="number"
-                    value={bulkUnifiedSessions}
-                    onChange={(e) => setBulkUnifiedSessions(e.target.value)}
-                  />
-                ) : (
-                  <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                    اكتب العدد لكل طفل داخل الجدول.
-                  </div>
-                )}
-              </div>
-              <div style={{ gridColumn: "span 3" }}>
-                <div className="muted">طريقة التسعير</div>
-                <ModernSelect
-                  value={bulkPriceMode}
-                  onChange={(v) => {
-                    setBulkPriceMode(v);
-                    if (v === "unified") setBulkPerChildPrice({});
-                  }}
-                  menuWidth="trigger"
-                  options={[
-                    { value: "unified", label: "سعر موحّد للجميع" },
-                    { value: "perChild", label: "تخصيص لكل طفل" },
-                  ]}
-                />
-              </div>
-              <div style={{ gridColumn: "span 3" }}>
-                <div className="muted">
-                  {bulkPriceMode === "unified" ? "سعر الباقة" : "الأسعار"}
-                </div>
-                {bulkPriceMode === "unified" ? (
-                  <input
-                    className="input"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={bulkUnifiedPrice}
-                    onChange={(e) => setBulkUnifiedPrice(e.target.value)}
-                    placeholder={String(defaultPrice)}
-                  />
-                ) : (
-                  <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-                    اكتب السعر لكل طفل داخل الجدول.
-                  </div>
-                )}
-              </div>
-              <div
-                className="row"
-                style={{
-                  gridColumn: "span 12",
-                  justifyContent: "flex-start",
-                  gap: 10,
-                  marginTop: 4,
-                }}
+            <div
+              className="row"
+              style={{
+                justifyContent: "flex-start",
+                gap: 10,
+                marginTop: 16,
+              }}
+            >
+              <button
+                type="button"
+                className="btn primary"
+                disabled={bulkSaving || bulkSelectedCount === 0}
+                onClick={bulkPurchaseAndEnroll}
               >
-                <button
-                  type="button"
-                  className="btn primary"
-                  disabled={bulkSaving || bulkSelectedCount === 0}
-                  onClick={bulkPurchaseAndEnroll}
-                >
-                  {bulkSaving
-                    ? "جارٍ الإضافة..."
-                    : `إضافة (${bulkSelectedCount})`}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => setOpenBulk(false)}
-                >
-                  إغلاق
-                </button>
-              </div>
+                {bulkSaving
+                  ? "جارٍ الإضافة..."
+                  : `إضافة (${bulkSelectedCount})`}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setOpenBulk(false)}
+              >
+                إغلاق
+              </button>
             </div>
           </div>
         </Modal>
