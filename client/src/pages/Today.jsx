@@ -29,7 +29,6 @@ import {
   ArrowDownRight,
   CalendarDays,
   BadgeDollarSign,
-  Filter,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -38,19 +37,12 @@ import EmptyState from "../components/EmptyState";
 import Badge from "../components/Badge";
 
 // ============================================================================
-// الدوال المساعدة
+// الدوال المساعدة الأساسية
 // ============================================================================
 
 function fmtMoney(n) {
   const x = Number(n || 0);
   return x.toLocaleString("en-US", { maximumFractionDigits: 0 });
-}
-
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "صباح الخير";
-  if (hour < 18) return "مساء الخير";
-  return "طاب مساؤك";
 }
 
 function startOfMonth(d = new Date()) {
@@ -72,12 +64,6 @@ function endOfDay(d = new Date()) {
   return x;
 }
 
-function addDays(d, n) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-
 function toDateString(d) {
   const dt = new Date(d);
   const y = dt.getFullYear();
@@ -86,43 +72,37 @@ function toDateString(d) {
   return `${y}-${m}-${day}`;
 }
 
-// دالة ذكية لحساب فترات الوقت وتقسيمها للمخطط البياني (Bins)
-function getRangeAndBins(preset) {
-  const now = new Date();
-  let from,
-    to = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      23,
-      59,
-      59,
-      999,
-    );
+function formatTimeLocally(dt) {
+  if (!dt) return "—";
+  const d = new Date(dt);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "صباح الخير";
+  if (hour < 18) return "مساء الخير";
+  return "طاب مساؤك";
+}
+
+// دالة ذكية لحساب فترات الوقت وتقسيمها للمخطط البياني (Dynamic Bins)
+function getDynamicRangeAndBins(startStr, endStr) {
+  const from = new Date(startStr);
+  from.setHours(0, 0, 0, 0);
+  const to = new Date(endStr);
+  to.setHours(23, 59, 59, 999);
+
+  const diffTime = Math.abs(to - from);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
   let bins = [];
 
-  if (preset === "today") {
-    from = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      0,
-      0,
-      0,
-      0,
-    );
+  if (diffDays <= 1) {
     bins.push({ start: from.getTime(), end: to.getTime(), label: "اليوم" });
-  } else if (preset === "7d") {
-    from = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 6,
-      0,
-      0,
-      0,
-      0,
-    );
-    for (let i = 0; i < 7; i++) {
+  } else if (diffDays <= 14) {
+    // عرض الأيام وتسميتها بأسماء الأيام
+    for (let i = 0; i < diffDays; i++) {
       let dStart = new Date(
         from.getFullYear(),
         from.getMonth(),
@@ -149,10 +129,9 @@ function getRangeAndBins(preset) {
         ),
       });
     }
-  } else if (preset === "this_month") {
-    from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    const daysInMonth = now.getDate(); // حتى اليوم الحالي
-    for (let i = 0; i < daysInMonth; i++) {
+  } else if (diffDays <= 60) {
+    // عرض الأيام ولكن تسمية بعضها فقط لعدم التزاحم
+    for (let i = 0; i < diffDays; i++) {
       let dStart = new Date(
         from.getFullYear(),
         from.getMonth(),
@@ -171,85 +150,24 @@ function getRangeAndBins(preset) {
         59,
         999,
       );
+      let showLabel = i % Math.ceil(diffDays / 10) === 0;
       bins.push({
         start: dStart.getTime(),
         end: dEnd.getTime(),
-        label: String(dStart.getDate()),
-      });
-    }
-  } else if (preset === "30d") {
-    from = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 29,
-      0,
-      0,
-      0,
-      0,
-    );
-    for (let i = 0; i < 30; i++) {
-      let dStart = new Date(
-        from.getFullYear(),
-        from.getMonth(),
-        from.getDate() + i,
-        0,
-        0,
-        0,
-        0,
-      );
-      let dEnd = new Date(
-        dStart.getFullYear(),
-        dStart.getMonth(),
-        dStart.getDate(),
-        23,
-        59,
-        59,
-        999,
-      );
-      // إظهار التسمية كل 3 أيام عشان المخطط ما يتزاحم
-      bins.push({
-        start: dStart.getTime(),
-        end: dEnd.getTime(),
-        label: i % 3 === 0 ? String(dStart.getDate()) : "",
-      });
-    }
-  } else if (preset === "this_year") {
-    from = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
-    const currentMonth = now.getMonth();
-    for (let i = 0; i <= currentMonth; i++) {
-      let mStart = new Date(now.getFullYear(), i, 1, 0, 0, 0, 0);
-      let mEnd = new Date(now.getFullYear(), i + 1, 0, 23, 59, 59, 999);
-      bins.push({
-        start: mStart.getTime(),
-        end: mEnd.getTime(),
-        label: new Intl.DateTimeFormat("ar-EG", { month: "short" }).format(
-          mStart,
-        ),
+        label: showLabel ? String(dStart.getDate()) : "",
       });
     }
   } else {
-    // all
-    from = new Date(2020, 0, 1, 0, 0, 0, 0); // تاريخ قديم جداً
-    const mStart12 = new Date(
-      now.getFullYear(),
-      now.getMonth() - 11,
-      1,
-      0,
-      0,
-      0,
-      0,
-    );
-    for (let i = 0; i < 12; i++) {
-      // تقسيم لآخر 12 شهر
-      let mStart = new Date(
-        mStart12.getFullYear(),
-        mStart12.getMonth() + i,
-        1,
-        0,
-        0,
-        0,
-        0,
-      );
+    // إذا كانت الفترة طويلة (أكثر من شهرين)، نعرض البيانات بالأشهر
+    const startMonth = from.getMonth();
+    const startYear = from.getFullYear();
+    const endMonth = to.getMonth();
+    const endYear = to.getFullYear();
+    const totalMonths =
+      (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+
+    for (let i = 0; i < totalMonths; i++) {
+      let mStart = new Date(startYear, startMonth + i, 1, 0, 0, 0, 0);
       let mEnd = new Date(
         mStart.getFullYear(),
         mStart.getMonth() + 1,
@@ -259,6 +177,7 @@ function getRangeAndBins(preset) {
         59,
         999,
       );
+      if (mEnd > to) mEnd = to; // لا تتجاوز تاريخ النهاية المحدد
       bins.push({
         start: mStart.getTime(),
         end: mEnd.getTime(),
@@ -290,7 +209,7 @@ const Sparkline = ({ data, color, type = "line" }) => {
       >
         {data.map((d, i) => {
           const h = ((d - Math.min(0, min)) / max) * 30 || 2;
-          const w = 100 / data.length - (data.length > 15 ? 1 : 2);
+          const w = 100 / data.length - (data.length > 15 ? 0.5 : 2);
           const x = i * (100 / data.length);
           return (
             <rect
@@ -520,30 +439,47 @@ const DASHBOARD_STYLES = `
   flex-wrap: wrap;
 }
 
-.dash-filter {
+/* Custom Modern Date Range Picker */
+.custom-date-range {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   background: #fff;
   border: 1px solid #cbd5e1;
-  padding: 8px 16px;
+  padding: 6px 16px;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  gap: 8px;
   transition: all 0.2s;
 }
-.dash-filter:hover {
-  border-color: #94a3b8;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+.custom-date-range:focus-within,
+.custom-date-range:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
-.dash-filter select {
+.date-input {
   border: none;
   background: transparent;
   outline: none;
+  font-family: inherit;
   font-weight: 800;
   color: #0f172a;
   font-size: 14px;
   cursor: pointer;
-  font-family: inherit;
+  color-scheme: light;
+}
+.date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: 0.2s;
+}
+.date-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+.date-sep {
+  color: #94a3b8;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 0 4px;
 }
 
 .dash-btn-refresh {
@@ -878,8 +814,11 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [time, setTime] = useState(new Date());
 
-  // حالة فلتر الوقت للمؤشرات المالية
-  const [dateRange, setDateRange] = useState("this_month");
+  // حالة التاريخ المخصصة (افتراضياً: بداية الشهر الحالي وحتى اليوم)
+  const [startDate, setStartDate] = useState(() =>
+    toDateString(startOfMonth(new Date())),
+  );
+  const [endDate, setEndDate] = useState(() => toDateString(new Date()));
 
   const [dashData, setDashData] = useState({
     incomeFiltered: 0,
@@ -901,16 +840,22 @@ export default function Dashboard() {
     sessionId: null,
   });
 
-  // تحديث الساعة الحية
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   // ============================================================================
-  // Data Fetching Engine
+  // Data Fetching Engine (Parallel Execution for Max Speed)
   // ============================================================================
   async function loadDashboard() {
+    // التأكد من صحة التواريخ المدخلة
+    if (!startDate || !endDate) return;
+    if (new Date(startDate) > new Date(endDate)) {
+      toast("تاريخ البداية يجب أن يكون قبل أو يساوي تاريخ النهاية", "warn");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -920,10 +865,13 @@ export default function Dashboard() {
       const isoDayStart = dayStartObj.toISOString();
       const isoDayEnd = dayEndObj.toISOString();
 
-      // جلب نطاق التواريخ والـ Bins بناءً على الفلتر المختار
-      const { fromIso, bins } = getRangeAndBins(dateRange);
+      // جلب نطاق التواريخ والـ Bins بناءً على التواريخ المحددة
+      const { fromIso, toIso, bins } = getDynamicRangeAndBins(
+        startDate,
+        endDate,
+      );
 
-      // الطلبات الأساسية التي لا تتأثر بالفلتر (طلاب، جلسات اليوم، ديون، آخر المعاملات)
+      // الطلبات الأساسية التي لا تتأثر بالفلتر
       const qActiveStudents = supabase
         .from("enrollments")
         .select("id", { count: "exact", head: true })
@@ -955,17 +903,18 @@ export default function Dashboard() {
         .order("created_at", { ascending: false })
         .limit(5);
 
-      // الطلبات المالية التي تتأثر بالفلتر (نجلب من البداية حتى الآن لنقسمهم لاحقاً)
-      let qPayments = supabase.from("payments").select("amount, created_at");
-      let qExpenses = supabase.from("expenses").select("amount, spent_on");
+      // الطلبات المالية التي تتأثر بنطاق التاريخ المحدد
+      const qPayments = supabase
+        .from("payments")
+        .select("amount, created_at")
+        .gte("created_at", fromIso)
+        .lte("created_at", toIso);
+      const qExpenses = supabase
+        .from("expenses")
+        .select("amount, spent_on")
+        .gte("spent_on", fromIso.split("T")[0])
+        .lte("spent_on", toIso.split("T")[0]);
 
-      if (dateRange !== "all") {
-        qPayments = qPayments.gte("created_at", fromIso);
-        // expenses table uses Date (YYYY-MM-DD) for spent_on, so we slice the ISO string
-        qExpenses = qExpenses.gte("spent_on", fromIso.split("T")[0]);
-      }
-
-      // 🚀 Parallel Requesting (تنفيذ متوازي لسرعة فائقة)
       const [
         { count: activeStudentsCount, error: e1 },
         { data: sessionsToday, error: e2 },
@@ -996,7 +945,6 @@ export default function Dashboard() {
 
       // --- Processing ---
 
-      // دمج الجلسات مع أسماء الدورات والأفواج
       const enrichedSessions = (sessionsToday || []).map((session) => {
         const runInfo = (runsSummary || []).find(
           (r) => r.run_id === session.run_id,
@@ -1008,7 +956,6 @@ export default function Dashboard() {
         };
       });
 
-      // دمج وترتيب أحدث المعاملات المالية
       let combinedTx = [];
       if (recentPays) {
         combinedTx.push(
@@ -1042,7 +989,6 @@ export default function Dashboard() {
       combinedTx.sort((a, b) => new Date(b.date) - new Date(a.date));
       combinedTx = combinedTx.slice(0, 6);
 
-      // حساب المجاميع الكلية للفترة المحددة
       const totalIncome = (paymentsData || []).reduce(
         (sum, p) => sum + Number(p.amount || 0),
         0,
@@ -1053,7 +999,6 @@ export default function Dashboard() {
       );
       const netProfit = totalIncome - totalExpense;
 
-      // حساب المخطط البياني (تقسيم البيانات إلى Bins)
       const incTrendArr = bins.map((b) => {
         return (paymentsData || [])
           .filter((p) => {
@@ -1093,11 +1038,11 @@ export default function Dashboard() {
     }
   }
 
-  // إعادة تحميل البيانات عند تغيير الفلتر الزمني
+  // إعادة تحميل البيانات فوراً عند تغيير التواريخ
   useEffect(() => {
     loadDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange]);
+  }, [startDate, endDate]);
 
   async function changeSessionStatus(id, newStatus) {
     const { error: upErr } = await supabase
@@ -1128,15 +1073,6 @@ export default function Dashboard() {
     second: "2-digit",
   }).format(time);
 
-  const rangeLabels = {
-    today: "اليوم",
-    "7d": "آخر 7 أيام",
-    this_month: "هذا الشهر",
-    "30d": "آخر 30 يوم",
-    this_year: "هذه السنة",
-    all: "كل الوقت",
-  };
-
   return (
     <div className="page page--dashboard" dir="rtl" lang="ar">
       <style>{DASHBOARD_STYLES}</style>
@@ -1158,19 +1094,22 @@ export default function Dashboard() {
           </div>
 
           <div className="dash-controls">
-            <div className="dash-filter">
-              <Filter size={16} color="#64748b" />
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-              >
-                <option value="today">اليوم</option>
-                <option value="7d">آخر 7 أيام</option>
-                <option value="this_month">هذا الشهر</option>
-                <option value="30d">آخر 30 يوم</option>
-                <option value="this_year">هذه السنة</option>
-                <option value="all">كل الوقت</option>
-              </select>
+            {/* Custom Modern Date Range Picker */}
+            <div className="custom-date-range">
+              <CalendarDays size={16} color="#64748b" />
+              <input
+                type="date"
+                className="date-input"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+              <span className="date-sep">إلى</span>
+              <input
+                type="date"
+                className="date-input"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
             </div>
 
             <button
@@ -1199,7 +1138,7 @@ export default function Dashboard() {
               >
                 <TrendingUp size={20} color="#10b981" />
               </div>
-              الإيرادات ({rangeLabels[dateRange]})
+              الإيرادات
             </div>
             <div className="kpi-value">
               {fmtMoney(dashData.incomeFiltered)}{" "}
@@ -1221,7 +1160,7 @@ export default function Dashboard() {
               >
                 <TrendingDown size={20} color="#ef4444" />
               </div>
-              المصاريف ({rangeLabels[dateRange]})
+              المصاريف
             </div>
             <div className="kpi-value">
               {fmtMoney(dashData.expenseFiltered)}{" "}
@@ -1373,13 +1312,15 @@ export default function Dashboard() {
                       >
                         <div>
                           <div className="tl-time">
-                            <span dir="ltr">{fmtTime24(s.start_at)}</span>
+                            <span dir="ltr">
+                              {formatTimeLocally(s.start_at)}
+                            </span>
                             <span style={{ color: "#cbd5e1" }}>-</span>
                             <span
                               dir="ltr"
                               style={{ color: "#64748b", fontSize: 15 }}
                             >
-                              {fmtTime24(s.end_at)}
+                              {formatTimeLocally(s.end_at)}
                             </span>
                             {s.status === "done" && (
                               <Badge variant="ok" style={{ marginLeft: 8 }}>
@@ -1469,7 +1410,7 @@ export default function Dashboard() {
                 marginBottom: 20,
               }}
             >
-              مقارنة بين الإيرادات والمصاريف ({rangeLabels[dateRange]}).
+              مقارنة بين الإيرادات والمصاريف للمدة المحددة.
             </div>
 
             <div className="chart-legend">
@@ -1659,7 +1600,7 @@ export default function Dashboard() {
                           <div className="li-title">{tx.title}</div>
                           <div className="li-sub">
                             {tx.subtitle} •{" "}
-                            <span dir="ltr">{fmtTime24(tx.date)}</span>
+                            <span dir="ltr">{formatTimeLocally(tx.date)}</span>
                           </div>
                         </div>
                       </div>
