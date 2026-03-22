@@ -37,6 +37,7 @@ import {
   History,
   List,
   CalendarCheck,
+  Phone,
 } from "lucide-react";
 
 const LOCALE_LATN = "en-IL";
@@ -535,6 +536,18 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 @media (max-width: 980px) {
   .runDetails .pQuickStats { grid-template-columns: 1fr; }
 }
+
+/* Modal Form Overrides */
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 `;
 
 export default function RunDetails() {
@@ -612,13 +625,13 @@ export default function RunDetails() {
   const [enrollSaving, setEnrollSaving] = useState(false);
 
   const [openNewChild, setOpenNewChild] = useState(false);
+  // تحديث حالة الفورم عشان تدعم القيم النصية للبلد والصف
   const [newChildForm, setNewChildForm] = useState({
     name: "",
     age: "",
     class: "",
     gender: "male",
-    country_id: 1,
-    new_country_name: "",
+    country_name: "", // بدل country_id
     mother_name: "",
     mother_phone: "",
     father_name: "",
@@ -628,32 +641,47 @@ export default function RunDetails() {
   const [newChildSaving, setNewChildSaving] = useState(false);
 
   const [countries, setCountries] = useState([]);
+  const [classes, setClasses] = useState([]); // لخيارات الصف
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
 
   const openCreateEnroll = () => {
+    // تصفير الفورم لما نفتحها
+    setNewChildForm({
+      name: "",
+      age: "",
+      class: "",
+      gender: "male",
+      country_name: "",
+      mother_name: "",
+      mother_phone: "",
+      father_name: "",
+      father_phone: "",
+      notes: "",
+    });
     setNewChildEnrollNow(true);
     setOpenNewChild(true);
   };
 
-  async function loadCountriesSafe() {
+  async function loadFormPicklists() {
     setCountriesLoading(true);
     try {
-      const res = await supabase
-        .from("countries")
-        .select("id,name")
-        .order("name", { ascending: true });
-      if (res.error) throw res.error;
-      setCountries(res.data ?? []);
+      const [cRes, clRes] = await Promise.all([
+        supabase.from("countries").select("id,name").order("name"),
+        // في حال كان جدول child_classes غير موجود، سيتم تجاهل الخطأ للأسفل
+        supabase.from("child_classes").select("id,name").order("name"),
+      ]);
+      if (cRes.data) setCountries(cRes.data);
+      if (clRes.data) setClasses(clRes.data);
     } catch (e) {
-      setCountries([]);
+      console.error("Failed to load picklists:", e);
     } finally {
       setCountriesLoading(false);
     }
   }
 
   useEffect(() => {
-    if (openNewChild) loadCountriesSafe();
+    if (openNewChild) loadFormPicklists();
   }, [openNewChild]);
 
   const [pkgInfo, setPkgInfo] = useState(null);
@@ -779,38 +807,42 @@ export default function RunDetails() {
     const name = (newChildForm.name || "").trim();
     const ageNum = Number(String(newChildForm.age ?? "").trim());
     if (!name || isNaN(ageNum)) {
-      toast("Name and age are required.", "warn");
+      toast("الاسم والعمر مطلوبان.", "warn");
       return;
     }
 
     setNewChildSaving(true);
     try {
-      let countryId = newChildForm.country_id
-        ? Number(newChildForm.country_id)
-        : null;
-      const newCountryName = (newChildForm.new_country_name || "").trim();
-      if (newCountryName) {
-        const existing = await supabase
-          .from("countries")
-          .select("id")
-          .eq("name", newCountryName)
-          .maybeSingle();
-        if (existing.data?.id) countryId = existing.data.id;
-        else {
+      let countryId = null;
+      const typedCountry = (newChildForm.country_name || "").trim();
+      if (typedCountry) {
+        const existingC = countries.find((c) => c.name === typedCountry);
+        if (existingC) {
+          countryId = existingC.id;
+        } else {
+          // إضافة البلد الجديد
           const created = await supabase
             .from("countries")
-            .insert([{ name: newCountryName }])
+            .insert([{ name: typedCountry }])
             .select("id")
             .single();
           if (created.data) countryId = created.data.id;
         }
-        loadCountriesSafe();
+      }
+
+      const typedClass = (newChildForm.class || "").trim();
+      if (typedClass) {
+        const existingCl = classes.find((c) => c.name === typedClass);
+        if (!existingCl) {
+          // إضافة الصف الجديد بصمت لجدول الفئات (إن وجد)
+          await supabase.from("child_classes").insert([{ name: typedClass }]);
+        }
       }
 
       const payload = {
         name,
         age: ageNum,
-        class: (newChildForm.class || "").trim() || null,
+        class: typedClass || null,
         gender: newChildForm.gender || "male",
         mother_name: (newChildForm.mother_name || "").trim() || null,
         mother_phone: (newChildForm.mother_phone || "").trim() || null,
@@ -835,12 +867,12 @@ export default function RunDetails() {
 
       if (enrollNow && newId) {
         initEnrollBuyNew({ childId: newId });
-        toast("Child created. Set sessions and click Save to enroll.", "ok");
+        toast("تم إضافة الطفل. حدد الباقة واضغط حفظ للتسجيل.", "ok");
       } else {
-        toast("Child created.", "ok");
+        toast("تم إضافة الطفل بنجاح.", "ok");
       }
     } catch (e) {
-      toast("Failed to create child.", "danger");
+      toast("فشلت عملية إضافة الطفل.", "danger");
     } finally {
       setNewChildSaving(false);
     }
@@ -1261,6 +1293,9 @@ export default function RunDetails() {
     setOpenEnroll(true);
   }
 
+  function openSingleEnrollNew() {
+    initEnrollBuyNew();
+  }
   function openSingleTopup(participantRow) {
     const remaining = Number(participantRow.package_sessions_remaining || 0);
     if (remaining > 0) {
@@ -3716,153 +3751,198 @@ export default function RunDetails() {
           title={newChildEnrollNow ? "إضافة طفل وتسجيله" : "إضافة طفل جديد"}
           onClose={() => setOpenNewChild(false)}
         >
-          <div className="grid">
+          <div className="grid" style={{ gap: "24px", padding: "10px 0" }}>
+            {/* معلومات الطفل */}
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الاسم *</div>
-              <input
-                className="input"
-                value={newChildForm.name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, name: e.target.value }))
-                }
-                placeholder=""
-              />
+              <h4 className="form-section-title">
+                <Users size={18} color="#64748b" /> البيانات الأساسية
+              </h4>
+              <div className="grid">
+                <div style={{ gridColumn: "span 12" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الاسم الرباعي *
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({ ...p, name: e.target.value }))
+                    }
+                    placeholder="مثال: أحمد محمد علي"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    العمر *
+                  </div>
+                  <input
+                    className="input"
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={newChildForm.age}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({ ...p, age: e.target.value }))
+                    }
+                    placeholder="بالسنوات"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الجنس
+                  </div>
+                  <ModernSelect
+                    value={newChildForm.gender}
+                    onChange={(v) =>
+                      setNewChildForm((p) => ({ ...p, gender: v }))
+                    }
+                    options={[
+                      { value: "male", label: "ذكر" },
+                      { value: "female", label: "أنثى" },
+                    ]}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الصف
+                  </div>
+                  <input
+                    className="input"
+                    list="classes-list"
+                    autoComplete="off"
+                    value={newChildForm.class}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({ ...p, class: e.target.value }))
+                    }
+                    placeholder="اختر أو اكتب صفاً..."
+                  />
+                  <datalist id="classes-list">
+                    {classes.map((c) => (
+                      <option key={c.id} value={c.name} />
+                    ))}
+                  </datalist>
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    البلد / المدينة
+                  </div>
+                  <input
+                    className="input"
+                    list="countries-list"
+                    autoComplete="off"
+                    value={newChildForm.country_name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        country_name: e.target.value,
+                      }))
+                    }
+                    placeholder="اختر أو اكتب بلداً..."
+                    disabled={countriesLoading}
+                  />
+                  <datalist id="countries-list">
+                    {countries.map((c) => (
+                      <option key={c.id} value={c.name} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
             </div>
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">العمر *</div>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                max={120}
-                value={newChildForm.age}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, age: e.target.value }))
-                }
-              />
-            </div>
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">الجنس</div>
-              <select
-                className="input"
-                value={newChildForm.gender}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, gender: e.target.value }))
-                }
-              >
-                <option value="male">ذكر</option>
-                <option value="female">أنثى</option>
-              </select>
-            </div>
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">الصف</div>
-              <input
-                className="input"
-                value={newChildForm.class}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, class: e.target.value }))
-                }
-                placeholder=""
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">البلد/المدينة</div>
-              <select
-                className="input"
-                value={newChildForm.country_id ?? ""}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, country_id: e.target.value }))
-                }
-                disabled={countriesLoading}
-              >
-                <option value="">
-                  {countriesLoading ? "جاري التحميل..." : "اختر البلد..."}
-                </option>
-                {(countries ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">بلد جديدة (اختياري)</div>
-              <input
-                className="input"
-                value={newChildForm.new_country_name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    new_country_name: e.target.value,
-                  }))
-                }
-                placeholder="مثال: الطيبة"
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">اسم الأم</div>
-              <input
-                className="input"
-                value={newChildForm.mother_name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    mother_name: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">هاتف الأم</div>
-              <input
-                className="input"
-                value={newChildForm.mother_phone}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    mother_phone: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">اسم الأب</div>
-              <input
-                className="input"
-                value={newChildForm.father_name}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    father_name: e.target.value,
-                  }))
-                }
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">هاتف الأب</div>
-              <input
-                className="input"
-                value={newChildForm.father_phone}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({
-                    ...p,
-                    father_phone: e.target.value,
-                  }))
-                }
-              />
-            </div>
+
+            {/* معلومات الأهل */}
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">ملاحظات (اختياري)</div>
+              <h4 className="form-section-title">
+                <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
+              </h4>
+              <div className="grid">
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    اسم الأم
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.mother_name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        mother_name: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    هاتف الأم
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.mother_phone}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        mother_phone: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                    dir="ltr"
+                    style={{ textAlign: "right" }}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    اسم الأب
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.father_name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        father_name: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    هاتف الأب
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.father_phone}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        father_phone: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                    dir="ltr"
+                    style={{ textAlign: "right" }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ملاحظات إضافية */}
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                ملاحظات إضافية
+              </div>
               <textarea
                 className="input"
-                rows={4}
+                rows={3}
                 value={newChildForm.notes}
                 onChange={(e) =>
                   setNewChildForm((p) => ({ ...p, notes: e.target.value }))
                 }
-                placeholder="أضف ملاحظاتك هنا..."
+                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+                style={{ resize: "vertical" }}
               />
             </div>
+
             <div
               style={{
                 gridColumn: "span 12",
@@ -3891,8 +3971,8 @@ export default function RunDetails() {
                 {newChildSaving
                   ? "جاري الحفظ..."
                   : newChildEnrollNow
-                    ? "إضافة وتسجيل"
-                    : "حفظ"}
+                    ? "حفظ وتسجيل بالدورة"
+                    : "حفظ الطالب"}
               </button>
             </div>
           </div>
