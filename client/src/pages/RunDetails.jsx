@@ -651,7 +651,6 @@ export default function RunDetails() {
   const navigate = useNavigate();
   const { toast } = useOutletContext();
 
-  // --- States ---
   const [tab, setTab] = useState("participants");
 
   const [summary, setSummary] = useState(null);
@@ -678,6 +677,9 @@ export default function RunDetails() {
   const [expParty, setExpParty] = useState("");
   const [expDesc, setExpDesc] = useState("");
   const [expSaving, setExpSaving] = useState(false);
+
+  const [newCatName, setNewCatName] = useState("");
+  const [newPartyName, setNewPartyName] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -729,7 +731,6 @@ export default function RunDetails() {
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
-  // السجلات الجديدة
   const [openHistory, setOpenHistory] = useState(false);
   const [historyEnrollment, setHistoryEnrollment] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
@@ -762,7 +763,6 @@ export default function RunDetails() {
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
-  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -3190,6 +3190,7 @@ export default function RunDetails() {
                       disabled={Number(manageP.balance || 0) <= 0}
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3212,6 +3213,7 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3226,6 +3228,7 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3265,6 +3268,7 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3279,6 +3283,7 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3293,6 +3298,7 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -4288,103 +4294,100 @@ export default function RunDetails() {
           </div>
         </Modal>
 
+        {/* =========================================================================
+            نافذة المصاريف 
+        ========================================================================= */}
         <Modal
-          open={openPay}
-          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
+          open={openExpenseModal}
+          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
           onClose={() => {
-            setPayEditId(null);
-            setPayLocked(false);
-            closeSubModalAndReopen(setOpenPay);
+            setOpenExpenseModal(false);
+            resetExpenseForm();
           }}
         >
           <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الطفل</div>
-              <ModernSelect
-                value={payEnrollmentId}
-                onChange={setPayEnrollmentId}
-                menuWidth="trigger"
-                disabled={paySaving || !!payEditId || payLocked}
-                placeholder="— اختر طفل —"
-                options={[
-                  { value: "", label: "— اختر طفل —" },
-                  ...participants
-                    .filter((p) => p.enrollment_status === "active")
-                    .map((p) => ({
-                      value: String(p.enrollment_id),
-                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
-                    })),
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">المبلغ (₪)</div>
-              <input
-                className="input"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">طريقة الدفع</div>
-              <ModernSelect
-                value={payMethod}
-                onChange={setPayMethod}
-                menuWidth="trigger"
-                options={[
-                  { value: "cash", label: "نقداً" },
-                  { value: "card", label: "بطاقة ائتمان" },
-                  { value: "transfer", label: "حوالة بنكية" },
-                  { value: "other", label: "أخرى" },
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">تاريخ الدفعة</div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                التاريخ
+              </div>
               <input
                 className="input"
                 type="date"
-                value={payDate}
-                onChange={(e) => setPayDate(e.target.value)}
+                value={expDate}
+                onChange={(e) => setExpDate(e.target.value)}
               />
             </div>
-
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">ملاحظات</div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                المبلغ
+              </div>
               <input
                 className="input"
-                placeholder="اختياري"
-                value={payNote}
-                onChange={(e) => setPayNote(e.target.value)}
+                type="number"
+                step="0.01"
+                min="0"
+                value={expAmount}
+                onChange={(e) => setExpAmount(e.target.value)}
+                placeholder="مثال: 50"
               />
             </div>
-
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                التصنيف
+              </div>
+              <CustomCombobox
+                value={expCategory}
+                onChange={(v) => setExpCategory(v)}
+                options={expCategories.map((x) => ({
+                  value: x,
+                  label: x,
+                }))}
+                placeholder="اختر أو اكتب تصنيفاً..."
+              />
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                الشخص
+              </div>
+              <CustomCombobox
+                value={expParty}
+                onChange={(v) => setExpParty(v)}
+                options={expParties.map((x) => ({
+                  value: x,
+                  label: x,
+                }))}
+                placeholder="اختر أو اكتب شخصاً..."
+              />
+            </div>
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                الوصف
+              </div>
+              <input
+                className="input"
+                value={expDesc}
+                onChange={(e) => setExpDesc(e.target.value)}
+                placeholder="اختياري..."
+              />
+            </div>
             <div
               className="row"
-              style={{ gridColumn: "span 12", marginTop: 10 }}
+              style={{ gridColumn: "span 12", marginTop: 20 }}
             >
               <button
                 type="button"
                 className="btn primary"
-                disabled={paySaving || !payEnrollmentId || !payAmount}
-                onClick={addPayment}
+                onClick={saveExpense}
+                disabled={expSaving}
               >
-                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
+                {expSaving ? "جاري الحفظ..." : "حفظ"}
               </button>
               <button
                 type="button"
                 className="btn"
                 onClick={() => {
-                  setPayEditId(null);
-                  setPayLocked(false);
-                  closeSubModalAndReopen(setOpenPay);
+                  setOpenExpenseModal(false);
+                  resetExpenseForm();
                 }}
               >
                 إلغاء
@@ -4392,6 +4395,7 @@ export default function RunDetails() {
             </div>
           </div>
         </Modal>
+        {/* ========================================================================= */}
 
         <ConfirmDialog
           open={confirm.open}
