@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router";
+import { useNavigate, useOutletContext, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 import PageHeader from "../components/PageHeader";
@@ -9,7 +9,6 @@ import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import IconButton from "../components/IconButton";
-import Control from "../components/Control";
 import ModernSelect from "../components/ModernSelect";
 import { fmtDateTime24 } from "../utils/datetime";
 
@@ -22,8 +21,10 @@ import {
   Trash2,
   Search,
   Filter,
+  AlertTriangle,
 } from "lucide-react";
 
+// --- دوال مساعدة ---
 function fmtMoney(n) {
   const x = Number(n || 0);
   return x.toLocaleString("en", { maximumFractionDigits: 2 });
@@ -42,275 +43,389 @@ function methodLabel(m) {
   return "—";
 }
 
+function isoDate(d) {
+  const dt = new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const da = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${da}`;
+}
+
 function toInputDatetimeLocal(dt) {
   const d = dt ? new Date(dt) : new Date();
   const pad = (x) => String(x).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  const mm = pad(d.getMonth() + 1);
-  const dd = pad(d.getDate());
-  const hh = pad(d.getHours());
+  const y = d.getFullYear();
+  const mo = pad(d.getMonth() + 1);
+  const da = pad(d.getDate());
+  const h = pad(d.getHours());
   const mi = pad(d.getMinutes());
-  return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  return `${y}-${mo}-${da}T${h}:${mi}`;
 }
 
-function parseInputDatetimeLocal(v) {
-  if (!v) return null;
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
-}
-
-function startOfDay(d) {
+function startOfMonth(d = new Date()) {
   const x = new Date(d);
+  x.setDate(1);
   x.setHours(0, 0, 0, 0);
   return x;
 }
 
-function endOfDay(d) {
+function addDays(d, n) {
   const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
+  x.setDate(x.getDate() + n);
   return x;
 }
 
-function rangeFromPreset(preset) {
-  const now = new Date();
-  const end = endOfDay(now);
-
-  if (preset === "30d") {
-    const start = startOfDay(
-      new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000),
-    );
-    return { start, end };
-  }
-  if (preset === "90d") {
-    const start = startOfDay(
-      new Date(now.getTime() - 89 * 24 * 60 * 60 * 1000),
-    );
-    return { start, end };
-  }
-  if (preset === "this_month") {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    return { start: startOfDay(start), end };
-  }
-  return { start: null, end: null };
+// --- CSS Styles ---
+const PAYMENTS_STYLES = `
+.page--payments {
+  /* خلفية بلون أخضر خفيف جداً ينسجم مع طابع المدفوعات */
+  background: linear-gradient(180deg, rgba(22, 163, 74, 0.05) 0%, #f4f6f8 300px);
+  min-height: 100vh;
+  padding-bottom: 40px;
 }
 
-export default function Payments() {
-  const navigate = useNavigate();
-  const { toast } = useOutletContext();
+.payments-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
 
+.payments-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.payments-subtitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payments-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.payments-toolbar {
+  padding: 20px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.filters-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.search-wrapper {
+  position: relative;
+  flex: 1 1 250px;
+  max-width: 350px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.search-input:focus {
+  outline: none;
+  /* إطار أخضر عند التحديد */
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.filter-select {
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.modern-table th {
+  background: #fff;
+  color: #64748b;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 16px 24px;
+  border-bottom: 2px solid #f1f5f9;
+  white-space: nowrap;
+}
+
+.modern-table td {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f8fafc;
+  color: #334155;
+  font-size: 15px;
+  vertical-align: middle;
+  transition: background 0.15s ease;
+}
+
+.modern-table tr:hover td {
+  background: #f8fafc;
+}
+
+.modern-table tr:last-child td {
+  border-bottom: none;
+}
+
+.btn-add {
+  /* زر رئيسي باللون الأخضر */
+  background: #16a34a !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 10px 20px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.2) !important;
+  transition: all 0.2s !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-add:hover {
+  transform: translateY(-2px);
+  /* لون أخضر أغمق عند الوقوف بالماوس */
+  background: #15803d !important;
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.3) !important;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* تنسيق الروابط داخل الجدول لتظهر باللون الأخضر المميز */
+.modern-table a {
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.modern-table a:hover {
+  text-decoration: underline;
+}
+
+/* تنسيق قائمة اختيار الطالب (Picker) */
+.enrollment-picker-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.enrollment-picker-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.enrollment-picker-item:last-child {
+  border-bottom: none;
+}
+
+.enrollment-picker-item:hover {
+  background: #f8fafc;
+}
+
+.enrollment-picker-item.selected {
+  background: #f0fdf4;
+  border-right: 4px solid #16a34a;
+}
+
+.epi-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.epi-name {
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.epi-meta {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.epi-balance {
+  font-weight: 900;
+  font-size: 15px;
+  color: #16a34a;
+  direction: ltr;
+}
+
+.epi-balance.debt {
+  color: #dc2626;
+}
+`;
+
+export default function Payments() {
+  const { toast } = useOutletContext();
+  const navigate = useNavigate();
+
+  const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [payments, setPayments] = useState([]);
-
-  const [search, setSearch] = useState("");
-  const [method, setMethod] = useState("all");
-
-  const [rangePreset, setRangePreset] = useState("90d");
+  const [q, setQ] = useState("");
+  const [rangePreset, setRangePreset] = useState("this_month");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
   const [openAdd, setOpenAdd] = useState(false);
-  const [pickerLoading, setPickerLoading] = useState(false);
-  const [enrollments, setEnrollments] = useState([]);
 
-  // Add payment form
-  const [payChildId, setPayChildId] = useState("");
-  const [payEnrollmentId, setPayEnrollmentId] = useState("");
-  const [payAmount, setPayAmount] = useState("");
+  // لحالة الإضافة
+  const [pickerRows, setPickerRows] = useState([]);
+  const [pickerQ, setPickerQ] = useState("");
+  const [payEnrId, setPayEnrId] = useState("");
+  const [payAmt, setPayAmt] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
-  const [payAt, setPayAt] = useState(toInputDatetimeLocal());
   const [payNote, setPayNote] = useState("");
+  const [payAt, setPayAt] = useState(toInputDatetimeLocal(new Date()));
 
   const [confirm, setConfirm] = useState({ open: false, id: null });
+  const [saving, setSaving] = useState(false);
 
-  const activeRange = useMemo(() => {
-    if (rangePreset === "custom") {
-      const f = fromDate ? startOfDay(new Date(fromDate)) : null;
-      const t = toDate ? endOfDay(new Date(toDate)) : null;
-      return { start: f, end: t };
+  function computeRange() {
+    if (rangePreset === "all") return { from: null, to: null };
+    const now = new Date();
+
+    if (rangePreset === "this_month") {
+      const from = startOfMonth(now);
+      const to = addDays(new Date(from), 32);
+      to.setDate(1);
+      to.setHours(0, 0, 0, 0);
+      return { from: isoDate(from), to: isoDate(addDays(to, -1)) };
     }
-    return rangeFromPreset(rangePreset);
-  }, [rangePreset, fromDate, toDate]);
 
-  async function loadPayments() {
+    if (rangePreset === "30d") {
+      const from = addDays(now, -30);
+      return { from: isoDate(from), to: isoDate(now) };
+    }
+
+    if (rangePreset === "custom") {
+      if (!fromDate || !toDate) return { from: null, to: null };
+      return { from: fromDate, to: toDate };
+    }
+
+    return { from: null, to: null };
+  }
+
+  async function load() {
     setLoading(true);
     setError(null);
 
-    try {
-      let rows = [];
+    const { from, to } = computeRange();
+    let query = supabase
+      .from("payments_details_view")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-      // Prefer rich view if exists
-      const baseSelect =
-        "id,enrollment_id,amount,method,paid_at,note,created_at,run_id,child_id,child_name,course_id,course_title,run_label";
+    if (from) query = query.gte("created_at", from + "T00:00:00");
+    if (to) query = query.lte("created_at", to + "T23:59:59");
 
-      let q = supabase
-        .from("payments_details_view")
-        .select(baseSelect)
-        .order("paid_at", { ascending: false });
-
-      if (activeRange.start)
-        q = q.gte("paid_at", activeRange.start.toISOString());
-      if (activeRange.end) q = q.lte("paid_at", activeRange.end.toISOString());
-
-      const r = await q;
-
-      if (r.error) {
-        // Fallback to old view
-        const legacySelect =
-          "id,enrollment_id,amount,method,paid_at,note,created_at,run_id,child_id,child_name";
-
-        let q2 = supabase
-          .from("payments_view")
-          .select(legacySelect)
-          .order("paid_at", { ascending: false });
-
-        if (activeRange.start)
-          q2 = q2.gte("paid_at", activeRange.start.toISOString());
-        if (activeRange.end)
-          q2 = q2.lte("paid_at", activeRange.end.toISOString());
-
-        const r2 = await q2;
-        if (r2.error) throw r2.error;
-
-        // Enrich with run -> course info (for nice table)
-        const runIds = Array.from(
-          new Set((r2.data ?? []).map((x) => x.run_id).filter(Boolean)),
-        );
-        const runMap = new Map();
-        if (runIds.length) {
-          const rs = await supabase
-            .from("course_runs_summary_view")
-            .select("run_id,template_id,title,kind,label")
-            .in("run_id", runIds);
-          if (!rs.error) {
-            for (const x of rs.data ?? []) runMap.set(x.run_id, x);
-          }
-        }
-
-        rows = (r2.data ?? []).map((x) => {
-          const run = runMap.get(x.run_id);
-          return {
-            ...x,
-            course_id: run?.template_id ?? null,
-            course_title: run?.title ?? "—",
-            run_label: run?.label ?? "—",
-          };
-        });
-      } else {
-        rows = r.data ?? [];
-      }
-
-      setPayments(rows);
-      setLoading(false);
-    } catch (e) {
-      setError(e);
-      setLoading(false);
+    const res = await query;
+    if (res.error) {
+      setError(res.error);
+    } else {
+      setRows(res.data ?? []);
     }
-  }
-
-  async function loadEnrollmentsPicker() {
-    setPickerLoading(true);
-    try {
-      const r = await supabase
-        .from("enrollments_finance_view")
-        .select(
-          "enrollment_id,child_id,child_name,run_id,course_id,course_title,run_label,enrollment_status,agreed_price,paid_amount,balance",
-        )
-        .order("child_name", { ascending: true })
-        .limit(2000);
-
-      if (r.error) {
-        // Fallback: try child_enrollments_view + children_view
-        const ce = await supabase
-          .from("child_enrollments_view")
-          .select(
-            "enrollment_id,child_id,run_id,enrollment_status,agreed_price,paid_amount,balance,title,label",
-          )
-          .order("enrollment_id", { ascending: false })
-          .limit(2000);
-        if (ce.error) throw r.error;
-
-        const childIds = Array.from(
-          new Set((ce.data ?? []).map((x) => x.child_id).filter(Boolean)),
-        );
-        const cm = new Map();
-        if (childIds.length) {
-          const ch = await supabase
-            .from("children_view")
-            .select("id,name")
-            .in("id", childIds);
-          if (!ch.error) for (const c of ch.data ?? []) cm.set(c.id, c.name);
-        }
-
-        setEnrollments(
-          (ce.data ?? []).map((x) => ({
-            enrollment_id: x.enrollment_id,
-            child_id: x.child_id,
-            child_name: cm.get(x.child_id) ?? "—",
-            run_id: x.run_id,
-            course_id: null,
-            course_title: x.title ?? "—",
-            run_label: x.label ?? "—",
-            enrollment_status: x.enrollment_status,
-            agreed_price: x.agreed_price,
-            paid_amount: x.paid_amount,
-            balance: x.balance,
-          })),
-        );
-      } else {
-        setEnrollments(r.data ?? []);
-      }
-
-      setPickerLoading(false);
-    } catch (e) {
-      setPickerLoading(false);
-      setError(e);
-    }
+    setLoading(false);
   }
 
   useEffect(() => {
-    loadPayments();
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rangePreset, fromDate, toDate]);
+  }, [rangePreset]);
 
   const filtered = useMemo(() => {
-    let list = [...payments];
-
-    const s = search.trim().toLowerCase();
-    if (s) {
-      list = list.filter((p) => {
-        const child = String(p.child_name ?? "").toLowerCase();
-        const course = String(p.course_title ?? "").toLowerCase();
-        const run = String(p.run_label ?? "").toLowerCase();
-        const note = String(p.note ?? "").toLowerCase();
-        return (
-          child.includes(s) ||
-          course.includes(s) ||
-          run.includes(s) ||
-          note.includes(s)
-        );
-      });
-    }
-
-    if (method !== "all") list = list.filter((p) => p.method === method);
-
-    return list;
-  }, [payments, search, method]);
-
-  const kpis = useMemo(() => {
-    const total = filtered.reduce((acc, x) => acc + Number(x.amount || 0), 0);
-    const count = filtered.length;
-    const cash = filtered
-      .filter((x) => x.method === "cash")
-      .reduce((acc, x) => acc + Number(x.amount || 0), 0);
-    const uniqChildren = new Set(
-      filtered.map((x) => x.child_id).filter(Boolean),
-    ).size;
-    const avg = count === 0 ? 0 : total / count;
-
-    return { total, count, cash, uniqChildren, avg };
-  }, [filtered]);
+    const s = q.trim().toLowerCase();
+    if (!s) return rows;
+    return rows.filter((r) => {
+      const cName = String(r.child_name || "").toLowerCase();
+      const crName = String(r.course_title || "").toLowerCase();
+      const rName = String(r.run_label || "").toLowerCase();
+      const n = String(r.note || "").toLowerCase();
+      return (
+        cName.includes(s) ||
+        crName.includes(s) ||
+        rName.includes(s) ||
+        n.includes(s)
+      );
+    });
+  }, [rows, q]);
 
   const rangeHint = useMemo(() => {
     if (rangePreset === "custom") {
@@ -318,497 +433,428 @@ export default function Payments() {
       const b = toDate ? new Date(toDate).toLocaleDateString("en") : "—";
       return `${a} → ${b}`;
     }
-    if (rangePreset === "30d") return "آخر 30 يوم";
-    if (rangePreset === "90d") return "آخر 90 يوم";
     if (rangePreset === "this_month") return "هذا الشهر";
-    return "كل الوقت";
+    if (rangePreset === "30d") return "آخر 30 يوم";
+    if (rangePreset === "all") return "كل الوقت";
+    return "هذا الشهر";
   }, [rangePreset, fromDate, toDate]);
 
-  const childOptions = useMemo(() => {
-    const byId = new Map();
-    for (const e of enrollments) {
-      if (!e?.child_id) continue;
-      if (!byId.has(e.child_id)) byId.set(e.child_id, e.child_name ?? "—");
-    }
-
-    const list = Array.from(byId.entries()).map(([id, name]) => ({
-      value: String(id),
-      label: name,
-    }));
-    list.sort((a, b) => String(a.label).localeCompare(String(b.label), "en"));
-    return [{ value: "", label: "Select child..." }, ...list];
-  }, [enrollments]);
-
-  const enrollmentsForChild = useMemo(() => {
-    if (!payChildId) return [];
-    return enrollments
-      .filter((e) => String(e.child_id) === String(payChildId))
-      .sort((a, b) =>
-        String(a.course_title).localeCompare(String(b.course_title), "en"),
-      );
-  }, [enrollments, payChildId]);
-
-  const enrollmentOptions = useMemo(() => {
-    if (!payChildId) {
-      return [{ value: "", label: "اختر الطفل أولاً" }];
-    }
-
-    const list = enrollmentsForChild.map((x) => {
-      const agreed = Number(x.agreed_price || 0);
-      const bal = Number(x.balance || 0);
-      const hint = agreed > 0 ? ` (المتبقي: ${fmtMoney(bal)}₪)` : "";
-      const label = `${x.course_title} — ${x.run_label}${hint}`;
-      return {
-        value: String(x.enrollment_id),
-        label,
-        disabled: x.enrollment_status !== "active",
-      };
-    });
-
-    return [{ value: "", label: "اختر اشتراكًا..." }, ...list];
-  }, [payChildId, enrollmentsForChild]);
-
-  const selectedEnrollment = useMemo(() => {
-    return (
-      enrollments.find(
-        (x) => String(x.enrollment_id) === String(payEnrollmentId),
-      ) ?? null
+  const stats = useMemo(() => {
+    const total = filtered.reduce((acc, r) => acc + Number(r.amount || 0), 0);
+    const count = filtered.length;
+    const avg = count === 0 ? 0 : total / count;
+    const max = filtered.reduce(
+      (m, r) => Math.max(m, Number(r.amount || 0)),
+      0,
     );
-  }, [enrollments, payEnrollmentId]);
 
-  async function openAddModal() {
+    return { total, count, avg, max };
+  }, [filtered]);
+
+  async function openCreate() {
     setOpenAdd(true);
-
-    setPayChildId("");
-    setPayEnrollmentId("");
-    setPayAmount("");
+    setPickerQ("");
+    setPayEnrId("");
+    setPayAmt("");
     setPayMethod("cash");
-    setPayAt(toInputDatetimeLocal());
     setPayNote("");
+    setPayAt(toInputDatetimeLocal(new Date()));
 
-    if (enrollments.length === 0) await loadEnrollmentsPicker();
+    const r = await supabase
+      .from("enrollments_finance_view")
+      .select("*")
+      .order("child_name", { ascending: true });
+
+    if (!r.error) {
+      setPickerRows(r.data ?? []);
+    }
   }
 
+  const pickerFiltered = useMemo(() => {
+    const s = pickerQ.trim().toLowerCase();
+    if (!s) return pickerRows;
+    return pickerRows.filter((r) => {
+      const cName = String(r.child_name || "").toLowerCase();
+      const crs = String(r.course_title || "").toLowerCase();
+      return cName.includes(s) || crs.includes(s);
+    });
+  }, [pickerRows, pickerQ]);
+
+  // عندما نختار اشتراك معين، يمكننا جلب رصيده تلقائيًا لمساعدة المستخدم
+  useEffect(() => {
+    if (payEnrId) {
+      const match = pickerRows.find((r) => r.enrollment_id === payEnrId);
+      if (match && Number(match.balance) > 0 && !payAmt) {
+        setPayAmt(match.balance);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payEnrId]);
+
   async function createPayment() {
-    if (!payEnrollmentId) {
-      toast("اختر اشتراكًا.", "warn");
+    if (!payEnrId) {
+      toast("الرجاء اختيار الطالب والاشتراك.", "warn");
       return;
     }
-
-    const amount = Number(payAmount);
-    if (!amount || amount <= 0) {
+    const val = Number(payAmt);
+    if (!val || val <= 0) {
       toast("أدخل مبلغًا صحيحًا.", "warn");
       return;
     }
 
-    const paidAtIso =
-      parseInputDatetimeLocal(payAt) ?? new Date().toISOString();
+    setSaving(true);
+    try {
+      const payload = {
+        enrollment_id: payEnrId,
+        amount: val,
+        method: payMethod,
+        note: payNote.trim() || null,
+        created_at: new Date(payAt).toISOString(),
+      };
+      const { error: insErr } = await supabase
+        .from("payments")
+        .insert([payload]);
+      if (insErr) throw insErr;
 
-    const payload = {
-      enrollment_id: Number(payEnrollmentId),
-      amount,
-      method: payMethod,
-      note: payNote ? String(payNote) : null,
-      paid_at: paidAtIso,
-    };
-
-    const ins = await supabase.from("payments").insert([payload]);
-
-    if (ins.error) {
-      setError(ins.error);
-      toast("فشل حفظ الدفعة.", "danger");
-      return;
+      toast("تم تسجيل الدفعة بنجاح.", "ok");
+      setOpenAdd(false);
+      await load();
+    } catch (e) {
+      toast("حدث خطأ أثناء الحفظ.", "danger");
+    } finally {
+      setSaving(false);
     }
-
-    toast("تم حفظ الدفعة.", "ok");
-    setOpenAdd(false);
-    await loadPayments();
   }
 
   async function deletePayment(id) {
-    const d = await supabase.from("payments").delete().eq("id", id);
-    if (d.error) {
-      setError(d.error);
+    const { error: delErr } = await supabase
+      .from("payments")
+      .delete()
+      .eq("id", id);
+    if (delErr) {
       toast("فشل حذف الدفعة.", "danger");
       return;
     }
-    toast("تم حذف الدفعة.", "ok");
-    await loadPayments();
+    toast("تم الحذف بنجاح.", "ok");
+    await load();
   }
 
   return (
-    <div className="container page page--payments" dir="rtl" lang="ar">
-      <PageHeader
-        title="المدفوعات"
-        subtitle={`الفترة: ${rangeHint}`}
-        actions={
-          <div className="toolbar">
-            <button className="btn" onClick={loadPayments}>
-              تحديث
-            </button>
-            <button className="btn primary" onClick={openAddModal}>
-              <Plus size={18} /> إضافة دفعة
-            </button>
+    <div className="page page--payments" dir="rtl" lang="ar">
+      <style>{PAYMENTS_STYLES}</style>
+      <div className="container">
+        {/* Header */}
+        <div className="payments-header">
+          <div className="payments-title">المدفوعات</div>
+          <div className="payments-subtitle">
+            <span style={{ color: "#cbd5e1" }}>|</span>
+            <CalendarDays size={16} /> النطاق: {rangeHint}
           </div>
-        }
-      />
+        </div>
 
-      <ErrorBanner error={error} />
+        {error && <ErrorBanner error={error} />}
 
-      {/* KPI Row */}
-      <div className="kpiGrid4" style={{ marginBottom: 14 }}>
-        <KpiCard
-          icon={Banknote}
-          label="إجمالي المقبوضات"
-          value={`${fmtMoney(kpis.total)}₪`}
-          hint="مجموع الدفعات في العرض الحالي"
-          variant={kpis.total === 0 ? "neutral" : "info"}
-          className="kpi--accent"
-        />
+        {/* KPIs */}
+        <div className="kpiGrid4" style={{ marginBottom: 20 }}>
+          <KpiCard
+            icon={Banknote}
+            label="إجمالي المدفوعات"
+            value={`${fmtMoney(stats.total)} ₪`}
+            hint={stats.count ? `${stats.count} دفعة` : "لا توجد دفعات"}
+            variant="ok"
+            className="kpi--accent"
+          />
 
-        <KpiCard
-          icon={CreditCard}
-          label="عدد الدفعات"
-          value={kpis.count}
-          hint="عدد الدفعات في العرض الحالي"
-          variant={kpis.count === 0 ? "neutral" : "info"}
-          className="kpi--accent"
-        />
+          <KpiCard
+            icon={CreditCard}
+            label="عدد الدفعات"
+            value={stats.count}
+            hint="خلال النطاق المحدد"
+            variant="neutral"
+            className="kpi--accent"
+          />
 
-        <KpiCard
-          icon={Banknote}
-          label="إجمالي الكاش"
-          value={`${fmtMoney(kpis.cash)}₪`}
-          hint="مجموع دفعات الكاش"
-          variant={kpis.cash === 0 ? "neutral" : "ok"}
-          className="kpi--accent"
-        />
+          <KpiCard
+            icon={Banknote}
+            label="متوسط الدفعة"
+            value={`${fmtMoney(stats.avg)} ₪`}
+            hint={stats.count ? "متوسط لكل دفعة" : "—"}
+            variant="neutral"
+            className="kpi--accent"
+          />
 
-        <KpiCard
-          icon={UserRound}
-          label="عدد الدافعين"
-          value={kpis.uniqChildren}
-          hint={`متوسط الدفعة: ${fmtMoney(kpis.avg)}₪`}
-          variant={kpis.uniqChildren === 0 ? "neutral" : "info"}
-          className="kpi--accent"
-        />
-      </div>
+          <KpiCard
+            icon={Banknote}
+            label="أكبر دفعة"
+            value={`${fmtMoney(stats.max)} ₪`}
+            hint={stats.max === 0 ? "—" : "أكبر دفعة منفردة"}
+            variant="info"
+            className="kpi--accent"
+          />
+        </div>
 
-      {/* Filters */}
-      <div className="card" style={{ marginBottom: 12 }}>
-        <div
-          className="toolbar"
-          style={{ justifyContent: "flex-start", gap: 10 }}
-        >
-          <div
-            className="filtersBar filtersBar--oneLine"
-            style={{ width: "100%" }}
-          >
-            <Control
-              icon={Search}
-              className="filtersBar__search"
-              style={{ minWidth: 260, width: "auto" }}
-            >
-              <input
-                placeholder="ابحث عن دفعة..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </Control>
+        {/* Toolbar & Table */}
+        <div className="payments-card">
+          <div className="payments-toolbar">
+            <div className="filters-group">
+              <div className="search-wrapper">
+                <Search size={18} className="search-icon" />
+                <input
+                  className="search-input"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="ابحث بالاسم، الدورة، الفوج، الملاحظة..."
+                />
+              </div>
 
-            <Control
-              icon={Filter}
-              className="filtersBar__select"
-              style={{ minWidth: 160, width: "auto" }}
-            >
-              <ModernSelect
-                bare
-                value={method}
-                onChange={setMethod}
-                placeholder="كل الطرق"
-                options={[
-                  { value: "all", label: "كل الطرق" },
-                  { value: "cash", label: "كاش" },
-                  { value: "card", label: "بطاقة" },
-                  { value: "transfer", label: "تحويل بنكي" },
-                  { value: "other", label: "أخرى" },
-                ]}
-              />
-            </Control>
+              <div className="filter-select">
+                <ModernSelect
+                  bare
+                  value={rangePreset}
+                  onChange={setRangePreset}
+                  options={[
+                    { value: "this_month", label: "هذا الشهر" },
+                    { value: "30d", label: "آخر 30 يوم" },
+                    { value: "custom", label: "نطاق مخصص" },
+                    { value: "all", label: "كل الوقت" },
+                  ]}
+                />
+              </div>
 
-            <Control
-              icon={CalendarDays}
-              className="filtersBar__select"
-              style={{ minWidth: 150, width: "auto" }}
-            >
-              <ModernSelect
-                bare
-                value={rangePreset}
-                onChange={setRangePreset}
-                placeholder="آخر 90 يوم"
-                options={[
-                  { value: "30d", label: "آخر 30 يوم" },
-                  { value: "90d", label: "آخر 90 يوم" },
-                  { value: "this_month", label: "هذا الشهر" },
-                  { value: "custom", label: "مخصص" },
-                ]}
-              />
-            </Control>
-
-            {rangePreset === "custom" ? (
-              <>
-                <div className="filtersBar__date" style={{ minWidth: 160 }}>
-                  <div className="label">من</div>
+              {rangePreset === "custom" && (
+                <div style={{ display: "flex", gap: "8px" }}>
                   <input
-                    className="input"
+                    className="search-input"
+                    style={{ padding: "10px 16px", maxWidth: "140px" }}
                     type="date"
                     value={fromDate}
                     onChange={(e) => setFromDate(e.target.value)}
                   />
-                </div>
-
-                <div className="filtersBar__date" style={{ minWidth: 160 }}>
-                  <div className="label">إلى</div>
                   <input
-                    className="input"
+                    className="search-input"
+                    style={{ padding: "10px 16px", maxWidth: "140px" }}
                     type="date"
                     value={toDate}
                     onChange={(e) => setToDate(e.target.value)}
                   />
+                  <button className="btn" onClick={load}>
+                    تطبيق
+                  </button>
                 </div>
-              </>
-            ) : null}
+              )}
+            </div>
+
+            <button className="btn btn-add" onClick={openCreate}>
+              <Plus size={18} /> إضافة دفعة
+            </button>
           </div>
+
+          {loading ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
+              جاري التحميل...
+            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={CreditCard}
+              title={
+                rows.length === 0 ? "لا توجد مدفوعات بعد" : "لا توجد نتائج"
+              }
+              description={
+                rows.length === 0
+                  ? "قم بإضافة دفعة جديدة للبدء."
+                  : "جرّب تغيير البحث أو الفلاتر."
+              }
+              actionLabel="إضافة دفعة"
+              onAction={openCreate}
+            />
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="modern-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 140 }}>تاريخ ووقت</th>
+                    <th>الطفل</th>
+                    <th>الدورة / الفوج</th>
+                    <th>طريقة الدفع</th>
+                    <th>ملاحظة</th>
+                    <th style={{ width: 120 }}>المبلغ</th>
+                    <th style={{ width: 80, textAlign: "center" }}>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((r) => (
+                    <tr key={r.id}>
+                      <td style={{ color: "#64748b", fontWeight: 600 }}>
+                        <span dir="ltr">{fmtDT(r.created_at)}</span>
+                      </td>
+
+                      <td style={{ fontWeight: 900 }}>
+                        <Link
+                          to={`/children/${r.child_id}`}
+                          style={{ color: "#0f172a" }}
+                          title="ملف الطفل"
+                        >
+                          {r.child_name || "—"}
+                        </Link>
+                      </td>
+
+                      <td style={{ minWidth: 180 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "2px",
+                          }}
+                        >
+                          <Link
+                            to={`/courses/${r.course_id}`}
+                            style={{ color: "#16a34a", fontWeight: 800 }}
+                            title="تفاصيل الدورة"
+                          >
+                            {r.course_title || "—"}
+                          </Link>
+                          <Link
+                            to={`/runs/${r.run_id}`}
+                            style={{
+                              color: "#64748b",
+                              fontSize: "13px",
+                              fontWeight: 600,
+                            }}
+                            title="تفاصيل الفوج"
+                          >
+                            {r.run_label || "—"}
+                          </Link>
+                        </div>
+                      </td>
+
+                      <td className="muted">
+                        <span
+                          style={{
+                            background: "#f1f5f9",
+                            padding: "4px 10px",
+                            borderRadius: "6px",
+                            fontSize: "13px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {methodLabel(r.method)}
+                        </span>
+                      </td>
+
+                      <td style={{ color: "#64748b", minWidth: 150 }}>
+                        {r.note || "—"}
+                      </td>
+
+                      <td style={{ fontWeight: 900, color: "#16a34a" }}>
+                        <span dir="ltr">{fmtMoney(r.amount)} ₪</span>
+                      </td>
+
+                      <td>
+                        <div className="actions-cell">
+                          <IconButton
+                            title="حذف"
+                            onClick={() => setConfirm({ open: true, id: r.id })}
+                            icon={Trash2}
+                            danger
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
-      {loading ? (
-        <div className="card">جارٍ التحميل...</div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={CreditCard}
-          title="لا توجد دفعات"
-          description="غيّر الفلاتر أو أضف دفعة جديدة."
-          actionLabel="إضافة دفعة"
-          onAction={openAddModal}
-          secondaryLabel="تصفير الفلاتر"
-          onSecondary={() => {
-            setSearch("");
-            setMethod("all");
-            setRangePreset("90d");
-            setFromDate("");
-            setToDate("");
-          }}
-        />
-      ) : (
-        <div className="tableWrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>وقت الدفع</th>
-                <th>الطفل</th>
-                <th>الدورة</th>
-                <th>المجموعة</th>
-                <th>المبلغ</th>
-                <th>الطريقة</th>
-                <th>ملاحظة</th>
-                <th style={{ width: 1 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => (
-                <tr key={p.id}>
-                  <td>{fmtDT(p.paid_at)}</td>
-
-                  <td>
-                    {p.child_id ? (
-                      <button
-                        className="linkBtn"
-                        onClick={() => navigate(`/children/${p.child_id}`)}
-                      >
-                        {p.child_name}
-                      </button>
-                    ) : (
-                      <span>{p.child_name ?? "—"}</span>
-                    )}
-                  </td>
-
-                  <td>
-                    {p.course_id ? (
-                      <button
-                        className="linkBtn"
-                        onClick={() => navigate(`/courses/${p.course_id}`)}
-                      >
-                        {p.course_title}
-                      </button>
-                    ) : (
-                      <span>{p.course_title ?? "—"}</span>
-                    )}
-                  </td>
-
-                  <td>
-                    {p.run_id ? (
-                      <button
-                        className="linkBtn"
-                        onClick={() => navigate(`/runs/${p.run_id}`)}
-                      >
-                        {p.run_label ?? `مجموعة #${p.run_id}`}
-                      </button>
-                    ) : (
-                      <span>{p.run_label ?? "—"}</span>
-                    )}
-                  </td>
-
-                  <td style={{ fontWeight: 950 }}>{fmtMoney(p.amount)}₪</td>
-                  <td>{methodLabel(p.method)}</td>
-
-                  <td style={{ maxWidth: 320 }}>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        maxWidth: 320,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                      title={p.note ?? ""}
-                    >
-                      {p.note ?? "—"}
-                    </span>
-                  </td>
-
-                  <td style={{ width: 1 }}>
-                    <IconButton
-                      icon={Trash2}
-                      label=""
-                      title="حذف"
-                      iconOnly
-                      onClick={() => setConfirm({ open: true, id: p.id })}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Add Payment Modal */}
+      {/* نافذة الإضافة */}
       <Modal
         open={openAdd}
-        title="إضافة دفعة"
-        onClose={() => setOpenAdd(false)}
+        title="إضافة دفعة جديدة"
+        onClose={() => !saving && setOpenAdd(false)}
       >
-        <div style={{ padding: 16 }}>
-          {pickerLoading ? (
-            <div className="card">جارٍ التحميل...</div>
-          ) : (
-            <>
-              <div className="grid" style={{ marginBottom: 12 }}>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
-                    الطفل
-                  </div>
-                  <ModernSelect
-                    value={payChildId}
-                    onChange={(v) => {
-                      setPayChildId(v);
-                      setPayEnrollmentId("");
+        <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
+          <div style={{ gridColumn: "span 12" }}>
+            <h4 className="form-section-title">
+              <UserRound size={18} color="#64748b" /> اختيار الاشتراك
+            </h4>
+            <div
+              className="search-wrapper"
+              style={{ maxWidth: "100%", marginBottom: 12 }}
+            >
+              <Search size={18} className="search-icon" />
+              <input
+                className="search-input"
+                value={pickerQ}
+                onChange={(e) => setPickerQ(e.target.value)}
+                placeholder="ابحث باسم الطفل أو الدورة..."
+              />
+            </div>
 
-                      // Auto-select if only one active enrollment
-                      const opts = enrollments
-                        .filter((e) => String(e.child_id) === String(v))
-                        .filter((e) => e.enrollment_status === "active");
-                      if (opts.length === 1)
-                        setPayEnrollmentId(String(opts[0].enrollment_id));
-                    }}
-                    menuWidth="trigger"
-                    placeholder="اختر طفلاً..."
-                    options={childOptions}
-                  />
+            {/* قائمة الاختيار التفاعلية */}
+            <div className="enrollment-picker-list">
+              {pickerFiltered.length === 0 ? (
+                <div
+                  style={{ padding: 20, textAlign: "center", color: "#94a3b8" }}
+                >
+                  لا توجد اشتراكات متطابقة
                 </div>
-
-                <div style={{ gridColumn: "span 6" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
-                    الاشتراك
-                  </div>
-                  <ModernSelect
-                    value={payEnrollmentId}
-                    onChange={setPayEnrollmentId}
-                    menuWidth="trigger"
-                    disabled={!payChildId}
-                    placeholder={
-                      payChildId ? "اختر اشتراكًا..." : "اختر الطفل أولاً"
-                    }
-                    options={enrollmentOptions}
-                  />
-                </div>
-              </div>
-
-              <div className="grid" style={{ marginBottom: 12 }}>
-                <div style={{ gridColumn: "span 4" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
-                    المبلغ
-                  </div>
-                  <Control>
-                    <input
-                      type="number"
-                      value={payAmount}
-                      onChange={(e) => setPayAmount(e.target.value)}
-                      placeholder="120"
-                    />
-                    <span className="muted" style={{ fontWeight: 950 }}>
-                      ₪
-                    </span>
-                  </Control>
-
-                  {selectedEnrollment ? (
+              ) : (
+                pickerFiltered.map((r) => {
+                  const isSelected = payEnrId === r.enrollment_id;
+                  const isDebt = Number(r.balance) > 0;
+                  return (
                     <div
-                      className="muted"
-                      style={{ marginTop: 6, fontWeight: 850 }}
+                      key={r.enrollment_id}
+                      className={`enrollment-picker-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => setPayEnrId(r.enrollment_id)}
                     >
-                      Balance:{" "}
-                      <span style={{ fontWeight: 950 }}>
-                        {fmtMoney(selectedEnrollment.balance)}₪
-                      </span>
-                      {Number(selectedEnrollment.balance || 0) > 0 ? (
-                        <button
-                          className="linkBtn"
-                          style={{ marginInlineStart: 10 }}
-                          onClick={() =>
-                            setPayAmount(
-                              String(Number(selectedEnrollment.balance || 0)),
-                            )
-                          }
-                          type="button"
-                        >
-                          Use balance
-                        </button>
-                      ) : null}
+                      <div className="epi-main">
+                        <div className="epi-name">{r.child_name}</div>
+                        <div className="epi-meta">
+                          {r.course_title} — {r.run_label}
+                        </div>
+                      </div>
+                      <div className={`epi-balance ${isDebt ? "debt" : ""}`}>
+                        {isDebt ? `متبقي: ${r.balance}` : "خالص"}
+                      </div>
                     </div>
-                  ) : null}
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* تفعيل باقي الحقول فقط إذا تم اختيار اشتراك */}
+          {payEnrId && (
+            <div style={{ gridColumn: "span 12" }}>
+              <h4 className="form-section-title">
+                <CreditCard size={18} color="#64748b" /> تفاصيل الدفعة
+              </h4>
+              <div className="grid" style={{ gap: "16px" }}>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    المبلغ (₪) *
+                  </div>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={payAmt}
+                    onChange={(e) => setPayAmt(e.target.value)}
+                    placeholder="أدخل المبلغ..."
+                  />
                 </div>
 
-                <div style={{ gridColumn: "span 4" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
-                    Payment method
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    طريقة الدفع
                   </div>
                   <ModernSelect
                     value={payMethod}
                     onChange={setPayMethod}
-                    menuWidth="trigger"
                     options={[
                       { value: "cash", label: "كاش" },
                       { value: "card", label: "بطاقة" },
@@ -818,56 +864,65 @@ export default function Payments() {
                   />
                 </div>
 
-                <div style={{ gridColumn: "span 4" }}>
-                  <div
-                    className="muted"
-                    style={{ fontWeight: 900, marginBottom: 6 }}
-                  >
-                    وقت الدفع
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    التاريخ والوقت *
                   </div>
-                  <Control>
-                    <input
-                      type="datetime-local"
-                      value={payAt}
-                      onChange={(e) => setPayAt(e.target.value)}
-                    />
-                  </Control>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 12 }}>
-                <div
-                  className="muted"
-                  style={{ fontWeight: 900, marginBottom: 6 }}
-                >
-                  ملاحظة (اختياري)
-                </div>
-                <Control>
                   <input
+                    className="input"
+                    type="datetime-local"
+                    value={payAt}
+                    onChange={(e) => setPayAt(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ gridColumn: "span 12" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    ملاحظة (اختياري)
+                  </div>
+                  <input
+                    className="input"
                     value={payNote}
                     onChange={(e) => setPayNote(e.target.value)}
-                    placeholder=""
+                    placeholder="أي ملاحظات حول الدفعة..."
                   />
-                </Control>
+                </div>
               </div>
-
-              <div className="row" style={{ gap: 10 }}>
-                <button className="btn primary" onClick={createPayment}>
-                  <Plus size={18} /> حفظ
-                </button>
-                <button className="btn" onClick={() => setOpenAdd(false)}>
-                  إلغاء
-                </button>
-              </div>
-            </>
+            </div>
           )}
+
+          <div
+            style={{
+              gridColumn: "span 12",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 10,
+              marginTop: 10,
+            }}
+          >
+            <button
+              className="btn"
+              onClick={() => setOpenAdd(false)}
+              disabled={saving}
+            >
+              إلغاء
+            </button>
+            <button
+              className="btn btn-add"
+              onClick={createPayment}
+              disabled={saving || !payEnrId}
+            >
+              {saving ? "جاري الحفظ..." : "حفظ الدفعة"}
+            </button>
+          </div>
         </div>
       </Modal>
 
+      {/* حوار تأكيد الحذف */}
       <ConfirmDialog
         open={confirm.open}
         title="حذف الدفعة"
-        message="متأكد بدك تحذف الدفعة؟ ما في رجعة."
+        message="هل أنت متأكد أنك تريد حذف هذه الدفعة؟ لا يمكن التراجع."
         confirmText="حذف"
         cancelText="إلغاء"
         danger
