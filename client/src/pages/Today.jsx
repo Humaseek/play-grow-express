@@ -20,13 +20,16 @@ import {
   Sparkles,
   History,
   BellRing,
-  PieChart,
+  PieChart as PieChartIcon,
   ArrowUpRight,
   ArrowDownRight,
   CalendarDays,
   BadgeDollarSign,
   Filter,
-  Zap,
+  BarChart3,
+  Activity,
+  CheckSquare,
+  Briefcase,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -35,7 +38,7 @@ import EmptyState from "../components/EmptyState";
 import Badge from "../components/Badge";
 
 // ============================================================================
-// الدوال المساعدة
+// 1. الدوال المساعدة الأساسية (تم حمايتها والتأكد من وجودها)
 // ============================================================================
 
 function fmtMoney(n) {
@@ -65,7 +68,32 @@ function formatTimeLocally(dt) {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-// دالة لمعالجة فترات الفلتر الذكي
+function startOfMonth(d = new Date()) {
+  const x = new Date(d);
+  x.setDate(1);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function startOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+function addDays(d, n) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+
+// دالة لمعالجة فترات الفلتر الذكي وتقسيمها للمخطط البياني
 function getRangeAndBins(preset, customStart, customEnd) {
   const now = new Date();
   let start = new Date();
@@ -175,7 +203,7 @@ function getRangeAndBins(preset, customStart, customEnd) {
 }
 
 // ============================================================================
-// مكونات الرسوم البيانية المتجاوبة
+// 2. مكونات الرسوم البيانية (SVG Charts) - مبنية برمجياً للأداء العالي
 // ============================================================================
 
 const Sparkline = ({ data, color, type = "line" }) => {
@@ -324,28 +352,129 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
   );
 };
 
-// ============================================================================
-// Skeleton Loader Component
-// ============================================================================
-const Skeleton = ({
-  width = "100%",
-  height = "20px",
-  borderRadius = "8px",
-  style = {},
-}) => (
-  <div
-    className="skeleton-pulse"
-    style={{ width, height, borderRadius, ...style }}
-  ></div>
-);
+// Donut Chart للمصاريف
+const ExpenseDonutChart = ({ data }) => {
+  if (!data || data.length === 0)
+    return (
+      <div className="muted text-center" style={{ padding: 20 }}>
+        لا توجد مصاريف لتحليلها
+      </div>
+    );
+
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  let cumulativePercent = 0;
+
+  const getCoordinatesForPercent = (percent) => {
+    const x = Math.cos(2 * Math.PI * percent);
+    const y = Math.sin(2 * Math.PI * percent);
+    return [x, y];
+  };
+
+  const colors = [
+    "#ef4444",
+    "#f59e0b",
+    "#3b82f6",
+    "#8b5cf6",
+    "#10b981",
+    "#64748b",
+  ];
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+      <div style={{ position: "relative", width: "120px", height: "120px" }}>
+        <svg viewBox="-1 -1 2 2" style={{ transform: "rotate(-90deg)" }}>
+          {data.map((slice, i) => {
+            const percent = slice.value / total;
+            const [startX, startY] =
+              getCoordinatesForPercent(cumulativePercent);
+            cumulativePercent += percent;
+            const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
+            const largeArcFlag = percent > 0.5 ? 1 : 0;
+            const pathData = [
+              `M ${startX} ${startY}`,
+              `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+              `L 0 0`,
+            ].join(" ");
+
+            return (
+              <path key={i} d={pathData} fill={colors[i % colors.length]} />
+            );
+          })}
+          {/* الدائرة الداخلية لعمل شكل الـ Donut */}
+          <circle cx="0" cy="0" r="0.6" fill="#fff" />
+        </svg>
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+          }}
+        >
+          <span style={{ fontSize: "10px", color: "#64748b", fontWeight: 800 }}>
+            الإجمالي
+          </span>
+          <span
+            style={{ fontSize: "14px", color: "#0f172a", fontWeight: 900 }}
+            className="ltrIso"
+          >
+            {fmtMoney(total)}
+          </span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}
+      >
+        {data.slice(0, 4).map((slice, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: "13px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div
+                style={{
+                  width: "10px",
+                  height: "10px",
+                  borderRadius: "50%",
+                  background: colors[i % colors.length],
+                }}
+              ></div>
+              <span style={{ fontWeight: 700, color: "#334155" }}>
+                {slice.label}
+              </span>
+            </div>
+            <span style={{ fontWeight: 900, color: "#0f172a" }}>
+              {Math.round((slice.value / total) * 100)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 // ============================================================================
-// Enterprise CSS Styles
+// 3. CSS Styles (Enterprise Dashboard UI)
 // ============================================================================
 const DASHBOARD_STYLES = `
-/* خلفية مش مألوفة - Mesh Gradient فخمة جداً */
 .page--dashboard {
-  background-color: #f8fafc;
+  background: #f8fafc;
   background-image: 
     radial-gradient(at 0% 0%, hsla(217,100%,94%,0.7) 0px, transparent 50%),
     radial-gradient(at 100% 0%, hsla(160,100%,94%,0.7) 0px, transparent 50%),
@@ -364,7 +493,7 @@ const DASHBOARD_STYLES = `
   align-items: flex-end;
   flex-wrap: wrap;
   gap: 20px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   padding-top: 24px;
 }
 
@@ -398,6 +527,38 @@ const DASHBOARD_STYLES = `
   font-size: 14px;
   font-weight: 800;
   box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+}
+
+/* Custom Tabs */
+.dash-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.5);
+  padding: 6px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  display: inline-flex;
+}
+.dash-tab {
+  padding: 10px 24px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 14px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dash-tab.active {
+  background: #fff;
+  color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 /* Controls & Filters */
@@ -485,7 +646,13 @@ const DASHBOARD_STYLES = `
   margin-bottom: 24px;
 }
 
-/* Glassmorphism Cards */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
 .bento-item {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(20px);
@@ -505,6 +672,20 @@ const DASHBOARD_STYLES = `
 .bento-item:hover {
   box-shadow: 0 14px 40px -4px rgba(15, 23, 42, 0.08);
   transform: translateY(-2px);
+}
+
+.span-3 { grid-column: span 3; }
+.span-4 { grid-column: span 4; }
+.span-6 { grid-column: span 6; }
+.span-8 { grid-column: span 8; }
+.span-12 { grid-column: span 12; }
+
+@media (max-width: 1200px) {
+  .span-3, .span-4, .span-6 { grid-column: span 6; }
+  .span-8 { grid-column: span 12; }
+}
+@media (max-width: 768px) {
+  .span-3, .span-4, .span-6, .span-8, .span-12 { grid-column: span 12; }
 }
 
 .kpi-title {
@@ -530,28 +711,6 @@ const DASHBOARD_STYLES = `
   margin-top: auto;
 }
 
-/* Layouts */
-.main-layout {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-  margin-bottom: 24px;
-}
-.layout-col-main {
-  flex: 2;
-  min-width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-.layout-col-side {
-  flex: 1;
-  min-width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
 /* Section Headers */
 .section-header {
   display: flex;
@@ -568,7 +727,7 @@ const DASHBOARD_STYLES = `
   gap: 10px;
 }
 
-/* Bulletproof Flex Timeline */
+/* Timeline مضاد للكسر */
 .timeline-list {
   display: flex;
   flex-direction: column;
@@ -604,7 +763,7 @@ const DASHBOARD_STYLES = `
 }
 .tl-row:last-child .tl-line { display: none; }
 
-/* تأثير النبض (Pulse) للجلسة المجدولة */
+/* تأثير النبض للجلسة المجدولة */
 @keyframes pulse-ring {
   0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
   70% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
@@ -657,7 +816,6 @@ const DASHBOARD_STYLES = `
   align-items: center;
   gap: 6px;
 }
-
 .tl-actions {
   display: flex;
   gap: 10px;
@@ -800,21 +958,11 @@ const DASHBOARD_STYLES = `
   transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
 }
-.chart-bar.income-bar {
-  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
-}
-.chart-bar.expense-bar {
-  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
-}
-.chart-label {
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 700;
-  margin-top: 8px;
-  white-space: nowrap;
-}
+.chart-bar.income-bar { background: linear-gradient(180deg, #10b981 0%, #059669 100%); }
+.chart-bar.expense-bar { background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%); }
+.chart-label { font-size: 12px; color: #64748b; font-weight: 700; margin-top: 8px; white-space: nowrap; }
 
-/* Skeleton Shimmer Loading Effect */
+/* Loader */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -823,6 +971,7 @@ const DASHBOARD_STYLES = `
   background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite linear;
+  border-radius: 8px;
 }
 `;
 
@@ -836,6 +985,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [time, setTime] = useState(new Date());
+
+  // Tab State
+  const [activeTab, setActiveTab] = useState("overview"); // overview, financial, schedule
 
   // فلاتر الوقت الذكية
   const [preset, setPreset] = useState("this_month");
@@ -858,6 +1010,7 @@ export default function Dashboard() {
     todaySessions: [],
     debtors: [],
     recentTransactions: [],
+    expenseCategories: [], // بيانات الرسم الدائري
   });
 
   const [confirm, setConfirm] = useState({
@@ -873,7 +1026,7 @@ export default function Dashboard() {
   }, []);
 
   // ============================================================================
-  // Data Fetching Engine
+  // Data Fetching Engine (Parallel Execution for Max Speed)
   // ============================================================================
   async function loadDashboard() {
     if (!customStartDate || !customEndDate) return;
@@ -935,7 +1088,7 @@ export default function Dashboard() {
         .lte("created_at", toIso);
       const qExpenses = supabase
         .from("expenses")
-        .select("amount, spent_on")
+        .select("amount, category, spent_on")
         .gte("spent_on", fromIso.split("T")[0])
         .lte("spent_on", toIso.split("T")[0]);
 
@@ -968,6 +1121,7 @@ export default function Dashboard() {
       }
 
       // --- Processing ---
+
       const enrichedSessions = (sessionsToday || []).map((session) => {
         const runInfo = (runsSummary || []).find(
           (r) => r.run_id === session.run_id,
@@ -1022,6 +1176,16 @@ export default function Dashboard() {
       );
       const netProfit = totalIncome - totalExpense;
 
+      // Group expenses by category for Donut Chart
+      const expCatMap = new Map();
+      (expensesData || []).forEach((e) => {
+        const cat = e.category || "أخرى";
+        expCatMap.set(cat, (expCatMap.get(cat) || 0) + Number(e.amount || 0));
+      });
+      const expCategories = Array.from(expCatMap.entries())
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value);
+
       const incTrendArr = bins.map((b) => {
         return (paymentsData || [])
           .filter((p) => {
@@ -1052,6 +1216,7 @@ export default function Dashboard() {
         todaySessions: enrichedSessions,
         debtors: debtorsData || [],
         recentTransactions: combinedTx,
+        expenseCategories: expCategories,
       });
     } catch (err) {
       console.error("Dashboard Hard Crash:", err);
@@ -1112,10 +1277,7 @@ export default function Dashboard() {
         {/* ==================== Header Section ==================== */}
         <div className="dash-header">
           <div>
-            <h1 className="dash-greeting">
-              {getGreeting()}، جيمي{" "}
-              <Zap size={32} color="#f59e0b" fill="#f59e0b" />
-            </h1>
+            <h1 className="dash-greeting">{getGreeting()}، جيمي</h1>
             <div className="dash-meta-pills">
               <div className="dash-pill">
                 <CalendarDays size={16} color="#3b82f6" />
@@ -1194,8 +1356,33 @@ export default function Dashboard() {
 
         {error && <ErrorBanner error={error} />}
 
+        {/* ==================== Tabs ==================== */}
+        <div className="dash-tabs">
+          <button
+            className={`dash-tab ${activeTab === "overview" ? "active" : ""}`}
+            onClick={() => setActiveTab("overview")}
+          >
+            <Activity size={16} /> نظرة عامة
+          </button>
+          <button
+            className={`dash-tab ${activeTab === "financial" ? "active" : ""}`}
+            onClick={() => setActiveTab("financial")}
+          >
+            <BarChart3 size={16} /> التحليل المالي
+          </button>
+          <button
+            className={`dash-tab ${activeTab === "schedule" ? "active" : ""}`}
+            onClick={() => setActiveTab("schedule")}
+          >
+            <CheckSquare size={16} /> الجدول والعمليات
+          </button>
+        </div>
+
         {/* ==================== ROW 1: Enterprise KPIs ==================== */}
-        <div className="kpi-grid">
+        <div
+          className="kpi-grid"
+          style={{ display: activeTab === "schedule" ? "none" : "grid" }}
+        >
           <div className="bento-item">
             <div className="kpi-title">
               <div
@@ -1206,7 +1393,10 @@ export default function Dashboard() {
               الإيرادات ({rangeLabels[preset]})
             </div>
             {loading ? (
-              <Skeleton height="45px" />
+              <div
+                className="skeleton-pulse"
+                style={{ height: 45, width: "60%" }}
+              ></div>
             ) : (
               <div className="kpi-value">
                 {fmtMoney(dashData.incomeFiltered)}{" "}
@@ -1234,7 +1424,10 @@ export default function Dashboard() {
               المصاريف ({rangeLabels[preset]})
             </div>
             {loading ? (
-              <Skeleton height="45px" />
+              <div
+                className="skeleton-pulse"
+                style={{ height: 45, width: "60%" }}
+              ></div>
             ) : (
               <div className="kpi-value">
                 {fmtMoney(dashData.expenseFiltered)}{" "}
@@ -1295,7 +1488,10 @@ export default function Dashboard() {
               صافي الأرباح
             </div>
             {loading ? (
-              <Skeleton height="45px" />
+              <div
+                className="skeleton-pulse"
+                style={{ height: 45, width: "60%" }}
+              ></div>
             ) : (
               <div
                 className="kpi-value"
@@ -1321,7 +1517,10 @@ export default function Dashboard() {
               }}
             >
               {loading ? (
-                <Skeleton width="60%" height="16px" />
+                <div
+                  className="skeleton-pulse"
+                  style={{ height: 16, width: "80%" }}
+                ></div>
               ) : dashData.netFiltered >= 0 ? (
                 "أداء مالي إيجابي لهذه الفترة"
               ) : (
@@ -1340,7 +1539,10 @@ export default function Dashboard() {
               الطلاب النشطين
             </div>
             {loading ? (
-              <Skeleton height="45px" />
+              <div
+                className="skeleton-pulse"
+                style={{ height: 45, width: "60%" }}
+              ></div>
             ) : (
               <div className="kpi-value" style={{ fontSize: 44 }}>
                 {dashData.activeStudents}
@@ -1355,7 +1557,10 @@ export default function Dashboard() {
               }}
             >
               {loading ? (
-                <Skeleton width="50%" height="16px" />
+                <div
+                  className="skeleton-pulse"
+                  style={{ height: 16, width: "80%" }}
+                ></div>
               ) : (
                 "إجمالي الاشتراكات الفعالة بالمركز"
               )}
@@ -1363,12 +1568,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ==================== Main Layout (Flex layout) ==================== */}
-        <div className="main-layout">
-          {/* ----- Left Column: Timeline & Recent Txs ----- */}
-          <div className="layout-col-main">
-            {/* Timeline */}
-            <div className="bento-item" style={{ minHeight: 400 }}>
+        {/* ==================== TABS CONTENT ==================== */}
+
+        {/* TAB 1: OVERVIEW */}
+        {activeTab === "overview" && (
+          <div className="bento-grid">
+            <div className="bento-item span-8" style={{ minHeight: 450 }}>
               <div className="section-header">
                 <h2 className="section-title">
                   <Clock size={24} color="#3b82f6" /> جدول اليوم
@@ -1392,7 +1597,10 @@ export default function Dashboard() {
                         <div className="tl-line"></div>
                       </div>
                       <div className="tl-card">
-                        <Skeleton height="100px" />
+                        <div
+                          className="skeleton-pulse"
+                          style={{ height: 100 }}
+                        ></div>
                       </div>
                     </div>
                   ))}
@@ -1412,7 +1620,6 @@ export default function Dashboard() {
                         : s.status === "canceled"
                           ? "status-canceled"
                           : "status-scheduled";
-
                     return (
                       <div key={s.id} className={`tl-row ${statusClass}`}>
                         <div className="tl-indicator">
@@ -1459,7 +1666,6 @@ export default function Dashboard() {
                                 <Layers size={16} /> الفوج: {s.run_label}
                               </div>
                             </div>
-
                             <div
                               style={{
                                 minWidth: 220,
@@ -1488,7 +1694,6 @@ export default function Dashboard() {
                                       sessionId: s.id,
                                     })
                                   }
-                                  title="تأكيد إكمال الجلسة"
                                 >
                                   <CheckCircle2 size={18} />
                                 </button>
@@ -1502,7 +1707,6 @@ export default function Dashboard() {
                                       sessionId: s.id,
                                     })
                                   }
-                                  title="إلغاء الجلسة"
                                 >
                                   <XCircle size={18} />
                                 </button>
@@ -1517,34 +1721,219 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Recent Transactions */}
-            <div className="bento-item">
+            <div
+              className="span-4"
+              style={{ display: "flex", flexDirection: "column", gap: 24 }}
+            >
+              <div className="bento-item" style={{ padding: "24px 24px 16px" }}>
+                <div className="quick-actions-grid">
+                  <Link to="/payments" className="qa-btn success">
+                    <div className="qa-icon-wrap">
+                      <CreditCard size={28} />
+                    </div>
+                    قبض دفعة
+                  </Link>
+                  <Link to="/expenses" className="qa-btn danger">
+                    <div className="qa-icon-wrap">
+                      <Receipt size={28} />
+                    </div>
+                    صرف مبلغ
+                  </Link>
+                  <Link to="/children" className="qa-btn primary">
+                    <div className="qa-icon-wrap">
+                      <UserPlus size={28} />
+                    </div>
+                    إضافة طالب
+                  </Link>
+                  <Link to="/calendar" className="qa-btn purple">
+                    <div className="qa-icon-wrap">
+                      <CalendarClock size={28} />
+                    </div>
+                    التقويم
+                  </Link>
+                </div>
+              </div>
+              <div className="bento-item" style={{ flex: 1 }}>
+                <div className="section-header" style={{ marginBottom: 20 }}>
+                  <h2 className="section-title" style={{ color: "#ef4444" }}>
+                    <BellRing size={22} color="#ef4444" /> رادار الديون
+                  </h2>
+                  {!loading && (
+                    <Badge variant="danger" style={{ fontSize: 14 }}>
+                      {dashData.debtors.length}
+                    </Badge>
+                  )}
+                </div>
+                {loading ? (
+                  <div className="list-widget">
+                    {[1, 2].map((n) => (
+                      <div key={n} className="list-item">
+                        <div
+                          className="skeleton-pulse"
+                          style={{ height: 40, width: "100%" }}
+                        ></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : dashData.debtors.length === 0 ? (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: 30,
+                      color: "#10b981",
+                      fontSize: 15,
+                      fontWeight: 800,
+                      background: "#f0fdf4",
+                      borderRadius: 16,
+                    }}
+                  >
+                    <CheckCircle2 size={32} style={{ margin: "0 auto 10px" }} />
+                    الوضع ممتاز!
+                  </div>
+                ) : (
+                  <div className="list-widget">
+                    {dashData.debtors.map((d, i) => (
+                      <Link
+                        to={`/children/${d.child_id}`}
+                        key={i}
+                        className="list-item"
+                      >
+                        <div className="li-info">
+                          <div
+                            className="li-avatar"
+                            style={{ background: "#fee2e2", color: "#ef4444" }}
+                          >
+                            <AlertOctagon size={20} />
+                          </div>
+                          <div>
+                            <div className="li-title">{d.child_name}</div>
+                            <div className="li-sub">تأخر بالدفع</div>
+                          </div>
+                        </div>
+                        <div className="li-value danger">
+                          {fmtMoney(d.balance)} ₪
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: FINANCIALS */}
+        {activeTab === "financial" && (
+          <div className="bento-grid">
+            <div className="bento-item span-8" style={{ minHeight: 450 }}>
+              <div className="section-header">
+                <h2 className="section-title">
+                  <PieChartIcon size={24} color="#8b5cf6" /> التدفق المالي
+                </h2>
+              </div>
+              <div
+                style={{
+                  color: "#64748b",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  marginBottom: 20,
+                }}
+              >
+                الإيرادات مقابل المصاريف ({rangeLabels[preset]}).
+              </div>
+              <div className="chart-legend">
+                <div className="legend-item">
+                  <div
+                    className="legend-color"
+                    style={{ background: "#10b981" }}
+                  ></div>{" "}
+                  الإيرادات
+                </div>
+                <div className="legend-item">
+                  <div
+                    className="legend-color"
+                    style={{ background: "#ef4444" }}
+                  ></div>{" "}
+                  المصاريف
+                </div>
+              </div>
+              {loading ? (
+                <div
+                  style={{
+                    height: 220,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <div
+                    className="skeleton-pulse"
+                    style={{ height: "100%", width: "100%" }}
+                  ></div>
+                </div>
+              ) : (
+                <DualBarChart
+                  incomeData={dashData.incomeTrend}
+                  expenseData={dashData.expenseTrend}
+                  labels={dashData.chartLabels}
+                />
+              )}
+            </div>
+
+            <div className="bento-item span-4">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <Briefcase size={22} color="#0f172a" /> توزيع المصاريف
+                </h2>
+              </div>
+              {loading ? (
+                <div
+                  style={{
+                    height: 200,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <div
+                    className="skeleton-pulse"
+                    style={{ height: 120, width: 120, borderRadius: "50%" }}
+                  ></div>
+                </div>
+              ) : (
+                <ExpenseDonutChart data={dashData.expenseCategories} />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: SCHEDULE & TRANSACTIONS */}
+        {activeTab === "schedule" && (
+          <div className="bento-grid">
+            <div className="bento-item span-12">
               <div className="section-header" style={{ marginBottom: 20 }}>
                 <h2 className="section-title">
                   <History size={22} color="#0f172a" /> أحدث الحركات المالية
-                  (العامة)
                 </h2>
               </div>
 
               {loading ? (
                 <div className="list-widget">
-                  {[1, 2, 3].map((n) => (
+                  {[1, 2, 3, 4].map((n) => (
                     <div key={n} className="list-item">
-                      <Skeleton height="40px" />
+                      <div
+                        className="skeleton-pulse"
+                        style={{ height: 40, width: "100%" }}
+                      ></div>
                     </div>
                   ))}
                 </div>
               ) : dashData.recentTransactions.length === 0 ? (
-                <div
-                  style={{
-                    padding: 40,
-                    textAlign: "center",
-                    color: "#94a3b8",
-                    fontWeight: 800,
-                  }}
-                >
-                  لا توجد حركات مالية مسجلة مؤخراً.
-                </div>
+                <EmptyState
+                  icon={Receipt}
+                  title="لا توجد حركات"
+                  description="لم يتم تسجيل أي حركات مالية في الفترة المحددة."
+                />
               ) : (
                 <div className="list-widget">
                   {dashData.recentTransactions.map((tx) => {
@@ -1586,176 +1975,10 @@ export default function Dashboard() {
               )}
             </div>
           </div>
-
-          {/* ----- Right Column: Charts, Actions & Debtors ----- */}
-          <div className="layout-col-side">
-            {/* Quick Actions */}
-            <div className="bento-item" style={{ padding: "24px 24px 20px" }}>
-              <div className="quick-actions-grid">
-                <Link to="/payments" className="qa-btn success">
-                  <div className="qa-icon-wrap">
-                    <CreditCard size={28} />
-                  </div>
-                  قبض دفعة
-                </Link>
-                <Link to="/expenses" className="qa-btn danger">
-                  <div className="qa-icon-wrap">
-                    <Receipt size={28} />
-                  </div>
-                  صرف مبلغ
-                </Link>
-                <Link to="/children" className="qa-btn primary">
-                  <div className="qa-icon-wrap">
-                    <UserPlus size={28} />
-                  </div>
-                  إضافة طالب
-                </Link>
-                <Link to="/calendar" className="qa-btn purple">
-                  <div className="qa-icon-wrap">
-                    <CalendarClock size={28} />
-                  </div>
-                  التقويم
-                </Link>
-              </div>
-            </div>
-
-            {/* Financial Flow Chart */}
-            <div className="bento-item">
-              <div className="section-header">
-                <h2 className="section-title">
-                  <PieChart size={24} color="#8b5cf6" /> التدفق المالي
-                </h2>
-              </div>
-              <div
-                style={{
-                  color: "#64748b",
-                  fontSize: 14,
-                  fontWeight: 800,
-                  marginBottom: 20,
-                }}
-              >
-                الإيرادات مقابل المصاريف ({rangeLabels[preset]}).
-              </div>
-
-              <div className="chart-legend">
-                <div className="legend-item">
-                  <div
-                    className="legend-color"
-                    style={{ background: "#10b981" }}
-                  ></div>{" "}
-                  الإيرادات
-                </div>
-                <div className="legend-item">
-                  <div
-                    className="legend-color"
-                    style={{ background: "#ef4444" }}
-                  ></div>{" "}
-                  المصاريف
-                </div>
-              </div>
-
-              {loading ? (
-                <div
-                  style={{
-                    height: 220,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Skeleton height="100%" />
-                </div>
-              ) : (
-                <DualBarChart
-                  incomeData={dashData.incomeTrend}
-                  expenseData={dashData.expenseTrend}
-                  labels={dashData.chartLabels}
-                />
-              )}
-            </div>
-
-            {/* Debtors */}
-            <div className="bento-item" style={{ flex: 1 }}>
-              <div className="section-header" style={{ marginBottom: 20 }}>
-                <h2 className="section-title" style={{ color: "#ef4444" }}>
-                  <BellRing size={22} color="#ef4444" /> رادار الديون
-                </h2>
-                {!loading && (
-                  <Badge variant="danger" style={{ fontSize: 14 }}>
-                    يوجد {dashData.debtors.length} طلاب
-                  </Badge>
-                )}
-              </div>
-
-              {loading ? (
-                <div className="list-widget">
-                  {[1, 2, 3].map((n) => (
-                    <div key={n} className="list-item">
-                      <Skeleton height="40px" />
-                    </div>
-                  ))}
-                </div>
-              ) : dashData.debtors.length === 0 ? (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: 30,
-                    color: "#10b981",
-                    fontSize: 15,
-                    fontWeight: 800,
-                    background: "#f0fdf4",
-                    borderRadius: 16,
-                  }}
-                >
-                  <CheckCircle2 size={32} style={{ margin: "0 auto 10px" }} />
-                  الوضع ممتاز! لا توجد ديون مسجلة حالياً.
-                </div>
-              ) : (
-                <div className="list-widget">
-                  {dashData.debtors.map((d, i) => (
-                    <Link
-                      to={`/children/${d.child_id}`}
-                      key={i}
-                      className="list-item"
-                    >
-                      <div className="li-info">
-                        <div
-                          className="li-avatar"
-                          style={{ background: "#fee2e2", color: "#ef4444" }}
-                        >
-                          <AlertOctagon size={20} />
-                        </div>
-                        <div>
-                          <div className="li-title">{d.child_name}</div>
-                          <div className="li-sub">حساب متأخر للدفع</div>
-                        </div>
-                      </div>
-                      <div className="li-value danger">
-                        {fmtMoney(d.balance)} ₪
-                      </div>
-                    </Link>
-                  ))}
-                  <Link
-                    to="/children"
-                    style={{
-                      textAlign: "center",
-                      fontSize: 14,
-                      fontWeight: 900,
-                      color: "#3b82f6",
-                      marginTop: 12,
-                      textDecoration: "none",
-                    }}
-                  >
-                    عرض كل الطلاب والديون ←
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* ============================================================================ */}
-        {/* حوار التأكيد لإدارة الجلسات */}
+        {/* حوار التأكيد */}
         {/* ============================================================================ */}
         <ConfirmDialog
           open={confirm.open}
