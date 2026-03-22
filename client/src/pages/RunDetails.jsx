@@ -3840,6 +3840,227 @@ export default function RunDetails() {
         </Modal>
 
         <Modal
+          open={openNewChild}
+          title={newChildEnrollNow ? "إضافة طفل وتسجيله" : "إضافة طفل جديد"}
+          onClose={() => setOpenNewChild(false)}
+        >
+          <div className="grid" style={{ gap: "24px", padding: "10px 0" }}>
+            {/* معلومات الطفل */}
+            <div style={{ gridColumn: "span 12" }}>
+              <h4 className="form-section-title">
+                <Users size={18} color="#64748b" /> البيانات الأساسية
+              </h4>
+              <div className="grid">
+                <div style={{ gridColumn: "span 12" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الاسم الرباعي *
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({ ...p, name: e.target.value }))
+                    }
+                    placeholder="مثال: أحمد محمد علي"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    العمر *
+                  </div>
+                  <input
+                    className="input"
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={newChildForm.age}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({ ...p, age: e.target.value }))
+                    }
+                    placeholder="بالسنوات"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الجنس
+                  </div>
+                  <ModernSelect
+                    value={newChildForm.gender}
+                    onChange={(v) =>
+                      setNewChildForm((p) => ({ ...p, gender: v }))
+                    }
+                    options={[
+                      { value: "male", label: "ذكر" },
+                      { value: "female", label: "أنثى" },
+                    ]}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الصف
+                  </div>
+                  <CustomCombobox
+                    value={newChildForm.class}
+                    onChange={(v) =>
+                      setNewChildForm((p) => ({ ...p, class: v }))
+                    }
+                    options={classes.map((c) => ({
+                      value: c.name,
+                      label: c.name,
+                    }))}
+                    placeholder="اختر أو اكتب صفاً..."
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    البلد / المدينة
+                  </div>
+                  <CustomCombobox
+                    value={newChildForm.country_name}
+                    onChange={(v) =>
+                      setNewChildForm((p) => ({ ...p, country_name: v }))
+                    }
+                    options={countries.map((c) => ({
+                      value: c.name,
+                      label: c.name,
+                    }))}
+                    placeholder="اختر أو اكتب بلداً..."
+                    disabled={countriesLoading}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* معلومات الأهل */}
+            <div style={{ gridColumn: "span 12" }}>
+              <h4 className="form-section-title">
+                <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
+              </h4>
+              <div className="grid">
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    اسم الأم
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.mother_name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        mother_name: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    هاتف الأم
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.mother_phone}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        mother_phone: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                    dir="ltr"
+                    style={{ textAlign: "right" }}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    اسم الأب
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.father_name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        father_name: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    هاتف الأب
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.father_phone}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        father_phone: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                    dir="ltr"
+                    style={{ textAlign: "right" }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ملاحظات إضافية */}
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                ملاحظات إضافية
+              </div>
+              <textarea
+                className="input"
+                rows={3}
+                value={newChildForm.notes}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, notes: e.target.value }))
+                }
+                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+                style={{ resize: "vertical" }}
+              />
+            </div>
+
+            <div
+              style={{
+                gridColumn: "span 12",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                paddingTop: 8,
+              }}
+            >
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setOpenNewChild(false)}
+                disabled={newChildSaving}
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() =>
+                  createChildInline({ enrollNow: newChildEnrollNow })
+                }
+                disabled={newChildSaving}
+              >
+                {newChildSaving
+                  ? "جاري الحفظ..."
+                  : newChildEnrollNow
+                    ? "حفظ وتسجيل بالدورة"
+                    : "حفظ الطالب"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
           open={openSession}
           title={sessionForm.id ? "تعديل الجلسة" : "إضافة جلسة"}
           onClose={() => setOpenSession(false)}
