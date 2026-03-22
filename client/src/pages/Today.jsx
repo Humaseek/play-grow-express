@@ -6,7 +6,6 @@ import { fmtTime24 } from "../utils/datetime";
 import {
   TrendingUp,
   TrendingDown,
-  Wallet,
   Users,
   CalendarClock,
   ClipboardList,
@@ -14,12 +13,10 @@ import {
   XCircle,
   Clock,
   Layers,
-  BookOpen,
   AlertOctagon,
   CreditCard,
   Receipt,
   UserPlus,
-  Activity,
   RefreshCcw,
   Sparkles,
   History,
@@ -29,6 +26,7 @@ import {
   ArrowDownRight,
   CalendarDays,
   BadgeDollarSign,
+  Filter,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -37,7 +35,7 @@ import EmptyState from "../components/EmptyState";
 import Badge from "../components/Badge";
 
 // ============================================================================
-// الدوال المساعدة الأساسية
+// الدوال المساعدة
 // ============================================================================
 
 function fmtMoney(n) {
@@ -45,23 +43,11 @@ function fmtMoney(n) {
   return x.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-function startOfMonth(d = new Date()) {
-  const x = new Date(d);
-  x.setDate(1);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function startOfDay(d = new Date()) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function endOfDay(d = new Date()) {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "صباح الخير";
+  if (hour < 18) return "مساء الخير";
+  return "طاب مساؤك";
 }
 
 function toDateString(d) {
@@ -79,34 +65,63 @@ function formatTimeLocally(dt) {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "صباح الخير";
-  if (hour < 18) return "مساء الخير";
-  return "طاب مساؤك";
-}
+// دالة لمعالجة فترات الفلتر الذكي
+function getRangeAndBins(preset, customStart, customEnd) {
+  const now = new Date();
+  let start = new Date();
+  let end = new Date();
 
-// دالة ذكية لحساب فترات الوقت وتقسيمها للمخطط البياني (Dynamic Bins)
-function getDynamicRangeAndBins(startStr, endStr) {
-  const from = new Date(startStr);
-  from.setHours(0, 0, 0, 0);
-  const to = new Date(endStr);
-  to.setHours(23, 59, 59, 999);
+  switch (preset) {
+    case "today":
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case "7d":
+      start.setDate(now.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case "this_month":
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case "30d":
+      start.setDate(now.getDate() - 29);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case "this_year":
+      start = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case "all":
+      start = new Date(2020, 0, 1, 0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      break;
+    case "custom":
+      if (customStart) start = new Date(customStart);
+      start.setHours(0, 0, 0, 0);
+      if (customEnd) end = new Date(customEnd);
+      end.setHours(23, 59, 59, 999);
+      break;
+    default:
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+  }
 
-  const diffTime = Math.abs(to - from);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+  // تقسيم الفترة إلى شرائح (Bins) للرسم البياني
+  const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
   let bins = [];
 
   if (diffDays <= 1) {
-    bins.push({ start: from.getTime(), end: to.getTime(), label: "اليوم" });
-  } else if (diffDays <= 14) {
-    // عرض الأيام وتسميتها بأسماء الأيام
+    bins.push({ start: start.getTime(), end: end.getTime(), label: "اليوم" });
+  } else if (diffDays <= 31) {
+    // عرض الأيام
     for (let i = 0; i < diffDays; i++) {
       let dStart = new Date(
-        from.getFullYear(),
-        from.getMonth(),
-        from.getDate() + i,
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate() + i,
         0,
         0,
         0,
@@ -121,50 +136,21 @@ function getDynamicRangeAndBins(startStr, endStr) {
         59,
         999,
       );
-      bins.push({
-        start: dStart.getTime(),
-        end: dEnd.getTime(),
-        label: new Intl.DateTimeFormat("ar-EG", { weekday: "short" }).format(
-          dStart,
-        ),
-      });
-    }
-  } else if (diffDays <= 60) {
-    // عرض الأيام ولكن تسمية بعضها فقط لعدم التزاحم
-    for (let i = 0; i < diffDays; i++) {
-      let dStart = new Date(
-        from.getFullYear(),
-        from.getMonth(),
-        from.getDate() + i,
-        0,
-        0,
-        0,
-        0,
-      );
-      let dEnd = new Date(
-        dStart.getFullYear(),
-        dStart.getMonth(),
-        dStart.getDate(),
-        23,
-        59,
-        59,
-        999,
-      );
-      let showLabel = i % Math.ceil(diffDays / 10) === 0;
-      bins.push({
-        start: dStart.getTime(),
-        end: dEnd.getTime(),
-        label: showLabel ? String(dStart.getDate()) : "",
-      });
+      if (dStart > end) break;
+      let label =
+        diffDays <= 7
+          ? new Intl.DateTimeFormat("ar-EG", { weekday: "short" }).format(
+              dStart,
+            )
+          : String(dStart.getDate());
+      bins.push({ start: dStart.getTime(), end: dEnd.getTime(), label });
     }
   } else {
-    // إذا كانت الفترة طويلة (أكثر من شهرين)، نعرض البيانات بالأشهر
-    const startMonth = from.getMonth();
-    const startYear = from.getFullYear();
-    const endMonth = to.getMonth();
-    const endYear = to.getFullYear();
+    // عرض الأشهر للفترات الطويلة
+    const startMonth = start.getMonth();
+    const startYear = start.getFullYear();
     const totalMonths =
-      (endYear - startYear) * 12 + (endMonth - startMonth) + 1;
+      (end.getFullYear() - startYear) * 12 + (end.getMonth() - startMonth) + 1;
 
     for (let i = 0; i < totalMonths; i++) {
       let mStart = new Date(startYear, startMonth + i, 1, 0, 0, 0, 0);
@@ -177,7 +163,7 @@ function getDynamicRangeAndBins(startStr, endStr) {
         59,
         999,
       );
-      if (mEnd > to) mEnd = to; // لا تتجاوز تاريخ النهاية المحدد
+      if (mEnd > end) mEnd = end;
       bins.push({
         start: mStart.getTime(),
         end: mEnd.getTime(),
@@ -187,11 +173,12 @@ function getDynamicRangeAndBins(startStr, endStr) {
       });
     }
   }
-  return { fromIso: from.toISOString(), toIso: to.toISOString(), bins };
+
+  return { fromIso: start.toISOString(), toIso: end.toISOString(), bins };
 }
 
 // ============================================================================
-// مكونات الرسوم البيانية المبرمجة يدوياً (SVG Charts)
+// مكونات الرسوم البيانية المتجاوبة
 // ============================================================================
 
 const Sparkline = ({ data, color, type = "line" }) => {
@@ -235,7 +222,6 @@ const Sparkline = ({ data, color, type = "line" }) => {
       return `${x},${y}`;
     })
     .join(" ");
-
   const fillPoints = `0,30 ${points} 100,30`;
 
   return (
@@ -272,111 +258,115 @@ const Sparkline = ({ data, color, type = "line" }) => {
   );
 };
 
+// رسم بياني محمي من التداخل بفضل الـ Scroll
 const DualBarChart = ({ incomeData, expenseData, labels }) => {
   const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
 
+  // حساب عرض المخطط ليتوسع إذا كان عدد الأيام كبير
+  const minWidth = labels.length > 10 ? `${labels.length * 40}px` : "100%";
+
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "220px",
-        display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "space-between",
-        paddingTop: 20,
-        position: "relative",
-      }}
-    >
+    <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px" }}>
       <div
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 25,
+          minWidth: minWidth,
+          height: "220px",
           display: "flex",
-          flexDirection: "column",
+          alignItems: "flex-end",
           justifyContent: "space-between",
-          zIndex: 0,
+          paddingTop: 20,
+          position: "relative",
         }}
       >
-        {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            style={{
-              borderTop: "1px dashed #e2e8f0",
-              width: "100%",
-              height: 0,
-            }}
-          ></div>
-        ))}
-      </div>
-
-      {(labels || []).map((label, i) => {
-        const incHeight = ((incomeData[i] || 0) / maxVal) * 100;
-        const expHeight = ((expenseData[i] || 0) / maxVal) * 100;
-
-        return (
-          <div
-            key={i}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              flex: 1,
-              zIndex: 1,
-              height: "100%",
-            }}
-          >
+        {/* خطوط الخلفية */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 25,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            zIndex: 0,
+          }}
+        >
+          {[...Array(4)].map((_, i) => (
             <div
+              key={i}
+              style={{
+                borderTop: "1px dashed #e2e8f0",
+                width: "100%",
+                height: 0,
+              }}
+            ></div>
+          ))}
+        </div>
+
+        {(labels || []).map((label, i) => {
+          const incHeight = ((incomeData[i] || 0) / maxVal) * 100;
+          const expHeight = ((expenseData[i] || 0) / maxVal) * 100;
+
+          return (
+            <div
+              key={i}
               style={{
                 display: "flex",
-                alignItems: "flex-end",
-                gap: labels.length > 15 ? "1px" : "4px",
-                height: "calc(100% - 25px)",
-                width: "100%",
-                justifyContent: "center",
+                flexDirection: "column",
+                alignItems: "center",
+                flex: 1,
+                zIndex: 1,
+                height: "100%",
+                minWidth: "35px",
               }}
             >
               <div
-                title={`الإيرادات: ${fmtMoney(incomeData[i])} ₪`}
                 style={{
-                  width: "45%",
-                  maxWidth: "20px",
-                  height: `${incHeight}%`,
-                  background:
-                    "linear-gradient(180deg, #10b981 0%, #059669 100%)",
-                  borderRadius: "4px 4px 0 0",
-                  transition: "height 0.5s ease-out",
+                  display: "flex",
+                  alignItems: "flex-end",
+                  gap: "3px",
+                  height: "calc(100% - 25px)",
+                  width: "100%",
+                  justifyContent: "center",
                 }}
-              />
+              >
+                <div
+                  title={`الإيرادات: ${fmtMoney(incomeData[i])} ₪`}
+                  style={{
+                    width: "12px",
+                    height: `${incHeight}%`,
+                    background:
+                      "linear-gradient(180deg, #10b981 0%, #059669 100%)",
+                    borderRadius: "4px 4px 0 0",
+                  }}
+                />
+                <div
+                  title={`المصاريف: ${fmtMoney(expenseData[i])} ₪`}
+                  style={{
+                    width: "12px",
+                    height: `${expHeight}%`,
+                    background:
+                      "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)",
+                    borderRadius: "4px 4px 0 0",
+                  }}
+                />
+              </div>
               <div
-                title={`المصاريف: ${fmtMoney(expenseData[i])} ₪`}
                 style={{
-                  width: "45%",
-                  maxWidth: "20px",
-                  height: `${expHeight}%`,
-                  background:
-                    "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)",
-                  borderRadius: "4px 4px 0 0",
-                  transition: "height 0.5s ease-out",
+                  fontSize: "12px",
+                  color: "#64748b",
+                  fontWeight: 700,
+                  marginTop: "8px",
+                  whiteSpace: "nowrap",
                 }}
-              />
+              >
+                {label}
+              </div>
             </div>
-            <div
-              style={{
-                fontSize: "11px",
-                color: "#64748b",
-                fontWeight: 700,
-                marginTop: "8px",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {label}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -399,12 +389,14 @@ const DASHBOARD_STYLES = `
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 20px;
   margin-bottom: 32px;
   padding-top: 24px;
 }
 
 .dash-greeting {
-  font-size: 36px;
+  font-size: 34px;
   font-weight: 900;
   color: #0f172a;
   margin-bottom: 12px;
@@ -421,7 +413,7 @@ const DASHBOARD_STYLES = `
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.8);
   color: #334155;
@@ -439,47 +431,46 @@ const DASHBOARD_STYLES = `
   flex-wrap: wrap;
 }
 
-/* Custom Modern Date Range Picker */
-.custom-date-range {
+.smart-filter-wrapper {
   display: inline-flex;
   align-items: center;
   background: #fff;
   border: 1px solid #cbd5e1;
-  padding: 6px 16px;
+  padding: 6px 14px;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   gap: 8px;
   transition: all 0.2s;
 }
-.custom-date-range:focus-within,
-.custom-date-range:hover {
+.smart-filter-wrapper:focus-within,
+.smart-filter-wrapper:hover {
   border-color: #3b82f6;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
-.date-input {
+
+.smart-select {
   border: none;
   background: transparent;
   outline: none;
-  font-family: inherit;
   font-weight: 800;
   color: #0f172a;
   font-size: 14px;
   cursor: pointer;
-  color-scheme: light;
+  font-family: inherit;
+  padding: 4px 0;
 }
-.date-input::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  opacity: 0.6;
-  transition: 0.2s;
-}
-.date-input::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
-}
-.date-sep {
-  color: #94a3b8;
-  font-weight: 800;
+
+.date-input {
+  border: none;
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 4px 8px;
+  outline: none;
+  font-family: inherit;
+  font-weight: 700;
+  color: #0f172a;
   font-size: 13px;
-  padding: 0 4px;
+  cursor: pointer;
 }
 
 .dash-btn-refresh {
@@ -503,9 +494,9 @@ const DASHBOARD_STYLES = `
   box-shadow: 0 8px 16px rgba(0,0,0,0.08);
 }
 
-.bento-grid {
+.kpi-grid {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 24px;
   margin-bottom: 24px;
 }
@@ -526,23 +517,8 @@ const DASHBOARD_STYLES = `
   box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.06);
 }
 
-.span-3 { grid-column: span 3; }
-.span-4 { grid-column: span 4; }
-.span-6 { grid-column: span 6; }
-.span-8 { grid-column: span 8; }
-.span-12 { grid-column: span 12; }
-
-@media (max-width: 1200px) {
-  .span-3 { grid-column: span 6; }
-  .span-4 { grid-column: span 6; }
-  .span-8 { grid-column: span 12; }
-}
-@media (max-width: 768px) {
-  .span-3, .span-4, .span-6, .span-8 { grid-column: span 12; }
-}
-
 .kpi-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   color: #64748b;
   margin-bottom: 14px;
@@ -564,11 +540,35 @@ const DASHBOARD_STYLES = `
   margin-top: auto;
 }
 
+/* تخطيط مرن (Flex Layout) بدلاً من Grid معقد لتجنب التكسر */
+.main-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.layout-col-main {
+  flex: 2;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.layout-col-side {
+  flex: 1;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 .section-title {
   font-size: 19px;
@@ -579,55 +579,69 @@ const DASHBOARD_STYLES = `
   gap: 10px;
 }
 
-.timeline-container {
-  position: relative;
-  padding-right: 28px;
+/* Timeline مضاد للكسر (Bulletproof Flex Timeline) */
+.timeline-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-}
-.timeline-container::before {
-  content: '';
-  position: absolute;
-  top: 10px; bottom: 10px; right: 9px;
-  width: 3px;
-  background: #f1f5f9;
-  border-radius: 3px;
+  gap: 0;
 }
 
-.timeline-item {
-  position: relative;
+.tl-row {
+  display: flex;
+  gap: 16px;
+}
+
+.tl-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 20px;
+  flex-shrink: 0;
+}
+.tl-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 4px solid #cbd5e1;
+  z-index: 2;
+  margin-top: 6px;
+}
+.tl-line {
+  flex: 1;
+  width: 2px;
+  background: #e2e8f0;
+  margin-top: 4px;
+  margin-bottom: -6px;
+}
+/* إخفاء الخط للآيتم الأخير */
+.tl-row:last-child .tl-line {
+  display: none;
+}
+
+.tl-card {
+  flex: 1;
   background: #fff;
   border: 1px solid #f1f5f9;
   border-radius: 20px;
   padding: 20px;
-  transition: all 0.2s ease;
+  margin-bottom: 24px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+  transition: all 0.2s ease;
 }
-.timeline-item:hover {
+.tl-card:hover {
   border-color: #e2e8f0;
   box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-  transform: translateX(-4px);
+  transform: translateX(-4px); /* لليمين بما انه RTL */
 }
 
-.timeline-dot {
-  position: absolute;
-  right: -28px;
-  top: 24px;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  border: 5px solid #cbd5e1;
-  z-index: 2;
-  box-shadow: 0 0 0 4px #fff;
-}
-.timeline-item.status-done .timeline-dot { border-color: #10b981; }
-.timeline-item.status-scheduled .timeline-dot { border-color: #3b82f6; }
-.timeline-item.status-canceled .timeline-dot { border-color: #ef4444; }
+/* ألوان النقاط حسب الحالة */
+.tl-row.status-done .tl-dot { border-color: #10b981; }
+.tl-row.status-scheduled .tl-dot { border-color: #3b82f6; }
+.tl-row.status-canceled .tl-dot { border-color: #ef4444; }
 
 .tl-time {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 900;
   color: #0f172a;
   margin-bottom: 8px;
@@ -636,7 +650,7 @@ const DASHBOARD_STYLES = `
   gap: 8px;
 }
 .tl-course {
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 900;
   color: #1e293b;
   margin-bottom: 8px;
@@ -656,14 +670,16 @@ const DASHBOARD_STYLES = `
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px dashed #e2e8f0;
+  flex-wrap: wrap;
 }
 
 .btn-tl {
   flex: 1;
-  padding: 12px;
-  border-radius: 14px;
+  min-width: 100px;
+  padding: 10px;
+  border-radius: 12px;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -673,16 +689,17 @@ const DASHBOARD_STYLES = `
   transition: all 0.2s;
 }
 .btn-tl-main { background: #eff6ff; color: #2563eb; }
-.btn-tl-main:hover { background: #dbeafe; transform: translateY(-1px); }
-.btn-tl-done { background: #f0fdf4; color: #16a34a; }
-.btn-tl-done:hover { background: #dcfce7; transform: translateY(-1px); }
-.btn-tl-cancel { background: #fef2f2; color: #dc2626; flex: 0.4; }
-.btn-tl-cancel:hover { background: #fee2e2; transform: translateY(-1px); }
-.btn-tl:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); transform: none; }
+.btn-tl-main:hover:not(:disabled) { background: #dbeafe; transform: translateY(-1px); }
+.btn-tl-done { background: #f0fdf4; color: #16a34a; flex: 0.5; min-width: 50px; }
+.btn-tl-done:hover:not(:disabled) { background: #dcfce7; transform: translateY(-1px); }
+.btn-tl-cancel { background: #fef2f2; color: #dc2626; flex: 0.5; min-width: 50px; }
+.btn-tl-cancel:hover:not(:disabled) { background: #fee2e2; transform: translateY(-1px); }
+.btn-tl:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
 
+/* Quick Actions */
 .quick-actions-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 16px;
 }
 .qa-btn {
@@ -722,6 +739,7 @@ const DASHBOARD_STYLES = `
 .qa-btn.danger .qa-icon-wrap { background: #fef2f2; color: #ef4444; }
 .qa-btn.purple .qa-icon-wrap { background: #faf5ff; color: #8b5cf6; }
 
+/* List Widgets */
 .list-widget {
   display: flex;
   flex-direction: column;
@@ -761,7 +779,6 @@ const DASHBOARD_STYLES = `
 .li-value { font-weight: 900; font-size: 16px; text-align: left; direction: ltr; }
 .li-value.danger { color: #ef4444; }
 .li-value.success { color: #10b981; }
-.li-value.neutral { color: #64748b; }
 
 .chart-legend {
   display: flex;
@@ -771,36 +788,8 @@ const DASHBOARD_STYLES = `
   font-weight: 800;
   color: #64748b;
 }
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.legend-color {
-  width: 12px; height: 12px; border-radius: 4px;
-}
-
-.modern-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: right;
-}
-.modern-table th {
-  background: #fff;
-  color: #64748b;
-  font-weight: 800;
-  font-size: 14px;
-  padding: 16px 24px;
-  border-bottom: 2px solid #f1f5f9;
-  white-space: nowrap;
-}
-.modern-table td {
-  padding: 16px 24px;
-  border-bottom: 1px solid #f8fafc;
-  color: #334155;
-  font-size: 15px;
-  vertical-align: middle;
-}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-color { width: 12px; height: 12px; border-radius: 4px; }
 `;
 
 export default function Dashboard() {
@@ -814,11 +803,14 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [time, setTime] = useState(new Date());
 
-  // حالة التاريخ المخصصة (افتراضياً: بداية الشهر الحالي وحتى اليوم)
-  const [startDate, setStartDate] = useState(() =>
+  // فلاتر الوقت الذكية
+  const [preset, setPreset] = useState("this_month");
+  const [customStartDate, setCustomStartDate] = useState(() =>
     toDateString(startOfMonth(new Date())),
   );
-  const [endDate, setEndDate] = useState(() => toDateString(new Date()));
+  const [customEndDate, setCustomEndDate] = useState(() =>
+    toDateString(new Date()),
+  );
 
   const [dashData, setDashData] = useState({
     incomeFiltered: 0,
@@ -840,6 +832,7 @@ export default function Dashboard() {
     sessionId: null,
   });
 
+  // تحديث الساعة الحية
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -849,29 +842,24 @@ export default function Dashboard() {
   // Data Fetching Engine (Parallel Execution for Max Speed)
   // ============================================================================
   async function loadDashboard() {
-    // التأكد من صحة التواريخ المدخلة
-    if (!startDate || !endDate) return;
-    if (new Date(startDate) > new Date(endDate)) {
-      toast("تاريخ البداية يجب أن يكون قبل أو يساوي تاريخ النهاية", "warn");
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
       const now = new Date();
+      // داتا خاصة باليوم فقط (للجدول الزمني)
       const dayStartObj = startOfDay(now);
       const dayEndObj = endOfDay(now);
       const isoDayStart = dayStartObj.toISOString();
       const isoDayEnd = dayEndObj.toISOString();
 
-      // جلب نطاق التواريخ والـ Bins بناءً على التواريخ المحددة
-      const { fromIso, toIso, bins } = getDynamicRangeAndBins(
-        startDate,
-        endDate,
+      // جلب نطاق التواريخ والـ Bins بناءً على الفلتر المختار
+      const { fromIso, toIso, bins } = getRangeAndBins(
+        preset,
+        customStartDate,
+        customEndDate,
       );
 
-      // الطلبات الأساسية التي لا تتأثر بالفلتر
+      // 1. الطلبات الثابتة (لا تتأثر بفلتر الوقت المالي)
       const qActiveStudents = supabase
         .from("enrollments")
         .select("id", { count: "exact", head: true })
@@ -903,18 +891,19 @@ export default function Dashboard() {
         .order("created_at", { ascending: false })
         .limit(5);
 
-      // الطلبات المالية التي تتأثر بنطاق التاريخ المحدد
-      const qPayments = supabase
+      // 2. الطلبات المالية التي تتأثر بفلتر الوقت
+      let qPayments = supabase
         .from("payments")
         .select("amount, created_at")
         .gte("created_at", fromIso)
         .lte("created_at", toIso);
-      const qExpenses = supabase
+      let qExpenses = supabase
         .from("expenses")
         .select("amount, spent_on")
         .gte("spent_on", fromIso.split("T")[0])
         .lte("spent_on", toIso.split("T")[0]);
 
+      // تنفيذ جميع الطلبات بوقت واحد (Parallel) لسرعة لا تضاهى
       const [
         { count: activeStudentsCount, error: e1 },
         { data: sessionsToday, error: e2 },
@@ -945,6 +934,7 @@ export default function Dashboard() {
 
       // --- Processing ---
 
+      // دمج الجلسات
       const enrichedSessions = (sessionsToday || []).map((session) => {
         const runInfo = (runsSummary || []).find(
           (r) => r.run_id === session.run_id,
@@ -956,6 +946,7 @@ export default function Dashboard() {
         };
       });
 
+      // دمج وترتيب أحدث المعاملات (آخر 6 عمليات بغض النظر عن الفلتر)
       let combinedTx = [];
       if (recentPays) {
         combinedTx.push(
@@ -989,6 +980,7 @@ export default function Dashboard() {
       combinedTx.sort((a, b) => new Date(b.date) - new Date(a.date));
       combinedTx = combinedTx.slice(0, 6);
 
+      // حساب المجاميع المالية للفترة المحددة
       const totalIncome = (paymentsData || []).reduce(
         (sum, p) => sum + Number(p.amount || 0),
         0,
@@ -999,6 +991,7 @@ export default function Dashboard() {
       );
       const netProfit = totalIncome - totalExpense;
 
+      // حساب المخطط البياني (تقسيم البيانات إلى Bins)
       const incTrendArr = bins.map((b) => {
         return (paymentsData || [])
           .filter((p) => {
@@ -1038,11 +1031,11 @@ export default function Dashboard() {
     }
   }
 
-  // إعادة تحميل البيانات فوراً عند تغيير التواريخ
+  // إعادة تحميل البيانات فوراً عند تغيير الفلتر أو التواريخ المخصصة
   useEffect(() => {
     loadDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startDate, endDate]);
+  }, [preset, customStartDate, customEndDate]);
 
   async function changeSessionStatus(id, newStatus) {
     const { error: upErr } = await supabase
@@ -1057,14 +1050,14 @@ export default function Dashboard() {
     loadDashboard();
   }
 
+  // تنسيق نصوص وتواريخ
   const todayFormatted = useMemo(() => {
-    const d = new Date();
     return new Intl.DateTimeFormat("ar-EG", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-    }).format(d);
+    }).format(new Date());
   }, []);
 
   const currentTimeStr = new Intl.DateTimeFormat("ar-EG", {
@@ -1072,6 +1065,16 @@ export default function Dashboard() {
     minute: "2-digit",
     second: "2-digit",
   }).format(time);
+
+  const rangeLabels = {
+    today: "اليوم",
+    "7d": "آخر 7 أيام",
+    this_month: "هذا الشهر",
+    "30d": "آخر 30 يوم",
+    this_year: "هذه السنة",
+    all: "كل الوقت",
+    custom: "فترة مخصصة",
+  };
 
   return (
     <div className="page page--dashboard" dir="rtl" lang="ar">
@@ -1094,22 +1097,53 @@ export default function Dashboard() {
           </div>
 
           <div className="dash-controls">
-            {/* Custom Modern Date Range Picker */}
-            <div className="custom-date-range">
-              <CalendarDays size={16} color="#64748b" />
-              <input
-                type="date"
-                className="date-input"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-              <span className="date-sep">إلى</span>
-              <input
-                type="date"
-                className="date-input"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+            {/* الفلتر الذكي للتواريخ */}
+            <div className="smart-filter-wrapper">
+              <Filter size={16} color="#64748b" />
+              <select
+                className="smart-select"
+                value={preset}
+                onChange={(e) => setPreset(e.target.value)}
+              >
+                <option value="today">اليوم</option>
+                <option value="7d">آخر 7 أيام</option>
+                <option value="this_month">هذا الشهر</option>
+                <option value="30d">آخر 30 يوم</option>
+                <option value="this_year">هذه السنة</option>
+                <option value="all">كل الوقت</option>
+                <option value="custom">تاريخ مخصص...</option>
+              </select>
+
+              {preset === "custom" && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    borderRight: "1px solid #e2e8f0",
+                    paddingRight: "8px",
+                    marginLeft: "4px",
+                  }}
+                >
+                  <input
+                    type="date"
+                    className="date-input"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                  />
+                  <span
+                    style={{ fontSize: 13, color: "#94a3b8", fontWeight: 800 }}
+                  >
+                    إلى
+                  </span>
+                  <input
+                    type="date"
+                    className="date-input"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                  />
+                </div>
+              )}
             </div>
 
             <button
@@ -1130,15 +1164,15 @@ export default function Dashboard() {
         {error && <ErrorBanner error={error} />}
 
         {/* ==================== ROW 1: Enterprise KPIs ==================== */}
-        <div className="bento-grid">
-          <div className="bento-item span-3">
+        <div className="kpi-grid">
+          <div className="bento-item">
             <div className="kpi-title">
               <div
                 style={{ background: "#f0fdf4", padding: 8, borderRadius: 10 }}
               >
                 <TrendingUp size={20} color="#10b981" />
               </div>
-              الإيرادات
+              الإيرادات ({rangeLabels[preset]})
             </div>
             <div className="kpi-value">
               {fmtMoney(dashData.incomeFiltered)}{" "}
@@ -1153,14 +1187,14 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bento-item span-3">
+          <div className="bento-item">
             <div className="kpi-title">
               <div
                 style={{ background: "#fef2f2", padding: 8, borderRadius: 10 }}
               >
                 <TrendingDown size={20} color="#ef4444" />
               </div>
-              المصاريف
+              المصاريف ({rangeLabels[preset]})
             </div>
             <div className="kpi-value">
               {fmtMoney(dashData.expenseFiltered)}{" "}
@@ -1176,7 +1210,7 @@ export default function Dashboard() {
           </div>
 
           <div
-            className="bento-item span-3"
+            className="bento-item"
             style={
               dashData.netFiltered >= 0
                 ? { background: "#f0fdf4", borderColor: "#bbf7d0" }
@@ -1231,7 +1265,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bento-item span-3">
+          <div className="bento-item">
             <div className="kpi-title">
               <div
                 style={{ background: "#eff6ff", padding: 8, borderRadius: 10 }}
@@ -1256,212 +1290,221 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ==================== ROW 2: Main Content Split ==================== */}
-        <div className="bento-grid">
-          {/* Left: Timeline (Span 8) */}
-          <div className="bento-item span-8" style={{ minHeight: 450 }}>
-            <div className="section-header">
-              <h2 className="section-title">
-                <Clock size={24} color="#3b82f6" /> جدول اليوم
-              </h2>
-              <Badge
-                variant="info"
-                style={{ fontSize: 14, padding: "6px 12px" }}
-              >
-                {dashData.sessionsCountToday} جلسات
-              </Badge>
-            </div>
-
-            {loading ? (
-              <div
-                style={{
-                  padding: 60,
-                  textAlign: "center",
-                  color: "#64748b",
-                  fontWeight: 800,
-                }}
-              >
-                جاري بناء الجدول...
+        {/* ==================== Main Layout (Flex instead of Grid to prevent breaking) ==================== */}
+        <div className="main-layout">
+          {/* ----- Left Column: Timeline & Recent Txs ----- */}
+          <div className="layout-col-main">
+            {/* Timeline */}
+            <div className="bento-item" style={{ minHeight: 400 }}>
+              <div className="section-header">
+                <h2 className="section-title">
+                  <Clock size={24} color="#3b82f6" /> جدول اليوم
+                </h2>
+                <Badge
+                  variant="info"
+                  style={{ fontSize: 14, padding: "6px 12px" }}
+                >
+                  {dashData.sessionsCountToday} جلسات
+                </Badge>
               </div>
-            ) : dashData.todaySessions.length === 0 ? (
-              <EmptyState
-                icon={Sparkles}
-                title="يوم راحة!"
-                description="لا توجد أي جلسات مبرمجة في جدولك لهذا اليوم. استمتع بوقتك."
-              />
-            ) : (
-              <div className="timeline-container">
-                {dashData.todaySessions.map((s) => {
-                  const statusClass =
-                    s.status === "done"
-                      ? "status-done"
-                      : s.status === "canceled"
-                        ? "status-canceled"
-                        : "status-scheduled";
 
-                  return (
-                    <div key={s.id} className={`timeline-item ${statusClass}`}>
-                      <div className="timeline-dot"></div>
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          flexWrap: "wrap",
-                          gap: 16,
-                        }}
-                      >
-                        <div>
-                          <div className="tl-time">
-                            <span dir="ltr">
-                              {formatTimeLocally(s.start_at)}
-                            </span>
-                            <span style={{ color: "#cbd5e1" }}>-</span>
-                            <span
-                              dir="ltr"
-                              style={{ color: "#64748b", fontSize: 15 }}
-                            >
-                              {formatTimeLocally(s.end_at)}
-                            </span>
-                            {s.status === "done" && (
-                              <Badge variant="ok" style={{ marginLeft: 8 }}>
-                                مكتملة
-                              </Badge>
-                            )}
-                            {s.status === "canceled" && (
-                              <Badge variant="danger" style={{ marginLeft: 8 }}>
-                                ملغاة
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="tl-course">{s.course_title}</div>
-                          <div className="tl-run">
-                            <Layers size={16} /> الفوج: {s.run_label}
-                          </div>
+              {loading ? (
+                <div
+                  style={{
+                    padding: 60,
+                    textAlign: "center",
+                    color: "#64748b",
+                    fontWeight: 800,
+                  }}
+                >
+                  جاري بناء الجدول...
+                </div>
+              ) : dashData.todaySessions.length === 0 ? (
+                <EmptyState
+                  icon={Sparkles}
+                  title="يوم راحة!"
+                  description="لا توجد أي جلسات مبرمجة في جدولك لهذا اليوم."
+                />
+              ) : (
+                <div className="timeline-list">
+                  {dashData.todaySessions.map((s) => {
+                    const statusClass =
+                      s.status === "done"
+                        ? "status-done"
+                        : s.status === "canceled"
+                          ? "status-canceled"
+                          : "status-scheduled";
+
+                    return (
+                      <div key={s.id} className={`tl-row ${statusClass}`}>
+                        <div className="tl-indicator">
+                          <div className="tl-dot"></div>
+                          <div className="tl-line"></div>
                         </div>
+                        <div className="tl-card">
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              flexWrap: "wrap",
+                              gap: 16,
+                            }}
+                          >
+                            <div>
+                              <div className="tl-time">
+                                <span dir="ltr">
+                                  {formatTimeLocally(s.start_at)}
+                                </span>
+                                <span style={{ color: "#cbd5e1" }}>-</span>
+                                <span
+                                  dir="ltr"
+                                  style={{ color: "#64748b", fontSize: 15 }}
+                                >
+                                  {formatTimeLocally(s.end_at)}
+                                </span>
+                                {s.status === "done" && (
+                                  <Badge variant="ok" style={{ marginLeft: 8 }}>
+                                    مكتملة
+                                  </Badge>
+                                )}
+                                {s.status === "canceled" && (
+                                  <Badge
+                                    variant="danger"
+                                    style={{ marginLeft: 8 }}
+                                  >
+                                    ملغاة
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="tl-course">{s.course_title}</div>
+                              <div className="tl-run">
+                                <Layers size={16} /> الفوج: {s.run_label}
+                              </div>
+                            </div>
 
-                        <div
-                          style={{
-                            minWidth: 220,
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "flex-end",
-                          }}
-                        >
-                          <div className="tl-actions">
-                            <button
-                              className="btn-tl btn-tl-main"
-                              disabled={s.status === "canceled"}
-                              onClick={() =>
-                                navigate(`/sessions/${s.id}/attendance`)
-                              }
+                            <div
+                              style={{
+                                minWidth: 220,
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "flex-end",
+                              }}
                             >
-                              <ClipboardList size={18} /> أخذ الحضور
-                            </button>
-                            <button
-                              className="btn-tl btn-tl-done"
-                              disabled={s.status !== "scheduled"}
-                              onClick={() =>
-                                setConfirm({
-                                  open: true,
-                                  action: "done",
-                                  sessionId: s.id,
-                                })
-                              }
-                              title="تأكيد إكمال الجلسة"
-                            >
-                              <CheckCircle2 size={18} />
-                            </button>
-                            <button
-                              className="btn-tl btn-tl-cancel"
-                              disabled={s.status !== "scheduled"}
-                              onClick={() =>
-                                setConfirm({
-                                  open: true,
-                                  action: "canceled",
-                                  sessionId: s.id,
-                                })
-                              }
-                              title="إلغاء الجلسة"
-                            >
-                              <XCircle size={18} />
-                            </button>
+                              <div className="tl-actions">
+                                <button
+                                  className="btn-tl btn-tl-main"
+                                  disabled={s.status === "canceled"}
+                                  onClick={() =>
+                                    navigate(`/sessions/${s.id}/attendance`)
+                                  }
+                                >
+                                  <ClipboardList size={18} /> أخذ الحضور
+                                </button>
+                                <button
+                                  className="btn-tl btn-tl-done"
+                                  disabled={s.status !== "scheduled"}
+                                  onClick={() =>
+                                    setConfirm({
+                                      open: true,
+                                      action: "done",
+                                      sessionId: s.id,
+                                    })
+                                  }
+                                  title="تأكيد إكمال الجلسة"
+                                >
+                                  <CheckCircle2 size={18} />
+                                </button>
+                                <button
+                                  className="btn-tl btn-tl-cancel"
+                                  disabled={s.status !== "scheduled"}
+                                  onClick={() =>
+                                    setConfirm({
+                                      open: true,
+                                      action: "canceled",
+                                      sessionId: s.id,
+                                    })
+                                  }
+                                  title="إلغاء الجلسة"
+                                >
+                                  <XCircle size={18} />
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Transactions */}
+            <div className="bento-item">
+              <div className="section-header" style={{ marginBottom: 20 }}>
+                <h2 className="section-title">
+                  <History size={22} color="#0f172a" /> أحدث الحركات المالية
+                  (العامة)
+                </h2>
               </div>
-            )}
+
+              {dashData.recentTransactions.length === 0 ? (
+                <div
+                  style={{
+                    padding: 40,
+                    textAlign: "center",
+                    color: "#94a3b8",
+                    fontWeight: 800,
+                  }}
+                >
+                  لا توجد حركات مالية مسجلة مؤخراً.
+                </div>
+              ) : (
+                <div className="list-widget">
+                  {dashData.recentTransactions.map((tx) => {
+                    const isIncome = tx.type === "income";
+                    const Icon = isIncome ? ArrowDownRight : ArrowUpRight;
+                    const colorClass = isIncome ? "success" : "danger";
+                    const bgClass = isIncome ? "#f0fdf4" : "#fef2f2";
+                    const iconColor = isIncome ? "#10b981" : "#ef4444";
+
+                    return (
+                      <div key={tx.id} className="list-item">
+                        <div className="li-info">
+                          <div
+                            className="li-avatar"
+                            style={{ background: bgClass, color: iconColor }}
+                          >
+                            <Icon size={20} strokeWidth={2.5} />
+                          </div>
+                          <div>
+                            <div className="li-title">{tx.title}</div>
+                            <div className="li-sub">
+                              {tx.subtitle} •{" "}
+                              <span dir="ltr">
+                                {formatTimeLocally(tx.date)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={`li-value ${colorClass}`}>
+                          <span dir="ltr">
+                            {isIncome ? "+" : "-"}
+                            {fmtMoney(tx.amount)} ₪
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Right: Financial Flow Chart (Span 4) */}
-          <div className="bento-item span-4" style={{ minHeight: 450 }}>
-            <div className="section-header">
-              <h2 className="section-title">
-                <PieChart size={24} color="#8b5cf6" /> التدفق المالي
-              </h2>
-            </div>
-            <div
-              style={{
-                color: "#64748b",
-                fontSize: 14,
-                fontWeight: 800,
-                marginBottom: 20,
-              }}
-            >
-              مقارنة بين الإيرادات والمصاريف للمدة المحددة.
-            </div>
-
-            <div className="chart-legend">
-              <div className="legend-item">
-                <div
-                  className="legend-color"
-                  style={{ background: "#10b981" }}
-                ></div>{" "}
-                الإيرادات
-              </div>
-              <div className="legend-item">
-                <div
-                  className="legend-color"
-                  style={{ background: "#ef4444" }}
-                ></div>{" "}
-                المصاريف
-              </div>
-            </div>
-
-            {loading ? (
-              <div
-                style={{
-                  height: 220,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#94a3b8",
-                  fontWeight: 800,
-                }}
-              >
-                جاري تحليل البيانات...
-              </div>
-            ) : (
-              <DualBarChart
-                incomeData={dashData.incomeTrend}
-                expenseData={dashData.expenseTrend}
-                labels={dashData.chartLabels}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* ==================== ROW 3: Alerts & Transactions ==================== */}
-        <div className="bento-grid">
-          {/* Left: Quick Actions + Debtors (Span 6) */}
-          <div
-            className="span-6"
-            style={{ display: "flex", flexDirection: "column", gap: 24 }}
-          >
+          {/* ----- Right Column: Charts, Actions & Debtors ----- */}
+          <div className="layout-col-side">
             {/* Quick Actions */}
-            <div className="bento-item" style={{ padding: "24px 24px 16px" }}>
+            <div className="bento-item" style={{ padding: "24px 24px 20px" }}>
               <div className="quick-actions-grid">
                 <Link to="/payments" className="qa-btn success">
                   <div className="qa-icon-wrap">
@@ -1488,6 +1531,63 @@ export default function Dashboard() {
                   التقويم
                 </Link>
               </div>
+            </div>
+
+            {/* Financial Flow Chart */}
+            <div className="bento-item">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <PieChart size={24} color="#8b5cf6" /> التدفق المالي
+                </h2>
+              </div>
+              <div
+                style={{
+                  color: "#64748b",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  marginBottom: 20,
+                }}
+              >
+                الإيرادات مقابل المصاريف ({rangeLabels[preset]}).
+              </div>
+
+              <div className="chart-legend">
+                <div className="legend-item">
+                  <div
+                    className="legend-color"
+                    style={{ background: "#10b981" }}
+                  ></div>{" "}
+                  الإيرادات
+                </div>
+                <div className="legend-item">
+                  <div
+                    className="legend-color"
+                    style={{ background: "#ef4444" }}
+                  ></div>{" "}
+                  المصاريف
+                </div>
+              </div>
+
+              {loading ? (
+                <div
+                  style={{
+                    height: 220,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#94a3b8",
+                    fontWeight: 800,
+                  }}
+                >
+                  جاري تحليل البيانات...
+                </div>
+              ) : (
+                <DualBarChart
+                  incomeData={dashData.incomeTrend}
+                  expenseData={dashData.expenseTrend}
+                  labels={dashData.chartLabels}
+                />
+              )}
             </div>
 
             {/* Debtors */}
@@ -1557,64 +1657,6 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Right: Recent Unified Transactions (Span 6) */}
-          <div className="bento-item span-6">
-            <div className="section-header" style={{ marginBottom: 20 }}>
-              <h2 className="section-title">
-                <History size={22} color="#0f172a" /> أحدث الحركات المالية
-              </h2>
-            </div>
-
-            {dashData.recentTransactions.length === 0 ? (
-              <div
-                style={{
-                  padding: 40,
-                  textAlign: "center",
-                  color: "#94a3b8",
-                  fontWeight: 800,
-                }}
-              >
-                لا توجد حركات مالية مسجلة مؤخراً.
-              </div>
-            ) : (
-              <div className="list-widget">
-                {dashData.recentTransactions.map((tx) => {
-                  const isIncome = tx.type === "income";
-                  const Icon = isIncome ? ArrowDownRight : ArrowUpRight;
-                  const colorClass = isIncome ? "success" : "danger";
-                  const bgClass = isIncome ? "#f0fdf4" : "#fef2f2";
-                  const iconColor = isIncome ? "#10b981" : "#ef4444";
-
-                  return (
-                    <div key={tx.id} className="list-item">
-                      <div className="li-info">
-                        <div
-                          className="li-avatar"
-                          style={{ background: bgClass, color: iconColor }}
-                        >
-                          <Icon size={20} strokeWidth={2.5} />
-                        </div>
-                        <div>
-                          <div className="li-title">{tx.title}</div>
-                          <div className="li-sub">
-                            {tx.subtitle} •{" "}
-                            <span dir="ltr">{formatTimeLocally(tx.date)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`li-value ${colorClass}`}>
-                        <span dir="ltr">
-                          {isIncome ? "+" : "-"}
-                          {fmtMoney(tx.amount)} ₪
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
 
