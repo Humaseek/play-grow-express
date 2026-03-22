@@ -53,6 +53,39 @@ function getGreeting() {
   return "طاب مساؤك";
 }
 
+function startOfMonth(d = new Date()) {
+  const x = new Date(d);
+  x.setDate(1);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function startOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+function addDays(d, n) {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+
+function toDateString(d) {
+  const dt = new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 // دالة ذكية لحساب فترات الوقت وتقسيمها للمخطط البياني (Bins)
 function getRangeAndBins(preset) {
   const now = new Date();
@@ -1033,8 +1066,6 @@ export default function Dashboard() {
       const expTrendArr = bins.map((b) => {
         return (expensesData || [])
           .filter((e) => {
-            // spent_on gives a local date string like "2026-03-23"
-            // convert it properly or just compare ISO
             const t = new Date(e.spent_on).getTime();
             return t >= b.start && t <= b.end;
           })
