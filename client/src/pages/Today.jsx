@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import { fmtTime24 } from "../utils/datetime";
 
 import {
   TrendingUp,
@@ -27,6 +28,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   CalendarDays,
+  BadgeDollarSign,
+  Filter,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -35,7 +38,7 @@ import EmptyState from "../components/EmptyState";
 import Badge from "../components/Badge";
 
 // ============================================================================
-// الدوال المساعدة الأساسية (تمت برمجتها محلياً لتفادي أي أخطاء بالاستيراد)
+// الدوال المساعدة
 // ============================================================================
 
 function fmtMoney(n) {
@@ -43,51 +46,196 @@ function fmtMoney(n) {
   return x.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-function startOfMonth(d = new Date()) {
-  const x = new Date(d);
-  x.setDate(1);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function startOfDay(d = new Date()) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function endOfDay(d = new Date()) {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
-}
-
-function addDays(d, n) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-
-function toDateString(d) {
-  const dt = new Date(d);
-  const y = dt.getFullYear();
-  const m = String(dt.getMonth() + 1).padStart(2, "0");
-  const day = String(dt.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function formatTimeLocally(dt) {
-  if (!dt) return "—";
-  const d = new Date(dt);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "صباح الخير";
   if (hour < 18) return "مساء الخير";
   return "طاب مساؤك";
+}
+
+// دالة ذكية لحساب فترات الوقت وتقسيمها للمخطط البياني (Bins)
+function getRangeAndBins(preset) {
+  const now = new Date();
+  let from,
+    to = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      59,
+      999,
+    );
+  let bins = [];
+
+  if (preset === "today") {
+    from = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      0,
+      0,
+      0,
+      0,
+    );
+    bins.push({ start: from.getTime(), end: to.getTime(), label: "اليوم" });
+  } else if (preset === "7d") {
+    from = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - 6,
+      0,
+      0,
+      0,
+      0,
+    );
+    for (let i = 0; i < 7; i++) {
+      let dStart = new Date(
+        from.getFullYear(),
+        from.getMonth(),
+        from.getDate() + i,
+        0,
+        0,
+        0,
+        0,
+      );
+      let dEnd = new Date(
+        dStart.getFullYear(),
+        dStart.getMonth(),
+        dStart.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
+      bins.push({
+        start: dStart.getTime(),
+        end: dEnd.getTime(),
+        label: new Intl.DateTimeFormat("ar-EG", { weekday: "short" }).format(
+          dStart,
+        ),
+      });
+    }
+  } else if (preset === "this_month") {
+    from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const daysInMonth = now.getDate(); // حتى اليوم الحالي
+    for (let i = 0; i < daysInMonth; i++) {
+      let dStart = new Date(
+        from.getFullYear(),
+        from.getMonth(),
+        from.getDate() + i,
+        0,
+        0,
+        0,
+        0,
+      );
+      let dEnd = new Date(
+        dStart.getFullYear(),
+        dStart.getMonth(),
+        dStart.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
+      bins.push({
+        start: dStart.getTime(),
+        end: dEnd.getTime(),
+        label: String(dStart.getDate()),
+      });
+    }
+  } else if (preset === "30d") {
+    from = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() - 29,
+      0,
+      0,
+      0,
+      0,
+    );
+    for (let i = 0; i < 30; i++) {
+      let dStart = new Date(
+        from.getFullYear(),
+        from.getMonth(),
+        from.getDate() + i,
+        0,
+        0,
+        0,
+        0,
+      );
+      let dEnd = new Date(
+        dStart.getFullYear(),
+        dStart.getMonth(),
+        dStart.getDate(),
+        23,
+        59,
+        59,
+        999,
+      );
+      // إظهار التسمية كل 3 أيام عشان المخطط ما يتزاحم
+      bins.push({
+        start: dStart.getTime(),
+        end: dEnd.getTime(),
+        label: i % 3 === 0 ? String(dStart.getDate()) : "",
+      });
+    }
+  } else if (preset === "this_year") {
+    from = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0);
+    const currentMonth = now.getMonth();
+    for (let i = 0; i <= currentMonth; i++) {
+      let mStart = new Date(now.getFullYear(), i, 1, 0, 0, 0, 0);
+      let mEnd = new Date(now.getFullYear(), i + 1, 0, 23, 59, 59, 999);
+      bins.push({
+        start: mStart.getTime(),
+        end: mEnd.getTime(),
+        label: new Intl.DateTimeFormat("ar-EG", { month: "short" }).format(
+          mStart,
+        ),
+      });
+    }
+  } else {
+    // all
+    from = new Date(2020, 0, 1, 0, 0, 0, 0); // تاريخ قديم جداً
+    const mStart12 = new Date(
+      now.getFullYear(),
+      now.getMonth() - 11,
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
+    for (let i = 0; i < 12; i++) {
+      // تقسيم لآخر 12 شهر
+      let mStart = new Date(
+        mStart12.getFullYear(),
+        mStart12.getMonth() + i,
+        1,
+        0,
+        0,
+        0,
+        0,
+      );
+      let mEnd = new Date(
+        mStart.getFullYear(),
+        mStart.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
+      bins.push({
+        start: mStart.getTime(),
+        end: mEnd.getTime(),
+        label: new Intl.DateTimeFormat("ar-EG", { month: "short" }).format(
+          mStart,
+        ),
+      });
+    }
+  }
+  return { fromIso: from.toISOString(), toIso: to.toISOString(), bins };
 }
 
 // ============================================================================
@@ -109,7 +257,7 @@ const Sparkline = ({ data, color, type = "line" }) => {
       >
         {data.map((d, i) => {
           const h = ((d - Math.min(0, min)) / max) * 30 || 2;
-          const w = 100 / data.length - 2;
+          const w = 100 / data.length - (data.length > 15 ? 1 : 2);
           const x = i * (100 / data.length);
           return (
             <rect
@@ -232,7 +380,7 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
               style={{
                 display: "flex",
                 alignItems: "flex-end",
-                gap: "4px",
+                gap: labels.length > 15 ? "1px" : "4px",
                 height: "calc(100% - 25px)",
                 width: "100%",
                 justifyContent: "center",
@@ -241,7 +389,7 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
               <div
                 title={`الإيرادات: ${fmtMoney(incomeData[i])} ₪`}
                 style={{
-                  width: "25%",
+                  width: "45%",
                   maxWidth: "20px",
                   height: `${incHeight}%`,
                   background:
@@ -253,7 +401,7 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
               <div
                 title={`المصاريف: ${fmtMoney(expenseData[i])} ₪`}
                 style={{
-                  width: "25%",
+                  width: "45%",
                   maxWidth: "20px",
                   height: `${expHeight}%`,
                   background:
@@ -307,7 +455,7 @@ const DASHBOARD_STYLES = `
   font-size: 36px;
   font-weight: 900;
   color: #0f172a;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   letter-spacing: -0.02em;
 }
 
@@ -332,11 +480,44 @@ const DASHBOARD_STYLES = `
   box-shadow: 0 4px 6px rgba(0,0,0,0.02);
 }
 
+.dash-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dash-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.2s;
+}
+.dash-filter:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.dash-filter select {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
 .dash-btn-refresh {
   background: #fff;
   border: 1px solid #cbd5e1;
   color: #334155;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 16px;
   font-weight: 900;
   font-size: 14px;
@@ -344,14 +525,13 @@ const DASHBOARD_STYLES = `
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 .dash-btn-refresh:hover {
   background: #f8fafc;
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(0,0,0,0.08);
-  border-color: #94a3b8;
 }
 
 .bento-grid {
@@ -393,7 +573,7 @@ const DASHBOARD_STYLES = `
 }
 
 .kpi-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   color: #64748b;
   margin-bottom: 14px;
@@ -658,14 +838,20 @@ export default function Dashboard() {
   const { toast } = useOutletContext();
   const navigate = useNavigate();
 
+  // ============================================================================
+  // States
+  // ============================================================================
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [time, setTime] = useState(new Date());
 
+  // حالة فلتر الوقت للمؤشرات المالية
+  const [dateRange, setDateRange] = useState("this_month");
+
   const [dashData, setDashData] = useState({
-    incomeMonth: 0,
-    expenseMonth: 0,
-    netMonth: 0,
+    incomeFiltered: 0,
+    expenseFiltered: 0,
+    netFiltered: 0,
     activeStudents: 0,
     sessionsCountToday: 0,
     incomeTrend: [],
@@ -682,114 +868,102 @@ export default function Dashboard() {
     sessionId: null,
   });
 
+  // تحديث الساعة الحية
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   // ============================================================================
-  // Data Fetching Engine (Parallel Execution for Max Speed)
+  // Data Fetching Engine
   // ============================================================================
   async function loadDashboard() {
     setLoading(true);
     setError(null);
     try {
       const now = new Date();
-      const monthStartObj = startOfMonth(now);
       const dayStartObj = startOfDay(now);
       const dayEndObj = endOfDay(now);
-
-      const isoMonthStart = monthStartObj.toISOString();
       const isoDayStart = dayStartObj.toISOString();
       const isoDayEnd = dayEndObj.toISOString();
-      const dateMonthStart = toDateString(monthStartObj);
 
-      const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = addDays(now, -6 + i);
-        return {
-          startIso: startOfDay(d).toISOString(),
-          endIso: endOfDay(d).toISOString(),
-          dateStr: toDateString(d),
-          label: new Intl.DateTimeFormat("ar-EG", { weekday: "short" }).format(
-            d,
-          ),
-        };
-      });
+      // جلب نطاق التواريخ والـ Bins بناءً على الفلتر المختار
+      const { fromIso, bins } = getRangeAndBins(dateRange);
 
-      const isoWeekStart = last7Days[0].startIso;
-      const dateWeekStart = last7Days[0].dateStr;
+      // الطلبات الأساسية التي لا تتأثر بالفلتر (طلاب، جلسات اليوم، ديون، آخر المعاملات)
+      const qActiveStudents = supabase
+        .from("enrollments")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active");
+      const qSessionsToday = supabase
+        .from("course_sessions")
+        .select("*")
+        .gte("start_at", isoDayStart)
+        .lte("start_at", isoDayEnd)
+        .order("start_at", { ascending: true });
+      const qRunsSummary = supabase
+        .from("course_runs_summary_view")
+        .select("run_id, title, label");
+      const qDebtors = supabase
+        .from("run_participants_view")
+        .select("child_name, child_id, balance")
+        .eq("enrollment_status", "active")
+        .gt("balance", 0)
+        .order("balance", { ascending: false })
+        .limit(5);
+      const qRecentPays = supabase
+        .from("payments_details_view")
+        .select("id, amount, child_name, method, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      const qRecentExps = supabase
+        .from("expenses")
+        .select("id, amount, category, party, created_at, spent_on")
+        .order("created_at", { ascending: false })
+        .limit(5);
 
-      // 🚀 Parallel Requesting (10x Faster)
+      // الطلبات المالية التي تتأثر بالفلتر (نجلب من البداية حتى الآن لنقسمهم لاحقاً)
+      let qPayments = supabase.from("payments").select("amount, created_at");
+      let qExpenses = supabase.from("expenses").select("amount, spent_on");
+
+      if (dateRange !== "all") {
+        qPayments = qPayments.gte("created_at", fromIso);
+        // expenses table uses Date (YYYY-MM-DD) for spent_on, so we slice the ISO string
+        qExpenses = qExpenses.gte("spent_on", fromIso.split("T")[0]);
+      }
+
+      // 🚀 Parallel Requesting (تنفيذ متوازي لسرعة فائقة)
       const [
-        { data: paymentsMonth, error: e1 },
-        { data: expensesMonth, error: e2 },
-        { data: paymentsWeek, error: e3 },
-        { data: expensesWeek, error: e4 },
-        { count: activeStudentsCount, error: e5 },
-        { data: sessionsToday, error: e6 },
-        { data: runsSummary, error: e7 },
-        { data: debtorsData, error: e8 },
-        { data: recentPays, error: e9 },
-        { data: recentExps, error: e10 },
+        { count: activeStudentsCount, error: e1 },
+        { data: sessionsToday, error: e2 },
+        { data: runsSummary, error: e3 },
+        { data: debtorsData, error: e4 },
+        { data: recentPays, error: e5 },
+        { data: recentExps, error: e6 },
+        { data: paymentsData, error: e7 },
+        { data: expensesData, error: e8 },
       ] = await Promise.all([
-        supabase
-          .from("payments")
-          .select("amount, created_at")
-          .gte("created_at", isoMonthStart),
-        supabase
-          .from("expenses")
-          .select("amount, spent_on")
-          .gte("spent_on", dateMonthStart),
-        supabase
-          .from("payments")
-          .select("amount, created_at")
-          .gte("created_at", isoWeekStart),
-        supabase
-          .from("expenses")
-          .select("amount, spent_on")
-          .gte("spent_on", dateWeekStart),
-        supabase
-          .from("enrollments")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "active"),
-        supabase
-          .from("course_sessions")
-          .select("*")
-          .gte("start_at", isoDayStart)
-          .lte("start_at", isoDayEnd)
-          .order("start_at", { ascending: true }),
-        supabase
-          .from("course_runs_summary_view")
-          .select("run_id, title, label"),
-        supabase
-          .from("run_participants_view")
-          .select("child_name, child_id, balance")
-          .eq("enrollment_status", "active")
-          .gt("balance", 0)
-          .order("balance", { ascending: false })
-          .limit(5),
-        supabase
-          .from("payments_details_view")
-          .select("id, amount, child_name, method, created_at")
-          .order("created_at", { ascending: false })
-          .limit(5),
-        supabase
-          .from("expenses")
-          .select("id, amount, category, party, created_at, spent_on")
-          .order("created_at", { ascending: false })
-          .limit(5),
+        qActiveStudents,
+        qSessionsToday,
+        qRunsSummary,
+        qDebtors,
+        qRecentPays,
+        qRecentExps,
+        qPayments,
+        qExpenses,
       ]);
 
-      const errs = [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10].filter(Boolean);
+      const errs = [e1, e2, e3, e4, e5, e6, e7, e8].filter(Boolean);
       if (errs.length > 0) {
         console.error("Dashboard Fetch Errors:", errs);
         setError({
-          message:
-            "حدثت بعض الأخطاء أثناء جلب البيانات، قد تكون بعض الأرقام غير دقيقة.",
+          message: "حدث خطأ أثناء جلب بعض البيانات، يرجى المحاولة لاحقاً.",
         });
       }
 
       // --- Processing ---
+
+      // دمج الجلسات مع أسماء الدورات والأفواج
       const enrichedSessions = (sessionsToday || []).map((session) => {
         const runInfo = (runsSummary || []).find(
           (r) => r.run_id === session.run_id,
@@ -801,6 +975,7 @@ export default function Dashboard() {
         };
       });
 
+      // دمج وترتيب أحدث المعاملات المالية
       let combinedTx = [];
       if (recentPays) {
         combinedTx.push(
@@ -834,39 +1009,47 @@ export default function Dashboard() {
       combinedTx.sort((a, b) => new Date(b.date) - new Date(a.date));
       combinedTx = combinedTx.slice(0, 6);
 
-      const totalIncome = (paymentsMonth || []).reduce(
+      // حساب المجاميع الكلية للفترة المحددة
+      const totalIncome = (paymentsData || []).reduce(
         (sum, p) => sum + Number(p.amount || 0),
         0,
       );
-      const totalExpense = (expensesMonth || []).reduce(
+      const totalExpense = (expensesData || []).reduce(
         (sum, e) => sum + Number(e.amount || 0),
         0,
       );
       const netProfit = totalIncome - totalExpense;
 
-      const incTrendArr = last7Days.map((day) => {
-        return (paymentsWeek || [])
-          .filter(
-            (p) => p.created_at >= day.startIso && p.created_at <= day.endIso,
-          )
+      // حساب المخطط البياني (تقسيم البيانات إلى Bins)
+      const incTrendArr = bins.map((b) => {
+        return (paymentsData || [])
+          .filter((p) => {
+            const t = new Date(p.created_at).getTime();
+            return t >= b.start && t <= b.end;
+          })
           .reduce((sum, p) => sum + Number(p.amount || 0), 0);
       });
 
-      const expTrendArr = last7Days.map((day) => {
-        return (expensesWeek || [])
-          .filter((e) => e.spent_on === day.dateStr)
+      const expTrendArr = bins.map((b) => {
+        return (expensesData || [])
+          .filter((e) => {
+            // spent_on gives a local date string like "2026-03-23"
+            // convert it properly or just compare ISO
+            const t = new Date(e.spent_on).getTime();
+            return t >= b.start && t <= b.end;
+          })
           .reduce((sum, e) => sum + Number(e.amount || 0), 0);
       });
 
       setDashData({
-        incomeMonth: totalIncome,
-        expenseMonth: totalExpense,
-        netMonth: netProfit,
+        incomeFiltered: totalIncome,
+        expenseFiltered: totalExpense,
+        netFiltered: netProfit,
         activeStudents: activeStudentsCount || 0,
         sessionsCountToday: enrichedSessions.length,
         incomeTrend: incTrendArr,
         expenseTrend: expTrendArr,
-        chartLabels: last7Days.map((day) => day.label),
+        chartLabels: bins.map((b) => b.label),
         todaySessions: enrichedSessions,
         debtors: debtorsData || [],
         recentTransactions: combinedTx,
@@ -879,10 +1062,11 @@ export default function Dashboard() {
     }
   }
 
+  // إعادة تحميل البيانات عند تغيير الفلتر الزمني
   useEffect(() => {
     loadDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dateRange]);
 
   async function changeSessionStatus(id, newStatus) {
     const { error: upErr } = await supabase
@@ -913,6 +1097,15 @@ export default function Dashboard() {
     second: "2-digit",
   }).format(time);
 
+  const rangeLabels = {
+    today: "اليوم",
+    "7d": "آخر 7 أيام",
+    this_month: "هذا الشهر",
+    "30d": "آخر 30 يوم",
+    this_year: "هذه السنة",
+    all: "كل الوقت",
+  };
+
   return (
     <div className="page page--dashboard" dir="rtl" lang="ar">
       <style>{DASHBOARD_STYLES}</style>
@@ -932,18 +1125,36 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          <button
-            className="dash-btn-refresh"
-            onClick={loadDashboard}
-            disabled={loading}
-          >
-            <RefreshCcw
-              size={18}
-              className={loading ? "spin" : ""}
-              color="#3b82f6"
-            />
-            {loading ? "جاري التحديث..." : "تحديث اللوحة"}
-          </button>
+
+          <div className="dash-controls">
+            <div className="dash-filter">
+              <Filter size={16} color="#64748b" />
+              <select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+              >
+                <option value="today">اليوم</option>
+                <option value="7d">آخر 7 أيام</option>
+                <option value="this_month">هذا الشهر</option>
+                <option value="30d">آخر 30 يوم</option>
+                <option value="this_year">هذه السنة</option>
+                <option value="all">كل الوقت</option>
+              </select>
+            </div>
+
+            <button
+              className="dash-btn-refresh"
+              onClick={loadDashboard}
+              disabled={loading}
+            >
+              <RefreshCcw
+                size={16}
+                className={loading ? "spin" : ""}
+                color="#3b82f6"
+              />
+              تحديث
+            </button>
+          </div>
         </div>
 
         {error && <ErrorBanner error={error} />}
@@ -957,10 +1168,10 @@ export default function Dashboard() {
               >
                 <TrendingUp size={20} color="#10b981" />
               </div>
-              إيرادات الشهر
+              الإيرادات ({rangeLabels[dateRange]})
             </div>
             <div className="kpi-value">
-              {fmtMoney(dashData.incomeMonth)}{" "}
+              {fmtMoney(dashData.incomeFiltered)}{" "}
               <span style={{ fontSize: 20, color: "#94a3b8" }}>₪</span>
             </div>
             <div className="kpi-chart-wrapper">
@@ -979,10 +1190,10 @@ export default function Dashboard() {
               >
                 <TrendingDown size={20} color="#ef4444" />
               </div>
-              مصاريف الشهر
+              المصاريف ({rangeLabels[dateRange]})
             </div>
             <div className="kpi-value">
-              {fmtMoney(dashData.expenseMonth)}{" "}
+              {fmtMoney(dashData.expenseFiltered)}{" "}
               <span style={{ fontSize: 20, color: "#94a3b8" }}>₪</span>
             </div>
             <div className="kpi-chart-wrapper">
@@ -997,14 +1208,16 @@ export default function Dashboard() {
           <div
             className="bento-item span-3"
             style={
-              dashData.netMonth >= 0
+              dashData.netFiltered >= 0
                 ? { background: "#f0fdf4", borderColor: "#bbf7d0" }
                 : { background: "#fef2f2", borderColor: "#fecaca" }
             }
           >
             <div
               className="kpi-title"
-              style={{ color: dashData.netMonth >= 0 ? "#059669" : "#dc2626" }}
+              style={{
+                color: dashData.netFiltered >= 0 ? "#059669" : "#dc2626",
+              }}
             >
               <div
                 style={{
@@ -1014,35 +1227,37 @@ export default function Dashboard() {
                   boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                 }}
               >
-                <Wallet
+                <BadgeDollarSign
                   size={20}
-                  color={dashData.netMonth >= 0 ? "#10b981" : "#ef4444"}
+                  color={dashData.netFiltered >= 0 ? "#10b981" : "#ef4444"}
                 />
               </div>
-              صافي أرباح الشهر
+              صافي الأرباح
             </div>
             <div
               className="kpi-value"
-              style={{ color: dashData.netMonth >= 0 ? "#047857" : "#b91c1c" }}
+              style={{
+                color: dashData.netFiltered >= 0 ? "#047857" : "#b91c1c",
+              }}
             >
               <span dir="ltr">
-                {dashData.netMonth > 0 ? "+" : ""}
-                {fmtMoney(dashData.netMonth)}
+                {dashData.netFiltered > 0 ? "+" : ""}
+                {fmtMoney(dashData.netFiltered)}
               </span>{" "}
               <span style={{ fontSize: 20, opacity: 0.5 }}>₪</span>
             </div>
             <div
               style={{
                 fontSize: 13,
-                fontWeight: 700,
+                fontWeight: 800,
                 marginTop: "auto",
-                color: dashData.netMonth >= 0 ? "#10b981" : "#ef4444",
+                color: dashData.netFiltered >= 0 ? "#10b981" : "#ef4444",
                 opacity: 0.8,
               }}
             >
-              {dashData.netMonth >= 0
-                ? "أداء مالي إيجابي هذا الشهر"
-                : "المصاريف تتجاوز الإيرادات"}
+              {dashData.netFiltered >= 0
+                ? "أداء مالي إيجابي لهذه الفترة"
+                : "المصاريف تتجاوز الإيرادات!"}
             </div>
           </div>
 
@@ -1066,7 +1281,7 @@ export default function Dashboard() {
                 marginTop: "auto",
               }}
             >
-              إجمالي الاشتراكات الفعالة بالمركز
+              إجمالي الاشتراكات الفعالة حالياً
             </div>
           </div>
         </div>
@@ -1127,15 +1342,13 @@ export default function Dashboard() {
                       >
                         <div>
                           <div className="tl-time">
-                            <span dir="ltr">
-                              {formatTimeLocally(s.start_at)}
-                            </span>
+                            <span dir="ltr">{fmtTime24(s.start_at)}</span>
                             <span style={{ color: "#cbd5e1" }}>-</span>
                             <span
                               dir="ltr"
                               style={{ color: "#64748b", fontSize: 15 }}
                             >
-                              {formatTimeLocally(s.end_at)}
+                              {fmtTime24(s.end_at)}
                             </span>
                             {s.status === "done" && (
                               <Badge variant="ok" style={{ marginLeft: 8 }}>
@@ -1221,11 +1434,11 @@ export default function Dashboard() {
               style={{
                 color: "#64748b",
                 fontSize: 14,
-                fontWeight: 700,
+                fontWeight: 800,
                 marginBottom: 20,
               }}
             >
-              مقارنة بين الإيرادات والمصاريف لآخر 7 أيام.
+              مقارنة بين الإيرادات والمصاريف ({rangeLabels[dateRange]}).
             </div>
 
             <div className="chart-legend">
@@ -1415,7 +1628,7 @@ export default function Dashboard() {
                           <div className="li-title">{tx.title}</div>
                           <div className="li-sub">
                             {tx.subtitle} •{" "}
-                            <span dir="ltr">{formatTimeLocally(tx.date)}</span>
+                            <span dir="ltr">{fmtTime24(tx.date)}</span>
                           </div>
                         </div>
                       </div>
