@@ -78,7 +78,6 @@ function addDays(d, n) {
 // --- CSS Styles ---
 const PAYMENTS_STYLES = `
 .page--payments {
-  /* خلفية بلون أخضر خفيف جداً ينسجم مع طابع المدفوعات */
   background: linear-gradient(180deg, rgba(22, 163, 74, 0.05) 0%, #f4f6f8 300px);
   min-height: 100vh;
   padding-bottom: 40px;
@@ -163,7 +162,6 @@ const PAYMENTS_STYLES = `
 
 .search-input:focus {
   outline: none;
-  /* إطار أخضر عند التحديد */
   border-color: #16a34a;
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
@@ -219,7 +217,6 @@ const PAYMENTS_STYLES = `
 }
 
 .btn-add {
-  /* زر رئيسي باللون الأخضر */
   background: #16a34a !important;
   color: #fff !important;
   border: none !important;
@@ -235,7 +232,6 @@ const PAYMENTS_STYLES = `
 
 .btn-add:hover {
   transform: translateY(-2px);
-  /* لون أخضر أغمق عند الوقوف بالماوس */
   background: #15803d !important;
   box-shadow: 0 6px 20px rgba(22, 163, 74, 0.3) !important;
 }
@@ -258,7 +254,6 @@ const PAYMENTS_STYLES = `
   gap: 8px;
 }
 
-/* تنسيق الروابط داخل الجدول لتظهر باللون الأخضر المميز */
 .modern-table a {
   text-decoration: none;
   transition: color 0.15s ease;
@@ -267,7 +262,6 @@ const PAYMENTS_STYLES = `
   text-decoration: underline;
 }
 
-/* تنسيق قائمة اختيار الطالب (Picker) */
 .enrollment-picker-list {
   max-height: 220px;
   overflow-y: auto;
@@ -460,13 +454,32 @@ export default function Payments() {
     setPayNote("");
     setPayAt(toInputDatetimeLocal(new Date()));
 
-    const r = await supabase
-      .from("enrollments_finance_view")
-      .select("*")
-      .order("child_name", { ascending: true });
+    // استخدام Promise.all لدمج بيانات الرصيد الحقيقي من run_participants_view
+    // مع أسماء الدورات من course_runs_summary_view
+    const [pRes, cRes] = await Promise.all([
+      supabase
+        .from("run_participants_view")
+        .select("enrollment_id, child_name, run_id, balance"),
+      supabase.from("course_runs_summary_view").select("run_id, title, label"),
+    ]);
 
-    if (!r.error) {
-      setPickerRows(r.data ?? []);
+    if (!pRes.error && !cRes.error) {
+      const runsMap = {};
+      (cRes.data || []).forEach((r) => {
+        runsMap[r.run_id] = r;
+      });
+
+      const merged = (pRes.data || []).map((p) => ({
+        enrollment_id: p.enrollment_id,
+        child_name: p.child_name || "—",
+        course_title: runsMap[p.run_id]?.title || "—",
+        run_label: runsMap[p.run_id]?.label || "—",
+        balance: Number(p.balance || 0),
+      }));
+
+      // ترتيب أبجدي
+      merged.sort((a, b) => a.child_name.localeCompare(b.child_name, "ar"));
+      setPickerRows(merged);
     }
   }
 
@@ -480,7 +493,6 @@ export default function Payments() {
     });
   }, [pickerRows, pickerQ]);
 
-  // عندما نختار اشتراك معين، يمكننا جلب رصيده تلقائيًا لمساعدة المستخدم
   useEffect(() => {
     if (payEnrId) {
       const match = pickerRows.find((r) => r.enrollment_id === payEnrId);
