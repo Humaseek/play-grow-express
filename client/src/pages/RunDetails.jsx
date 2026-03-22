@@ -901,7 +901,7 @@ export default function RunDetails() {
     const tryView = await supabase
       .from("children_view")
       .select(
-        "id,name,age,class,gender,country_id,country_name,mother_name,mother_phone,father_name,father_phone",
+        "id,name,age,class,gender,country_id,country_name,mother_name,mother_phone,father_name,father_phone,created_at",
       )
       .order("name", { ascending: true });
 
@@ -909,7 +909,7 @@ export default function RunDetails() {
     const tryTable = await supabase
       .from("children")
       .select(
-        "id,name,age,class,gender,country_id,mother_name,mother_phone,father_name,father_phone",
+        "id,name,age,class,gender,country_id,mother_name,mother_phone,father_name,father_phone,created_at",
       )
       .order("name", { ascending: true });
 
@@ -4148,6 +4148,7 @@ export default function RunDetails() {
                         <th style={{ textAlign: "right" }}>الصف</th>
                         <th style={{ textAlign: "right" }}>الجنس</th>
                         <th style={{ textAlign: "right" }}>هاتف الأم</th>
+                        <th style={{ textAlign: "right" }}>تاريخ الإضافة</th>
                         <th style={{ width: 100, textAlign: "center" }}>
                           الحصص
                         </th>
@@ -4189,6 +4190,7 @@ export default function RunDetails() {
                                 {c.mother_phone ?? "-"}
                               </span>
                             </td>
+                            <td className="muted">{fmtDate(c.created_at)}</td>
                             <td>
                               <input
                                 className="input"
