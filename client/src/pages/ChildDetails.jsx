@@ -1,181 +1,320 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useOutletContext, useParams } from "react-router";
+// ChildDetails.jsx
+
+import React, { useState, useEffect } from "react";
+// 1. استيراد useNavigate
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import ErrorBanner from "../components/ErrorBanner";
-import Badge from "../components/Badge";
-
-function badgeRun(status) {
-  if (status === "active") return <Badge variant="ok">نشط</Badge>;
-  if (status === "done") return <Badge variant="info">مكتمل</Badge>;
-  return <Badge variant="danger">ملغاة</Badge>;
-}
-
-function fmtMoney(n) {
-  const x = Number(n || 0);
-  return x.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+import Loader from "./Loader";
+import ErrorBanner from "./ErrorBanner";
+// 2. تأكد من استيراد ملف CSS
+import "./ChildDetails.css"; // أنشئ هذا الملف وأضف الأنماط
 
 export default function ChildDetails() {
-  const { childId } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useOutletContext();
-
   const [child, setChild] = useState(null);
-  const [enrollments, setEnrollments] = useState([]);
+  const [guardians, setGuardians] = useState([]);
+  const [enrollmentHistory, setEnrollmentHistory] = useState([]);
+  const [paymentHistory, setPaymentHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  async function load() {
-    setLoading(true);
-    setError(null);
-
-    const c = await supabase.from("children_view").select("*").eq("id", childId).single();
-    if (c.error) {
-      setError(c.error);
-      setLoading(false);
-      return;
+  // لحساب العمر
+  const calculateAge = (birthDateStr) => {
+    if (!birthDateStr) return "غير محدد";
+    const birthDate = new Date(birthDateStr);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
-    setChild(c.data);
-
-    const e = await supabase
-      .from("child_enrollments_view")
-      .select("*")
-      .eq("child_id", childId)
-      .order("run_id", { ascending: false });
-
-    if (e.error) {
-      setError(e.error);
-      setLoading(false);
-      return;
-    }
-
-    setEnrollments(e.data ?? []);
-    setLoading(false);
-  }
+    return age;
+  };
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [childId]);
+    async function fetchChildDetails() {
+      setLoading(true);
+      setError(null);
+      try {
+        const { data: childData, error: childError } = await supabase
+          .from("children")
+          .select("*, classes(name)")
+          .eq("id", id)
+          .single();
+        if (childError) throw childError;
+        setChild(childData);
 
-  const totals = useMemo(() => {
-    const agreed = enrollments.reduce((acc, r) => acc + Number(r.agreed_price || 0), 0);
-    const paid = enrollments.reduce((acc, r) => acc + Number(r.paid_amount || 0), 0);
-    const balance = enrollments.reduce((acc, r) => acc + Number(r.balance || 0), 0);
-    return { agreed, paid, balance };
-  }, [enrollments]);
+        const { data: guardiansData, error: guardiansError } = await supabase
+          .from("guardians")
+          .select("*")
+          .eq("id", childData.guardian_id);
+        if (guardiansError) throw guardiansError;
+        setGuardians(guardiansData);
 
-  if (loading)
-    return (
-      <div className="container page page--children" dir="rtl" lang="ar">
-        <div className="card">جارٍ التحميل...</div>
-      </div>
-    );
+        const { data: enrollmentData, error: enrollmentError } = await supabase
+          .from("enrollments")
+          .select("*, courses(title)")
+          .eq("child_id", id);
+        if (enrollmentError) throw enrollmentError;
+        setEnrollmentHistory(enrollmentData);
 
-  if (!child)
-    return (
-      <div className="container page page--child-details" dir="rtl" lang="ar">
-        <div className="card">الطفل غير موجود.</div>
-      </div>
-    );
+        const { data: paymentData, error: paymentError } = await supabase
+          .from("payments")
+          .select("*")
+          .eq("child_id", id);
+        if (paymentError) throw paymentError;
+        setPaymentHistory(paymentData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchChildDetails();
+  }, [id]);
+
+  const updateChild = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("children")
+        .update({
+          first_name: child.first_name,
+          last_name: child.last_name,
+          birth_date: child.birth_date,
+          gender: child.gender,
+        })
+        .eq("id", id);
+      if (error) throw error;
+      toast("تم حفظ التعديلات بنجاح", "ok");
+    } catch (err) {
+      toast(err.message, "danger");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addPayment = () => {
+    // منطق إضافة دفعة جديدة (مثلاً: فتح نافذة مودال)
+    console.log("إضافة دفعة جديدة للطفل:", id);
+  };
+
+  if (loading) return <Loader />;
+  if (error) return <ErrorBanner message={error} />;
 
   return (
-    <div className="container" dir="rtl" lang="ar">
-      <div className="topbar">
-        <div>
-          <div className="h1">{child.name}</div>
-          <div className="muted">
-            العمر: {child.age ?? "-"} • الصف: {child.class ?? "-"} • المدينة: {child.country ?? "-"}
-          </div>
+    <div className="page-content child-details" dir="rtl">
+      {/* 3. رأس الصفحة (Header) */}
+      <div className="content-header">
+        <div className="header-info">
+          <h1>
+            👤 {child.first_name} {child.last_name}
+          </h1>
+          <span className="id-badge">ID: {child.id}</span>
+          {/* شارة حالة الاشتراك */}
+          <span className={`status-badge active`}>نشط</span>
         </div>
-
-        <div className="row">
-          <button className="btn" onClick={() => navigate("/children")}>
-            رجوع
+        <div className="header-actions">
+          <button onClick={updateChild} className="btn-save" disabled={saving}>
+            {saving ? "جاري الحفظ..." : "حفظ التعديلات"}
+          </button>
+          <button onClick={() => navigate("/children")} className="btn-cancel">
+            إلغاء
           </button>
         </div>
       </div>
 
-      <ErrorBanner error={error} />
-
-      <div className="grid" style={{ marginBottom: 12 }}>
-        <div className="card" style={{ gridColumn: "span 4" }}>
-          <div className="muted">إجمالي المتفق عليه</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>{fmtMoney(totals.agreed)}₪</div>
-        </div>
-
-        <div className="card" style={{ gridColumn: "span 4" }}>
-          <div className="muted">إجمالي المدفوع</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>{fmtMoney(totals.paid)}₪</div>
-        </div>
-
-        <div className="card" style={{ gridColumn: "span 4" }}>
-          <div className="muted">المتبقي</div>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>{fmtMoney(totals.balance)}₪</div>
-        </div>
-      </div>
-
-      <div className="grid" style={{ marginBottom: 12 }}>
-        <div className="card" style={{ gridColumn: "span 6" }}>
-          <div className="h1">الأم</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            {child.mother_name ?? "-"}
+      <div className="content-body">
+        <div className="main-grid">
+          {/* 4. المعلومات الأساسية (Basic Info) */}
+          <div className="info-card basic-info">
+            <div className="card-header">
+              <h2>👶 المعلومات الأساسية</h2>
+            </div>
+            <div className="card-body">
+              <div className="avatar-section">
+                <div className="avatar-placeholder">👤</div>
+                {/* يمكنك إضافة زر لتغيير الصورة لاحقاً */}
+              </div>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>الاسم الأول</label>
+                  <input
+                    type="text"
+                    value={child.first_name}
+                    onChange={(e) =>
+                      setChild({ ...child, first_name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>اسم العائلة</label>
+                  <input
+                    type="text"
+                    value={child.last_name}
+                    onChange={(e) =>
+                      setChild({ ...child, last_name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>تاريخ الميلاد</label>
+                  <input
+                    type="date"
+                    value={child.birth_date}
+                    onChange={(e) =>
+                      setChild({ ...child, birth_date: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>العمر</label>
+                  {/* حساب العمر وعرضه تلقائياً */}
+                  <input
+                    type="text"
+                    value={calculateAge(child.birth_date)}
+                    readOnly
+                  />
+                </div>
+                <div className="form-group">
+                  <label>الجنس</label>
+                  <select
+                    value={child.gender}
+                    onChange={(e) =>
+                      setChild({ ...child, gender: e.target.value })
+                    }
+                  >
+                    <option value="male">ذكر</option>
+                    <option value="female">أنثى</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>الصف الحالي</label>
+                  <input
+                    type="text"
+                    value={child.classes?.name || "غير محدد"}
+                    readOnly
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="row" style={{ marginTop: 10, flexWrap: "wrap" }}>
-            <div className="muted">{child.mother_phone ?? "-"}</div>
+
+          {/* 5. معلومات ولي الأمر (Guardian Info) */}
+          <div className="info-card guardian-info">
+            <div className="card-header">
+              <h2>🧑‍🧑‍🧒 معلومات ولي الأمر</h2>
+            </div>
+            <div className="card-body">
+              {guardians.length > 0 ? (
+                guardians.map((guardian) => (
+                  <div key={guardian.id} className="guardian-item">
+                    <div className="guardian-field">
+                      <span>👤</span>
+                      <span>
+                        {guardian.first_name} {guardian.last_name}
+                      </span>
+                    </div>
+                    <div className="guardian-field">
+                      <span>📞</span>
+                      <span>{guardian.phone_number || "غير محدد"}</span>
+                    </div>
+                    <div className="guardian-field">
+                      <span>🔗</span>
+                      <span>{guardian.relationship || "غير محدد"}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="muted text-center">
+                  لا توجد معلومات عن ولي الأمر
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="card" style={{ gridColumn: "span 6" }}>
-          <div className="h1">الأب</div>
-          <div className="muted" style={{ marginTop: 6 }}>
-            {child.father_name ?? "-"}
+        {/* 6. السجل المالي وتاريخ التسجيل (Tabs/Cards) */}
+        <div className="tabs-container">
+          {/* تاريخ الدفع (Payment History) */}
+          <div className="info-card payment-history">
+            <div className="card-header">
+              <h2>💰 السجل المالي</h2>
+              <button onClick={addPayment} className="btn-add-payment">
+                إضافة دفعة
+              </button>
+            </div>
+            <div className="card-body">
+              {paymentHistory.length > 0 ? (
+                <table className="modern-table payment-table">
+                  <thead>
+                    <tr>
+                      <th>التاريخ</th>
+                      <th>المبلغ</th>
+                      <th>طريقة الدفع</th>
+                      <th>الحالة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentHistory.map((payment) => (
+                      <tr key={payment.id}>
+                        <td>{payment.created_at || "غير محدد"}</td>
+                        <td>{fmtMoney(payment.amount)} ₪</td>
+                        <td>{payment.method || "غير محدد"}</td>
+                        <td>
+                          {/* شارة حالة الدفع */}
+                          <span className={`payment-status paid`}>مدفوع</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="muted text-center">لا يوجد سجل مدفوعات</div>
+              )}
+            </div>
           </div>
-          <div className="row" style={{ marginTop: 10, flexWrap: "wrap" }}>
-            <div className="muted">{child.father_phone ?? "-"}</div>
+
+          {/* تاريخ التسجيل (Enrollment History) */}
+          <div className="info-card enrollment-history">
+            <div className="card-header">
+              <h2>📝 تاريخ التسجيل</h2>
+            </div>
+            <div className="card-body">
+              {enrollmentHistory.length > 0 ? (
+                <table className="modern-table enrollment-table">
+                  <thead>
+                    <tr>
+                      <th>الدورة</th>
+                      <th>تاريخ البدء</th>
+                      <th>تاريخ الانتهاء</th>
+                      <th>الحالة</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {enrollmentHistory.map((enrollment) => (
+                      <tr key={enrollment.id}>
+                        <td>{enrollment.courses?.title || "غير محدد"}</td>
+                        <td>{enrollment.start_date || "غير محدد"}</td>
+                        <td>{enrollment.end_date || "غير محدد"}</td>
+                        <td>
+                          {/* شارة حالة التسجيل */}
+                          <span className={`enrollment-status active`}>
+                            نشط
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="muted text-center">لا يوجد سجل تسجيلي</div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="card">
-        <div className="h1">الاشتراكات</div>
-
-        <hr className="sep" />
-
-        {enrollments.length === 0 ? (
-          <div className="muted">لا يوجد اشتراكات بعد.</div>
-        ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>الدورة</th>
-                <th>الدفعة</th>
-                <th>الحالة</th>
-                <th>المتفق عليه (₪)</th>
-                <th>المدفوع (₪)</th>
-                <th>المتبقي (₪)</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {enrollments.map((r) => (
-                <tr key={r.enrollment_id}>
-                  <td style={{ fontWeight: 800 }}>{r.title}</td>
-                  <td className="muted">{r.label}</td>
-                  <td>{badgeRun(r.run_status)}</td>
-                  <td>{fmtMoney(r.agreed_price)}₪</td>
-                  <td>{fmtMoney(r.paid_amount)}₪</td>
-                  <td>{fmtMoney(r.balance)}₪</td>
-                  <td>
-                    <button className="btn primary" onClick={() => navigate(`/runs/${r.run_id}`)}>
-                      فتح
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </div>
     </div>
   );
