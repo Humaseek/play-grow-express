@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
@@ -38,6 +38,7 @@ import {
   List,
   CalendarCheck,
   Phone,
+  ChevronDown,
 } from "lucide-react";
 
 const LOCALE_LATN = "en-IL";
@@ -105,7 +106,6 @@ function isoDate(d) {
   return `${y}-${m}-${da}`;
 }
 
-// دالة لتحديث التاريخ مع الحفاظ على وقت النظام
 function updateDateKeepTime(dateStr) {
   if (!dateStr) return new Date().toISOString();
   const d = new Date();
@@ -127,6 +127,102 @@ function uniqSorted(list) {
 
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
+}
+
+// --- مُركّب مخصص للجمع بين الكتابة والقائمة المنسدلة (Combobox) ---
+function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = options.filter((o) =>
+    (o.label || "").toLowerCase().includes((value || "").toLowerCase()),
+  );
+
+  return (
+    <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
+      <input
+        className="input"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="off"
+        style={{ width: "100%", paddingLeft: 36 }}
+      />
+      <ChevronDown
+        size={16}
+        style={{
+          position: "absolute",
+          left: 12,
+          top: "50%",
+          transform: `translateY(-50%) ${isOpen ? "rotate(180deg)" : "rotate(0deg)"}`,
+          color: "#94a3b8",
+          pointerEvents: "none",
+          transition: "transform 0.2s ease",
+        }}
+      />
+      {isOpen && filtered.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 50,
+            background: "#fff",
+            border: "1px solid rgba(15,23,42,0.08)",
+            borderRadius: "14px",
+            maxHeight: "200px",
+            overflowY: "auto",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
+            padding: "4px",
+          }}
+        >
+          {filtered.map((opt, i) => (
+            <div
+              key={i}
+              style={{
+                padding: "10px 14px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#334155",
+                borderRadius: "10px",
+                transition: "background 0.15s ease",
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#f8fafc")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 const RUN_DETAILS_SOFT_UI_STYLES = `
@@ -1293,9 +1389,6 @@ export default function RunDetails() {
     setOpenEnroll(true);
   }
 
-  function openSingleEnrollNew() {
-    initEnrollBuyNew();
-  }
   function openSingleTopup(participantRow) {
     const remaining = Number(participantRow.package_sessions_remaining || 0);
     if (remaining > 0) {
@@ -2268,13 +2361,6 @@ export default function RunDetails() {
                 >
                   <button type="button" className="btn" onClick={openBulkModal}>
                     + إضافة مجموعة
-                  </button>
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={openCreateEnroll}
-                  >
-                    <Plus size={16} /> إضافة وتسجيل
                   </button>
                 </div>
               </div>
@@ -3741,442 +3827,6 @@ export default function RunDetails() {
                 onClick={() => closeSubModalAndReopen(setOpenEnroll)}
               >
                 إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openNewChild}
-          title={newChildEnrollNow ? "إضافة طفل وتسجيله" : "إضافة طفل جديد"}
-          onClose={() => setOpenNewChild(false)}
-        >
-          <div className="grid" style={{ gap: "24px", padding: "10px 0" }}>
-            {/* معلومات الطفل */}
-            <div style={{ gridColumn: "span 12" }}>
-              <h4 className="form-section-title">
-                <Users size={18} color="#64748b" /> البيانات الأساسية
-              </h4>
-              <div className="grid">
-                <div style={{ gridColumn: "span 12" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الاسم الرباعي *
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.name}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({ ...p, name: e.target.value }))
-                    }
-                    placeholder="مثال: أحمد محمد علي"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    العمر *
-                  </div>
-                  <input
-                    className="input"
-                    type="number"
-                    min={0}
-                    max={120}
-                    value={newChildForm.age}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({ ...p, age: e.target.value }))
-                    }
-                    placeholder="بالسنوات"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الجنس
-                  </div>
-                  <ModernSelect
-                    value={newChildForm.gender}
-                    onChange={(v) =>
-                      setNewChildForm((p) => ({ ...p, gender: v }))
-                    }
-                    options={[
-                      { value: "male", label: "ذكر" },
-                      { value: "female", label: "أنثى" },
-                    ]}
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الصف
-                  </div>
-                  <input
-                    className="input"
-                    list="classes-list"
-                    autoComplete="off"
-                    value={newChildForm.class}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({ ...p, class: e.target.value }))
-                    }
-                    placeholder="اختر أو اكتب صفاً..."
-                  />
-                  <datalist id="classes-list">
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.name} />
-                    ))}
-                  </datalist>
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    البلد / المدينة
-                  </div>
-                  <input
-                    className="input"
-                    list="countries-list"
-                    autoComplete="off"
-                    value={newChildForm.country_name}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({
-                        ...p,
-                        country_name: e.target.value,
-                      }))
-                    }
-                    placeholder="اختر أو اكتب بلداً..."
-                    disabled={countriesLoading}
-                  />
-                  <datalist id="countries-list">
-                    {countries.map((c) => (
-                      <option key={c.id} value={c.name} />
-                    ))}
-                  </datalist>
-                </div>
-              </div>
-            </div>
-
-            {/* معلومات الأهل */}
-            <div style={{ gridColumn: "span 12" }}>
-              <h4 className="form-section-title">
-                <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
-              </h4>
-              <div className="grid">
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    اسم الأم
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.mother_name}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({
-                        ...p,
-                        mother_name: e.target.value,
-                      }))
-                    }
-                    placeholder="اختياري"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    هاتف الأم
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.mother_phone}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({
-                        ...p,
-                        mother_phone: e.target.value,
-                      }))
-                    }
-                    placeholder="اختياري"
-                    dir="ltr"
-                    style={{ textAlign: "right" }}
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    اسم الأب
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.father_name}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({
-                        ...p,
-                        father_name: e.target.value,
-                      }))
-                    }
-                    placeholder="اختياري"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    هاتف الأب
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.father_phone}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({
-                        ...p,
-                        father_phone: e.target.value,
-                      }))
-                    }
-                    placeholder="اختياري"
-                    dir="ltr"
-                    style={{ textAlign: "right" }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* ملاحظات إضافية */}
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted" style={{ marginBottom: 6 }}>
-                ملاحظات إضافية
-              </div>
-              <textarea
-                className="input"
-                rows={3}
-                value={newChildForm.notes}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, notes: e.target.value }))
-                }
-                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
-                style={{ resize: "vertical" }}
-              />
-            </div>
-
-            <div
-              style={{
-                gridColumn: "span 12",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-                paddingTop: 8,
-              }}
-            >
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setOpenNewChild(false)}
-                disabled={newChildSaving}
-              >
-                إلغاء
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() =>
-                  createChildInline({ enrollNow: newChildEnrollNow })
-                }
-                disabled={newChildSaving}
-              >
-                {newChildSaving
-                  ? "جاري الحفظ..."
-                  : newChildEnrollNow
-                    ? "حفظ وتسجيل بالدورة"
-                    : "حفظ الطالب"}
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openBulk}
-          title="إضافة مجموعة"
-          onClose={() => setOpenBulk(false)}
-        >
-          <div dir="rtl" lang="ar" className="modal-wide-1000">
-            <div className="muted" style={{ lineHeight: 1.5 }}>
-              اختر الأطفال ثم اضغط <b>إضافة</b>.
-            </div>
-            <hr className="sep" />
-            <div
-              className="row"
-              style={{
-                gap: 10,
-                flexWrap: "wrap",
-                justifyContent: "flex-start",
-                alignItems: "center",
-              }}
-            >
-              <input
-                className="input"
-                style={{ width: 280 }}
-                placeholder="ابحث عن طفل..."
-                value={bulkQ}
-                onChange={(e) => setBulkQ(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn"
-                onClick={bulkSelectAllFiltered}
-              >
-                تحديد الكل
-              </button>
-              <button
-                type="button"
-                className="btn danger"
-                onClick={bulkClearSelection}
-              >
-                إلغاء التحديد
-              </button>
-              <div className="muted" style={{ marginInlineStart: "auto" }}>
-                المحدد: <b>{bulkSelectedCount}</b>
-              </div>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              {bulkCandidates.length === 0 ? (
-                <div className="card">لا يوجد أطفال.</div>
-              ) : (
-                <div
-                  className="card"
-                  style={{
-                    padding: 0,
-                    overflow: "auto",
-                    maxHeight: "55vh",
-                    direction: "rtl",
-                  }}
-                >
-                  <table className="table" style={{ margin: 0, minWidth: 720 }}>
-                    <thead
-                      style={{
-                        position: "sticky",
-                        top: 0,
-                        background: "white",
-                        zIndex: 2,
-                      }}
-                    >
-                      <tr>
-                        <th style={{ width: 70, textAlign: "right" }}>
-                          اختيار
-                        </th>
-                        <th style={{ textAlign: "right" }}>الاسم</th>
-                        <th style={{ textAlign: "right" }}>العمر</th>
-                        <th style={{ textAlign: "right" }}>الصف</th>
-                        <th style={{ textAlign: "right" }}>الجنس</th>
-                        <th style={{ textAlign: "right" }}>هاتف الأم</th>
-                        <th style={{ width: 100, textAlign: "center" }}>
-                          الحصص
-                        </th>
-                        <th style={{ width: 120, textAlign: "center" }}>
-                          السعر
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bulkCandidates.map((c) => {
-                        const checked = !!bulkSelected[String(c.id)];
-                        const genderLabel =
-                          c.gender === "male"
-                            ? "ذكر"
-                            : c.gender === "female"
-                              ? "أنثى"
-                              : (c.gender ?? "-");
-
-                        return (
-                          <tr key={c.id}>
-                            <td>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => toggleBulkChild(c.id)}
-                              />
-                            </td>
-                            <td style={{ fontWeight: 850 }}>{c.name}</td>
-                            <td className="muted">{c.age ?? "-"}</td>
-                            <td className="muted">{c.class ?? "-"}</td>
-                            <td className="muted">{genderLabel}</td>
-                            <td className="muted">
-                              <span
-                                style={{
-                                  direction: "ltr",
-                                  unicodeBidi: "embed",
-                                }}
-                              >
-                                {c.mother_phone ?? "-"}
-                              </span>
-                            </td>
-                            <td>
-                              <input
-                                className="input"
-                                style={{
-                                  width: "100%",
-                                  minWidth: 70,
-                                  height: 38,
-                                  textAlign: "center",
-                                }}
-                                type="number"
-                                min="0"
-                                value={
-                                  bulkPerChildSessions[c.id] !== undefined
-                                    ? bulkPerChildSessions[c.id]
-                                    : defaultSessionsTotal
-                                }
-                                onChange={(e) =>
-                                  setBulkPerChildSessions((prev) => ({
-                                    ...prev,
-                                    [c.id]: e.target.value,
-                                  }))
-                                }
-                                disabled={!checked}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                className="input"
-                                style={{
-                                  width: "100%",
-                                  minWidth: 90,
-                                  height: 38,
-                                  textAlign: "center",
-                                }}
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={
-                                  bulkPerChildPrice[c.id] !== undefined
-                                    ? bulkPerChildPrice[c.id]
-                                    : defaultPrice
-                                }
-                                onChange={(e) =>
-                                  setBulkPerChildPrice((prev) => ({
-                                    ...prev,
-                                    [c.id]: e.target.value,
-                                  }))
-                                }
-                                disabled={!checked}
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-            <div
-              className="row"
-              style={{
-                justifyContent: "flex-start",
-                gap: 10,
-                marginTop: 16,
-              }}
-            >
-              <button
-                type="button"
-                className="btn primary"
-                disabled={bulkSaving || bulkSelectedCount === 0}
-                onClick={bulkPurchaseAndEnroll}
-              >
-                {bulkSaving
-                  ? "جارٍ الإضافة..."
-                  : `إضافة (${bulkSelectedCount})`}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setOpenBulk(false)}
-              >
-                إغلاق
               </button>
             </div>
           </div>
