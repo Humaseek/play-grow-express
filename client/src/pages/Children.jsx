@@ -1,117 +1,368 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
-import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
-import PageHeader from "../components/PageHeader";
-import EmptyState from "../components/EmptyState";
-import { useNavigate, useOutletContext } from "react-router";
+import Modal from "../components/Modal";
 import IconButton from "../components/IconButton";
+import Badge from "../components/Badge";
 import ModernSelect from "../components/ModernSelect";
-import { Pencil, Trash2, UserRound, Plus } from "lucide-react";
+import {
+  Users,
+  Search,
+  Plus,
+  Pencil,
+  Trash2,
+  MapPin,
+  Phone,
+  Cake,
+  GraduationCap,
+  ChevronDown,
+} from "lucide-react";
 
-const emptyForm = {
-  id: null,
-  name: "",
-  age: "",
-  class: "",
-  gender: "male",
-  country_id: "",
-  new_city: "",
-  mother_name: "",
-  mother_phone: "",
-  father_name: "",
-  father_phone: "",
-  notes: "",
-};
+// --- مُركّب مخصص للجمع بين الكتابة والقائمة المنسدلة (Combobox) ---
+function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  // إغلاق القائمة عند النقر خارجها
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // تصفية الخيارات بناءً على النص المدخل
+  const filtered = options.filter((o) =>
+    (o.label || "").toLowerCase().includes((value || "").toLowerCase()),
+  );
+
+  return (
+    <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
+      <input
+        className="input"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="off"
+        style={{ width: "100%", paddingLeft: 36 }}
+      />
+      <ChevronDown
+        size={16}
+        style={{
+          position: "absolute",
+          left: 12,
+          top: "50%",
+          transform: `translateY(-50%) ${isOpen ? "rotate(180deg)" : "rotate(0deg)"}`,
+          color: "#94a3b8",
+          pointerEvents: "none",
+          transition: "transform 0.2s ease",
+        }}
+      />
+      {isOpen && filtered.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 50,
+            background: "#fff",
+            border: "1px solid rgba(15,23,42,0.08)",
+            borderRadius: "14px",
+            maxHeight: "200px",
+            overflowY: "auto",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
+            padding: "4px",
+          }}
+        >
+          {filtered.map((opt, i) => (
+            <div
+              key={i}
+              style={{
+                padding: "10px 14px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#334155",
+                borderRadius: "10px",
+                transition: "background 0.15s ease",
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault(); // منع فقدان التركيز من حقل الإدخال
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#f8fafc")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- تنسيقات CSS مدمجة ---
+const CHILDREN_STYLES = `
+.page--children {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+.children-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.children-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.children-subtitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.children-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
+  overflow: hidden;
+}
+
+.children-toolbar {
+  padding: 20px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.search-wrapper {
+  position: relative;
+  flex: 1 1 300px;
+  max-width: 400px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.modern-table th {
+  background: #fff;
+  color: #64748b;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 16px 24px;
+  border-bottom: 2px solid #f1f5f9;
+  white-space: nowrap;
+}
+
+.modern-table td {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f8fafc;
+  color: #334155;
+  font-size: 15px;
+  vertical-align: middle;
+  transition: background 0.15s ease;
+}
+
+.modern-table tr:hover td {
+  background: #f8fafc;
+}
+
+.modern-table tr:last-child td {
+  border-bottom: none;
+}
+
+.child-id {
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.child-name {
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.phone-number {
+  direction: ltr;
+  unicode-bidi: embed;
+  display: inline-block;
+  font-weight: 600;
+  color: #475569;
+}
+
+.btn-add {
+  background: #f59e0b !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 10px 20px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2) !important;
+  transition: all 0.2s !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3) !important;
+  background: #d97706 !important;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* تنسيق شارات الجنس لتكون أوضح */
+.ModernBadge.ModernBadge-info {
+  border-color: #bbf7d0 !important;
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+}
+
+.ModernBadge.ModernBadge-warning {
+  border-color: #fde68a !important;
+  background: #fffbeb !important;
+  color: #d97706 !important;
+}
+
+/* Modal Form Overrides */
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+`;
 
 export default function Children() {
-  const navigate = useNavigate();
-  const { toast } = useOutletContext();
-
-  const [rows, setRows] = useState([]);
-  const [countries, setCountries] = useState([]);
-  const [classOptions, setClassOptions] = useState([]);
-
+  // حالة البيانات الأساسية
+  const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const [q, setQ] = useState("");
+  // قوائم الاختيار (Picklists)
+  const [countries, setCountries] = useState([]);
+  const [classes, setClasses] = useState([]);
 
-  const [openForm, setOpenForm] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  // حالة النموذج (Modal State)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
-
-  // Add new Class (persistent)
-  const [newClassName, setNewClassName] = useState("");
-  const [addingClass, setAddingClass] = useState(false);
-
-  // Add new City (persistent)
-  const [addingCity, setAddingCity] = useState(false);
-
-  const [confirmDel, setConfirmDel] = useState({
-    open: false,
-    id: null,
+  const [formData, setFormData] = useState({
     name: "",
+    age: "",
+    class: "",
+    gender: "male",
+    country_name: "", // اسم المدينة المدخل نصياً
+    mother_name: "",
+    mother_phone: "",
+    father_name: "",
+    father_phone: "",
+    notes: "",
   });
 
-  async function loadClassesOnly() {
-    const clsRes = await supabase
-      .from("child_classes")
-      .select("id,name")
-      .order("name", { ascending: true });
+  // حالة حوار التأكيد (Confirm Delete State)
+  const [confirm, setConfirm] = useState({
+    open: false,
+    id: null,
+    text: "",
+  });
 
-    if (clsRes.error) {
-      // إذا الجدول مش موجود (لسه ما شغّلت الـ SQL)
-      setClassOptions([]);
-      return;
-    }
+  // تحميل البيانات الأولية وقوائم الاختيار عند التحميل
+  useEffect(() => {
+    loadData();
+    loadPicklists();
+  }, []);
 
-    setClassOptions(clsRes.data ?? []);
-  }
-
-  async function loadCitiesOnly() {
-    const cRes = await supabase
-      .from("countries")
-      .select("id,name")
-      .order("name", { ascending: true });
-
-    if (cRes.error) {
-      setError(cRes.error);
-      return;
-    }
-
-    setCountries(cRes.data ?? []);
-  }
-
-  async function loadAll() {
+  // دالة جلب بيانات الأطفال
+  async function loadData() {
     setLoading(true);
-    setError(null);
     try {
-      const [cRes, chRes, clsRes] = await Promise.all([
-        supabase
-          .from("countries")
-          .select("id,name")
-          .order("name", { ascending: true }),
-        supabase
-          .from("children_view")
-          .select("*")
-          .order("id", { ascending: false }),
-        supabase
-          .from("child_classes")
-          .select("id,name")
-          .order("name", { ascending: true }),
-      ]);
+      const { data, error } = await supabase
+        .from("children_view") // جلب من الـ View لعرض اسم المدينة
+        .select("*")
+        .order("id", { ascending: false });
 
-      if (cRes.error) throw cRes.error;
-      if (chRes.error) throw chRes.error;
-
-      setCountries(cRes.data ?? []);
-      setRows(chRes.data ?? []);
-
-      // classes table is optional until you run the SQL migration
-      if (!clsRes.error) setClassOptions(clsRes.data ?? []);
-      else setClassOptions([]);
+      if (error) throw error;
+      setChildren(data || []);
     } catch (e) {
       setError(e);
     } finally {
@@ -119,522 +370,495 @@ export default function Children() {
     }
   }
 
-  useEffect(() => {
-    loadAll();
-  }, []);
+  // دالة جلب قوائم الاختيار للمدن والصفوف
+  async function loadPicklists() {
+    try {
+      const [cRes, clRes] = await Promise.all([
+        supabase.from("countries").select("id,name").order("name"),
+        supabase.from("child_classes").select("id,name").order("name"),
+      ]);
+      if (cRes.data) setCountries(cRes.data);
+      if (clRes.data) setClasses(clRes.data);
+    } catch (e) {
+      console.error("Failed to load picklists:", e);
+    }
+  }
 
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return rows;
-    return rows.filter(
-      (r) =>
-        (r.name ?? "").toLowerCase().includes(s) ||
-        (r.mother_phone ?? "").toLowerCase().includes(s) ||
-        (r.father_phone ?? "").toLowerCase().includes(s),
+  // تصفية الأطفال بناءً على نص البحث (باستخدام useMemo للأداء)
+  const filteredChildren = useMemo(() => {
+    if (!searchQuery.trim()) return children;
+    const q = searchQuery.toLowerCase();
+    return children.filter(
+      (c) =>
+        (c.id && String(c.id).includes(q)) || // البحث بالمعرف
+        (c.name || "").toLowerCase().includes(q) || // البحث بالاسم
+        (c.mother_phone || "").includes(q) || // البحث بهاتف الأم
+        (c.father_phone || "").includes(q), // البحث بهاتف الأب
     );
-  }, [rows, q]);
+  }, [children, searchQuery]);
 
-  const classSelectOptions = useMemo(() => {
-    const base = (classOptions || []).map((c) => ({
-      value: c.name,
-      label: c.name,
-    }));
-
-    const current = (form.class ?? "").trim();
-    if (current && !base.some((o) => o.value === current)) {
-      base.unshift({ value: current, label: current });
-    }
-
-    return base;
-  }, [classOptions, form.class]);
-
-  function openCreate() {
-    setForm(emptyForm);
-    setNewClassName("");
-    setOpenForm(true);
-  }
-
-  function openEdit(r) {
-    const match = countries.find((c) => c.name === r.country);
-    setForm({
-      id: r.id,
-      name: r.name ?? "",
-      age: r.age ?? "",
-      class: r.class ?? "",
-      gender: r.gender ?? "male",
-      country_id: match ? String(match.id) : "",
-      new_city: "",
-      mother_name: r.mother_name ?? "",
-      mother_phone: r.mother_phone ?? "",
-      father_name: r.father_name ?? "",
-      father_phone: r.father_phone ?? "",
-      notes: r.notes ?? "",
+  // فتح نموذج إضافة طفل جديد
+  function openAddModal() {
+    setEditingId(null);
+    setFormData({
+      name: "",
+      age: "",
+      class: "",
+      gender: "male",
+      country_name: "",
+      mother_name: "",
+      mother_phone: "",
+      father_name: "",
+      father_phone: "",
+      notes: "",
     });
-    setNewClassName("");
-    setOpenForm(true);
+    setIsModalOpen(true);
   }
 
-  async function upsertCityIfNeeded() {
-    const hasSelected = !!form.country_id;
-    if (hasSelected) return Number(form.country_id);
-
-    const name = (form.new_city ?? "").trim();
-    if (!name) return null;
-
-    const { data, error } = await supabase
-      .from("countries")
-      .upsert([{ name }], { onConflict: "name" })
-      .select("id")
-      .single();
-
-    if (error) throw error;
-    return data?.id ?? null;
+  // فتح نموذج تعديل بيانات طفل موجود
+  function openEditModal(child) {
+    setEditingId(child.id);
+    setFormData({
+      name: child.name || "",
+      age: child.age ?? "",
+      class: child.class || "",
+      gender: child.gender || "male",
+      country_name: child.country || "", // من الـ View بنجيب الاسم
+      mother_name: child.mother_name || "",
+      mother_phone: child.mother_phone || "",
+      father_name: child.father_name || "",
+      father_phone: child.father_phone || "",
+      notes: child.notes || "",
+    });
+    setIsModalOpen(true);
   }
 
-  async function addNewClass() {
-    const name = (newClassName ?? "").trim();
+  // دالة حفظ البيانات (إضافة أو تعديل)
+  async function handleSave() {
+    const name = formData.name.trim();
+    const ageNum = Number(formData.age);
+
     if (!name) {
-      toast("اكتب اسم الصف أولاً", "warn");
+      alert("الرجاء إدخال اسم الطفل الرباعي.");
       return;
     }
 
-    setAddingClass(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase
-        .from("child_classes")
-        .upsert([{ name }], { onConflict: "name" });
-
-      if (error) throw error;
-
-      setNewClassName("");
-      await loadClassesOnly();
-      setForm((p) => ({ ...p, class: name }));
-      toast("تم إضافة الصف وحفظه للدروب داون", "ok");
-    } catch (e) {
-      // إذا الجدول مش موجود، غالبًا لازم تشغيل SQL
-      if (String(e?.code) === "42P01") {
-        toast("لازم أولاً تشغّل ملف SQL اللي بضيف جدول child_classes", "warn");
-      } else {
-        toast("فشل إضافة الصف", "danger");
-      }
-      setError(e);
-    } finally {
-      setAddingClass(false);
-    }
-  }
-
-  async function addNewCity() {
-    const name = (form.new_city ?? "").trim();
-    if (!name) {
-      toast("اكتب اسم المدينة أولاً", "warn");
-      return;
-    }
-
-    setAddingCity(true);
-    setError(null);
-
-    try {
-      const { data, error } = await supabase
-        .from("countries")
-        .upsert([{ name }], { onConflict: "name" })
-        .select("id,name")
-        .single();
-
-      if (error) throw error;
-
-      await loadCitiesOnly();
-      setForm((p) => ({
-        ...p,
-        country_id: data?.id ? String(data.id) : p.country_id,
-        new_city: "",
-      }));
-      toast("تم إضافة المدينة وحفظها للدروب داون", "ok");
-    } catch (e) {
-      if (String(e?.code) === "42P01") {
-        toast("جدول المدن غير موجود. تأكد إن جدول countries موجود.", "warn");
-      } else if (String(e?.code) === "23505") {
-        toast("المدينة موجودة مسبقًا", "warn");
-      } else {
-        toast("فشل إضافة المدينة", "danger");
-      }
-      setError(e);
-    } finally {
-      setAddingCity(false);
-    }
-  }
-
-  async function saveChild(e) {
-    e.preventDefault();
     setSaving(true);
-    setError(null);
-
     try {
-      const countryId = await upsertCityIfNeeded();
+      // 1. إدارة قائمة المدن: الحصول على المعرف أو إنشاء مدينة جديدة
+      let countryId = null;
+      const typedCountry = formData.country_name.trim();
+      if (typedCountry) {
+        const existingC = countries.find((c) => c.name === typedCountry);
+        if (existingC) {
+          countryId = existingC.id;
+        } else {
+          const created = await supabase
+            .from("countries")
+            .insert([{ name: typedCountry }])
+            .select("id")
+            .single();
+          if (created.data) countryId = created.data.id;
+        }
+      }
 
+      // 2. إدارة قائمة الصفوف: إضافة الصف للقائمة إن لم يكن موجوداً
+      const typedClass = formData.class.trim();
+      if (typedClass) {
+        const existingCl = classes.find((c) => c.name === typedClass);
+        if (!existingCl) {
+          await supabase.from("child_classes").insert([{ name: typedClass }]);
+          // لا نحتاج لمعرف الصف هنا لأن جدول children يحفظ اسم الصف كقيمة نصية
+        }
+      }
+
+      // 3. تحضير بيانات الطفل للحفظ
       const payload = {
-        name: form.name.trim(),
-        age: form.age === "" ? null : Math.floor(Number(form.age)),
-        class: (form.class ?? "").trim() || null,
-        gender: form.gender,
-        country_id: countryId,
-
-        mother_name: form.mother_name.trim() || null,
-        mother_phone: form.mother_phone.trim() || null,
-        father_name: form.father_name.trim() || null,
-        father_phone: form.father_phone.trim() || null,
-        notes: form.notes.trim() || null,
+        name,
+        age: isNaN(ageNum) ? null : ageNum,
+        class: typedClass || null, // اسم الصف كقيمة نصية
+        gender: formData.gender,
+        country_id: countryId, // معرف المدينة
+        mother_name: formData.mother_name.trim() || null,
+        mother_phone: formData.mother_phone.trim() || null,
+        father_name: formData.father_name.trim() || null,
+        father_phone: formData.father_phone.trim() || null,
+        notes: formData.notes.trim() || null,
       };
 
-      if (
-        !payload.name ||
-        payload.age === null ||
-        !Number.isFinite(payload.age) ||
-        payload.age < 0
-      ) {
-        toast("الاسم والعمر مطلوبان.", "warn");
-        setSaving(false);
-        return;
-      }
-
-      if (form.id) {
+      // 4. تنفيذ عملية الحفظ (تعديل أو إضافة)
+      if (editingId) {
         const { error } = await supabase
           .from("children")
           .update(payload)
-          .eq("id", form.id);
+          .eq("id", editingId);
         if (error) throw error;
-        toast("تم التعديل.", "ok");
       } else {
         const { error } = await supabase.from("children").insert([payload]);
         if (error) throw error;
-        toast("تمت الإضافة.", "ok");
       }
 
-      setOpenForm(false);
-      setForm(emptyForm);
-      setNewClassName("");
-      await loadAll();
-    } catch (e2) {
-      setError(e2);
-      toast("فشل حفظ بيانات الطفل.", "danger");
+      // 5. إغلاق النموذج وتحديث البيانات وقوائم الاختيار
+      setIsModalOpen(false);
+      loadData();
+      loadPicklists(); // لتحديث القوائم بالمدن أو الصفوف الجديدة
+    } catch (e) {
+      console.error(e);
+      alert("حدث خطأ أثناء حفظ البيانات.");
     } finally {
       setSaving(false);
     }
   }
 
-  async function deleteChild(id) {
-    setError(null);
-    const { error } = await supabase.from("children").delete().eq("id", id);
-    if (error) {
-      setError(error);
-      toast("فشل حذف الطفل.", "danger");
-      return;
+  // دالة حذف الطفل
+  async function handleDelete(id) {
+    try {
+      const { error } = await supabase.from("children").delete().eq("id", id);
+      if (error) {
+        // التحقق من خطأ "Constraint" لوجود ارتباطات
+        if (error.message.includes("foreign key constraint")) {
+          alert("لا يمكن حذف الطفل لارتباطه بدفعات أو دورات مسجلة.");
+        } else {
+          throw error;
+        }
+      } else {
+        loadData(); // تحديث البيانات بعد الحذف بنجاح
+      }
+    } catch (e) {
+      console.error(e);
+      alert("حدث خطأ أثناء عملية الحذف.");
     }
-    toast("تم حذف الطفل.", "ok");
-    await loadAll();
   }
 
+  // عرض شارة الجنس بتنسيق مخصص
+  const genderLabel = (g) => {
+    if (g === "male") return <Badge variant="info">ذكر</Badge>;
+    if (g === "female") return <Badge variant="warning">أنثى</Badge>;
+    return "-";
+  };
+
   return (
-    <div className="container page page--children" dir="rtl" lang="ar">
-      <PageHeader
-        title="الأطفال"
-        subtitle="إدارة الأطفال"
-        actions={
-          <div className="toolbar">
-            <input
-              className="input"
-              placeholder="ابحث بالاسم…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <button className="btn primary" onClick={openCreate}>
+    <div className="page page--children" dir="rtl" lang="ar">
+      <style>{CHILDREN_STYLES}</style>
+      <div className="container">
+        {/* رأس الصفحة */}
+        <div className="children-header">
+          <div className="children-title">الأطفال</div>
+          <div className="children-subtitle">
+            <span style={{ color: "#cbd5e1" }}>|</span>
+            <Users size={16} /> إدارة جميع الأطفال
+          </div>
+        </div>
+
+        {error && <ErrorBanner error={error} />}
+
+        {/* الكرت الرئيسي للجدول */}
+        <div className="children-card">
+          {/* شريط الأدوات العلوي (البحث والإضافة) */}
+          <div className="children-toolbar">
+            <div className="search-wrapper">
+              <Search size={18} className="search-icon" />
+              <input
+                type="text"
+                className="search-input"
+                placeholder="ابحث بالاسم، المعرف أو رقم الهاتف..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <button className="btn btn-add" onClick={openAddModal}>
               <Plus size={18} /> إضافة طفل
             </button>
           </div>
-        }
-      />
 
-      <ErrorBanner error={error} />
-
-      {loading ? (
-        <div className="card">جاري التحميل...</div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          icon={UserRound}
-          title="لا يوجد أطفال"
-          description=""
-          actionLabel=""
-          onAction={openCreate}
-        />
-      ) : (
-        <div className="tableWrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>رقم</th>
-                <th>الاسم</th>
-                <th>العمر</th>
-                <th>الصف</th>
-                <th>الجنس</th>
-                <th>المدينة</th>
-                <th>هاتف الأم</th>
-                <th>هاتف الأب</th>
-                <th>إجراءات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr key={r.id}>
-                  <td className="muted">{r.id}</td>
-
-                  <td style={{ fontWeight: 800 }}>
-                    <button
-                      className="linkBtn"
-                      onClick={() => navigate(`/children/${r.id}`)}
-                    >
-                      {r.name}
-                    </button>
-                  </td>
-
-                  <td>{r.age}</td>
-                  <td className="muted">{r.class ?? "-"}</td>
-                  <td className="muted">
-                    {r.gender === "male" ? "ذكر" : "أنثى"}
-                  </td>
-                  <td className="muted">{r.country || "-"}</td>
-                  <td className="muted">{r.mother_phone ?? "-"}</td>
-                  <td className="muted">{r.father_phone ?? "-"}</td>
-                  <td>
-                    <div className="row">
-                      <div className="actionsRow">
-                        <IconButton title="تعديل" onClick={() => openEdit(r)}>
-                          <Pencil size={18} />
-                        </IconButton>
-
-                        <IconButton
-                          title="حذف"
-                          variant="danger"
-                          onClick={() =>
-                            setConfirmDel({
-                              open: true,
-                              id: r.id,
-                              name: r.name,
-                            })
-                          }
-                        >
-                          <Trash2 size={18} />
-                        </IconButton>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* الجدول */}
+          {loading ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
+              جاري التحميل...
+            </div>
+          ) : filteredChildren.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
+              لا يوجد بيانات متطابقة.
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table className="modern-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 60, textAlign: "center" }}>معرف</th>
+                    <th>الاسم</th>
+                    <th>العمر</th>
+                    <th>الصف</th>
+                    <th>الجنس</th>
+                    <th>المدينة</th>
+                    <th>هاتف الأم</th>
+                    <th>هاتف الأب</th>
+                    <th style={{ width: 100, textAlign: "center" }}>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredChildren.map((child) => (
+                    <tr key={child.id}>
+                      <td className="child-id" style={{ textAlign: "center" }}>
+                        {child.id}
+                      </td>
+                      <td className="child-name">{child.name}</td>
+                      <td>{child.age ?? "-"}</td>
+                      <td className="muted">{child.class || "-"}</td>
+                      <td>{genderLabel(child.gender)}</td>
+                      <td className="muted">{child.country || "-"}</td>
+                      <td>
+                        <span className="phone-number">
+                          {child.mother_phone || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="phone-number">
+                          {child.father_phone || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="actions-cell">
+                          <IconButton
+                            onClick={() => openEditModal(child)}
+                            title="تعديل"
+                          >
+                            <Pencil size={16} />
+                          </IconButton>
+                          <IconButton
+                            danger
+                            onClick={() =>
+                              setConfirm({
+                                open: true,
+                                id: child.id,
+                                text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                              })
+                            }
+                            title="حذف"
+                          >
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
+      {/* نموذج الإضافة والتعديل */}
       <Modal
-        open={openForm}
-        title={form.id ? "تعديل طفل" : "إضافة طفل"}
-        onClose={() => {
-          setOpenForm(false);
-          setForm(emptyForm);
-          setNewClassName("");
-        }}
+        open={isModalOpen}
+        title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
+        onClose={() => !saving && setIsModalOpen(false)} // منع الإغلاق أثناء الحفظ
       >
-        <form onSubmit={saveChild} className="grid">
-          <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">الاسم *</div>
-            <input
-              className="input"
-              value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-            />
-          </div>
-
-          <div style={{ gridColumn: "span 3" }}>
-            <div className="muted">العمر *</div>
-            <input
-              className="input"
-              type="number"
-              min={0}
-              step={1}
-              value={form.age}
-              onChange={(e) => setForm((p) => ({ ...p, age: e.target.value }))}
-              placeholder="e.g. 6"
-            />
-          </div>
-
-          <div style={{ gridColumn: "span 3" }}>
-            <div className="muted">الجنس</div>
-            <ModernSelect
-              value={form.gender}
-              onChange={(v) => setForm((p) => ({ ...p, gender: v }))}
-              menuWidth="trigger"
-              options={[
-                { value: "male", label: "ذكر" },
-                { value: "female", label: "أنثى" },
-              ]}
-            />
-          </div>
-
-          <div style={{ gridColumn: "span 4" }}>
-            <div className="muted">الصف</div>
-            <ModernSelect
-              value={form.class}
-              onChange={(v) => setForm((p) => ({ ...p, class: v }))}
-              menuWidth="trigger"
-              options={classSelectOptions}
-              placeholder={
-                classSelectOptions.length
-                  ? "Select a class…"
-                  : "No classes yet…"
-              }
-            />
-
-            <div className="row" style={{ gap: 8, marginTop: 8 }}>
-              <input
-                className="input"
-                placeholder="أضف صفًا جديدًا…"
-                value={newClassName}
-                onChange={(e) => setNewClassName(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn"
-                onClick={addNewClass}
-                disabled={addingClass}
-              >
-                {addingClass ? "جاري الإضافة..." : "إضافة"}
-              </button>
-            </div>
-          </div>
-
-          <div style={{ gridColumn: "span 8" }}>
-            <div className="muted">المدينة</div>
-            <ModernSelect
-              value={form.country_id}
-              onChange={(v) => setForm((p) => ({ ...p, country_id: v }))}
-              menuWidth="trigger"
-              options={(countries || []).map((c) => ({
-                value: c.id,
-                label: c.name,
-              }))}
-              placeholder="اختر مدينة…"
-            />
-
-            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-              <input
-                className="input"
-                placeholder="أضف مدينة جديدة..."
-                value={form.new_city}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, new_city: e.target.value }))
-                }
-              />
-              <button
-                type="button"
-                className="btn"
-                onClick={addNewCity}
-                disabled={addingCity}
-              >
-                {addingCity ? "جاري الإضافة..." : "إضافة"}
-              </button>
-            </div>
-          </div>
-
-          <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">اسم الأم</div>
-            <input
-              className="input"
-              value={form.mother_name}
-              placeholder="e.g. Sarah"
-              onChange={(e) =>
-                setForm((p) => ({ ...p, mother_name: e.target.value }))
-              }
-            />
-          </div>
-          <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">هاتف الأم</div>
-            <input
-              className="input"
-              value={form.mother_phone}
-              placeholder="e.g. 050-1234567"
-              onChange={(e) =>
-                setForm((p) => ({ ...p, mother_phone: e.target.value }))
-              }
-            />
-          </div>
-
-          <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">اسم الأب</div>
-            <input
-              className="input"
-              value={form.father_name}
-              placeholder="e.g. Ahmad"
-              onChange={(e) =>
-                setForm((p) => ({ ...p, father_name: e.target.value }))
-              }
-            />
-          </div>
-          <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">هاتف الأب</div>
-            <input
-              className="input"
-              value={form.father_phone}
-              placeholder="e.g. 052-1234567"
-              onChange={(e) =>
-                setForm((p) => ({ ...p, father_phone: e.target.value }))
-              }
-            />
-          </div>
-
+        <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
+          {/* قسم البيانات الأساسية */}
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">ملاحظات (اختياري)</div>
+            <h4 className="form-section-title">
+              <Users size={18} color="#64748b" /> البيانات الأساسية
+            </h4>
+            <div className="grid" style={{ gap: "16px" }}>
+              <div style={{ gridColumn: "span 12" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  الاسم الرباعي *
+                </div>
+                <input
+                  className="input"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="مثال: أحمد محمد علي"
+                />
+              </div>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  العمر
+                </div>
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  max={120}
+                  value={formData.age}
+                  onChange={(e) =>
+                    setFormData({ ...formData, age: e.target.value })
+                  }
+                  placeholder="بالسنوات"
+                />
+              </div>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  الجنس
+                </div>
+                <ModernSelect
+                  value={formData.gender}
+                  onChange={(v) => setFormData({ ...formData, gender: v })}
+                  options={[
+                    { value: "male", label: "ذكر" },
+                    { value: "female", label: "أنثى" },
+                  ]}
+                />
+              </div>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  الصف
+                </div>
+                <CustomCombobox
+                  value={formData.class}
+                  onChange={(v) => setFormData({ ...formData, class: v })}
+                  options={classes.map((c) => ({
+                    value: c.name,
+                    label: c.name,
+                  }))}
+                  placeholder="اختر أو اكتب صفاً..."
+                />
+              </div>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  المدينة / البلد
+                </div>
+                <CustomCombobox
+                  value={formData.country_name}
+                  onChange={(v) =>
+                    setFormData({ ...formData, country_name: v })
+                  }
+                  options={countries.map((c) => ({
+                    value: c.name,
+                    label: c.name,
+                  }))}
+                  placeholder="اختر أو اكتب مدينة..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* قسم معلومات التواصل مع الأهل */}
+          <div style={{ gridColumn: "span 12" }}>
+            <h4 className="form-section-title">
+              <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
+            </h4>
+            <div className="grid" style={{ gap: "16px" }}>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  هاتف الأم
+                </div>
+                <input
+                  className="input"
+                  value={formData.mother_phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, mother_phone: e.target.value })
+                  }
+                  placeholder="رقم الهاتف"
+                  dir="ltr"
+                  style={{ textAlign: "right" }}
+                />
+              </div>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  اسم الأم
+                </div>
+                <input
+                  className="input"
+                  value={formData.mother_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, mother_name: e.target.value })
+                  }
+                  placeholder="اختياري"
+                />
+              </div>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  هاتف الأب
+                </div>
+                <input
+                  className="input"
+                  value={formData.father_phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, father_phone: e.target.value })
+                  }
+                  placeholder="رقم الهاتف"
+                  dir="ltr"
+                  style={{ textAlign: "right" }}
+                />
+              </div>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  اسم الأب
+                </div>
+                <input
+                  className="input"
+                  value={formData.father_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, father_name: e.target.value })
+                  }
+                  placeholder="اختياري"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* قسم الملاحظات */}
+          <div style={{ gridColumn: "span 12" }}>
+            <div className="muted" style={{ marginBottom: 6 }}>
+              ملاحظات إضافية
+            </div>
             <textarea
               className="input"
               rows={3}
-              placeholder="ملاحظات (اختياري)..."
-              value={form.notes}
+              value={formData.notes}
               onChange={(e) =>
-                setForm((p) => ({ ...p, notes: e.target.value }))
+                setFormData({ ...formData, notes: e.target.value })
               }
+              placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+              style={{ resize: "vertical" }}
             />
           </div>
 
-          <div className="row" style={{ gridColumn: "span 12" }}>
-            <button className="btn primary" disabled={saving}>
-              {saving ? "جاري الحفظ..." : "حفظ"}
-            </button>
+          {/* أزرار الإجراءات في النموذج */}
+          <div
+            style={{
+              gridColumn: "span 12",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 10,
+              marginTop: 10,
+            }}
+          >
             <button
-              type="button"
               className="btn"
-              onClick={() => {
-                setOpenForm(false);
-                setForm(emptyForm);
-                setNewClassName("");
-              }}
+              onClick={() => setIsModalOpen(false)}
+              disabled={saving}
             >
               إلغاء
             </button>
+            <button
+              className="btn btn-add"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              {saving ? "جاري الحفظ..." : "حفظ البيانات"}
+            </button>
           </div>
-        </form>
+        </div>
       </Modal>
 
+      {/* حوار تأكيد الحذف */}
       <ConfirmDialog
-        open={confirmDel.open}
-        title="حذف"
-        message={`حذف: ${confirmDel.name}`}
-        confirmText="حذف"
+        open={confirm.open}
+        title="تأكيد الحذف"
+        message={confirm.text}
+        confirmText="نعم، احذف"
         cancelText="إلغاء"
-        danger
-        onCancel={() => setConfirmDel({ open: false, id: null, name: "" })}
+        danger // تلوين الزر باللون الأحمر
+        onCancel={() => setConfirm({ open: false, id: null, text: "" })}
         onConfirm={async () => {
-          const id = confirmDel.id;
-          setConfirmDel({ open: false, id: null, name: "" });
-          await deleteChild(id);
+          await handleDelete(confirm.id);
+          setConfirm({ open: false, id: null, text: "" });
         }}
       />
     </div>
