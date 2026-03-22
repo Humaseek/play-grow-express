@@ -18,6 +18,7 @@ import {
   MousePointerClick,
   CalendarDays,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 
 // --- دوال تنسيق التاريخ والوقت لتنظيف العنوان ---
@@ -185,6 +186,26 @@ const ATTENDANCE_STYLES = `
 
 .attendancePage .table tr:last-child td {
   border-bottom: none !important;
+}
+
+/* تنسيق فواصل أقسام الرصيد */
+.section-title-td-ok {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  font-weight: 900 !important;
+  font-size: 15px;
+  padding: 14px 30px !important;
+  border-bottom: 2px solid #bbf7d0 !important;
+}
+
+.section-title-td-danger {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+  font-weight: 900 !important;
+  font-size: 15px;
+  padding: 14px 30px !important;
+  border-bottom: 2px solid #fecaca !important;
+  border-top: 4px solid #fff !important;
 }
 
 .attendancePage .btn.primary {
@@ -420,6 +441,76 @@ export default function Attendance() {
       setSaving(false);
     }
   }
+
+  // دالة مخصصة لعرض سطر الطالب بشكل نظيف عشان ما نكرر الكود
+  const renderChildRow = (r) => {
+    const v = att[r.enrollment_id] ?? "none";
+    const remaining = Number(r.package_sessions_remaining || 0);
+    const hasBalance = remaining > 0;
+
+    return (
+      <tr key={r.enrollment_id}>
+        <td
+          style={{
+            textAlign: "right",
+            paddingRight: "30px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span
+              style={{ fontWeight: 800, color: "#0f172a", fontSize: "16px" }}
+            >
+              {r.child_name}
+            </span>
+            <Badge variant={hasBalance ? "ok" : "danger"}>
+              {hasBalance ? `متبقي: ${remaining}` : "الرصيد منتهي"}
+            </Badge>
+          </div>
+        </td>
+        <td style={{ textAlign: "center" }}>
+          <div
+            className="row"
+            style={{
+              flexWrap: "nowrap",
+              gap: 14,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            {STATUS.map((s) => {
+              const meta = statusMeta(s);
+              const ActiveIcon = meta.Icon;
+              const active = v === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  title={meta.label}
+                  onClick={() =>
+                    setAtt((p) => ({
+                      ...p,
+                      [r.enrollment_id]: s,
+                    }))
+                  }
+                  className={`att-action-btn ${meta.className} ${active ? "active" : ""}`}
+                >
+                  <ActiveIcon size={20} strokeWidth={active ? 2.5 : 2} />
+                </button>
+              );
+            })}
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
+  // تقسيم الطلاب بناءً على الرصيد المتبقي
+  const hasBalanceRows = rows.filter(
+    (r) => Number(r.package_sessions_remaining || 0) > 0,
+  );
+  const noBalanceRows = rows.filter(
+    (r) => Number(r.package_sessions_remaining || 0) <= 0,
+  );
 
   if (loading)
     return (
@@ -681,60 +772,51 @@ export default function Attendance() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => {
-                    const v = att[r.enrollment_id] ?? "none";
-                    return (
-                      <tr key={r.enrollment_id}>
-                        <td
-                          style={{
-                            fontWeight: 800,
-                            textAlign: "right",
-                            paddingRight: "30px",
-                            color: "#0f172a",
-                            fontSize: "16px",
-                          }}
-                        >
-                          {r.child_name}
-                        </td>
-                        <td style={{ textAlign: "center" }}>
+                  {/* قسم الطلاب اللي معهم رصيد */}
+                  {hasBalanceRows.length > 0 && (
+                    <>
+                      <tr>
+                        <td colSpan="2" className="section-title-td-ok">
                           <div
-                            className="row"
                             style={{
-                              flexWrap: "nowrap",
-                              gap: 14, // مسافة مريحة بين الأيقونات
-                              justifyContent: "center",
+                              display: "flex",
                               alignItems: "center",
+                              gap: 8,
                             }}
                           >
-                            {STATUS.map((s) => {
-                              const meta = statusMeta(s);
-                              const ActiveIcon = meta.Icon;
-                              const active = v === s;
-                              return (
-                                <button
-                                  key={s}
-                                  type="button"
-                                  title={meta.label}
-                                  onClick={() =>
-                                    setAtt((p) => ({
-                                      ...p,
-                                      [r.enrollment_id]: s,
-                                    }))
-                                  }
-                                  className={`att-action-btn ${meta.className} ${active ? "active" : ""}`}
-                                >
-                                  <ActiveIcon
-                                    size={20}
-                                    strokeWidth={active ? 2.5 : 2}
-                                  />
-                                </button>
-                              );
-                            })}
+                            <CheckCircle2 size={18} />
+                            <span>
+                              طلاب لديهم رصيد جلسات ({hasBalanceRows.length})
+                            </span>
                           </div>
                         </td>
                       </tr>
-                    );
-                  })}
+                      {hasBalanceRows.map(renderChildRow)}
+                    </>
+                  )}
+
+                  {/* قسم الطلاب اللي خلص رصيدهم */}
+                  {noBalanceRows.length > 0 && (
+                    <>
+                      <tr>
+                        <td colSpan="2" className="section-title-td-danger">
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 8,
+                            }}
+                          >
+                            <AlertCircle size={18} />
+                            <span>
+                              طلاب انتهى رصيدهم ({noBalanceRows.length})
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                      {noBalanceRows.map(renderChildRow)}
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>
