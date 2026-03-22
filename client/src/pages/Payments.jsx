@@ -321,9 +321,9 @@ const PAYMENTS_STYLES = `
 
 .epi-balance {
   font-weight: 900;
-  font-size: 15px;
+  font-size: 14px;
   color: #16a34a;
-  direction: ltr;
+  direction: rtl;
 }
 
 .epi-balance.debt {
@@ -817,7 +817,9 @@ export default function Payments() {
                         </div>
                       </div>
                       <div className={`epi-balance ${isDebt ? "debt" : ""}`}>
-                        {isDebt ? `متبقي: ${r.balance}` : "خالص"}
+                        {isDebt
+                          ? `متبقي عليه: ${r.balance} ₪`
+                          : "مدفوع بالكامل"}
                       </div>
                     </div>
                   );
