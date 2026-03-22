@@ -167,7 +167,8 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
 // --- CSS Styles ---
 const EXPENSES_STYLES = `
 .page--expenses {
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
+  /* خلفية بلون أحمر خفيف جداً ينسجم مع طابع المصاريف */
+  background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, #f4f6f8 300px);
   min-height: 100vh;
   padding-bottom: 40px;
 }
@@ -251,8 +252,9 @@ const EXPENSES_STYLES = `
 
 .search-input:focus {
   outline: none;
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  /* إطار أحمر عند التحديد */
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .search-icon {
@@ -306,13 +308,14 @@ const EXPENSES_STYLES = `
 }
 
 .btn-add {
-  background: #f59e0b !important;
+  /* زر رئيسي باللون الأحمر */
+  background: #ef4444 !important;
   color: #fff !important;
   border: none !important;
   border-radius: 14px !important;
   padding: 10px 20px !important;
   font-weight: 800 !important;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2) !important;
   transition: all 0.2s !important;
   display: inline-flex;
   align-items: center;
@@ -321,8 +324,9 @@ const EXPENSES_STYLES = `
 
 .btn-add:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3) !important;
-  background: #d97706 !important;
+  /* لون أحمر أغمق عند الوقوف بالماوس */
+  background: #dc2626 !important;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3) !important;
 }
 
 .actions-cell {
