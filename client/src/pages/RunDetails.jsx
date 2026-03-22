@@ -651,6 +651,7 @@ export default function RunDetails() {
   const navigate = useNavigate();
   const { toast } = useOutletContext();
 
+  // --- States ---
   const [tab, setTab] = useState("participants");
 
   const [summary, setSummary] = useState(null);
@@ -681,26 +682,6 @@ export default function RunDetails() {
   const [newCatName, setNewCatName] = useState("");
   const [newPartyName, setNewPartyName] = useState("");
 
-  const isWorkshop = (() => {
-    const raw =
-      summary?.course_type ??
-      summary?.type ??
-      summary?.kind ??
-      summary?.course?.course_type ??
-      summary?.course?.type ??
-      summary?.course?.kind ??
-      "";
-    const v = String(raw).trim().toLowerCase();
-    return (
-      v === "workshop" ||
-      v === "ws" ||
-      v === "one_time" ||
-      v === "one-time" ||
-      v.includes("workshop") ||
-      v.includes("ورشة")
-    );
-  })();
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -721,13 +702,12 @@ export default function RunDetails() {
   const [enrollSaving, setEnrollSaving] = useState(false);
 
   const [openNewChild, setOpenNewChild] = useState(false);
-  // تحديث حالة الفورم عشان تدعم القيم النصية للبلد والصف
   const [newChildForm, setNewChildForm] = useState({
     name: "",
     age: "",
     class: "",
     gender: "male",
-    country_name: "", // بدل country_id
+    country_name: "",
     mother_name: "",
     mother_phone: "",
     father_name: "",
@@ -737,108 +717,9 @@ export default function RunDetails() {
   const [newChildSaving, setNewChildSaving] = useState(false);
 
   const [countries, setCountries] = useState([]);
-  const [classes, setClasses] = useState([]); // لخيارات الصف
+  const [classes, setClasses] = useState([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
-
-  // --- الدوال المسترجعة بالكامل لحل مشكلة الأزرار ---
-  const openCreateEnroll = () => {
-    // تصفير الفورم لما نفتحها
-    setNewChildForm({
-      name: "",
-      age: "",
-      class: "",
-      gender: "male",
-      country_name: "",
-      mother_name: "",
-      mother_phone: "",
-      father_name: "",
-      father_phone: "",
-      notes: "",
-    });
-    setNewChildEnrollNow(true);
-    setOpenNewChild(true);
-  };
-
-  function openBulkModal() {
-    setOpenBulk(true);
-    setBulkQ("");
-    setBulkSelected({});
-    setBulkPerChildSessions({});
-    setBulkPerChildPrice({});
-  }
-
-  function toggleBulkChild(childId) {
-    setBulkSelected((prev) => {
-      const next = { ...prev };
-      next[String(childId)] = !next[String(childId)];
-      return next;
-    });
-  }
-
-  function bulkSelectAllFiltered() {
-    setBulkSelected((prev) => {
-      const next = { ...prev };
-      for (const c of bulkCandidates) next[String(c.id)] = true;
-      return next;
-    });
-  }
-
-  function bulkClearSelection() {
-    setBulkSelected({});
-    setBulkPerChildPrice({});
-    setBulkPerChildSessions({});
-  }
-
-  // هذه دالة فتح إضافة دفعة لأي طفل من الجدول العام
-  function openNewPaymentModal() {
-    setPayEditId(null);
-    setPayLocked(false);
-    setPayEnrollmentId("");
-    setPayAmount("");
-    setPayMethod("cash");
-    setPayDate(isoDate(new Date()));
-    setPayNote("");
-    setOpenPay(true);
-  }
-
-  // هذه دالة فتح دفعة مخصصة (سواء متبقي أو دفعة جديدة) داخل كرت الطالب
-  function openPaymentModalFor(pRow, mode = "custom") {
-    setPayEnrollmentId(String(pRow.enrollment_id));
-    setPayLocked(true);
-    setPayEditId(null);
-    setPayAmount(
-      mode === "remaining" && Number(pRow.balance) > 0
-        ? String(Number(pRow.balance).toFixed(2))
-        : "",
-    );
-    setPayMethod("cash");
-    setPayDate(isoDate(new Date()));
-    setPayNote("");
-    setOpenPay(true);
-  }
-  // -------------------------------
-
-  async function loadFormPicklists() {
-    setCountriesLoading(true);
-    try {
-      const [cRes, clRes] = await Promise.all([
-        supabase.from("countries").select("id,name").order("name"),
-        // في حال كان جدول child_classes غير موجود، سيتم تجاهل الخطأ للأسفل
-        supabase.from("child_classes").select("id,name").order("name"),
-      ]);
-      if (cRes.data) setCountries(cRes.data);
-      if (clRes.data) setClasses(clRes.data);
-    } catch (e) {
-      console.error("Failed to load picklists:", e);
-    } finally {
-      setCountriesLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    if (openNewChild) loadFormPicklists();
-  }, [openNewChild]);
 
   const [pkgInfo, setPkgInfo] = useState(null);
   const [pkgLoading, setPkgLoading] = useState(false);
@@ -851,7 +732,6 @@ export default function RunDetails() {
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
-  // السجلات الجديدة
   const [openHistory, setOpenHistory] = useState(false);
   const [historyEnrollment, setHistoryEnrollment] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
@@ -870,7 +750,7 @@ export default function RunDetails() {
     id: null,
     sessions_total: "",
     price_total: "",
-    created_at: "", // لحفظ وتعديل تاريخ الباقة
+    created_at: "",
   });
   const [editPkgSaving, setEditPkgSaving] = useState(false);
 
@@ -878,13 +758,12 @@ export default function RunDetails() {
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
-  const [payDate, setPayDate] = useState(isoDate(new Date())); // التاريخ كمدخل منفصل
+  const [payDate, setPayDate] = useState(isoDate(new Date()));
   const [payNote, setPayNote] = useState("");
   const [paySaving, setPaySaving] = useState(false);
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
-  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -906,17 +785,38 @@ export default function RunDetails() {
   const [openإدارة, setOpenإدارة] = useState(false);
   const [manageP, setإدارةP] = useState(null);
 
-  const manageHasPayments = useMemo(
-    () => Number(manageP?.paid_amount || 0) > 0,
-    [manageP],
-  );
-
   const [confirm, setConfirm] = useState({
     open: false,
     type: null,
     id: null,
     text: "",
   });
+
+  // --- Memos & Derived State ---
+  const isWorkshop = (() => {
+    const raw =
+      summary?.course_type ??
+      summary?.type ??
+      summary?.kind ??
+      summary?.course?.course_type ??
+      summary?.course?.type ??
+      summary?.course?.kind ??
+      "";
+    const v = String(raw).trim().toLowerCase();
+    return (
+      v === "workshop" ||
+      v === "ws" ||
+      v === "one_time" ||
+      v === "one-time" ||
+      v.includes("workshop") ||
+      v.includes("ورشة")
+    );
+  })();
+
+  const manageHasPayments = useMemo(
+    () => Number(manageP?.paid_amount || 0) > 0,
+    [manageP],
+  );
 
   const defaultPrice = useMemo(
     () => Number(summary?.default_price ?? 0),
@@ -929,327 +829,6 @@ export default function RunDetails() {
     return Number.isFinite(n) && n > 0 ? Math.floor(n) : 8;
   }, [summary]);
 
-  async function loadChildrenSafe() {
-    const tryView = await supabase
-      .from("children_view")
-      .select(
-        "id,name,age,class,gender,country_id,country_name,mother_name,mother_phone,father_name,father_phone",
-      )
-      .order("name", { ascending: true });
-
-    if (!tryView.error) return tryView.data ?? [];
-    const tryTable = await supabase
-      .from("children")
-      .select(
-        "id,name,age,class,gender,country_id,mother_name,mother_phone,father_name,father_phone",
-      )
-      .order("name", { ascending: true });
-
-    if (tryTable.error) throw tryTable.error;
-    return tryTable.data ?? [];
-  }
-
-  const closeSubModalAndReopen = (setterFunc) => {
-    setterFunc(false);
-    if (shouldReopenManage && manageP) {
-      setTimeout(() => {
-        setOpenإدارة(true);
-      }, 150);
-      setShouldReopenManage(false);
-    }
-  };
-
-  async function createChildInline({ enrollNow = false } = {}) {
-    const name = (newChildForm.name || "").trim();
-    const ageNum = Number(String(newChildForm.age ?? "").trim());
-    if (!name || isNaN(ageNum)) {
-      toast("الاسم والعمر مطلوبان.", "warn");
-      return;
-    }
-
-    setNewChildSaving(true);
-    try {
-      let countryId = null;
-      const typedCountry = (newChildForm.country_name || "").trim();
-      if (typedCountry) {
-        const existingC = countries.find((c) => c.name === typedCountry);
-        if (existingC) {
-          countryId = existingC.id;
-        } else {
-          // إضافة البلد الجديد
-          const created = await supabase
-            .from("countries")
-            .insert([{ name: typedCountry }])
-            .select("id")
-            .single();
-          if (created.data) countryId = created.data.id;
-        }
-      }
-
-      const typedClass = (newChildForm.class || "").trim();
-      if (typedClass) {
-        const existingCl = classes.find((c) => c.name === typedClass);
-        if (!existingCl) {
-          // إضافة الصف الجديد بصمت لجدول الفئات (إن وجد)
-          await supabase.from("child_classes").insert([{ name: typedClass }]);
-        }
-      }
-
-      const payload = {
-        name,
-        age: ageNum,
-        class: typedClass || null,
-        gender: newChildForm.gender || "male",
-        mother_name: (newChildForm.mother_name || "").trim() || null,
-        mother_phone: (newChildForm.mother_phone || "").trim() || null,
-        father_name: (newChildForm.father_name || "").trim() || null,
-        father_phone: (newChildForm.father_phone || "").trim() || null,
-        notes: (newChildForm.notes || "").trim() || null,
-        country_id: countryId,
-      };
-
-      const ins = await supabase
-        .from("children")
-        .insert([payload])
-        .select("id")
-        .single();
-      if (ins.error) throw ins.error;
-
-      const newId = ins.data?.id;
-      const ch = await loadChildrenSafe();
-      setChildren(ch);
-      setSelectedChildId(String(newId || ""));
-      setOpenNewChild(false);
-
-      if (enrollNow && newId) {
-        initEnrollBuyNew({ childId: newId });
-        toast("تم إضافة الطفل. حدد الباقة واضغط حفظ للتسجيل.", "ok");
-      } else {
-        toast("تم إضافة الطفل بنجاح.", "ok");
-      }
-    } catch (e) {
-      toast("فشلت عملية إضافة الطفل.", "danger");
-    } finally {
-      setNewChildSaving(false);
-    }
-  }
-
-  async function purchaseAndEnrollSpecificChild(childId) {
-    if (!summary) return;
-    const sessionsToBuy = Number(buySessions);
-    const priceNum = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
-    const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
-      p_run_id: Number(runId),
-      p_child_id: Number(childId),
-      p_sessions: sessionsToBuy,
-      p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
-    });
-    if (rpc2.error) throw rpc2.error;
-    toast("تم التسجيل بنجاح.", "ok");
-    closeSubModalAndReopen(setOpenEnroll);
-    await loadFixed();
-    if (!enrollLocked && !shouldReopenManage) setTab("participants");
-  }
-
-  function resetExpenseForm() {
-    setExpenseEditId(null);
-    setExpDate(isoDate(new Date()));
-    setExpAmount("");
-    setExpCategory("");
-    setExpParty("");
-    setExpDesc("");
-  }
-
-  function openAddExpense() {
-    resetExpenseForm();
-    setOpenExpenseModal(true);
-  }
-  function openEditExpense(row) {
-    setExpenseEditId(row.id);
-    setExpDate(row.spent_on ? String(row.spent_on) : isoDate(new Date()));
-    setExpAmount(String(row.amount ?? ""));
-    setExpCategory(String(row.category ?? ""));
-    setExpParty(String(row.party ?? ""));
-    setExpDesc(String(row.description ?? ""));
-    setOpenExpenseModal(true);
-  }
-
-  async function loadExpensePicklistsSafe() {
-    try {
-      const cRes = await supabase
-        .from("expense_categories")
-        .select("name")
-        .order("name", { ascending: true });
-      const pRes = await supabase
-        .from("expense_parties")
-        .select("name")
-        .order("name", { ascending: true });
-      if (cRes.data) setExpCatOptions(cRes.data.map((r) => r.name));
-      if (pRes.data) setExpPartyOptions(pRes.data.map((r) => r.name));
-      setExpHasPicklists(true);
-    } catch {
-      setExpHasPicklists(false);
-    }
-  }
-
-  async function loadRunExpensesSafe() {
-    try {
-      const res = await supabase
-        .from("expenses")
-        .select("id,spent_on,amount,category,party,description,created_at")
-        .eq("run_id", Number(runId))
-        .order("spent_on", { ascending: false });
-      if (res.error) throw res.error;
-      setExpenses(res.data ?? []);
-      setExpFeatureAvailable(true);
-    } catch {
-      setExpenses([]);
-      setExpFeatureAvailable(false);
-    }
-  }
-
-  async function addPicklistValue(kind, name) {
-    const clean = String(name || "").trim();
-    if (!clean) return;
-    const table =
-      kind === "category" ? "expense_categories" : "expense_parties";
-    const setter = kind === "category" ? setExpCategory : setExpParty;
-    const inputSetter = kind === "category" ? setNewCatName : setNewPartyName;
-    try {
-      await supabase.from(table).insert({ name: clean });
-      setter(clean);
-      inputSetter("");
-      await loadExpensePicklistsSafe();
-      toast("Saved.", "ok");
-    } catch {
-      toast("Failed to save.", "danger");
-    }
-  }
-
-  async function saveExpense() {
-    const amt = Number(expAmount);
-    if (!expDate || isNaN(amt) || amt <= 0) {
-      toast("Please enter a valid date and amount.", "danger");
-      return;
-    }
-    setExpSaving(true);
-    const payload = {
-      spent_on: expDate,
-      amount: amt,
-      category: expCategory?.trim() || null,
-      party: expParty?.trim() || null,
-      description: expDesc?.trim() || null,
-      run_id: Number(runId),
-    };
-    try {
-      if (expenseEditId)
-        await supabase.from("expenses").update(payload).eq("id", expenseEditId);
-      else await supabase.from("expenses").insert(payload);
-      setOpenExpenseModal(false);
-      resetExpenseForm();
-      await loadRunExpensesSafe();
-    } catch {
-      toast("Failed to save.", "danger");
-    } finally {
-      setExpSaving(false);
-    }
-  }
-
-  async function deleteExpense(id) {
-    try {
-      await supabase.from("expenses").delete().eq("id", id);
-      toast("Deleted.", "ok");
-      await loadRunExpensesSafe();
-    } catch {
-      toast("Failed to delete.", "danger");
-    }
-  }
-
-  async function loadFixed() {
-    setLoading(true);
-    setError(null);
-    try {
-      const s = await supabase
-        .from("course_runs_summary_view")
-        .select("*")
-        .eq("run_id", runId)
-        .maybeSingle();
-      if (s.error) throw s.error;
-      if (!s.data) {
-        setSummary(null);
-        setLoading(false);
-        return;
-      }
-      setSummary(s.data);
-
-      const p = await supabase
-        .from("run_participants_view")
-        .select("*")
-        .eq("run_id", runId)
-        .order("child_name", { ascending: true });
-      if (p.error) throw p.error;
-      setParticipants(p.data ?? []);
-
-      const ses = await supabase
-        .from("course_sessions")
-        .select("*")
-        .eq("run_id", runId)
-        .order("start_at", { ascending: true });
-      if (ses.error) throw ses.error;
-      setSessions(ses.data ?? []);
-
-      const ch = await loadChildrenSafe();
-      setChildren(ch);
-
-      const pkgIds = p.data?.map((x) => x.package_id).filter(Boolean) || [];
-      const uniqPkgIds = Array.from(new Set(pkgIds));
-      if (uniqPkgIds.length > 0) {
-        const payRes = await supabase
-          .from("payments")
-          .select("id,package_id,enrollment_id,amount,method,note,created_at")
-          .in("package_id", uniqPkgIds)
-          .order("created_at", { ascending: false });
-        if (payRes.data) {
-          const pkgMap = new Map();
-          for (const r of p.data)
-            if (r.package_id)
-              pkgMap.set(r.package_id, {
-                child_id: r.child_id,
-                child_name: r.child_name,
-              });
-          setPayments(
-            payRes.data.map((x) => ({
-              ...x,
-              child_id: pkgMap.get(x.package_id)?.child_id,
-              child_name: pkgMap.get(x.package_id)?.child_name ?? "—",
-            })),
-          );
-        }
-      } else setPayments([]);
-
-      await loadRunExpensesSafe();
-      setLoading(false);
-    } catch (e) {
-      setError(e);
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadFixed();
-  }, [runId]);
-  useEffect(() => {
-    loadExpensePicklistsSafe();
-  }, []);
-
-  useEffect(() => {
-    if (!openإدارة || !manageP) return;
-    const updated = participants.find(
-      (x) => Number(x.enrollment_id) === Number(manageP.enrollment_id),
-    );
-    if (updated) setإدارةP(updated);
-  }, [participants]);
-
   const expCategories = useMemo(
     () =>
       expHasPicklists && expCatOptions.length
@@ -1257,6 +836,7 @@ export default function RunDetails() {
         : uniqSorted(expenses.map((r) => r.category)),
     [expHasPicklists, expCatOptions, expenses],
   );
+
   const expParties = useMemo(
     () =>
       expHasPicklists && expPartyOptions.length
@@ -1264,6 +844,7 @@ export default function RunDetails() {
         : uniqSorted(expenses.map((r) => r.party)),
     [expHasPicklists, expPartyOptions, expenses],
   );
+
   const expensesFiltered = useMemo(() => {
     let list = [...expenses];
     const s = expQ.trim().toLowerCase();
@@ -1286,7 +867,6 @@ export default function RunDetails() {
     [expenses],
   );
 
-  // تقسيم الجلسات إلى قادمة وسابقة
   const { upcomingSessions, pastSessions } = useMemo(() => {
     const now = new Date();
     const upcoming = [];
@@ -1300,9 +880,7 @@ export default function RunDetails() {
       }
     });
 
-    // ترتيب القادمة من الأقرب للأبعد
     upcoming.sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
-    // ترتيب السابقة من الأحدث للأقدم
     past.sort((a, b) => new Date(b.start_at) - new Date(a.start_at));
 
     return { upcomingSessions: upcoming, pastSessions: past };
@@ -1318,6 +896,7 @@ export default function RunDetails() {
         : { weekday: "—", timeRange: "—" },
     [sessions],
   );
+
   const runHeaderTitle = useMemo(() => {
     const m = String(summary?.title || "").trim();
     const s = String(summary?.label || "").trim();
@@ -1396,10 +975,186 @@ export default function RunDetails() {
     [manageP, children],
   );
 
-  function openإدارةFor(p) {
-    setإدارةP(p);
-    setOpenإدارة(true);
+  const bulkCandidates = useMemo(() => {
+    const s = bulkQ.trim().toLowerCase();
+    return s
+      ? availableChildren.filter((c) =>
+          (c.name ?? "").toLowerCase().includes(s),
+        )
+      : availableChildren;
+  }, [availableChildren, bulkQ]);
+
+  const bulkSelectedIds = useMemo(
+    () =>
+      Object.keys(bulkSelected)
+        .filter((id) => bulkSelected[id])
+        .map(Number),
+    [bulkSelected],
+  );
+
+  const bulkSelectedCount = bulkSelectedIds.length;
+
+  // --- API & Helper Functions ---
+  async function loadFixed() {
+    setLoading(true);
+    setError(null);
+    try {
+      const s = await supabase
+        .from("course_runs_summary_view")
+        .select("*")
+        .eq("run_id", runId)
+        .maybeSingle();
+      if (s.error) throw s.error;
+      if (!s.data) {
+        setSummary(null);
+        setLoading(false);
+        return;
+      }
+      setSummary(s.data);
+
+      const p = await supabase
+        .from("run_participants_view")
+        .select("*")
+        .eq("run_id", runId)
+        .order("child_name", { ascending: true });
+      if (p.error) throw p.error;
+      setParticipants(p.data ?? []);
+
+      const ses = await supabase
+        .from("course_sessions")
+        .select("*")
+        .eq("run_id", runId)
+        .order("start_at", { ascending: true });
+      if (ses.error) throw ses.error;
+      setSessions(ses.data ?? []);
+
+      const ch = await loadChildrenSafe();
+      setChildren(ch);
+
+      const pkgIds = p.data?.map((x) => x.package_id).filter(Boolean) || [];
+      const uniqPkgIds = Array.from(new Set(pkgIds));
+      if (uniqPkgIds.length > 0) {
+        const payRes = await supabase
+          .from("payments")
+          .select("id,package_id,enrollment_id,amount,method,note,created_at")
+          .in("package_id", uniqPkgIds)
+          .order("created_at", { ascending: false });
+        if (payRes.data) {
+          const pkgMap = new Map();
+          for (const r of p.data)
+            if (r.package_id)
+              pkgMap.set(r.package_id, {
+                child_id: r.child_id,
+                child_name: r.child_name,
+              });
+          setPayments(
+            payRes.data.map((x) => ({
+              ...x,
+              child_id: pkgMap.get(x.package_id)?.child_id,
+              child_name: pkgMap.get(x.package_id)?.child_name ?? "—",
+            })),
+          );
+        }
+      } else setPayments([]);
+
+      await loadRunExpensesSafe();
+      setLoading(false);
+    } catch (e) {
+      setError(e);
+      setLoading(false);
+    }
   }
+
+  async function loadChildrenSafe() {
+    const tryView = await supabase
+      .from("children_view")
+      .select(
+        "id,name,age,class,gender,country_id,country_name,mother_name,mother_phone,father_name,father_phone",
+      )
+      .order("name", { ascending: true });
+
+    if (!tryView.error) return tryView.data ?? [];
+    const tryTable = await supabase
+      .from("children")
+      .select(
+        "id,name,age,class,gender,country_id,mother_name,mother_phone,father_name,father_phone",
+      )
+      .order("name", { ascending: true });
+
+    if (tryTable.error) throw tryTable.error;
+    return tryTable.data ?? [];
+  }
+
+  async function loadFormPicklists() {
+    setCountriesLoading(true);
+    try {
+      const [cRes, clRes] = await Promise.all([
+        supabase.from("countries").select("id,name").order("name"),
+        supabase.from("child_classes").select("id,name").order("name"),
+      ]);
+      if (cRes.data) setCountries(cRes.data);
+      if (clRes.data) setClasses(clRes.data);
+    } catch (e) {
+      console.error("Failed to load picklists:", e);
+    } finally {
+      setCountriesLoading(false);
+    }
+  }
+
+  async function loadExpensePicklistsSafe() {
+    try {
+      const cRes = await supabase
+        .from("expense_categories")
+        .select("name")
+        .order("name", { ascending: true });
+      const pRes = await supabase
+        .from("expense_parties")
+        .select("name")
+        .order("name", { ascending: true });
+      if (cRes.data) setExpCatOptions(cRes.data.map((r) => r.name));
+      if (pRes.data) setExpPartyOptions(pRes.data.map((r) => r.name));
+      setExpHasPicklists(true);
+    } catch {
+      setExpHasPicklists(false);
+    }
+  }
+
+  async function loadRunExpensesSafe() {
+    try {
+      const res = await supabase
+        .from("expenses")
+        .select("id,spent_on,amount,category,party,description,created_at")
+        .eq("run_id", Number(runId))
+        .order("spent_on", { ascending: false });
+      if (res.error) throw res.error;
+      setExpenses(res.data ?? []);
+      setExpFeatureAvailable(true);
+    } catch {
+      setExpenses([]);
+      setExpFeatureAvailable(false);
+    }
+  }
+
+  // --- Effects ---
+  useEffect(() => {
+    loadFixed();
+  }, [runId]);
+
+  useEffect(() => {
+    loadExpensePicklistsSafe();
+  }, []);
+
+  useEffect(() => {
+    if (!openإدارة || !manageP) return;
+    const updated = participants.find(
+      (x) => Number(x.enrollment_id) === Number(manageP.enrollment_id),
+    );
+    if (updated) setإدارةP(updated);
+  }, [participants]);
+
+  useEffect(() => {
+    if (openNewChild) loadFormPicklists();
+  }, [openNewChild]);
 
   useEffect(() => {
     async function fetchPkg() {
@@ -1431,6 +1186,106 @@ export default function RunDetails() {
     fetchPkg();
   }, [openEnroll, selectedChildId, summary]);
 
+  // --- Action Functions ---
+  const closeSubModalAndReopen = (setterFunc) => {
+    setterFunc(false);
+    if (shouldReopenManage && manageP) {
+      setTimeout(() => {
+        setOpenإدارة(true);
+      }, 150);
+      setShouldReopenManage(false);
+    }
+  };
+
+  function openإدارةFor(p) {
+    setإدارةP(p);
+    setOpenإدارة(true);
+  }
+
+  const openCreateEnroll = () => {
+    setNewChildForm({
+      name: "",
+      age: "",
+      class: "",
+      gender: "male",
+      country_name: "",
+      mother_name: "",
+      mother_phone: "",
+      father_name: "",
+      father_phone: "",
+      notes: "",
+    });
+    setNewChildEnrollNow(true);
+    setOpenNewChild(true);
+  };
+
+  function openBulkModal() {
+    setOpenBulk(true);
+    setBulkQ("");
+    setBulkSelected({});
+    setBulkPerChildSessions({});
+    setBulkPerChildPrice({});
+  }
+
+  function toggleBulkChild(childId) {
+    setBulkSelected((prev) => {
+      const next = { ...prev };
+      next[String(childId)] = !next[String(childId)];
+      return next;
+    });
+  }
+
+  function bulkSelectAllFiltered() {
+    setBulkSelected((prev) => {
+      const next = { ...prev };
+      for (const c of bulkCandidates) next[String(c.id)] = true;
+      return next;
+    });
+  }
+
+  function bulkClearSelection() {
+    setBulkSelected({});
+    setBulkPerChildPrice({});
+    setBulkPerChildSessions({});
+  }
+
+  function openNewPaymentModal() {
+    setPayEditId(null);
+    setPayLocked(false);
+    setPayEnrollmentId("");
+    setPayAmount("");
+    setPayMethod("cash");
+    setPayDate(isoDate(new Date()));
+    setPayNote("");
+    setOpenPay(true);
+  }
+
+  function openPaymentModalFor(pRow, mode = "custom") {
+    setPayEnrollmentId(String(pRow.enrollment_id));
+    setPayLocked(true);
+    setPayEditId(null);
+    setPayAmount(
+      mode === "remaining" && Number(pRow.balance) > 0
+        ? String(Number(pRow.balance).toFixed(2))
+        : "",
+    );
+    setPayMethod("cash");
+    setPayDate(isoDate(new Date()));
+    setPayNote("");
+    setOpenPay(true);
+  }
+
+  function openEditPayment(r) {
+    setPayEditId(r.id);
+    setPayEnrollmentId(String(r.enrollment_id ?? ""));
+    setPayLocked(true);
+    setPayAmount(r.amount ? String(Number(r.amount).toFixed(2)) : "");
+    setPayMethod(r.method || "cash");
+    setPayDate(isoDate(r.created_at));
+    setPayNote(r.note || "");
+    setOpenPay(true);
+  }
+
   function initEnrollBuyNew({
     childId = "",
     locked = false,
@@ -1455,7 +1310,6 @@ export default function RunDetails() {
       toast("لا يمكن إضافة جلسات جديدة حتى يتم إنهاء الجلسات الحالية.", "warn");
       return;
     }
-
     setEnrollLocked(true);
     setEnrollLockedName(participantRow.child_name);
     setSelectedChildId(String(participantRow.child_id));
@@ -1473,24 +1327,94 @@ export default function RunDetails() {
     setOpenEnroll(true);
   }
 
-  const bulkCandidates = useMemo(() => {
-    const s = bulkQ.trim().toLowerCase();
-    return s
-      ? availableChildren.filter((c) =>
-          (c.name ?? "").toLowerCase().includes(s),
-        )
-      : availableChildren;
-  }, [availableChildren, bulkQ]);
+  async function createChildInline({ enrollNow = false } = {}) {
+    const name = (newChildForm.name || "").trim();
+    const ageNum = Number(String(newChildForm.age ?? "").trim());
+    if (!name || isNaN(ageNum)) {
+      toast("الاسم والعمر مطلوبان.", "warn");
+      return;
+    }
+    setNewChildSaving(true);
+    try {
+      let countryId = null;
+      const typedCountry = (newChildForm.country_name || "").trim();
+      if (typedCountry) {
+        const existingC = countries.find((c) => c.name === typedCountry);
+        if (existingC) {
+          countryId = existingC.id;
+        } else {
+          const created = await supabase
+            .from("countries")
+            .insert([{ name: typedCountry }])
+            .select("id")
+            .single();
+          if (created.data) countryId = created.data.id;
+        }
+      }
 
-  const bulkSelectedIds = useMemo(
-    () =>
-      Object.keys(bulkSelected)
-        .filter((id) => bulkSelected[id])
-        .map(Number),
-    [bulkSelected],
-  );
+      const typedClass = (newChildForm.class || "").trim();
+      if (typedClass) {
+        const existingCl = classes.find((c) => c.name === typedClass);
+        if (!existingCl) {
+          await supabase.from("child_classes").insert([{ name: typedClass }]);
+        }
+      }
 
-  const bulkSelectedCount = bulkSelectedIds.length;
+      const payload = {
+        name,
+        age: ageNum,
+        class: typedClass || null,
+        gender: newChildForm.gender || "male",
+        mother_name: (newChildForm.mother_name || "").trim() || null,
+        mother_phone: (newChildForm.mother_phone || "").trim() || null,
+        father_name: (newChildForm.father_name || "").trim() || null,
+        father_phone: (newChildForm.father_phone || "").trim() || null,
+        notes: (newChildForm.notes || "").trim() || null,
+        country_id: countryId,
+      };
+
+      const ins = await supabase
+        .from("children")
+        .insert([payload])
+        .select("id")
+        .single();
+      if (ins.error) throw ins.error;
+
+      const newId = ins.data?.id;
+      const ch = await loadChildrenSafe();
+      setChildren(ch);
+      setSelectedChildId(String(newId || ""));
+      setOpenNewChild(false);
+
+      if (enrollNow && newId) {
+        initEnrollBuyNew({ childId: newId });
+        toast("تم إضافة الطفل. حدد الباقة واضغط حفظ للتسجيل.", "ok");
+      } else {
+        toast("تم إضافة الطفل بنجاح.", "ok");
+      }
+    } catch (e) {
+      toast("فشلت عملية إضافة الطفل.", "danger");
+    } finally {
+      setNewChildSaving(false);
+    }
+  }
+
+  async function purchaseAndEnrollSpecificChild(childId) {
+    if (!summary) return;
+    const sessionsToBuy = Number(buySessions);
+    const priceNum = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
+    const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
+      p_run_id: Number(runId),
+      p_child_id: Number(childId),
+      p_sessions: sessionsToBuy,
+      p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
+    });
+    if (rpc2.error) throw rpc2.error;
+    toast("تم التسجيل بنجاح.", "ok");
+    closeSubModalAndReopen(setOpenEnroll);
+    await loadFixed();
+    if (!enrollLocked && !shouldReopenManage) setTab("participants");
+  }
 
   async function bumpEnrollmentAllocated(enrollmentId, delta) {
     const id = Number(enrollmentId);
@@ -1649,13 +1573,19 @@ export default function RunDetails() {
       for (const childId of bulkSelectedIds) {
         const cid = Number(childId);
 
-        let sessionsNum = Number(
-          bulkPerChildSessions[cid] ?? defaultSessionsTotal,
-        );
+        const sessRaw = bulkPerChildSessions[cid];
+        let sessionsNum =
+          sessRaw !== undefined && sessRaw !== ""
+            ? Number(sessRaw)
+            : Number(defaultSessionsTotal);
         if (isNaN(sessionsNum) || sessionsNum < 0)
           sessionsNum = Number(defaultSessionsTotal) || 0;
 
-        let priceNum = Number(bulkPerChildPrice[cid] ?? defaultPrice);
+        const priceRaw = bulkPerChildPrice[cid];
+        let priceNum =
+          priceRaw !== undefined && priceRaw !== ""
+            ? Number(priceRaw)
+            : Number(defaultPrice);
         if (isNaN(priceNum) || priceNum < 0)
           priceNum = Number(defaultPrice) || 0;
 
@@ -1831,45 +1761,6 @@ export default function RunDetails() {
     await supabase.from("course_sessions").delete().eq("id", sessionId);
     await loadFixed();
   }
-
-  // --- دوال الدفع المسترجعة والنظيفة لحل مشكلة عدم الاستجابة ---
-  function openNewPaymentModal() {
-    setPayEditId(null);
-    setPayLocked(false);
-    setPayEnrollmentId("");
-    setPayAmount("");
-    setPayMethod("cash");
-    setPayDate(isoDate(new Date()));
-    setPayNote("");
-    setOpenPay(true);
-  }
-
-  function openPaymentModalFor(pRow, mode = "custom") {
-    setPayEnrollmentId(String(pRow.enrollment_id));
-    setPayLocked(true);
-    setPayEditId(null);
-    setPayAmount(
-      mode === "remaining" && Number(pRow.balance) > 0
-        ? String(Number(pRow.balance).toFixed(2))
-        : "",
-    );
-    setPayMethod("cash");
-    setPayDate(isoDate(new Date()));
-    setPayNote("");
-    setOpenPay(true);
-  }
-
-  function openEditPayment(r) {
-    setPayEditId(r.id);
-    setPayEnrollmentId(String(r.enrollment_id ?? ""));
-    setPayLocked(true);
-    setPayAmount(r.amount ? String(Number(r.amount).toFixed(2)) : "");
-    setPayMethod(r.method || "cash");
-    setPayDate(isoDate(r.created_at));
-    setPayNote(r.note || "");
-    setOpenPay(true);
-  }
-  // -----------------------------------------------------------
 
   function paymentMethodLabel(v) {
     if (v === "cash") return "نقداً";
@@ -2047,6 +1938,31 @@ export default function RunDetails() {
     }
   }
 
+  function resetExpenseForm() {
+    setExpenseEditId(null);
+    setExpDate(isoDate(new Date()));
+    setExpAmount("");
+    setExpCategory("");
+    setExpParty("");
+    setExpDesc("");
+  }
+
+  function openAddExpense() {
+    resetExpenseForm();
+    setOpenExpenseModal(true);
+  }
+
+  function openEditExpense(row) {
+    setExpenseEditId(row.id);
+    setExpDate(row.spent_on ? String(row.spent_on) : isoDate(new Date()));
+    setExpAmount(String(row.amount ?? ""));
+    setExpCategory(String(row.category ?? ""));
+    setExpParty(String(row.party ?? ""));
+    setExpDesc(String(row.description ?? ""));
+    setOpenExpenseModal(true);
+  }
+
+  // --- EARLY RETURNS ---
   if (loading)
     return (
       <div className="page page--runs" dir="rtl">
@@ -2064,6 +1980,7 @@ export default function RunDetails() {
       </div>
     );
 
+  // --- MAIN RETURN ---
   return (
     <div
       className="page page--runs"
@@ -2400,7 +2317,6 @@ export default function RunDetails() {
                     justifyContent: "flex-end",
                   }}
                 >
-                  {/* --- ربط الدوال الصحيحة المباشرة --- */}
                   <button type="button" className="btn" onClick={openBulkModal}>
                     + إضافة مجموعة
                   </button>
@@ -4109,6 +4025,208 @@ export default function RunDetails() {
                   : newChildEnrollNow
                     ? "حفظ وتسجيل بالدورة"
                     : "حفظ الطالب"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
+          open={openBulk}
+          title="إضافة مجموعة"
+          onClose={() => setOpenBulk(false)}
+        >
+          <div dir="rtl" lang="ar" className="modal-wide-1000">
+            <div className="muted" style={{ lineHeight: 1.5 }}>
+              اختر الأطفال ثم اضغط <b>إضافة</b>.
+            </div>
+            <hr className="sep" />
+            <div
+              className="row"
+              style={{
+                gap: 10,
+                flexWrap: "wrap",
+                justifyContent: "flex-start",
+                alignItems: "center",
+              }}
+            >
+              <input
+                className="input"
+                style={{ width: 280 }}
+                placeholder="ابحث عن طفل..."
+                value={bulkQ}
+                onChange={(e) => setBulkQ(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn"
+                onClick={bulkSelectAllFiltered}
+              >
+                تحديد الكل
+              </button>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={bulkClearSelection}
+              >
+                إلغاء التحديد
+              </button>
+              <div className="muted" style={{ marginInlineStart: "auto" }}>
+                المحدد: <b>{bulkSelectedCount}</b>
+              </div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              {bulkCandidates.length === 0 ? (
+                <div className="card">لا يوجد أطفال.</div>
+              ) : (
+                <div
+                  className="card"
+                  style={{
+                    padding: 0,
+                    overflow: "auto",
+                    maxHeight: "55vh",
+                    direction: "rtl",
+                  }}
+                >
+                  <table className="table" style={{ margin: 0, minWidth: 720 }}>
+                    <thead
+                      style={{
+                        position: "sticky",
+                        top: 0,
+                        background: "white",
+                        zIndex: 2,
+                      }}
+                    >
+                      <tr>
+                        <th style={{ width: 70, textAlign: "right" }}>
+                          اختيار
+                        </th>
+                        <th style={{ textAlign: "right" }}>الاسم</th>
+                        <th style={{ textAlign: "right" }}>العمر</th>
+                        <th style={{ textAlign: "right" }}>الصف</th>
+                        <th style={{ textAlign: "right" }}>الجنس</th>
+                        <th style={{ textAlign: "right" }}>هاتف الأم</th>
+                        <th style={{ width: 100, textAlign: "center" }}>
+                          الحصص
+                        </th>
+                        <th style={{ width: 120, textAlign: "center" }}>
+                          السعر
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkCandidates.map((c) => {
+                        const checked = !!bulkSelected[String(c.id)];
+                        const genderLabel =
+                          c.gender === "male"
+                            ? "ذكر"
+                            : c.gender === "female"
+                              ? "أنثى"
+                              : (c.gender ?? "-");
+
+                        return (
+                          <tr key={c.id}>
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleBulkChild(c.id)}
+                              />
+                            </td>
+                            <td style={{ fontWeight: 850 }}>{c.name}</td>
+                            <td className="muted">{c.age ?? "-"}</td>
+                            <td className="muted">{c.class ?? "-"}</td>
+                            <td className="muted">{genderLabel}</td>
+                            <td className="muted">
+                              <span
+                                style={{
+                                  direction: "ltr",
+                                  unicodeBidi: "embed",
+                                }}
+                              >
+                                {c.mother_phone ?? "-"}
+                              </span>
+                            </td>
+                            <td>
+                              <input
+                                className="input"
+                                style={{
+                                  width: "100%",
+                                  minWidth: 70,
+                                  height: 38,
+                                  textAlign: "center",
+                                }}
+                                type="number"
+                                min="0"
+                                value={
+                                  bulkPerChildSessions[c.id] ??
+                                  defaultSessionsTotal ??
+                                  ""
+                                }
+                                onChange={(e) =>
+                                  setBulkPerChildSessions((prev) => ({
+                                    ...prev,
+                                    [c.id]: e.target.value,
+                                  }))
+                                }
+                                disabled={!checked}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                className="input"
+                                style={{
+                                  width: "100%",
+                                  minWidth: 90,
+                                  height: 38,
+                                  textAlign: "center",
+                                }}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={
+                                  bulkPerChildPrice[c.id] ?? defaultPrice ?? ""
+                                }
+                                onChange={(e) =>
+                                  setBulkPerChildPrice((prev) => ({
+                                    ...prev,
+                                    [c.id]: e.target.value,
+                                  }))
+                                }
+                                disabled={!checked}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div
+              className="row"
+              style={{
+                justifyContent: "flex-start",
+                gap: 10,
+                marginTop: 16,
+              }}
+            >
+              <button
+                type="button"
+                className="btn primary"
+                disabled={bulkSaving || bulkSelectedCount === 0}
+                onClick={bulkPurchaseAndEnroll}
+              >
+                {bulkSaving
+                  ? "جارٍ الإضافة..."
+                  : `إضافة (${bulkSelectedCount})`}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setOpenBulk(false)}
+              >
+                إغلاق
               </button>
             </div>
           </div>
