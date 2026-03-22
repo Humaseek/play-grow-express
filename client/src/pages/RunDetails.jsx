@@ -2362,6 +2362,13 @@ export default function RunDetails() {
                   <button type="button" className="btn" onClick={openBulkModal}>
                     + إضافة مجموعة
                   </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={openCreateEnroll}
+                  >
+                    <Plus size={16} /> إضافة وتسجيل
+                  </button>
                 </div>
               </div>
             </div>
