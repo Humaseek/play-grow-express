@@ -11,6 +11,7 @@ import {
   Wallet,
   Users,
   CalendarClock,
+  CalendarDays, // <-- تم إضافة هذه الأيقونة هنا
   ClipboardList,
   CheckCircle2,
   XCircle,
