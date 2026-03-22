@@ -721,12 +721,13 @@ export default function RunDetails() {
   const [enrollSaving, setEnrollSaving] = useState(false);
 
   const [openNewChild, setOpenNewChild] = useState(false);
+  // تحديث حالة الفورم عشان تدعم القيم النصية للبلد والصف
   const [newChildForm, setNewChildForm] = useState({
     name: "",
     age: "",
     class: "",
     gender: "male",
-    country_name: "",
+    country_name: "", // بدل country_id
     mother_name: "",
     mother_phone: "",
     father_name: "",
@@ -736,15 +737,94 @@ export default function RunDetails() {
   const [newChildSaving, setNewChildSaving] = useState(false);
 
   const [countries, setCountries] = useState([]);
-  const [classes, setClasses] = useState([]);
+  const [classes, setClasses] = useState([]); // لخيارات الصف
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
+
+  // --- الدوال المسترجعة بالكامل ---
+  const openCreateEnroll = () => {
+    // تصفير الفورم لما نفتحها
+    setNewChildForm({
+      name: "",
+      age: "",
+      class: "",
+      gender: "male",
+      country_name: "",
+      mother_name: "",
+      mother_phone: "",
+      father_name: "",
+      father_phone: "",
+      notes: "",
+    });
+    setNewChildEnrollNow(true);
+    setOpenNewChild(true);
+  };
+
+  function openBulkModal() {
+    setOpenBulk(true);
+    setBulkQ("");
+    setBulkSelected({});
+    setBulkPerChildSessions({});
+    setBulkPerChildPrice({});
+  }
+
+  function toggleBulkChild(childId) {
+    setBulkSelected((prev) => {
+      const next = { ...prev };
+      next[String(childId)] = !next[String(childId)];
+      return next;
+    });
+  }
+
+  function bulkSelectAllFiltered() {
+    setBulkSelected((prev) => {
+      const next = { ...prev };
+      for (const c of bulkCandidates) next[String(c.id)] = true;
+      return next;
+    });
+  }
+
+  function bulkClearSelection() {
+    setBulkSelected({});
+    setBulkPerChildPrice({});
+    setBulkPerChildSessions({});
+  }
+
+  // هذه دالة فتح إضافة دفعة لأي طفل من الجدول العام
+  function openNewPaymentModal() {
+    setPayEditId(null);
+    setPayLocked(false);
+    setPayEnrollmentId("");
+    setPayAmount("");
+    setPayMethod("cash");
+    setPayDate(isoDate(new Date()));
+    setPayNote("");
+    setOpenPay(true);
+  }
+
+  // هذه دالة فتح دفعة مخصصة (سواء متبقي أو دفعة جديدة) داخل كرت الطالب
+  function openPaymentModalFor(pRow, mode = "custom") {
+    setPayEnrollmentId(String(pRow.enrollment_id));
+    setPayLocked(true);
+    setPayEditId(null);
+    setPayAmount(
+      mode === "remaining" && Number(pRow.balance) > 0
+        ? String(Number(pRow.balance).toFixed(2))
+        : "",
+    );
+    setPayMethod("cash");
+    setPayDate(isoDate(new Date()));
+    setPayNote("");
+    setOpenPay(true);
+  }
+  // -------------------------------
 
   async function loadFormPicklists() {
     setCountriesLoading(true);
     try {
       const [cRes, clRes] = await Promise.all([
         supabase.from("countries").select("id,name").order("name"),
+        // في حال كان جدول child_classes غير موجود، سيتم تجاهل الخطأ للأسفل
         supabase.from("child_classes").select("id,name").order("name"),
       ]);
       if (cRes.data) setCountries(cRes.data);
@@ -790,7 +870,7 @@ export default function RunDetails() {
     id: null,
     sessions_total: "",
     price_total: "",
-    created_at: "",
+    created_at: "", // لحفظ وتعديل تاريخ الباقة
   });
   const [editPkgSaving, setEditPkgSaving] = useState(false);
 
@@ -798,12 +878,13 @@ export default function RunDetails() {
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
-  const [payDate, setPayDate] = useState(isoDate(new Date()));
+  const [payDate, setPayDate] = useState(isoDate(new Date())); // التاريخ كمدخل منفصل
   const [payNote, setPayNote] = useState("");
   const [paySaving, setPaySaving] = useState(false);
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
+  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -895,6 +976,7 @@ export default function RunDetails() {
         if (existingC) {
           countryId = existingC.id;
         } else {
+          // إضافة البلد الجديد
           const created = await supabase
             .from("countries")
             .insert([{ name: typedCountry }])
@@ -908,6 +990,7 @@ export default function RunDetails() {
       if (typedClass) {
         const existingCl = classes.find((c) => c.name === typedClass);
         if (!existingCl) {
+          // إضافة الصف الجديد بصمت لجدول الفئات (إن وجد)
           await supabase.from("child_classes").insert([{ name: typedClass }]);
         }
       }
@@ -1749,17 +1832,6 @@ export default function RunDetails() {
     await loadFixed();
   }
 
-  function openNewPaymentModal() {
-    setPayEditId(null);
-    setPayLocked(false);
-    setPayEnrollmentId("");
-    setPayAmount("");
-    setPayMethod("cash");
-    setPayDate(isoDate(new Date()));
-    setPayNote("");
-    setOpenPay(true);
-  }
-
   function openEditPayment(r) {
     setPayEditId(r.id);
     setPayEnrollmentId(String(r.enrollment_id ?? ""));
@@ -1814,24 +1886,6 @@ export default function RunDetails() {
   async function deletePayment(id) {
     await supabase.from("payments").delete().eq("id", id);
     await loadFixed();
-  }
-
-  async function openPaymentHistory(pRow) {
-    setHistoryEnrollment(pRow);
-    setOpenHistory(true);
-    setHistoryLoading(true);
-    if (!pRow.package_id) {
-      setHistoryRows([]);
-      setHistoryLoading(false);
-      return;
-    }
-    const { data } = await supabase
-      .from("payments")
-      .select("id,enrollment_id,amount,method,note,created_at")
-      .eq("package_id", pRow.package_id)
-      .order("created_at", { ascending: false });
-    setHistoryRows(data ?? []);
-    setHistoryLoading(false);
   }
 
   async function fetchAttHistory(pRow) {
@@ -1946,6 +2000,52 @@ export default function RunDetails() {
       toast("فشل التعديل.", "danger");
     }
   }
+
+  // --- دوال الدفع المسترجعة ---
+  function openPaymentModalFor(pRow, mode = "custom") {
+    setPayEnrollmentId(String(pRow.enrollment_id));
+    setPayLocked(true);
+    setPayEditId(null);
+    setPayAmount(
+      mode === "remaining" && Number(pRow.balance) > 0
+        ? String(Number(pRow.balance).toFixed(2))
+        : "",
+    );
+    setPayMethod("cash");
+    setPayDate(isoDate(new Date()));
+    setPayNote("");
+    setOpenPay(true);
+  }
+
+  function openNewPaymentModal() {
+    setPayEditId(null);
+    setPayLocked(false);
+    setPayEnrollmentId("");
+    setPayAmount("");
+    setPayMethod("cash");
+    setPayDate(isoDate(new Date()));
+    setPayNote("");
+    setOpenPay(true);
+  }
+
+  async function openPaymentHistory(pRow) {
+    setHistoryEnrollment(pRow);
+    setOpenHistory(true);
+    setHistoryLoading(true);
+    if (!pRow.package_id) {
+      setHistoryRows([]);
+      setHistoryLoading(false);
+      return;
+    }
+    const { data } = await supabase
+      .from("payments")
+      .select("id,enrollment_id,amount,method,note,created_at")
+      .eq("package_id", pRow.package_id)
+      .order("created_at", { ascending: false });
+    setHistoryRows(data ?? []);
+    setHistoryLoading(false);
+  }
+  // -----------------------------
 
   if (loading)
     return (
@@ -2300,38 +2400,13 @@ export default function RunDetails() {
                     justifyContent: "flex-end",
                   }}
                 >
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setBulkQ("");
-                      setBulkSelected({});
-                      setBulkPerChildSessions({});
-                      setBulkPerChildPrice({});
-                      setOpenBulk(true);
-                    }}
-                  >
+                  <button type="button" className="btn" onClick={openBulkModal}>
                     + إضافة مجموعة
                   </button>
                   <button
                     type="button"
                     className="btn primary"
-                    onClick={() => {
-                      setNewChildForm({
-                        name: "",
-                        age: "",
-                        class: "",
-                        gender: "male",
-                        country_name: "",
-                        mother_name: "",
-                        mother_phone: "",
-                        father_name: "",
-                        father_phone: "",
-                        notes: "",
-                      });
-                      setNewChildEnrollNow(true);
-                      setOpenNewChild(true);
-                    }}
+                    onClick={openCreateEnroll}
                   >
                     <Plus size={16} /> إضافة وتسجيل
                   </button>
@@ -2733,16 +2808,7 @@ export default function RunDetails() {
                 <button
                   type="button"
                   className="btn primary"
-                  onClick={() => {
-                    setPayEditId(null);
-                    setPayLocked(false);
-                    setPayEnrollmentId("");
-                    setPayAmount("");
-                    setPayMethod("cash");
-                    setPayDate(isoDate(new Date()));
-                    setPayNote("");
-                    setOpenPay(true);
-                  }}
+                  onClick={openNewPaymentModal}
                 >
                   + إضافة دفعة
                 </button>
@@ -3214,22 +3280,14 @@ export default function RunDetails() {
                   >
                     <button
                       className="actionSquare"
-                      disabled={Number(manageP.balance || 0) <= 0}
+                      disabled={Number(manageP?.balance || 0) <= 0}
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
-                          setPayEnrollmentId(String(currentP.enrollment_id));
-                          setPayLocked(true);
-                          setPayEditId(null);
-                          setPayAmount(
-                            String(Number(currentP.balance).toFixed(2)),
-                          );
-                          setPayMethod("cash");
-                          setPayDate(isoDate(new Date()));
-                          setPayNote("");
-                          setOpenPay(true);
+                          openPaymentModalFor(currentP, "remaining");
                         }, 150);
                       }}
                     >
@@ -3237,7 +3295,7 @@ export default function RunDetails() {
                         size={26}
                         style={{
                           color:
-                            Number(manageP.balance || 0) > 0
+                            Number(manageP?.balance || 0) > 0
                               ? "#16a34a"
                               : "#94a3b8",
                         }}
@@ -3248,17 +3306,11 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
-                          setPayEnrollmentId(String(currentP.enrollment_id));
-                          setPayLocked(true);
-                          setPayEditId(null);
-                          setPayAmount("");
-                          setPayMethod("cash");
-                          setPayDate(isoDate(new Date()));
-                          setPayNote("");
-                          setOpenPay(true);
+                          openPaymentModalFor(currentP, "custom");
                         }, 150);
                       }}
                     >
@@ -3269,6 +3321,7 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3308,6 +3361,7 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3322,6 +3376,7 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3336,6 +3391,7 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
+                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
