@@ -2529,7 +2529,7 @@ export default function RunDetails() {
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">إعداد الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيتك المحلي.
+                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيت المحلي.
               </div>
               <hr className="sep" />
               <div style={{ display: "grid", gap: 12 }}>
