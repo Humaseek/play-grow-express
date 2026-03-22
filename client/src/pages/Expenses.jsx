@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { useOutletContext } from "react-router";
+// إضافة Link من react-router-dom لإنشاء روابط قابلة للضغط
+import { useNavigate, useOutletContext, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 import PageHeader from "../components/PageHeader";
@@ -346,6 +347,12 @@ const EXPENSES_STYLES = `
   align-items: center;
   gap: 8px;
 }
+
+/* تنسيق للروابط داخل الجدول لتظهر باللون الأحمر Soft */
+.modern-table a {
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
 `;
 
 export default function Expenses() {
@@ -447,9 +454,15 @@ export default function Expenses() {
 
     const { from, to } = computeRange();
 
+    // تغيير مصدر البيانات من جدول expenses إلى view expenses_details_view
+    //cite: [Expenses.jsx]
     let query = supabase
-      .from("expenses")
-      .select("id,spent_on,amount,category,party,description,created_at")
+      .from("expenses_details_view")
+      // تحديد الأعمدة الإضافية المطلوبة للروابط (course_id, course_title, run_id, run_label)
+      //cite: [20260319155343_remote_schema.sql]
+      .select(
+        "id,spent_on,amount,category,party,description,created_at,run_id,course_id,course_title,run_label",
+      )
       .order("spent_on", { ascending: false })
       .order("id", { ascending: false });
 
@@ -503,7 +516,16 @@ export default function Expenses() {
         const a = String(r.category || "").toLowerCase();
         const b = String(r.party || "").toLowerCase();
         const c = String(r.description || "").toLowerCase();
-        return a.includes(s) || b.includes(s) || c.includes(s);
+        // إضافة اسم الدورة والفوج لنطاق البحث
+        const d = String(r.course_title || "").toLowerCase();
+        const e = String(r.run_label || "").toLowerCase();
+        return (
+          a.includes(s) ||
+          b.includes(s) ||
+          c.includes(s) ||
+          d.includes(s) ||
+          e.includes(s)
+        );
       });
     }
 
@@ -843,6 +865,8 @@ export default function Expenses() {
                         <th>الفئة</th>
                         <th>شخص/المتجر</th>
                         <th>الوصف</th>
+                        {/* عمود جديد يعرض الدورة والفوج */}
+                        <th>التبعية (الدورة/الفوج)</th>
                         <th style={{ width: 120 }}>المبلغ</th>
                         <th style={{ width: 100, textAlign: "center" }}>
                           إجراءات
@@ -862,6 +886,49 @@ export default function Expenses() {
                           <td style={{ color: "#64748b", minWidth: 200 }}>
                             {r.description || <span className="muted">—</span>}
                           </td>
+
+                          {/* الخلية الجديدة التي تحتوي على روابط الدورة والفوج */}
+                          <td style={{ minWidth: 200 }}>
+                            {r.run_id ? (
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: "2px",
+                                }}
+                              >
+                                {/* رابط لصفحة تفاصيل الدورة */}
+                                <Link
+                                  to={`/courses/${r.course_id}`}
+                                  style={{
+                                    color: "#ef4444",
+                                    fontWeight: 700,
+                                    textDecoration: "none",
+                                  }}
+                                  title="انتقل لتفاصيل الدورة"
+                                >
+                                  {r.course_title}
+                                </Link>
+                                {/* رابط لصفحة تفاصيل الفوج */}
+                                <Link
+                                  to={`/runs/${r.run_id}`}
+                                  style={{
+                                    color: "#64748b",
+                                    fontSize: "13px",
+                                    fontWeight: 600,
+                                    textDecoration: "none",
+                                  }}
+                                  title="انتقل لتفاصيل الفوج"
+                                >
+                                  الفوج: {r.run_label}
+                                </Link>
+                              </div>
+                            ) : (
+                              // في حال لم يكن المصروف مرتباً بفوج
+                              <span className="muted">مصروف عام</span>
+                            )}
+                          </td>
+
                           <td style={{ fontWeight: 900, color: "#0f172a" }}>
                             {fmtMoney(r.amount)} ₪
                           </td>
