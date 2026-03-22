@@ -1430,33 +1430,6 @@ export default function RunDetails() {
   );
   const bulkSelectedCount = bulkSelectedIds.length;
 
-  function openBulkModal() {
-    setOpenBulk(true);
-    setBulkQ("");
-    setBulkSelected({});
-    setBulkPerChildSessions({});
-    setBulkPerChildPrice({});
-  }
-  function toggleBulkChild(childId) {
-    setBulkSelected((prev) => {
-      const next = { ...prev };
-      next[String(childId)] = !next[String(childId)];
-      return next;
-    });
-  }
-  function bulkSelectAllFiltered() {
-    setBulkSelected((prev) => {
-      const next = { ...prev };
-      for (const c of bulkCandidates) next[String(c.id)] = true;
-      return next;
-    });
-  }
-  function bulkClearSelection() {
-    setBulkSelected({});
-    setBulkPerChildPrice({});
-    setBulkPerChildSessions({});
-  }
-
   async function bumpEnrollmentAllocated(enrollmentId, delta) {
     const id = Number(enrollmentId);
     const d = Number(delta);
@@ -1640,7 +1613,9 @@ export default function RunDetails() {
         failed > 0 ? "warn" : "ok",
       );
       setOpenBulk(false);
-      bulkClearSelection();
+      setBulkSelected({});
+      setBulkPerChildPrice({});
+      setBulkPerChildSessions({});
     } catch {
       toast("Bulk enroll failed.", "danger");
     } finally {
@@ -2359,13 +2334,38 @@ export default function RunDetails() {
                     justifyContent: "flex-end",
                   }}
                 >
-                  <button type="button" className="btn" onClick={openBulkModal}>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setBulkQ("");
+                      setBulkSelected({});
+                      setBulkPerChildSessions({});
+                      setBulkPerChildPrice({});
+                      setOpenBulk(true);
+                    }}
+                  >
                     + إضافة مجموعة
                   </button>
                   <button
                     type="button"
                     className="btn primary"
-                    onClick={openCreateEnroll}
+                    onClick={() => {
+                      setNewChildForm({
+                        name: "",
+                        age: "",
+                        class: "",
+                        gender: "male",
+                        country_name: "",
+                        mother_name: "",
+                        mother_phone: "",
+                        father_name: "",
+                        father_phone: "",
+                        notes: "",
+                      });
+                      setNewChildEnrollNow(true);
+                      setOpenNewChild(true);
+                    }}
                   >
                     <Plus size={16} /> إضافة وتسجيل
                   </button>
@@ -2529,7 +2529,7 @@ export default function RunDetails() {
             <div className="card" style={{ gridColumn: "span 4" }}>
               <div className="h1">إعداد الجلسات</div>
               <div className="muted" style={{ marginTop: 6 }}>
-                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيت المحلي.
+                حدد التكرار ثم أنشئ قائمة الجلسات. الأوقات حسب توقيتك المحلي.
               </div>
               <hr className="sep" />
               <div style={{ display: "grid", gap: 12 }}>
@@ -3840,221 +3840,202 @@ export default function RunDetails() {
         </Modal>
 
         <Modal
-          open={openNewChild}
-          title={newChildEnrollNow ? "إضافة طفل وتسجيله" : "إضافة طفل جديد"}
-          onClose={() => setOpenNewChild(false)}
+          open={openBulk}
+          title="إضافة مجموعة"
+          onClose={() => setOpenBulk(false)}
         >
-          <div className="grid" style={{ gap: "24px", padding: "10px 0" }}>
-            {/* معلومات الطفل */}
-            <div style={{ gridColumn: "span 12" }}>
-              <h4 className="form-section-title">
-                <Users size={18} color="#64748b" /> البيانات الأساسية
-              </h4>
-              <div className="grid">
-                <div style={{ gridColumn: "span 12" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الاسم الرباعي *
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.name}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({ ...p, name: e.target.value }))
-                    }
-                    placeholder="مثال: أحمد محمد علي"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    العمر *
-                  </div>
-                  <input
-                    className="input"
-                    type="number"
-                    min={0}
-                    max={120}
-                    value={newChildForm.age}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({ ...p, age: e.target.value }))
-                    }
-                    placeholder="بالسنوات"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الجنس
-                  </div>
-                  <ModernSelect
-                    value={newChildForm.gender}
-                    onChange={(v) =>
-                      setNewChildForm((p) => ({ ...p, gender: v }))
-                    }
-                    options={[
-                      { value: "male", label: "ذكر" },
-                      { value: "female", label: "أنثى" },
-                    ]}
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الصف
-                  </div>
-                  <CustomCombobox
-                    value={newChildForm.class}
-                    onChange={(v) =>
-                      setNewChildForm((p) => ({ ...p, class: v }))
-                    }
-                    options={classes.map((c) => ({
-                      value: c.name,
-                      label: c.name,
-                    }))}
-                    placeholder="اختر أو اكتب صفاً..."
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    البلد / المدينة
-                  </div>
-                  <CustomCombobox
-                    value={newChildForm.country_name}
-                    onChange={(v) =>
-                      setNewChildForm((p) => ({ ...p, country_name: v }))
-                    }
-                    options={countries.map((c) => ({
-                      value: c.name,
-                      label: c.name,
-                    }))}
-                    placeholder="اختر أو اكتب بلداً..."
-                    disabled={countriesLoading}
-                  />
-                </div>
-              </div>
+          <div dir="rtl" lang="ar" className="modal-wide-1000">
+            <div className="muted" style={{ lineHeight: 1.5 }}>
+              اختر الأطفال ثم اضغط <b>إضافة</b>.
             </div>
-
-            {/* معلومات الأهل */}
-            <div style={{ gridColumn: "span 12" }}>
-              <h4 className="form-section-title">
-                <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
-              </h4>
-              <div className="grid">
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    اسم الأم
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.mother_name}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({
-                        ...p,
-                        mother_name: e.target.value,
-                      }))
-                    }
-                    placeholder="اختياري"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    هاتف الأم
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.mother_phone}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({
-                        ...p,
-                        mother_phone: e.target.value,
-                      }))
-                    }
-                    placeholder="اختياري"
-                    dir="ltr"
-                    style={{ textAlign: "right" }}
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    اسم الأب
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.father_name}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({
-                        ...p,
-                        father_name: e.target.value,
-                      }))
-                    }
-                    placeholder="اختياري"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    هاتف الأب
-                  </div>
-                  <input
-                    className="input"
-                    value={newChildForm.father_phone}
-                    onChange={(e) =>
-                      setNewChildForm((p) => ({
-                        ...p,
-                        father_phone: e.target.value,
-                      }))
-                    }
-                    placeholder="اختياري"
-                    dir="ltr"
-                    style={{ textAlign: "right" }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* ملاحظات إضافية */}
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted" style={{ marginBottom: 6 }}>
-                ملاحظات إضافية
-              </div>
-              <textarea
-                className="input"
-                rows={3}
-                value={newChildForm.notes}
-                onChange={(e) =>
-                  setNewChildForm((p) => ({ ...p, notes: e.target.value }))
-                }
-                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
-                style={{ resize: "vertical" }}
-              />
-            </div>
-
+            <hr className="sep" />
             <div
+              className="row"
               style={{
-                gridColumn: "span 12",
-                display: "flex",
-                justifyContent: "flex-end",
                 gap: 10,
-                paddingTop: 8,
+                flexWrap: "wrap",
+                justifyContent: "flex-start",
+                alignItems: "center",
+              }}
+            >
+              <input
+                className="input"
+                style={{ width: 280 }}
+                placeholder="ابحث عن طفل..."
+                value={bulkQ}
+                onChange={(e) => setBulkQ(e.target.value)}
+              />
+              <button
+                type="button"
+                className="btn"
+                onClick={bulkSelectAllFiltered}
+              >
+                تحديد الكل
+              </button>
+              <button
+                type="button"
+                className="btn danger"
+                onClick={bulkClearSelection}
+              >
+                إلغاء التحديد
+              </button>
+              <div className="muted" style={{ marginInlineStart: "auto" }}>
+                المحدد: <b>{bulkSelectedCount}</b>
+              </div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              {bulkCandidates.length === 0 ? (
+                <div className="card">لا يوجد أطفال.</div>
+              ) : (
+                <div
+                  className="card"
+                  style={{
+                    padding: 0,
+                    overflow: "auto",
+                    maxHeight: "55vh",
+                    direction: "rtl",
+                  }}
+                >
+                  <table className="table" style={{ margin: 0, minWidth: 720 }}>
+                    <thead
+                      style={{
+                        position: "sticky",
+                        top: 0,
+                        background: "white",
+                        zIndex: 2,
+                      }}
+                    >
+                      <tr>
+                        <th style={{ width: 70, textAlign: "right" }}>
+                          اختيار
+                        </th>
+                        <th style={{ textAlign: "right" }}>الاسم</th>
+                        <th style={{ textAlign: "right" }}>العمر</th>
+                        <th style={{ textAlign: "right" }}>الصف</th>
+                        <th style={{ textAlign: "right" }}>الجنس</th>
+                        <th style={{ textAlign: "right" }}>هاتف الأم</th>
+                        <th style={{ width: 100, textAlign: "center" }}>
+                          الحصص
+                        </th>
+                        <th style={{ width: 120, textAlign: "center" }}>
+                          السعر
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkCandidates.map((c) => {
+                        const checked = !!bulkSelected[String(c.id)];
+                        const genderLabel =
+                          c.gender === "male"
+                            ? "ذكر"
+                            : c.gender === "female"
+                              ? "أنثى"
+                              : (c.gender ?? "-");
+
+                        return (
+                          <tr key={c.id}>
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleBulkChild(c.id)}
+                              />
+                            </td>
+                            <td style={{ fontWeight: 850 }}>{c.name}</td>
+                            <td className="muted">{c.age ?? "-"}</td>
+                            <td className="muted">{c.class ?? "-"}</td>
+                            <td className="muted">{genderLabel}</td>
+                            <td className="muted">
+                              <span
+                                style={{
+                                  direction: "ltr",
+                                  unicodeBidi: "embed",
+                                }}
+                              >
+                                {c.mother_phone ?? "-"}
+                              </span>
+                            </td>
+                            <td>
+                              <input
+                                className="input"
+                                style={{
+                                  width: "100%",
+                                  minWidth: 70,
+                                  height: 38,
+                                  textAlign: "center",
+                                }}
+                                type="number"
+                                min="0"
+                                value={
+                                  bulkPerChildSessions[c.id] ??
+                                  defaultSessionsTotal ??
+                                  ""
+                                }
+                                onChange={(e) =>
+                                  setBulkPerChildSessions((prev) => ({
+                                    ...prev,
+                                    [c.id]: e.target.value,
+                                  }))
+                                }
+                                disabled={!checked}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                className="input"
+                                style={{
+                                  width: "100%",
+                                  minWidth: 90,
+                                  height: 38,
+                                  textAlign: "center",
+                                }}
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={
+                                  bulkPerChildPrice[c.id] ?? defaultPrice ?? ""
+                                }
+                                onChange={(e) =>
+                                  setBulkPerChildPrice((prev) => ({
+                                    ...prev,
+                                    [c.id]: e.target.value,
+                                  }))
+                                }
+                                disabled={!checked}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div
+              className="row"
+              style={{
+                justifyContent: "flex-start",
+                gap: 10,
+                marginTop: 16,
               }}
             >
               <button
                 type="button"
-                className="btn"
-                onClick={() => setOpenNewChild(false)}
-                disabled={newChildSaving}
+                className="btn primary"
+                disabled={bulkSaving || bulkSelectedCount === 0}
+                onClick={bulkPurchaseAndEnroll}
               >
-                إلغاء
+                {bulkSaving
+                  ? "جارٍ الإضافة..."
+                  : `إضافة (${bulkSelectedCount})`}
               </button>
               <button
                 type="button"
-                className="btn btn-primary"
-                onClick={() =>
-                  createChildInline({ enrollNow: newChildEnrollNow })
-                }
-                disabled={newChildSaving}
+                className="btn"
+                onClick={() => setOpenBulk(false)}
               >
-                {newChildSaving
-                  ? "جاري الحفظ..."
-                  : newChildEnrollNow
-                    ? "حفظ وتسجيل بالدورة"
-                    : "حفظ الطالب"}
+                إغلاق
               </button>
             </div>
           </div>
