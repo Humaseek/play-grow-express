@@ -651,7 +651,6 @@ export default function RunDetails() {
   const navigate = useNavigate();
   const { toast } = useOutletContext();
 
-  // --- States ---
   const [tab, setTab] = useState("participants");
 
   const [summary, setSummary] = useState(null);
@@ -732,7 +731,6 @@ export default function RunDetails() {
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
-  // السجلات الجديدة
   const [openHistory, setOpenHistory] = useState(false);
   const [historyEnrollment, setHistoryEnrollment] = useState(null);
   const [historyRows, setHistoryRows] = useState([]);
@@ -765,7 +763,6 @@ export default function RunDetails() {
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
-  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -1955,21 +1952,21 @@ export default function RunDetails() {
     setOpenExpenseModal(true);
   }
 
+  // الدوال المفقودة للمصاريف اللي كانت تمنع زر الحفظ من العمل:
   async function saveExpense() {
-    const amt = Number(expAmount);
-    if (!expDate || isNaN(amt) || amt <= 0) {
-      toast("الرجاء إدخال مبلغ وتاريخ صحيحين.", "warn");
+    if (!expAmount) {
+      toast("يرجى إدخال المبلغ.", "warn");
       return;
     }
     setExpSaving(true);
     try {
       const payload = {
-        spent_on: expDate,
-        amount: amt,
-        category: expCategory ? String(expCategory).trim() : null,
-        party: expParty ? String(expParty).trim() : null,
-        description: expDesc ? String(expDesc).trim() : null,
         run_id: Number(runId),
+        spent_on: expDate || isoDate(new Date()),
+        amount: Number(expAmount),
+        category: expCategory.trim() || null,
+        party: expParty.trim() || null,
+        description: expDesc.trim() || null,
       };
 
       if (expenseEditId) {
@@ -1978,20 +1975,33 @@ export default function RunDetails() {
           .update(payload)
           .eq("id", expenseEditId);
         if (error) throw error;
+        toast("تم تعديل المصروف بنجاح", "ok");
       } else {
         const { error } = await supabase.from("expenses").insert([payload]);
         if (error) throw error;
+        toast("تم إضافة المصروف بنجاح", "ok");
       }
 
       setOpenExpenseModal(false);
       resetExpenseForm();
-      await loadRunExpensesSafe();
-      toast("تم حفظ المصروف بنجاح", "ok");
-    } catch (err) {
-      console.error(err);
-      toast("فشل حفظ المصروف.", "danger");
+      await loadFixed();
+    } catch (e) {
+      console.error("Error saving expense:", e);
+      toast("حدث خطأ أثناء حفظ المصروف", "danger");
     } finally {
       setExpSaving(false);
+    }
+  }
+
+  async function deleteExpense(id) {
+    try {
+      const { error } = await supabase.from("expenses").delete().eq("id", id);
+      if (error) throw error;
+      toast("تم حذف المصروف بنجاح", "ok");
+      await loadFixed();
+    } catch (e) {
+      console.error("Error deleting expense:", e);
+      toast("حدث خطأ أثناء حذف المصروف", "danger");
     }
   }
 
@@ -4338,16 +4348,12 @@ export default function RunDetails() {
         </Modal>
 
         {/* =========================================================================
-            نافذة الدفع 
+            نافذة الدفع المضافة لتفعيل أزرار (دفع المتبقي / إضافة دفعة) 
         ========================================================================= */}
         <Modal
           open={openPay}
           title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
-          onClose={() => {
-            setPayEditId(null);
-            setPayLocked(false);
-            closeSubModalAndReopen(setOpenPay);
-          }}
+          onClose={() => closeSubModalAndReopen(setOpenPay)}
         >
           <div className="grid">
             {!payLocked && (
