@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { fmtTime24 } from "../utils/datetime";
 
 import {
   TrendingUp,
@@ -28,7 +27,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   CalendarDays,
-  BadgeDollarSign,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -37,7 +35,7 @@ import EmptyState from "../components/EmptyState";
 import Badge from "../components/Badge";
 
 // ============================================================================
-// الدوال المساعدة الأساسية
+// الدوال المساعدة الأساسية (تمت برمجتها محلياً لتفادي أي أخطاء بالاستيراد)
 // ============================================================================
 
 function fmtMoney(n) {
@@ -70,6 +68,21 @@ function addDays(d, n) {
   return x;
 }
 
+function toDateString(d) {
+  const dt = new Date(d);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const day = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function formatTimeLocally(dt) {
+  if (!dt) return "—";
+  const d = new Date(dt);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return "صباح الخير";
@@ -78,10 +91,9 @@ function getGreeting() {
 }
 
 // ============================================================================
-// مكونات الرسوم البيانية المبرمجة يدوياً (SVG Charts) - خفيفة وسريعة جداً
+// مكونات الرسوم البيانية المبرمجة يدوياً (SVG Charts)
 // ============================================================================
 
-// 1. Sparkline (للبطاقات العلوية)
 const Sparkline = ({ data, color, type = "line" }) => {
   if (!data || data.length === 0) return null;
   const max = Math.max(...data) || 1;
@@ -160,9 +172,8 @@ const Sparkline = ({ data, color, type = "line" }) => {
   );
 };
 
-// 2. Dual Bar Chart (للمقارنة بين الدخل والمصروف لآخر 7 أيام)
 const DualBarChart = ({ incomeData, expenseData, labels }) => {
-  const maxVal = Math.max(...incomeData, ...expenseData) || 1;
+  const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
 
   return (
     <div
@@ -176,7 +187,6 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
         position: "relative",
       }}
     >
-      {/* خطوط الخلفية (Grid lines) */}
       <div
         style={{
           position: "absolute",
@@ -202,9 +212,9 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
         ))}
       </div>
 
-      {labels.map((label, i) => {
-        const incHeight = (incomeData[i] / maxVal) * 100;
-        const expHeight = (expenseData[i] / maxVal) * 100;
+      {(labels || []).map((label, i) => {
+        const incHeight = ((incomeData[i] || 0) / maxVal) * 100;
+        const expHeight = ((expenseData[i] || 0) / maxVal) * 100;
 
         return (
           <div
@@ -228,7 +238,6 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
                 justifyContent: "center",
               }}
             >
-              {/* عامود الإيرادات */}
               <div
                 title={`الإيرادات: ${fmtMoney(incomeData[i])} ₪`}
                 style={{
@@ -241,7 +250,6 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
                   transition: "height 0.5s ease-out",
                 }}
               />
-              {/* عامود المصاريف */}
               <div
                 title={`المصاريف: ${fmtMoney(expenseData[i])} ₪`}
                 style={{
@@ -274,7 +282,7 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
 };
 
 // ============================================================================
-// CSS Styles (Enterprise Dashboard UI)
+// CSS Styles
 // ============================================================================
 const DASHBOARD_STYLES = `
 .page--dashboard {
@@ -287,7 +295,6 @@ const DASHBOARD_STYLES = `
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* Header Area */
 .dash-header {
   display: flex;
   justify-content: space-between;
@@ -347,7 +354,6 @@ const DASHBOARD_STYLES = `
   border-color: #94a3b8;
 }
 
-/* Bento Grid Layout */
 .bento-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
@@ -371,7 +377,6 @@ const DASHBOARD_STYLES = `
   box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.06);
 }
 
-/* Specific Grid Spans */
 .span-3 { grid-column: span 3; }
 .span-4 { grid-column: span 4; }
 .span-6 { grid-column: span 6; }
@@ -387,7 +392,6 @@ const DASHBOARD_STYLES = `
   .span-3, .span-4, .span-6, .span-8 { grid-column: span 12; }
 }
 
-/* KPI Cards */
 .kpi-title {
   font-size: 15px;
   font-weight: 800;
@@ -411,7 +415,6 @@ const DASHBOARD_STYLES = `
   margin-top: auto;
 }
 
-/* Section Titles inside Cards */
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -427,10 +430,9 @@ const DASHBOARD_STYLES = `
   gap: 10px;
 }
 
-/* Timeline Design */
 .timeline-container {
   position: relative;
-  padding-right: 28px; /* RTL */
+  padding-right: 28px;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -529,7 +531,6 @@ const DASHBOARD_STYLES = `
 .btn-tl-cancel:hover { background: #fee2e2; transform: translateY(-1px); }
 .btn-tl:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); transform: none; }
 
-/* Quick Actions Grid */
 .quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -572,7 +573,6 @@ const DASHBOARD_STYLES = `
 .qa-btn.danger .qa-icon-wrap { background: #fef2f2; color: #ef4444; }
 .qa-btn.purple .qa-icon-wrap { background: #faf5ff; color: #8b5cf6; }
 
-/* List Widgets (Debtors, Recent Transactions) */
 .list-widget {
   display: flex;
   flex-direction: column;
@@ -630,19 +630,36 @@ const DASHBOARD_STYLES = `
 .legend-color {
   width: 12px; height: 12px; border-radius: 4px;
 }
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+.modern-table th {
+  background: #fff;
+  color: #64748b;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 16px 24px;
+  border-bottom: 2px solid #f1f5f9;
+  white-space: nowrap;
+}
+.modern-table td {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f8fafc;
+  color: #334155;
+  font-size: 15px;
+  vertical-align: middle;
+}
 `;
 
 export default function Dashboard() {
   const { toast } = useOutletContext();
   const navigate = useNavigate();
 
-  // ============================================================================
-  // States
-  // ============================================================================
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Real-time clock state
   const [time, setTime] = useState(new Date());
 
   const [dashData, setDashData] = useState({
@@ -651,12 +668,12 @@ export default function Dashboard() {
     netMonth: 0,
     activeStudents: 0,
     sessionsCountToday: 0,
-    incomeTrend: [], // لآخر 7 أيام
+    incomeTrend: [],
     expenseTrend: [],
-    chartLabels: [], // أسماء الأيام للرسم البياني
+    chartLabels: [],
     todaySessions: [],
     debtors: [],
-    recentTransactions: [], // دمج المدفوعات والمصاريف
+    recentTransactions: [],
   });
 
   const [confirm, setConfirm] = useState({
@@ -665,78 +682,114 @@ export default function Dashboard() {
     sessionId: null,
   });
 
-  // تحديث الساعة الحية
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   // ============================================================================
-  // Data Fetching Engine (Enterprise Level Data Aggregation)
+  // Data Fetching Engine (Parallel Execution for Max Speed)
   // ============================================================================
   async function loadDashboard() {
     setLoading(true);
     setError(null);
     try {
       const now = new Date();
-      const monthStart = startOfMonth(now).toISOString();
-      const dayStart = startOfDay(now).toISOString();
-      const dayEnd = endOfDay(now).toISOString();
+      const monthStartObj = startOfMonth(now);
+      const dayStartObj = startOfDay(now);
+      const dayEndObj = endOfDay(now);
 
-      // التجهيز لحساب الـ Trends لآخر 7 أيام
+      const isoMonthStart = monthStartObj.toISOString();
+      const isoDayStart = dayStartObj.toISOString();
+      const isoDayEnd = dayEndObj.toISOString();
+      const dateMonthStart = toDateString(monthStartObj);
+
       const last7Days = Array.from({ length: 7 }, (_, i) => {
         const d = addDays(now, -6 + i);
         return {
-          start: startOfDay(d).toISOString(),
-          end: endOfDay(d).toISOString(),
+          startIso: startOfDay(d).toISOString(),
+          endIso: endOfDay(d).toISOString(),
+          dateStr: toDateString(d),
           label: new Intl.DateTimeFormat("ar-EG", { weekday: "short" }).format(
             d,
           ),
-          dateObj: d,
         };
       });
-      const weekStart = last7Days[0].start;
 
-      // 1. Fetch Financials for the month
-      const { data: paymentsMonth } = await supabase
-        .from("payments")
-        .select("amount, created_at")
-        .gte("created_at", monthStart);
+      const isoWeekStart = last7Days[0].startIso;
+      const dateWeekStart = last7Days[0].dateStr;
 
-      const { data: expensesMonth } = await supabase
-        .from("expenses")
-        .select("amount, spent_on")
-        .gte("spent_on", monthStart);
+      // 🚀 Parallel Requesting (10x Faster)
+      const [
+        { data: paymentsMonth, error: e1 },
+        { data: expensesMonth, error: e2 },
+        { data: paymentsWeek, error: e3 },
+        { data: expensesWeek, error: e4 },
+        { count: activeStudentsCount, error: e5 },
+        { data: sessionsToday, error: e6 },
+        { data: runsSummary, error: e7 },
+        { data: debtorsData, error: e8 },
+        { data: recentPays, error: e9 },
+        { data: recentExps, error: e10 },
+      ] = await Promise.all([
+        supabase
+          .from("payments")
+          .select("amount, created_at")
+          .gte("created_at", isoMonthStart),
+        supabase
+          .from("expenses")
+          .select("amount, spent_on")
+          .gte("spent_on", dateMonthStart),
+        supabase
+          .from("payments")
+          .select("amount, created_at")
+          .gte("created_at", isoWeekStart),
+        supabase
+          .from("expenses")
+          .select("amount, spent_on")
+          .gte("spent_on", dateWeekStart),
+        supabase
+          .from("enrollments")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active"),
+        supabase
+          .from("course_sessions")
+          .select("*")
+          .gte("start_at", isoDayStart)
+          .lte("start_at", isoDayEnd)
+          .order("start_at", { ascending: true }),
+        supabase
+          .from("course_runs_summary_view")
+          .select("run_id, title, label"),
+        supabase
+          .from("run_participants_view")
+          .select("child_name, child_id, balance")
+          .eq("enrollment_status", "active")
+          .gt("balance", 0)
+          .order("balance", { ascending: false })
+          .limit(5),
+        supabase
+          .from("payments_details_view")
+          .select("id, amount, child_name, method, created_at")
+          .order("created_at", { ascending: false })
+          .limit(5),
+        supabase
+          .from("expenses")
+          .select("id, amount, category, party, created_at, spent_on")
+          .order("created_at", { ascending: false })
+          .limit(5),
+      ]);
 
-      // 2. Fetch Financials for the 7-day Trend
-      const { data: paymentsWeek } = await supabase
-        .from("payments")
-        .select("amount, created_at")
-        .gte("created_at", weekStart);
+      const errs = [e1, e2, e3, e4, e5, e6, e7, e8, e9, e10].filter(Boolean);
+      if (errs.length > 0) {
+        console.error("Dashboard Fetch Errors:", errs);
+        setError({
+          message:
+            "حدثت بعض الأخطاء أثناء جلب البيانات، قد تكون بعض الأرقام غير دقيقة.",
+        });
+      }
 
-      const { data: expensesWeek } = await supabase
-        .from("expenses")
-        .select("amount, spent_on")
-        .gte("spent_on", weekStart);
-
-      // 3. Fetch Active Students
-      const { count: activeStudentsCount } = await supabase
-        .from("enrollments")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active");
-
-      // 4. Fetch Today's Sessions & Run Info
-      const { data: sessionsToday } = await supabase
-        .from("course_sessions")
-        .select("*")
-        .gte("start_at", dayStart)
-        .lte("start_at", dayEnd)
-        .order("start_at", { ascending: true });
-
-      const { data: runsSummary } = await supabase
-        .from("course_runs_summary_view")
-        .select("run_id, title, label");
-
+      // --- Processing ---
       const enrichedSessions = (sessionsToday || []).map((session) => {
         const runInfo = (runsSummary || []).find(
           (r) => r.run_id === session.run_id,
@@ -748,33 +801,9 @@ export default function Dashboard() {
         };
       });
 
-      // 5. Fetch Debtors (Students with balance > 0)
-      const { data: debtorsData } = await supabase
-        .from("run_participants_view")
-        .select("child_name, child_id, balance")
-        .eq("enrollment_status", "active")
-        .gt("balance", 0)
-        .order("balance", { ascending: false })
-        .limit(5);
-
-      // 6. Fetch Recent Transactions (Payments + Expenses Combined)
-      const { data: recentPays } = await supabase
-        .from("payments_details_view")
-        .select("id, amount, child_name, method, created_at")
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      const { data: recentExps } = await supabase
-        .from("expenses")
-        .select("id, amount, category, party, created_at, spent_on")
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      // دمج وتصنيف الحركات الأخيرة
       let combinedTx = [];
       if (recentPays) {
-        combinedTx = [
-          ...combinedTx,
+        combinedTx.push(
           ...recentPays.map((p) => ({
             type: "income",
             id: `p_${p.id}`,
@@ -788,26 +817,22 @@ export default function Dashboard() {
             amount: p.amount,
             date: p.created_at,
           })),
-        ];
+        );
       }
       if (recentExps) {
-        combinedTx = [
-          ...combinedTx,
+        combinedTx.push(
           ...recentExps.map((e) => ({
             type: "expense",
             id: `e_${e.id}`,
             title: e.category || "مصروف عام",
             subtitle: e.party || "—",
             amount: e.amount,
-            date: e.created_at, // Or spent_on
+            date: e.created_at,
           })),
-        ];
+        );
       }
-      // ترتيب حسب الأحدث وأخذ أول 6 حركات
       combinedTx.sort((a, b) => new Date(b.date) - new Date(a.date));
       combinedTx = combinedTx.slice(0, 6);
-
-      // --- Processing the Data ---
 
       const totalIncome = (paymentsMonth || []).reduce(
         (sum, p) => sum + Number(p.amount || 0),
@@ -821,20 +846,17 @@ export default function Dashboard() {
 
       const incTrendArr = last7Days.map((day) => {
         return (paymentsWeek || [])
-          .filter((p) => p.created_at >= day.start && p.created_at <= day.end)
+          .filter(
+            (p) => p.created_at >= day.startIso && p.created_at <= day.endIso,
+          )
           .reduce((sum, p) => sum + Number(p.amount || 0), 0);
       });
 
       const expTrendArr = last7Days.map((day) => {
         return (expensesWeek || [])
-          .filter((e) => {
-            const eDate = new Date(e.spent_on).toISOString();
-            return eDate >= day.start && eDate <= day.end;
-          })
+          .filter((e) => e.spent_on === day.dateStr)
           .reduce((sum, e) => sum + Number(e.amount || 0), 0);
       });
-
-      const labelsArr = last7Days.map((day) => day.label);
 
       setDashData({
         incomeMonth: totalIncome,
@@ -844,20 +866,24 @@ export default function Dashboard() {
         sessionsCountToday: enrichedSessions.length,
         incomeTrend: incTrendArr,
         expenseTrend: expTrendArr,
-        chartLabels: labelsArr,
+        chartLabels: last7Days.map((day) => day.label),
         todaySessions: enrichedSessions,
         debtors: debtorsData || [],
         recentTransactions: combinedTx,
       });
     } catch (err) {
-      console.error("Dashboard Load Error:", err);
+      console.error("Dashboard Hard Crash:", err);
       setError(err);
     } finally {
       setLoading(false);
     }
   }
 
-  // تغيير حالة الجلسة
+  useEffect(() => {
+    loadDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   async function changeSessionStatus(id, newStatus) {
     const { error: upErr } = await supabase
       .from("course_sessions")
@@ -871,15 +897,15 @@ export default function Dashboard() {
     loadDashboard();
   }
 
-  // تنسيقات النصوص والأوقات
   const todayFormatted = useMemo(() => {
+    const d = new Date();
     return new Intl.DateTimeFormat("ar-EG", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-    }).format(time);
-  }, []); // Using initial time for date is fine
+    }).format(d);
+  }, []);
 
   const currentTimeStr = new Intl.DateTimeFormat("ar-EG", {
     hour: "2-digit",
@@ -988,7 +1014,7 @@ export default function Dashboard() {
                   boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
                 }}
               >
-                <BadgeDollarSign
+                <Wallet
                   size={20}
                   color={dashData.netMonth >= 0 ? "#10b981" : "#ef4444"}
                 />
@@ -1101,13 +1127,15 @@ export default function Dashboard() {
                       >
                         <div>
                           <div className="tl-time">
-                            <span dir="ltr">{fmtTime24(s.start_at)}</span>
+                            <span dir="ltr">
+                              {formatTimeLocally(s.start_at)}
+                            </span>
                             <span style={{ color: "#cbd5e1" }}>-</span>
                             <span
                               dir="ltr"
                               style={{ color: "#64748b", fontSize: 15 }}
                             >
-                              {fmtTime24(s.end_at)}
+                              {formatTimeLocally(s.end_at)}
                             </span>
                             {s.status === "done" && (
                               <Badge variant="ok" style={{ marginLeft: 8 }}>
@@ -1387,7 +1415,7 @@ export default function Dashboard() {
                           <div className="li-title">{tx.title}</div>
                           <div className="li-sub">
                             {tx.subtitle} •{" "}
-                            <span dir="ltr">{fmtTime24(tx.date)}</span>
+                            <span dir="ltr">{formatTimeLocally(tx.date)}</span>
                           </div>
                         </div>
                       </div>
