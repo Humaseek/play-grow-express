@@ -741,7 +741,7 @@ export default function RunDetails() {
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
 
-  // --- الدوال المسترجعة بالكامل ---
+  // --- الدوال المسترجعة بالكامل لحل مشكلة الأزرار ---
   const openCreateEnroll = () => {
     // تصفير الفورم لما نفتحها
     setNewChildForm({
@@ -1832,6 +1832,33 @@ export default function RunDetails() {
     await loadFixed();
   }
 
+  // --- دوال الدفع المسترجعة والنظيفة لحل مشكلة عدم الاستجابة ---
+  function openNewPaymentModal() {
+    setPayEditId(null);
+    setPayLocked(false);
+    setPayEnrollmentId("");
+    setPayAmount("");
+    setPayMethod("cash");
+    setPayDate(isoDate(new Date()));
+    setPayNote("");
+    setOpenPay(true);
+  }
+
+  function openPaymentModalFor(pRow, mode = "custom") {
+    setPayEnrollmentId(String(pRow.enrollment_id));
+    setPayLocked(true);
+    setPayEditId(null);
+    setPayAmount(
+      mode === "remaining" && Number(pRow.balance) > 0
+        ? String(Number(pRow.balance).toFixed(2))
+        : "",
+    );
+    setPayMethod("cash");
+    setPayDate(isoDate(new Date()));
+    setPayNote("");
+    setOpenPay(true);
+  }
+
   function openEditPayment(r) {
     setPayEditId(r.id);
     setPayEnrollmentId(String(r.enrollment_id ?? ""));
@@ -1842,6 +1869,7 @@ export default function RunDetails() {
     setPayNote(r.note || "");
     setOpenPay(true);
   }
+  // -----------------------------------------------------------
 
   function paymentMethodLabel(v) {
     if (v === "cash") return "نقداً";
@@ -1886,6 +1914,24 @@ export default function RunDetails() {
   async function deletePayment(id) {
     await supabase.from("payments").delete().eq("id", id);
     await loadFixed();
+  }
+
+  async function openPaymentHistory(pRow) {
+    setHistoryEnrollment(pRow);
+    setOpenHistory(true);
+    setHistoryLoading(true);
+    if (!pRow.package_id) {
+      setHistoryRows([]);
+      setHistoryLoading(false);
+      return;
+    }
+    const { data } = await supabase
+      .from("payments")
+      .select("id,enrollment_id,amount,method,note,created_at")
+      .eq("package_id", pRow.package_id)
+      .order("created_at", { ascending: false });
+    setHistoryRows(data ?? []);
+    setHistoryLoading(false);
   }
 
   async function fetchAttHistory(pRow) {
@@ -2000,52 +2046,6 @@ export default function RunDetails() {
       toast("فشل التعديل.", "danger");
     }
   }
-
-  // --- دوال الدفع المسترجعة ---
-  function openPaymentModalFor(pRow, mode = "custom") {
-    setPayEnrollmentId(String(pRow.enrollment_id));
-    setPayLocked(true);
-    setPayEditId(null);
-    setPayAmount(
-      mode === "remaining" && Number(pRow.balance) > 0
-        ? String(Number(pRow.balance).toFixed(2))
-        : "",
-    );
-    setPayMethod("cash");
-    setPayDate(isoDate(new Date()));
-    setPayNote("");
-    setOpenPay(true);
-  }
-
-  function openNewPaymentModal() {
-    setPayEditId(null);
-    setPayLocked(false);
-    setPayEnrollmentId("");
-    setPayAmount("");
-    setPayMethod("cash");
-    setPayDate(isoDate(new Date()));
-    setPayNote("");
-    setOpenPay(true);
-  }
-
-  async function openPaymentHistory(pRow) {
-    setHistoryEnrollment(pRow);
-    setOpenHistory(true);
-    setHistoryLoading(true);
-    if (!pRow.package_id) {
-      setHistoryRows([]);
-      setHistoryLoading(false);
-      return;
-    }
-    const { data } = await supabase
-      .from("payments")
-      .select("id,enrollment_id,amount,method,note,created_at")
-      .eq("package_id", pRow.package_id)
-      .order("created_at", { ascending: false });
-    setHistoryRows(data ?? []);
-    setHistoryLoading(false);
-  }
-  // -----------------------------
 
   if (loading)
     return (
@@ -2400,6 +2400,7 @@ export default function RunDetails() {
                     justifyContent: "flex-end",
                   }}
                 >
+                  {/* --- ربط الدوال الصحيحة المباشرة --- */}
                   <button type="button" className="btn" onClick={openBulkModal}>
                     + إضافة مجموعة
                   </button>
@@ -3280,7 +3281,7 @@ export default function RunDetails() {
                   >
                     <button
                       className="actionSquare"
-                      disabled={Number(manageP?.balance || 0) <= 0}
+                      disabled={Number(manageP.balance || 0) <= 0}
                       onClick={() => {
                         const currentP = manageP;
                         if (!currentP) return;
@@ -3295,7 +3296,7 @@ export default function RunDetails() {
                         size={26}
                         style={{
                           color:
-                            Number(manageP?.balance || 0) > 0
+                            Number(manageP.balance || 0) > 0
                               ? "#16a34a"
                               : "#94a3b8",
                         }}
@@ -4176,6 +4177,111 @@ export default function RunDetails() {
                 type="button"
                 className="btn"
                 onClick={() => setOpenSession(false)}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        <Modal
+          open={openPay}
+          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
+          onClose={() => {
+            setPayEditId(null);
+            setPayLocked(false);
+            closeSubModalAndReopen(setOpenPay);
+          }}
+        >
+          <div className="grid">
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الطفل</div>
+              <ModernSelect
+                value={payEnrollmentId}
+                onChange={setPayEnrollmentId}
+                menuWidth="trigger"
+                disabled={paySaving || !!payEditId || payLocked}
+                placeholder="— اختر طفل —"
+                options={[
+                  { value: "", label: "— اختر طفل —" },
+                  ...participants
+                    .filter((p) => p.enrollment_status === "active")
+                    .map((p) => ({
+                      value: String(p.enrollment_id),
+                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
+                    })),
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">المبلغ (₪)</div>
+              <input
+                className="input"
+                type="number"
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">طريقة الدفع</div>
+              <ModernSelect
+                value={payMethod}
+                onChange={setPayMethod}
+                menuWidth="trigger"
+                options={[
+                  { value: "cash", label: "نقداً" },
+                  { value: "card", label: "بطاقة ائتمان" },
+                  { value: "transfer", label: "حوالة بنكية" },
+                  { value: "other", label: "أخرى" },
+                ]}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">تاريخ الدفعة</div>
+              <input
+                className="input"
+                type="date"
+                value={payDate}
+                onChange={(e) => setPayDate(e.target.value)}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">ملاحظات</div>
+              <input
+                className="input"
+                placeholder="اختياري"
+                value={payNote}
+                onChange={(e) => setPayNote(e.target.value)}
+              />
+            </div>
+
+            <div
+              className="row"
+              style={{ gridColumn: "span 12", marginTop: 10 }}
+            >
+              <button
+                type="button"
+                className="btn primary"
+                disabled={paySaving || !payEnrollmentId || !payAmount}
+                onClick={addPayment}
+              >
+                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setPayEditId(null);
+                  setPayLocked(false);
+                  closeSubModalAndReopen(setOpenPay);
+                }}
               >
                 إلغاء
               </button>
