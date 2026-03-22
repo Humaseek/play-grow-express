@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { fmtTime24 } from "../utils/datetime";
 
 import {
   TrendingUp,
@@ -27,6 +26,7 @@ import {
   CalendarDays,
   BadgeDollarSign,
   Filter,
+  Zap,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -63,31 +63,6 @@ function formatTimeLocally(dt) {
   const d = new Date(dt);
   const pad = (n) => String(n).padStart(2, "0");
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function startOfMonth(d = new Date()) {
-  const x = new Date(d);
-  x.setDate(1);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function startOfDay(d = new Date()) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
-
-function endOfDay(d = new Date()) {
-  const x = new Date(d);
-  x.setHours(23, 59, 59, 999);
-  return x;
-}
-
-function addDays(d, n) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
 }
 
 // دالة لمعالجة فترات الفلتر الذكي
@@ -134,14 +109,12 @@ function getRangeAndBins(preset, customStart, customEnd) {
       end.setHours(23, 59, 59, 999);
   }
 
-  // تقسيم الفترة إلى شرائح (Bins) للرسم البياني
   const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
   let bins = [];
 
   if (diffDays <= 1) {
     bins.push({ start: start.getTime(), end: end.getTime(), label: "اليوم" });
   } else if (diffDays <= 31) {
-    // عرض الأيام
     for (let i = 0; i < diffDays; i++) {
       let dStart = new Date(
         start.getFullYear(),
@@ -171,7 +144,6 @@ function getRangeAndBins(preset, customStart, customEnd) {
       bins.push({ start: dStart.getTime(), end: dEnd.getTime(), label });
     }
   } else {
-    // عرض الأشهر للفترات الطويلة
     const startMonth = start.getMonth();
     const startYear = start.getFullYear();
     const totalMonths =
@@ -283,11 +255,8 @@ const Sparkline = ({ data, color, type = "line" }) => {
   );
 };
 
-// رسم بياني محمي من التداخل بفضل الـ Scroll
 const DualBarChart = ({ incomeData, expenseData, labels }) => {
   const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
-
-  // حساب عرض المخطط ليتوسع إذا كان عدد الأيام كبير
   const minWidth = labels.length > 10 ? `${labels.length * 40}px` : "100%";
 
   return (
@@ -303,7 +272,6 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
           position: "relative",
         }}
       >
-        {/* خطوط الخلفية */}
         <div
           style={{
             position: "absolute",
@@ -334,60 +302,20 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
           const expHeight = ((expenseData[i] || 0) / maxVal) * 100;
 
           return (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                flex: 1,
-                zIndex: 1,
-                height: "100%",
-                minWidth: "35px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-end",
-                  gap: "3px",
-                  height: "calc(100% - 25px)",
-                  width: "100%",
-                  justifyContent: "center",
-                }}
-              >
+            <div key={i} className="chart-col-group">
+              <div className="chart-bars-wrap">
                 <div
+                  className="chart-bar income-bar"
                   title={`الإيرادات: ${fmtMoney(incomeData[i])} ₪`}
-                  style={{
-                    width: "12px",
-                    height: `${incHeight}%`,
-                    background:
-                      "linear-gradient(180deg, #10b981 0%, #059669 100%)",
-                    borderRadius: "4px 4px 0 0",
-                  }}
+                  style={{ height: `${incHeight}%` }}
                 />
                 <div
+                  className="chart-bar expense-bar"
                   title={`المصاريف: ${fmtMoney(expenseData[i])} ₪`}
-                  style={{
-                    width: "12px",
-                    height: `${expHeight}%`,
-                    background:
-                      "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)",
-                    borderRadius: "4px 4px 0 0",
-                  }}
+                  style={{ height: `${expHeight}%` }}
                 />
               </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#64748b",
-                  fontWeight: 700,
-                  marginTop: "8px",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {label}
-              </div>
+              <div className="chart-label">{label}</div>
             </div>
           );
         })}
@@ -397,19 +325,39 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
 };
 
 // ============================================================================
-// CSS Styles
+// Skeleton Loader Component
+// ============================================================================
+const Skeleton = ({
+  width = "100%",
+  height = "20px",
+  borderRadius = "8px",
+  style = {},
+}) => (
+  <div
+    className="skeleton-pulse"
+    style={{ width, height, borderRadius, ...style }}
+  ></div>
+);
+
+// ============================================================================
+// Enterprise CSS Styles
 // ============================================================================
 const DASHBOARD_STYLES = `
+/* خلفية مش مألوفة - Mesh Gradient فخمة جداً */
 .page--dashboard {
-  background: #f4f7f9;
+  background-color: #f8fafc;
   background-image: 
-    radial-gradient(at 0% 0%, hsla(217,100%,94%,1) 0, transparent 40%), 
-    radial-gradient(at 100% 0%, hsla(160,100%,94%,1) 0, transparent 40%);
+    radial-gradient(at 0% 0%, hsla(217,100%,94%,0.7) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(160,100%,94%,0.7) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(280,100%,94%,0.6) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, hsla(38,100%,94%,0.6) 0px, transparent 50%);
+  background-attachment: fixed;
   min-height: 100vh;
   padding-bottom: 60px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Header Area */
 .dash-header {
   display: flex;
   justify-content: space-between;
@@ -426,6 +374,9 @@ const DASHBOARD_STYLES = `
   color: #0f172a;
   margin-bottom: 12px;
   letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .dash-meta-pills {
@@ -439,16 +390,17 @@ const DASHBOARD_STYLES = `
   align-items: center;
   gap: 8px;
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   color: #334155;
   padding: 8px 16px;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 800;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
 }
 
+/* Controls & Filters */
 .dash-controls {
   display: flex;
   gap: 12px;
@@ -459,18 +411,20 @@ const DASHBOARD_STYLES = `
 .smart-filter-wrapper {
   display: inline-flex;
   align-items: center;
-  background: #fff;
-  border: 1px solid #cbd5e1;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(203, 213, 225, 0.8);
   padding: 6px 14px;
   border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
   gap: 8px;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .smart-filter-wrapper:focus-within,
 .smart-filter-wrapper:hover {
   border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.12);
+  background: #fff;
 }
 
 .smart-select {
@@ -496,11 +450,14 @@ const DASHBOARD_STYLES = `
   color: #0f172a;
   font-size: 13px;
   cursor: pointer;
+  transition: background 0.2s;
 }
+.date-input:hover { background: #e2e8f0; }
 
 .dash-btn-refresh {
-  background: #fff;
-  border: 1px solid #cbd5e1;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(203, 213, 225, 0.8);
   color: #334155;
   padding: 10px 20px;
   border-radius: 16px;
@@ -510,36 +467,44 @@ const DASHBOARD_STYLES = `
   align-items: center;
   gap: 8px;
   cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 .dash-btn-refresh:hover {
-  background: #f8fafc;
+  background: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  border-color: #94a3b8;
 }
 
+/* Bento Grid */
 .kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
   margin-bottom: 24px;
 }
 
+/* Glassmorphism Cards */
 .bento-item {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
   border-radius: 28px;
-  border: 1px solid rgba(15, 23, 42, 0.04);
-  box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.03), 0 1px 4px -1px rgba(15, 23, 42, 0.02);
+  border: 1px solid rgba(255, 255, 255, 1);
+  box-shadow: 
+    0 4px 24px -4px rgba(15, 23, 42, 0.04), 
+    0 1px 4px -1px rgba(15, 23, 42, 0.02),
+    inset 0 0 0 1px rgba(255,255,255,0.4);
   padding: 24px;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
 }
 .bento-item:hover {
-  box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 14px 40px -4px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
 }
 
 .kpi-title {
@@ -552,7 +517,7 @@ const DASHBOARD_STYLES = `
   gap: 10px;
 }
 .kpi-value {
-  font-size: 38px;
+  font-size: 40px;
   font-weight: 900;
   color: #0f172a;
   line-height: 1.1;
@@ -565,14 +530,13 @@ const DASHBOARD_STYLES = `
   margin-top: auto;
 }
 
-/* تخطيط مرن (Flex Layout) بدلاً من Grid معقد لتجنب التكسر */
+/* Layouts */
 .main-layout {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
   margin-bottom: 24px;
 }
-
 .layout-col-main {
   flex: 2;
   min-width: 320px;
@@ -580,7 +544,6 @@ const DASHBOARD_STYLES = `
   flex-direction: column;
   gap: 24px;
 }
-
 .layout-col-side {
   flex: 1;
   min-width: 320px;
@@ -589,6 +552,7 @@ const DASHBOARD_STYLES = `
   gap: 24px;
 }
 
+/* Section Headers */
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -604,18 +568,15 @@ const DASHBOARD_STYLES = `
   gap: 10px;
 }
 
-/* Timeline مضاد للكسر (Bulletproof Flex Timeline) */
+/* Bulletproof Flex Timeline */
 .timeline-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
-
 .tl-row {
   display: flex;
   gap: 16px;
 }
-
 .tl-indicator {
   display: flex;
   flex-direction: column;
@@ -624,46 +585,54 @@ const DASHBOARD_STYLES = `
   flex-shrink: 0;
 }
 .tl-dot {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #fff;
-  border: 4px solid #cbd5e1;
+  border: 5px solid #cbd5e1;
   z-index: 2;
   margin-top: 6px;
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.8);
 }
 .tl-line {
   flex: 1;
-  width: 2px;
+  width: 3px;
   background: #e2e8f0;
   margin-top: 4px;
   margin-bottom: -6px;
+  border-radius: 3px;
 }
-/* إخفاء الخط للآيتم الأخير */
-.tl-row:last-child .tl-line {
-  display: none;
+.tl-row:last-child .tl-line { display: none; }
+
+/* تأثير النبض (Pulse) للجلسة المجدولة */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
 }
+
+.tl-row.status-done .tl-dot { border-color: #10b981; }
+.tl-row.status-scheduled .tl-dot { 
+  border-color: #3b82f6; 
+  animation: pulse-ring 2s infinite;
+}
+.tl-row.status-canceled .tl-dot { border-color: #ef4444; }
 
 .tl-card {
   flex: 1;
-  background: #fff;
-  border: 1px solid #f1f5f9;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 20px;
   padding: 20px;
   margin-bottom: 24px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
   transition: all 0.2s ease;
 }
 .tl-card:hover {
-  border-color: #e2e8f0;
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
-  transform: translateX(-4px); /* لليمين بما انه RTL */
+  background: #fff;
+  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.06);
+  transform: translateX(-4px);
 }
-
-/* ألوان النقاط حسب الحالة */
-.tl-row.status-done .tl-dot { border-color: #10b981; }
-.tl-row.status-scheduled .tl-dot { border-color: #3b82f6; }
-.tl-row.status-canceled .tl-dot { border-color: #ef4444; }
 
 .tl-time {
   font-size: 15px;
@@ -675,7 +644,7 @@ const DASHBOARD_STYLES = `
   gap: 8px;
 }
 .tl-course {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 900;
   color: #1e293b;
   margin-bottom: 8px;
@@ -694,7 +663,7 @@ const DASHBOARD_STYLES = `
   gap: 10px;
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 1px dashed #e2e8f0;
+  border-top: 1px dashed rgba(226, 232, 240, 0.8);
   flex-wrap: wrap;
 }
 
@@ -702,7 +671,7 @@ const DASHBOARD_STYLES = `
   flex: 1;
   min-width: 100px;
   padding: 10px;
-  border-radius: 12px;
+  border-radius: 14px;
   font-weight: 800;
   font-size: 13px;
   display: flex;
@@ -728,8 +697,8 @@ const DASHBOARD_STYLES = `
   gap: 16px;
 }
 .qa-btn {
-  background: #fff;
-  border: 1px solid #f1f5f9;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 1);
   padding: 20px 16px;
   border-radius: 24px;
   display: flex;
@@ -741,28 +710,30 @@ const DASHBOARD_STYLES = `
   font-weight: 800;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   box-shadow: 0 4px 6px rgba(0,0,0,0.02);
 }
 .qa-btn:hover {
-  border-color: #cbd5e1;
+  background: #fff;
   color: #0f172a;
   transform: translateY(-4px);
   box-shadow: 0 14px 25px -5px rgba(0,0,0,0.08);
 }
 .qa-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.3s;
 }
-.qa-btn.primary .qa-icon-wrap { background: #eff6ff; color: #3b82f6; }
-.qa-btn.success .qa-icon-wrap { background: #f0fdf4; color: #10b981; }
-.qa-btn.danger .qa-icon-wrap { background: #fef2f2; color: #ef4444; }
-.qa-btn.purple .qa-icon-wrap { background: #faf5ff; color: #8b5cf6; }
+.qa-btn:hover .qa-icon-wrap { transform: scale(1.1); }
+.qa-btn.primary .qa-icon-wrap { background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #3b82f6; }
+.qa-btn.success .qa-icon-wrap { background: linear-gradient(135deg, #f0fdf4, #dcfce7); color: #10b981; }
+.qa-btn.danger .qa-icon-wrap { background: linear-gradient(135deg, #fef2f2, #fee2e2); color: #ef4444; }
+.qa-btn.purple .qa-icon-wrap { background: linear-gradient(135deg, #faf5ff, #f3e8ff); color: #8b5cf6; }
 
 /* List Widgets */
 .list-widget {
@@ -775,16 +746,15 @@ const DASHBOARD_STYLES = `
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.6);
   border-radius: 20px;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.9);
   transition: all 0.2s;
   text-decoration: none;
 }
 .list-item:hover {
   background: #fff;
-  border-color: #e2e8f0;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.04);
   transform: translateX(-4px);
 }
 .li-info {
@@ -793,28 +763,67 @@ const DASHBOARD_STYLES = `
   gap: 14px;
 }
 .li-avatar {
-  width: 44px; height: 44px;
-  border-radius: 14px;
+  width: 46px; height: 46px;
+  border-radius: 16px;
   background: #e2e8f0;
   display: flex; align-items: center; justify-content: center;
   color: #64748b; font-weight: 900;
 }
-.li-title { font-weight: 800; color: #0f172a; font-size: 15px; margin-bottom: 4px; }
+.li-title { font-weight: 900; color: #0f172a; font-size: 15px; margin-bottom: 4px; }
 .li-sub { font-size: 13px; color: #64748b; font-weight: 700; }
 .li-value { font-weight: 900; font-size: 16px; text-align: left; direction: ltr; }
 .li-value.danger { color: #ef4444; }
 .li-value.success { color: #10b981; }
 
-.chart-legend {
+/* Bar Chart Styling */
+.chart-col-group {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-  font-size: 13px;
-  font-weight: 800;
-  color: #64748b;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  z-index: 1;
+  height: 100%;
+  min-width: 40px;
 }
-.legend-item { display: flex; align-items: center; gap: 6px; }
-.legend-color { width: 12px; height: 12px; border-radius: 4px; }
+.chart-bars-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: calc(100% - 25px);
+  width: 100%;
+  justify-content: center;
+}
+.chart-bar {
+  width: 35%;
+  max-width: 16px;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 -2px 6px rgba(0,0,0,0.1);
+}
+.chart-bar.income-bar {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+}
+.chart-bar.expense-bar {
+  background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+}
+.chart-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+  margin-top: 8px;
+  white-space: nowrap;
+}
+
+/* Skeleton Shimmer Loading Effect */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-pulse {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
 `;
 
 export default function Dashboard() {
@@ -864,10 +873,9 @@ export default function Dashboard() {
   }, []);
 
   // ============================================================================
-  // Data Fetching Engine (Parallel Execution for Max Speed)
+  // Data Fetching Engine
   // ============================================================================
   async function loadDashboard() {
-    // التأكد من صحة التواريخ المدخلة
     if (!customStartDate || !customEndDate) return;
     if (new Date(customStartDate) > new Date(customEndDate)) {
       toast("تاريخ البداية يجب أن يكون قبل أو يساوي تاريخ النهاية", "warn");
@@ -878,20 +886,17 @@ export default function Dashboard() {
     setError(null);
     try {
       const now = new Date();
-      // داتا خاصة باليوم فقط (للجدول الزمني)
       const dayStartObj = startOfDay(now);
       const dayEndObj = endOfDay(now);
       const isoDayStart = dayStartObj.toISOString();
       const isoDayEnd = dayEndObj.toISOString();
 
-      // جلب نطاق التواريخ والـ Bins بناءً على الفلتر المختار
       const { fromIso, toIso, bins } = getRangeAndBins(
         preset,
         customStartDate,
         customEndDate,
       );
 
-      // 1. الطلبات الثابتة (لا تتأثر بفلتر الوقت المالي)
       const qActiveStudents = supabase
         .from("enrollments")
         .select("id", { count: "exact", head: true })
@@ -923,19 +928,17 @@ export default function Dashboard() {
         .order("created_at", { ascending: false })
         .limit(5);
 
-      // 2. الطلبات المالية التي تتأثر بفلتر الوقت
-      let qPayments = supabase
+      const qPayments = supabase
         .from("payments")
         .select("amount, created_at")
         .gte("created_at", fromIso)
         .lte("created_at", toIso);
-      let qExpenses = supabase
+      const qExpenses = supabase
         .from("expenses")
         .select("amount, spent_on")
         .gte("spent_on", fromIso.split("T")[0])
         .lte("spent_on", toIso.split("T")[0]);
 
-      // تنفيذ جميع الطلبات بوقت واحد (Parallel) لسرعة لا تضاهى
       const [
         { count: activeStudentsCount, error: e1 },
         { data: sessionsToday, error: e2 },
@@ -965,8 +968,6 @@ export default function Dashboard() {
       }
 
       // --- Processing ---
-
-      // دمج الجلسات
       const enrichedSessions = (sessionsToday || []).map((session) => {
         const runInfo = (runsSummary || []).find(
           (r) => r.run_id === session.run_id,
@@ -978,7 +979,6 @@ export default function Dashboard() {
         };
       });
 
-      // دمج وترتيب أحدث المعاملات (آخر 6 عمليات بغض النظر عن الفلتر)
       let combinedTx = [];
       if (recentPays) {
         combinedTx.push(
@@ -1012,7 +1012,6 @@ export default function Dashboard() {
       combinedTx.sort((a, b) => new Date(b.date) - new Date(a.date));
       combinedTx = combinedTx.slice(0, 6);
 
-      // حساب المجاميع المالية للفترة المحددة
       const totalIncome = (paymentsData || []).reduce(
         (sum, p) => sum + Number(p.amount || 0),
         0,
@@ -1023,7 +1022,6 @@ export default function Dashboard() {
       );
       const netProfit = totalIncome - totalExpense;
 
-      // حساب المخطط البياني (تقسيم البيانات إلى Bins)
       const incTrendArr = bins.map((b) => {
         return (paymentsData || [])
           .filter((p) => {
@@ -1063,7 +1061,6 @@ export default function Dashboard() {
     }
   }
 
-  // إعادة تحميل البيانات فوراً عند تغيير الفلتر أو التواريخ المخصصة
   useEffect(() => {
     loadDashboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1082,14 +1079,14 @@ export default function Dashboard() {
     loadDashboard();
   }
 
-  // تنسيق نصوص وتواريخ
   const todayFormatted = useMemo(() => {
+    const d = new Date();
     return new Intl.DateTimeFormat("ar-EG", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-    }).format(new Date());
+    }).format(d);
   }, []);
 
   const currentTimeStr = new Intl.DateTimeFormat("ar-EG", {
@@ -1115,7 +1112,10 @@ export default function Dashboard() {
         {/* ==================== Header Section ==================== */}
         <div className="dash-header">
           <div>
-            <h1 className="dash-greeting">{getGreeting()}، جيمي 👋</h1>
+            <h1 className="dash-greeting">
+              {getGreeting()}، جيمي{" "}
+              <Zap size={32} color="#f59e0b" fill="#f59e0b" />
+            </h1>
             <div className="dash-meta-pills">
               <div className="dash-pill">
                 <CalendarDays size={16} color="#3b82f6" />
@@ -1129,7 +1129,6 @@ export default function Dashboard() {
           </div>
 
           <div className="dash-controls">
-            {/* الفلتر الذكي للتواريخ */}
             <div className="smart-filter-wrapper">
               <Filter size={16} color="#64748b" />
               <select
@@ -1206,16 +1205,22 @@ export default function Dashboard() {
               </div>
               الإيرادات ({rangeLabels[preset]})
             </div>
-            <div className="kpi-value">
-              {fmtMoney(dashData.incomeFiltered)}{" "}
-              <span style={{ fontSize: 20, color: "#94a3b8" }}>₪</span>
-            </div>
+            {loading ? (
+              <Skeleton height="45px" />
+            ) : (
+              <div className="kpi-value">
+                {fmtMoney(dashData.incomeFiltered)}{" "}
+                <span style={{ fontSize: 20, color: "#94a3b8" }}>₪</span>
+              </div>
+            )}
             <div className="kpi-chart-wrapper">
-              <Sparkline
-                data={dashData.incomeTrend}
-                color="#10b981"
-                type="line"
-              />
+              {!loading && (
+                <Sparkline
+                  data={dashData.incomeTrend}
+                  color="#10b981"
+                  type="line"
+                />
+              )}
             </div>
           </div>
 
@@ -1228,31 +1233,44 @@ export default function Dashboard() {
               </div>
               المصاريف ({rangeLabels[preset]})
             </div>
-            <div className="kpi-value">
-              {fmtMoney(dashData.expenseFiltered)}{" "}
-              <span style={{ fontSize: 20, color: "#94a3b8" }}>₪</span>
-            </div>
+            {loading ? (
+              <Skeleton height="45px" />
+            ) : (
+              <div className="kpi-value">
+                {fmtMoney(dashData.expenseFiltered)}{" "}
+                <span style={{ fontSize: 20, color: "#94a3b8" }}>₪</span>
+              </div>
+            )}
             <div className="kpi-chart-wrapper">
-              <Sparkline
-                data={dashData.expenseTrend}
-                color="#ef4444"
-                type="bar"
-              />
+              {!loading && (
+                <Sparkline
+                  data={dashData.expenseTrend}
+                  color="#ef4444"
+                  type="bar"
+                />
+              )}
             </div>
           </div>
 
           <div
             className="bento-item"
             style={
-              dashData.netFiltered >= 0
+              !loading && dashData.netFiltered >= 0
                 ? { background: "#f0fdf4", borderColor: "#bbf7d0" }
-                : { background: "#fef2f2", borderColor: "#fecaca" }
+                : !loading
+                  ? { background: "#fef2f2", borderColor: "#fecaca" }
+                  : {}
             }
           >
             <div
               className="kpi-title"
               style={{
-                color: dashData.netFiltered >= 0 ? "#059669" : "#dc2626",
+                color:
+                  !loading && dashData.netFiltered >= 0
+                    ? "#059669"
+                    : !loading
+                      ? "#dc2626"
+                      : "#64748b",
               }}
             >
               <div
@@ -1265,35 +1283,50 @@ export default function Dashboard() {
               >
                 <BadgeDollarSign
                   size={20}
-                  color={dashData.netFiltered >= 0 ? "#10b981" : "#ef4444"}
+                  color={
+                    !loading && dashData.netFiltered >= 0
+                      ? "#10b981"
+                      : !loading
+                        ? "#ef4444"
+                        : "#64748b"
+                  }
                 />
               </div>
               صافي الأرباح
             </div>
-            <div
-              className="kpi-value"
-              style={{
-                color: dashData.netFiltered >= 0 ? "#047857" : "#b91c1c",
-              }}
-            >
-              <span dir="ltr">
-                {dashData.netFiltered > 0 ? "+" : ""}
-                {fmtMoney(dashData.netFiltered)}
-              </span>{" "}
-              <span style={{ fontSize: 20, opacity: 0.5 }}>₪</span>
-            </div>
+            {loading ? (
+              <Skeleton height="45px" />
+            ) : (
+              <div
+                className="kpi-value"
+                style={{
+                  color: dashData.netFiltered >= 0 ? "#047857" : "#b91c1c",
+                }}
+              >
+                <span dir="ltr">
+                  {dashData.netFiltered > 0 ? "+" : ""}
+                  {fmtMoney(dashData.netFiltered)}
+                </span>{" "}
+                <span style={{ fontSize: 20, opacity: 0.5 }}>₪</span>
+              </div>
+            )}
             <div
               style={{
                 fontSize: 13,
                 fontWeight: 800,
                 marginTop: "auto",
-                color: dashData.netFiltered >= 0 ? "#10b981" : "#ef4444",
+                color:
+                  !loading && dashData.netFiltered >= 0 ? "#10b981" : "#ef4444",
                 opacity: 0.8,
               }}
             >
-              {dashData.netFiltered >= 0
-                ? "أداء مالي إيجابي لهذه الفترة"
-                : "المصاريف تتجاوز الإيرادات!"}
+              {loading ? (
+                <Skeleton width="60%" height="16px" />
+              ) : dashData.netFiltered >= 0 ? (
+                "أداء مالي إيجابي لهذه الفترة"
+              ) : (
+                "تنبيه: المصاريف تتجاوز الإيرادات!"
+              )}
             </div>
           </div>
 
@@ -1306,9 +1339,13 @@ export default function Dashboard() {
               </div>
               الطلاب النشطين
             </div>
-            <div className="kpi-value" style={{ fontSize: 44 }}>
-              {dashData.activeStudents}
-            </div>
+            {loading ? (
+              <Skeleton height="45px" />
+            ) : (
+              <div className="kpi-value" style={{ fontSize: 44 }}>
+                {dashData.activeStudents}
+              </div>
+            )}
             <div
               style={{
                 color: "#64748b",
@@ -1317,12 +1354,16 @@ export default function Dashboard() {
                 marginTop: "auto",
               }}
             >
-              إجمالي الاشتراكات الفعالة حالياً
+              {loading ? (
+                <Skeleton width="50%" height="16px" />
+              ) : (
+                "إجمالي الاشتراكات الفعالة بالمركز"
+              )}
             </div>
           </div>
         </div>
 
-        {/* ==================== Main Layout (Flex instead of Grid to prevent breaking) ==================== */}
+        {/* ==================== Main Layout (Flex layout) ==================== */}
         <div className="main-layout">
           {/* ----- Left Column: Timeline & Recent Txs ----- */}
           <div className="layout-col-main">
@@ -1332,24 +1373,29 @@ export default function Dashboard() {
                 <h2 className="section-title">
                   <Clock size={24} color="#3b82f6" /> جدول اليوم
                 </h2>
-                <Badge
-                  variant="info"
-                  style={{ fontSize: 14, padding: "6px 12px" }}
-                >
-                  {dashData.sessionsCountToday} جلسات
-                </Badge>
+                {!loading && (
+                  <Badge
+                    variant="info"
+                    style={{ fontSize: 14, padding: "6px 12px" }}
+                  >
+                    {dashData.sessionsCountToday} جلسات
+                  </Badge>
+                )}
               </div>
 
               {loading ? (
-                <div
-                  style={{
-                    padding: 60,
-                    textAlign: "center",
-                    color: "#64748b",
-                    fontWeight: 800,
-                  }}
-                >
-                  جاري بناء الجدول...
+                <div className="timeline-list">
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} className="tl-row">
+                      <div className="tl-indicator">
+                        <div className="tl-dot"></div>
+                        <div className="tl-line"></div>
+                      </div>
+                      <div className="tl-card">
+                        <Skeleton height="100px" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : dashData.todaySessions.length === 0 ? (
                 <EmptyState
@@ -1480,7 +1526,15 @@ export default function Dashboard() {
                 </h2>
               </div>
 
-              {dashData.recentTransactions.length === 0 ? (
+              {loading ? (
+                <div className="list-widget">
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} className="list-item">
+                      <Skeleton height="40px" />
+                    </div>
+                  ))}
+                </div>
+              ) : dashData.recentTransactions.length === 0 ? (
                 <div
                   style={{
                     padding: 40,
@@ -1607,11 +1661,9 @@ export default function Dashboard() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#94a3b8",
-                    fontWeight: 800,
                   }}
                 >
-                  جاري تحليل البيانات...
+                  <Skeleton height="100%" />
                 </div>
               ) : (
                 <DualBarChart
@@ -1628,12 +1680,22 @@ export default function Dashboard() {
                 <h2 className="section-title" style={{ color: "#ef4444" }}>
                   <BellRing size={22} color="#ef4444" /> رادار الديون
                 </h2>
-                <Badge variant="danger" style={{ fontSize: 14 }}>
-                  يوجد {dashData.debtors.length} طلاب
-                </Badge>
+                {!loading && (
+                  <Badge variant="danger" style={{ fontSize: 14 }}>
+                    يوجد {dashData.debtors.length} طلاب
+                  </Badge>
+                )}
               </div>
 
-              {dashData.debtors.length === 0 ? (
+              {loading ? (
+                <div className="list-widget">
+                  {[1, 2, 3].map((n) => (
+                    <div key={n} className="list-item">
+                      <Skeleton height="40px" />
+                    </div>
+                  ))}
+                </div>
+              ) : dashData.debtors.length === 0 ? (
                 <div
                   style={{
                     textAlign: "center",
