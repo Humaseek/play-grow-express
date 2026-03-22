@@ -10,6 +10,11 @@ import {
   RefreshCcw,
   Sparkles,
   XCircle,
+  Users,
+  Clock,
+  BookOpen,
+  CalendarCheck,
+  ChevronLeft,
 } from "lucide-react";
 
 import { supabase } from "../supabaseClient";
@@ -19,7 +24,6 @@ import EmptyState from "../components/EmptyState";
 import ErrorBanner from "../components/ErrorBanner";
 import IconButton from "../components/IconButton";
 import KpiCard from "../components/KpiCard";
-import PageHeader from "../components/PageHeader";
 import { fmtTime24, fmtDayLabelAr } from "../utils/datetime";
 
 function clamp(n, a, b) {
@@ -30,7 +34,6 @@ function normalizeRatio(v) {
   if (v == null) return 0;
   if (typeof v === "number") {
     const n = Number.isFinite(v) ? v : 0;
-    // ( 38) 0.38
     const asRatio = n > 1.5 ? n / 100 : n;
     return clamp(asRatio, 0, 1);
   }
@@ -40,50 +43,247 @@ function normalizeRatio(v) {
     const hasPct = s.endsWith("%");
     const num = Number.parseFloat(hasPct ? s.slice(0, -1) : s);
     if (!Number.isFinite(num)) return 0;
-    const asRatio = hasPct || num > 1.5 ? num / 100 : num;
+    const asRatio = hasPct ? num / 100 : num > 1.5 ? num / 100 : num;
     return clamp(asRatio, 0, 1);
   }
   return 0;
 }
 
-function fmtTime(ts) {
-  if (!ts) return "";
-  return fmtTime24(ts);
+// --- CSS Styles ---
+const TODAY_STYLES = `
+.page--today {
+  /* ثيم أزرق سماوي يعطي طاقة وحيوية للـ Dashboard */
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.06) 0%, #f4f6f8 350px);
+  min-height: 100vh;
+  padding-bottom: 40px;
 }
 
-function fmtDay(ts) {
-  if (!ts) return "";
-  return fmtDayLabelAr(ts);
+.today-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-function formatTimeRange(startAt, endAt) {
-  return `${fmtTime(startAt)} - ${fmtTime(endAt)}`;
+.today-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-function paidVariant(paidRatio) {
-  const r = typeof paidRatio === "number" ? paidRatio : 0;
-  if (r >= 0.85) return "ok";
-  if (r >= 0.4) return "warn";
-  return "danger";
+.today-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f172a;
 }
 
-function pctVariant(pct) {
-  const p = typeof pct === "number" ? pct : 0;
-  if (p >= 85) return "ok";
-  if (p >= 40) return "warn";
-  return "danger";
+.today-date {
+  font-size: 15px;
+  font-weight: 700;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.04);
 }
+
+.btn-refresh {
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  color: #475569;
+  border-radius: 14px;
+  padding: 10px 20px;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.btn-refresh:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+
+.section-heading {
+  font-size: 20px;
+  font-weight: 900;
+  color: #1e293b;
+  margin-top: 32px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* تصميم بطاقة الجلسة (Widget) */
+.session-widget {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid rgba(15,23,42,0.06);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15,23,42,0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.session-widget:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px rgba(15,23,42,0.06);
+}
+
+/* شريط جانبي يعبر عن الحالة */
+.session-widget::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 6px;
+  background: #3b82f6; /* أزرق للمجدولة */
+  border-radius: 0 22px 22px 0;
+}
+.session-widget.status-done::before { background: #16a34a; }
+.session-widget.status-canceled::before { background: #ef4444; }
+
+.sw-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.sw-time-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sw-time {
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.5px;
+}
+
+.sw-course {
+  font-size: 18px;
+  font-weight: 900;
+  color: #1e293b;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sw-run {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.sw-footer {
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 16px;
+  margin-top: auto;
+}
+
+.btn-take-att {
+  flex: 2;
+  background: #eff6ff;
+  color: #2563eb;
+  border: none;
+  border-radius: 14px;
+  padding: 10px;
+  font-weight: 800;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-take-att:hover:not(:disabled) {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.btn-take-att:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.btn-sw-action {
+  flex: 1;
+  border: none;
+  border-radius: 14px;
+  padding: 10px;
+  font-weight: 800;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-sw-done { background: #f0fdf4; color: #16a34a; }
+.btn-sw-done:hover:not(:disabled) { background: #dcfce7; }
+.btn-sw-cancel { background: #fef2f2; color: #dc2626; }
+.btn-sw-cancel:hover:not(:disabled) { background: #fee2e2; }
+
+.btn-sw-action:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #f8fafc;
+  color: #cbd5e1;
+}
+`;
 
 export default function Today() {
-  const navigate = useNavigate();
   const { toast } = useOutletContext();
+  const navigate = useNavigate();
 
-  // view = "active" (dashboard) | "day" (جدول اليوم)
-  const [view, setView] = useState("active");
-
-  const [activeRuns, setActiveRuns] = useState([]);
-  const [todayRows, setTodayRows] = useState([]);
-  const [loading, setLoading] = useState({ active: true, day: true });
+  const [kpi, setKpi] = useState({
+    sessions_today: 0,
+    active_runs: 0,
+    active_students: 0,
+    attendance_ratio: 0,
+  });
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [confirm, setConfirm] = useState({
@@ -92,700 +292,281 @@ export default function Today() {
     sessionId: null,
   });
 
-  async function loadActiveRuns() {
-    setLoading((s) => ({ ...s, active: true }));
+  async function load() {
+    setLoading(true);
     setError(null);
+    try {
+      // 1. KPIs
+      const { data: kpiData, error: kpiErr } = await supabase
+        .from("today_kpis_view")
+        .select("*")
+        .maybeSingle();
 
-    // 1) /Courses ( next_session_at view)
-    const { data: runs, error: runsErr } = await supabase
-      .from("course_runs_summary_view")
-      .select("*")
-      .eq("status", "active")
-      .not("next_session_at", "is", null);
-
-    if (runsErr) {
-      setError(runsErr);
-      setLoading((s) => ({ ...s, active: false }));
-      return;
-    }
-
-    // 2) ( ) → + + id
-    const nowIso = new Date().toISOString();
-    const { data: upcoming, error: upErr } = await supabase
-      .from("course_sessions")
-      .select("id, run_id, start_at, end_at")
-      .eq("status", "scheduled")
-      .gte("start_at", nowIso)
-      .order("start_at", { ascending: true });
-
-    if (upErr) {
-      setError(upErr);
-      setLoading((s) => ({ ...s, active: false }));
-      return;
-    }
-
-    const byRun = new Map();
-    for (const s of upcoming ?? []) {
-      const key = String(s.run_id);
-      const prev = byRun.get(key);
-      if (!prev) {
-        byRun.set(key, {
-          upcomingCount: 1,
-          nextSession: s,
+      if (kpiErr) {
+        if (!kpiErr.message.includes("does not exist")) throw kpiErr;
+      }
+      if (kpiData) {
+        setKpi({
+          sessions_today: Number(kpiData.sessions_today || 0),
+          active_runs: Number(kpiData.active_runs || 0),
+          active_students: Number(kpiData.active_students || 0),
+          attendance_ratio: normalizeRatio(kpiData.attendance_ratio),
         });
-      } else {
-        prev.upcomingCount += 1;
       }
-    }
 
-    const merged = (runs ?? [])
-      .map((r) => {
-        const meta = byRun.get(String(r.run_id));
-        return {
-          ...r,
-          upcoming_count: meta?.upcomingCount ?? 0,
-          next_session: meta?.nextSession ?? null,
-        };
-      })
-      .filter((r) => (r.upcoming_count ?? 0) > 0)
-      .sort(
-        (a, b) =>
-          new Date(a.next_session?.start_at ?? a.next_session_at) -
-          new Date(b.next_session?.start_at ?? b.next_session_at),
-      );
+      // 2. Sessions
+      const { data: sData, error: sErr } = await supabase
+        .from("today_sessions_view")
+        .select("*")
+        .order("start_at", { ascending: true });
 
-    setActiveRuns(merged);
-    setLoading((s) => ({ ...s, active: false }));
-  }
-
-  async function loadTodayAgenda() {
-    setLoading((s) => ({ ...s, day: true }));
-    setError(null);
-
-    const { data, error: err } = await supabase
-      .from("today_sessions_view")
-      .select("*");
-
-    if (err) {
+      if (sErr) {
+        if (!sErr.message.includes("does not exist")) throw sErr;
+      }
+      if (sData) setSessions(sData);
+    } catch (err) {
       setError(err);
-      setTodayRows([]);
-      setLoading((s) => ({ ...s, day: false }));
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    const baseRows = (data ?? [])
-      .slice()
-      .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
-
-    // IMPORTANT: today_sessions_view .
-    // RunDetails (agreed_price / paid_amount) run_participants_view.
-    // RunDetails 1:1 .
-    const runIds = Array.from(
-      new Set(baseRows.map((r) => r.run_id).filter(Boolean)),
-    );
-    const courseIds = Array.from(
-      new Set(baseRows.map((r) => r.course_id).filter(Boolean)),
-    );
-
-    const paidByRun = new Map(); // run_id(string) -> ratio(0..1)
-    if (runIds.length) {
-      const { data: parts, error: partErr } = await supabase
-        .from("run_participants_view")
-        .select("run_id,enrollment_status,agreed_price,paid_amount")
-        .in("run_id", runIds);
-
-      if (!partErr) {
-        const agg = new Map(); // run_id -> {agreed, paid}
-        for (const p of parts ?? []) {
-          const rid = String(p.run_id ?? "");
-          if (!rid) continue;
-          if ((p.enrollment_status ?? "") !== "active") continue;
-
-          const agreed = Number(p.agreed_price ?? 0);
-          const paid = Number(p.paid_amount ?? 0);
-          const cur = agg.get(rid) ?? { agreed: 0, paid: 0 };
-          cur.agreed += agreed;
-          cur.paid += paid;
-          agg.set(rid, cur);
-        }
-
-        for (const [rid, a] of agg.entries()) {
-          const ratio = a.agreed <= 0 ? 0 : clamp(a.paid / a.agreed, 0, 1);
-          paidByRun.set(rid, ratio);
-        }
-      }
-    }
-
-    const runLabelById = new Map(); // run_id(string) -> label
-    if (runIds.length) {
-      const { data: metaRuns, error: metaRunsErr } = await supabase
-        .from("course_runs")
-        .select("id,label")
-        .in("id", runIds);
-
-      if (!metaRunsErr) {
-        for (const x of metaRuns ?? []) {
-          const id = String(x.id ?? "");
-          if (!id) continue;
-          runLabelById.set(id, x.label ?? "");
-        }
-      }
-    }
-
-    const courseTitleById = new Map(); // course_id(string) -> title
-    if (courseIds.length) {
-      const { data: metaCourses, error: metaCoursesErr } = await supabase
-        .from("courses")
-        .select("id,title")
-        .in("id", courseIds);
-
-      if (!metaCoursesErr) {
-        for (const c of metaCourses ?? []) {
-          const id = String(c.id ?? "");
-          if (!id) continue;
-          courseTitleById.set(id, c.title ?? "");
-        }
-      }
-    }
-
-    const normalized = baseRows.map((r) => {
-      const rid = String(r.run_id ?? "");
-      const fallbackPaid = paidByRun.get(rid) ?? 0;
-
-      return {
-        ...r,
-        run_label:
-          runLabelById.get(rid) ?? r.run_label ?? r.label ?? r.title ?? "",
-        course_title:
-          courseTitleById.get(String(r.course_id ?? "")) ??
-          r.course_title ??
-          "",
-        paid_ratio:
-          normalizeRatio(r.paid_ratio) > 0
-            ? normalizeRatio(r.paid_ratio)
-            : fallbackPaid,
-      };
-    });
-
-    setTodayRows(normalized);
-    setLoading((s) => ({ ...s, day: false }));
-  }
-
-  async function loadAll() {
-    await Promise.all([loadActiveRuns(), loadTodayAgenda()]);
   }
 
   useEffect(() => {
-    loadAll();
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const activeStats = useMemo(() => {
-    const runsCount = activeRuns.length;
-    const upcomingSum = activeRuns.reduce(
-      (acc, r) => acc + Number(r.upcoming_count ?? 0),
-      0,
-    );
-    const participantsSum = activeRuns.reduce(
-      (acc, r) => acc + Number(r.participants_count ?? 0),
-      0,
-    );
-
-    const next = activeRuns[0]?.next_session ?? null;
-    const nextLabel = next
-      ? `${fmtDay(next.start_at)} • ${formatTimeRange(next.start_at, next.end_at)}`
-      : "لا توجد جلسات قادمة";
-
-    return { runsCount, upcomingSum, participantsSum, next, nextLabel };
-  }, [activeRuns]);
-
-  const dayStats = useMemo(() => {
-    const count = todayRows.length;
-
-    const scheduled = todayRows.filter((r) => r.status === "scheduled").length;
-
-    const expectedSum = todayRows.reduce(
-      (acc, r) => acc + Number(r.expected_count ?? 0),
-      0,
-    );
-    const recordedSum = todayRows.reduce(
-      (acc, r) => acc + Number(r.attendance_recorded ?? 0),
-      0,
-    );
-    const presentSum = todayRows.reduce(
-      (acc, r) => acc + Number(r.present_count ?? 0),
-      0,
-    );
-
-    const recordedPct =
-      expectedSum === 0 ? 0 : (recordedSum / expectedSum) * 100;
-    const presentPct = expectedSum === 0 ? 0 : (presentSum / expectedSum) * 100;
-
-    const avgPaid =
-      count === 0
-        ? 0
-        : todayRows.reduce((acc, r) => acc + Number(r.paid_ratio ?? 0), 0) /
-          count;
-
-    const next = todayRows
-      .filter((r) => r.status === "scheduled")
-      .slice()
-      .sort((a, b) => new Date(a.start_at) - new Date(b.start_at))[0];
-
-    return {
-      count,
-      scheduled,
-      expectedSum,
-      recordedSum,
-      presentSum,
-      recordedPct,
-      presentPct,
-      avgPaid,
-      next,
-    };
-  }, [todayRows]);
-
-  async function changeSessionStatus(sessionId, status) {
-    const { error: err } = await supabase
+  async function changeSessionStatus(id, newStatus) {
+    const { error: upErr } = await supabase
       .from("course_sessions")
-      .update({ status })
-      .eq("id", sessionId);
-
-    if (err) {
-      setError(err);
-      toast("فشل تحديث حالة الجلسة.", "danger");
+      .update({ status: newStatus })
+      .eq("id", id);
+    if (upErr) {
+      toast("حدث خطأ أثناء تحديث حالة الجلسة.", "danger");
       return;
     }
-    toast("تم تحديث حالة الجلسة.", "ok");
-    await loadTodayAgenda();
-    await loadActiveRuns();
+    toast("تم تحديث حالة الجلسة بنجاح.", "ok");
+    load();
   }
 
-  const paidPctKpi = dayStats.avgPaid * 100 || 0;
+  const currentDateFormatted = useMemo(() => {
+    const today = new Date();
+    const options = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    return today.toLocaleDateString("ar-EG", options);
+  }, []);
 
   return (
-    <div className="container page page--today" dir="rtl" lang="ar">
-      <PageHeader
-        title="لوحة التحكم"
-        subtitle=""
-        actions={
-          <div className="toolbar" style={{ gap: 10 }}>
-            <div className="segmented">
-              <button
-                className={`segmentedBtn ${view === "active" ? "isActive" : ""}`}
-                onClick={() => setView("active")}
-                type="button"
-              >
-                الدورات الفعّالة
-              </button>
-              <button
-                className={`segmentedBtn ${view === "day" ? "isActive" : ""}`}
-                onClick={() => setView("day")}
-                type="button"
-              >
-                جدول اليوم
-              </button>
-            </div>
-
-            <IconButton
-              title="تحديث"
-              variant="soft"
-              onClick={loadAll}
-              ariaLabel="تحديث"
-            >
-              <RefreshCcw size={18} />
-            </IconButton>
-
-            <button className="btn soft" onClick={() => navigate("/courses")}>
-              الدورات
-            </button>
-            <button className="btn soft" onClick={() => navigate("/payments")}>
-              المدفوعات
-            </button>
-            <button className="btn soft" onClick={() => navigate("/expenses")}>
-              المصروفات
-            </button>
-          </div>
-        }
-      />
-
-      <ErrorBanner error={error} />
-
-      {/* ===================== Active Runs Dashboard ===================== */}
-      {view === "active" && (
-        <>
-          <div className="grid" style={{ marginBottom: 14 }}>
-            <div style={{ gridColumn: "span 4" }}>
-              <KpiCard
-                icon={Sparkles}
-                label="الدورات الفعّالة"
-                value={activeStats.runsCount}
-                hint={
-                  activeStats.next
-                    ? `الجلسة القادمة: ${activeStats.nextLabel}`
-                    : "لا توجد جلسات قادمة"
-                }
-                variant={activeStats.runsCount === 0 ? "neutral" : "info"}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <KpiCard
-                icon={CalendarDays}
-                label="الجلسات القادمة"
-                value={activeStats.upcomingSum}
-                hint=""
-                variant={activeStats.upcomingSum === 0 ? "neutral" : "info"}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <KpiCard
-                icon={ClipboardList}
-                label="المشتركين النشطين"
-                value={activeStats.participantsSum}
-                hint=""
-                variant={activeStats.participantsSum === 0 ? "neutral" : "ok"}
-              />
+    <div className="page page--today" dir="rtl" lang="ar">
+      <style>{TODAY_STYLES}</style>
+      <div className="container">
+        {/* Header */}
+        <div className="today-header">
+          <div className="today-title-group">
+            <div className="today-title">اليوم</div>
+            <div className="today-date">
+              <CalendarDays size={16} />
+              {currentDateFormatted}
             </div>
           </div>
+          <button className="btn-refresh" onClick={load} disabled={loading}>
+            <RefreshCcw size={18} className={loading ? "spin" : ""} />
+            تحديث البيانات
+          </button>
+        </div>
 
-          {loading.active ? (
-            <div className="card">جارٍ التحميل...</div>
-          ) : activeRuns.length === 0 ? (
+        {error && <ErrorBanner error={error} />}
+
+        {/* KPIs */}
+        <div className="kpiGrid4" style={{ marginBottom: 32 }}>
+          <KpiCard
+            icon={ClipboardList}
+            label="جلسات اليوم"
+            value={kpi.sessions_today}
+            variant="info"
+            className="kpi--accent"
+          />
+          <KpiCard
+            icon={CheckCircle2}
+            label="نسبة الحضور"
+            value={`${Math.round(kpi.attendance_ratio * 100)}%`}
+            hint="معدل الحضور لجلسات اليوم"
+            variant={
+              kpi.attendance_ratio >= 0.8
+                ? "ok"
+                : kpi.attendance_ratio > 0
+                  ? "warn"
+                  : "neutral"
+            }
+            className="kpi--accent"
+          />
+          <KpiCard
+            icon={LayoutTemplate}
+            label="الأفواج النشطة"
+            value={kpi.active_runs}
+            variant="neutral"
+            className="kpi--accent"
+          />
+          <KpiCard
+            icon={Users}
+            label="الطلاب النشطين"
+            value={kpi.active_students}
+            variant="neutral"
+            className="kpi--accent"
+          />
+        </div>
+
+        <div className="section-heading">
+          <CalendarCheck size={24} color="#3b82f6" /> قائمة جلسات اليوم
+        </div>
+
+        {loading ? (
+          <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
+            جاري تحميل جلسات اليوم...
+          </div>
+        ) : sessions.length === 0 ? (
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 22,
+              border: "1px solid rgba(15,23,42,0.06)",
+              padding: 40,
+            }}
+          >
             <EmptyState
               icon={Sparkles}
-              title="لا توجد دورات فعّالة"
-              description=""
-              actionLabel="الدورات"
-              onAction={() => navigate("/courses")}
+              title="يوم هادئ!"
+              description="لا توجد أي جلسات مبرمجة في جدولك لهذا اليوم."
             />
-          ) : (
-            <div className="grid">
-              {activeRuns.map((r) => {
-                const next = r.next_session;
-                const when = next
-                  ? `${fmtDay(next.start_at)} • ${formatTimeRange(next.start_at, next.end_at)}`
-                  : "—";
-
-                return (
-                  <div
-                    className="card hoverLift"
-                    style={{ gridColumn: "span 6" }}
-                    key={r.run_id}
-                  >
-                    <div
-                      className="row space"
-                      style={{ alignItems: "flex-start" }}
-                    >
-                      <div>
-                        <div className="titleRow">
-                          <div className="titleMain">{r.title}</div>
-                          <Badge
-                            variant={r.kind === "workshop" ? "info" : "neutral"}
-                          >
-                            {r.kind === "workshop" ? "ورشة" : "دورة"}
-                          </Badge>
-                        </div>
-                        <div className="muted" style={{ marginTop: 6 }}>
-                          {r.label} • المشتركين: <b>{r.participants_count ?? 0}</b>
-                        </div>
-                      </div>
-
-                      <div
-                        className="stack"
-                        style={{ gap: 8, alignItems: "flex-end" }}
-                      >
-                        <Badge variant="info">الجلسة القادمة</Badge>
-                        <div style={{ fontWeight: 950 }}>{when}</div>
-                      </div>
-                    </div>
-
-                    <hr className="sep" />
-
-                    <div className="row space" style={{ alignItems: "center" }}>
-                      <div className="muted">
-                        الجلسات المتبقية: <b>{r.upcoming_count}</b>
-                      </div>
-
-                      <div className="actionsRow">
-                        {next?.id ? (
-                          <IconButton
-                            title="فتح الجلسة القادمة (الحضور)"
-                            variant="primary"
-                            onClick={() =>
-                              navigate(`/sessions/${next.id}/attendance`)
-                            }
-                          >
-                            <ClipboardList size={18} />
-                          </IconButton>
-                        ) : null}
-
-                        <IconButton
-                          title="تفاصيل الدورة"
-                          onClick={() => navigate(`/runs/${r.run_id}`)}
-                        >
-                          <Layers size={18} />
-                        </IconButton>
-
-                        <IconButton
-                          title="قالب الدورة"
-                          onClick={() => navigate(`/courses/${r.template_id}`)}
-                        >
-                          <LayoutTemplate size={18} />
-                        </IconButton>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* ===================== Day Agenda ===================== */}
-      {view === "day" && (
-        <>
-          <div className="grid" style={{ marginBottom: 14 }}>
-            <div style={{ gridColumn: "span 3" }}>
-              <KpiCard
-                icon={CalendarDays}
-                label="جلسات اليوم"
-                value={dayStats.count}
-                hint={
-                  dayStats.next
-                    ? `الجلسة القادمة: ${formatTimeRange(dayStats.next.start_at, dayStats.next.end_at)}`
-                    : "لا توجد جلسات اليوم"
-                }
-                variant={dayStats.count === 0 ? "neutral" : "info"}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 3" }}>
-              <KpiCard
-                icon={Sparkles}
-                label="مجدولة"
-                value={dayStats.scheduled}
-                hint=""
-                variant={dayStats.scheduled === 0 ? "neutral" : "info"}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 3" }}>
-              <KpiCard
-                icon={ClipboardList}
-                label="تسجيل الحضور"
-                value={`${dayStats.recordedSum}/${dayStats.expectedSum}`}
-                hint={`${dayStats.recordedPct.toFixed(0)}% من المتوقع`}
-                variant={pctVariant(dayStats.recordedPct)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 3" }}>
-              <KpiCard
-                icon={Banknote}
-                label="متوسط الدفع"
-                value={`${paidPctKpi.toFixed(0)}%`}
-                hint=""
-                variant={paidVariant(dayStats.avgPaid)}
-              />
-            </div>
           </div>
+        ) : (
+          <div className="sessions-grid">
+            {sessions.map((r) => {
+              const startDT = r.start_at ? new Date(r.start_at) : null;
+              const endDT = r.end_at ? new Date(r.end_at) : null;
 
-          {loading.day ? (
-            <div className="card">جارٍ التحميل...</div>
-          ) : todayRows.length === 0 ? (
-            <EmptyState
-              icon={CalendarDays}
-              title="لا توجد جلسات اليوم"
-              description=""
-              actionLabel="الدورات"
-              onAction={() => navigate("/courses")}
-            />
-          ) : (
-            <div className="dayList">
-              {todayRows.map((r) => {
-                const expected = r.expected_count ?? 0;
-                const present = r.present_count ?? 0;
-                const recorded = r.attendance_recorded ?? 0;
+              let badgeVar = "neutral";
+              let statusAr = "غير معروف";
+              let widgetClass = "session-widget";
 
-                const recordedPct =
-                  expected === 0 ? 0 : (recorded / expected) * 100;
-                const paidPct = Number(r.paid_ratio ?? 0) * 100;
+              if (r.status === "scheduled") {
+                badgeVar = "info";
+                statusAr = "مجدولة";
+              } else if (r.status === "done") {
+                badgeVar = "ok";
+                statusAr = "مكتملة";
+                widgetClass += " status-done";
+              } else if (r.status === "canceled") {
+                badgeVar = "danger";
+                statusAr = "ملغاة";
+                widgetClass += " status-canceled";
+              }
 
-                return (
-                  <div className="dayRow" key={r.session_id}>
-                    <div className="dayTime">
-                      <div className="timePill">{fmtTime(r.start_at)}</div>
-                      <div className="muted" style={{ marginTop: 6 }}>
-                        {fmtTime(r.end_at)}
+              const isDisabled = r.status !== "scheduled";
+
+              return (
+                <div key={r.session_id} className={widgetClass}>
+                  <div className="sw-header">
+                    <div className="sw-time-box">
+                      <Clock size={20} color="#64748b" />
+                      <div className="sw-time" dir="ltr">
+                        {startDT ? fmtTime24(startDT) : "—"}
+                        <span style={{ color: "#cbd5e1", margin: "0 4px" }}>
+                          -
+                        </span>
+                        <span style={{ fontSize: 16, color: "#64748b" }}>
+                          {endDT ? fmtTime24(endDT) : "—"}
+                        </span>
                       </div>
                     </div>
+                    <Badge variant={badgeVar}>{statusAr}</Badge>
+                  </div>
 
-                    <div className="dayCard card hoverLift">
-                      <div
-                        className="row space"
-                        style={{ alignItems: "flex-start" }}
-                      >
-                        <div>
-                          <div className="titleRow">
-                            <div className="titleMain">
-                              {r.run_label ?? r.title}
-                            </div>
-                            <Badge
-                              variant={
-                                r.kind === "workshop" ? "info" : "neutral"
-                              }
-                            >
-                              {r.kind === "workshop" ? "ورشة" : "دورة"}
-                            </Badge>
-                          </div>
-                          {r.course_title ? (
-                            <div className="muted" style={{ marginTop: 6 }}>
-                              {r.course_title}
-                            </div>
-                          ) : null}
-                          <div
-                            className="muted"
-                            style={{ marginTop: r.course_title ? 2 : 6 }}
-                          >
-                            {formatTimeRange(r.start_at, r.end_at)}
-                          </div>
-                        </div>
-
-                        <Badge
-                          variant={
-                            r.status === "scheduled"
-                              ? "info"
-                              : r.status === "done"
-                                ? "ok"
-                                : "warn"
-                          }
-                        >
-                          {r.status === "scheduled"
-                            ? "مجدولة"
-                            : r.status === "done"
-                              ? "مكتملة"
-                              : "ملغاة"}
-                        </Badge>
-                      </div>
-
-                      <hr className="sep" />
-
-                      <div
-                        className="row space"
-                        style={{ gap: 10, flexWrap: "wrap" }}
-                      >
-                        <div className="pill">
-                          <span className="muted">الحضور المسجّل</span>
-                          <b>
-                            {recorded}/{expected}
-                          </b>
-                        </div>
-                        <div className="pill">
-                          <span className="muted">حاضر</span>
-                          <b>
-                            {present}/{expected}
-                          </b>
-                        </div>
-                        <div className="pill">
-                          <span className="muted">الدفع</span>
-                          <Badge variant={paidVariant(r.paid_ratio)}>
-                            {paidPct.toFixed(0)}%
-                          </Badge>
-                        </div>
-                        <div className="pill">
-                          <span className="muted">نسبة التسجيل</span>
-                          <Badge variant={pctVariant(recordedPct)}>
-                            {recordedPct.toFixed(0)}%
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="actionsRow" style={{ marginTop: 12 }}>
-                        <IconButton
-                          title="فتح الحضور"
-                          variant="primary"
-                          onClick={() =>
-                            navigate(`/sessions/${r.session_id}/attendance`)
-                          }
-                        >
-                          <ClipboardList size={18} />
-                        </IconButton>
-
-                        <IconButton
-                          title="تفاصيل الدورة"
-                          onClick={() => navigate(`/runs/${r.run_id}`)}
-                        >
-                          <Layers size={18} />
-                        </IconButton>
-
-                        <IconButton
-                          title="قالب الدورة"
-                          onClick={() => navigate(`/courses/${r.course_id}`)}
-                        >
-                          <LayoutTemplate size={18} />
-                        </IconButton>
-
-                        <IconButton
-                          title="إنهاء"
-                          onClick={() =>
-                            setConfirm({
-                              open: true,
-                              action: "done",
-                              sessionId: r.session_id,
-                            })
-                          }
-                          disabled={r.status !== "scheduled"}
-                        >
-                          <CheckCircle2 size={18} />
-                        </IconButton>
-
-                        <IconButton
-                          title="إلغاء"
-                          variant="danger"
-                          onClick={() =>
-                            setConfirm({
-                              open: true,
-                              action: "canceled",
-                              sessionId: r.session_id,
-                            })
-                          }
-                          disabled={r.status !== "scheduled"}
-                        >
-                          <XCircle size={18} />
-                        </IconButton>
-                      </div>
+                  <div className="sw-body">
+                    <div className="sw-course">
+                      <BookOpen size={18} color="#3b82f6" />
+                      {r.course_title || "دورة غير معروفة"}
+                    </div>
+                    <div className="sw-run">
+                      <Layers size={16} />
+                      فوج: {r.run_label || "—"}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
 
-      <ConfirmDialog
-        open={confirm.open}
-        title="تأكيد"
-        message={
-          confirm.action === "done"
-            ? "هل تريد تعليم الجلسة كمكتملة؟"
-            : "هل تريد إلغاء الجلسة؟"
-        }
-        confirmText="نعم"
-        cancelText="إلغاء"
-        danger={confirm.action !== "done"}
-        onCancel={() =>
-          setConfirm({ open: false, action: null, sessionId: null })
-        }
-        onConfirm={async () => {
-          const { sessionId, action } = confirm;
-          setConfirm({ open: false, action: null, sessionId: null });
-          await changeSessionStatus(sessionId, action);
-        }}
-      />
+                  <div className="sw-footer">
+                    <button
+                      className="btn-take-att"
+                      disabled={r.status === "canceled"}
+                      onClick={() =>
+                        navigate(`/sessions/${r.session_id}/attendance`)
+                      }
+                      title="سجل حضور وغياب الطلاب"
+                    >
+                      <ClipboardList size={18} />
+                      أخذ الحضور
+                    </button>
+
+                    <button
+                      className="btn-sw-action btn-sw-done"
+                      disabled={isDisabled}
+                      onClick={() =>
+                        setConfirm({
+                          open: true,
+                          action: "done",
+                          sessionId: r.session_id,
+                        })
+                      }
+                      title="تأكيد إكمال الجلسة"
+                    >
+                      <CheckCircle2 size={18} />
+                    </button>
+
+                    <button
+                      className="btn-sw-action btn-sw-cancel"
+                      disabled={isDisabled}
+                      onClick={() =>
+                        setConfirm({
+                          open: true,
+                          action: "canceled",
+                          sessionId: r.session_id,
+                        })
+                      }
+                      title="إلغاء الجلسة"
+                    >
+                      <XCircle size={18} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <ConfirmDialog
+          open={confirm.open}
+          title="تأكيد حالة الجلسة"
+          message={
+            confirm.action === "done"
+              ? "هل أنت متأكد من تعليم هذه الجلسة كمكتملة؟"
+              : "هل أنت متأكد من إلغاء هذه الجلسة؟"
+          }
+          confirmText="نعم، بالتأكيد"
+          cancelText="تراجع"
+          danger={confirm.action === "canceled"}
+          onCancel={() =>
+            setConfirm({ open: false, action: null, sessionId: null })
+          }
+          onConfirm={async () => {
+            const { sessionId, action } = confirm;
+            setConfirm({ open: false, action: null, sessionId: null });
+            await changeSessionStatus(sessionId, action);
+          }}
+        />
+      </div>
     </div>
   );
 }
