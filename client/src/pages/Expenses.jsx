@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useOutletContext } from "react-router";
 import { supabase } from "../supabaseClient";
 
@@ -9,7 +9,6 @@ import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import IconButton from "../components/IconButton";
-import Control from "../components/Control";
 import ModernSelect from "../components/ModernSelect";
 
 import {
@@ -23,8 +22,10 @@ import {
   Search,
   Filter,
   AlertTriangle,
+  ChevronDown,
 } from "lucide-react";
 
+// --- دوال مساعدة ---
 function fmtMoney(n) {
   const x = Number(n || 0);
   return x.toLocaleString("en", { maximumFractionDigits: 2 });
@@ -33,15 +34,11 @@ function fmtMoney(n) {
 function fmtDate(d) {
   if (!d) return "—";
   const dt = new Date(d);
-  return dt.toLocaleDateString("en", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
 }
 
 function isoDate(d) {
-  // YYYY-MM-DD
   const dt = new Date(d);
   const y = dt.getFullYear();
   const m = String(dt.getMonth() + 1).padStart(2, "0");
@@ -71,11 +68,288 @@ function uniqSorted(list) {
   return Array.from(s).sort((a, b) => a.localeCompare(b, "en"));
 }
 
+// --- Custom Combobox Component ---
+function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = options.filter((o) =>
+    (o.label || "").toLowerCase().includes((value || "").toLowerCase()),
+  );
+
+  return (
+    <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
+      <input
+        className="input"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="off"
+        style={{ width: "100%", paddingLeft: 36 }}
+      />
+      <ChevronDown
+        size={16}
+        style={{
+          position: "absolute",
+          left: 12,
+          top: "50%",
+          transform: `translateY(-50%) ${isOpen ? "rotate(180deg)" : "rotate(0deg)"}`,
+          color: "#94a3b8",
+          pointerEvents: "none",
+          transition: "transform 0.2s ease",
+        }}
+      />
+      {isOpen && filtered.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 50,
+            background: "#fff",
+            border: "1px solid rgba(15,23,42,0.08)",
+            borderRadius: "14px",
+            maxHeight: "200px",
+            overflowY: "auto",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
+            padding: "4px",
+          }}
+        >
+          {filtered.map((opt, i) => (
+            <div
+              key={i}
+              style={{
+                padding: "10px 14px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#334155",
+                borderRadius: "10px",
+                transition: "background 0.15s ease",
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#f8fafc")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --- CSS Styles ---
+const EXPENSES_STYLES = `
+.page--expenses {
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+.expenses-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.expenses-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  font-size: 24px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.expenses-subtitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.expenses-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.expenses-toolbar {
+  padding: 20px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.filters-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.search-wrapper {
+  position: relative;
+  flex: 1 1 250px;
+  max-width: 350px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.filter-select {
+  min-width: 160px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+
+.modern-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+
+.modern-table th {
+  background: #fff;
+  color: #64748b;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 16px 24px;
+  border-bottom: 2px solid #f1f5f9;
+  white-space: nowrap;
+}
+
+.modern-table td {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f8fafc;
+  color: #334155;
+  font-size: 15px;
+  vertical-align: middle;
+  transition: background 0.15s ease;
+}
+
+.modern-table tr:hover td {
+  background: #f8fafc;
+}
+
+.modern-table tr:last-child td {
+  border-bottom: none;
+}
+
+.btn-add {
+  background: #f59e0b !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 10px 20px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2) !important;
+  transition: all 0.2s !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3) !important;
+  background: #d97706 !important;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+`;
+
 export default function Expenses() {
   const { toast } = useOutletContext();
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [hasTable, setHasTable] = useState(true);
 
@@ -88,12 +362,12 @@ export default function Expenses() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
-  // Picklists (dropdown options saved in DB)
+  // Picklists
   const [catOptions, setCatOptions] = useState([]);
   const [partyOptions, setPartyOptions] = useState([]);
   const [hasPicklists, setHasPicklists] = useState(true);
 
-  // Modal/form
+  // Modal
   const [openAdd, setOpenAdd] = useState(false);
   const [editId, setEditId] = useState(null);
   const [expDate, setExpDate] = useState(isoDate(new Date()));
@@ -101,9 +375,6 @@ export default function Expenses() {
   const [expCategory, setExpCategory] = useState("");
   const [expParty, setExpParty] = useState("");
   const [expDesc, setExpDesc] = useState("");
-
-  const [newCatName, setNewCatName] = useState("");
-  const [newPartyName, setNewPartyName] = useState("");
 
   const [confirm, setConfirm] = useState({ open: false, id: null });
 
@@ -133,8 +404,6 @@ export default function Expenses() {
   }
 
   async function loadPicklists() {
-    // These tables are created by: 20260215_expenses_add_party_and_picklists.sql
-    // If they don't exist, we'll fallback to deriving options from rows.
     setHasPicklists(true);
 
     const [catsRes, partiesRes] = await Promise.all([
@@ -157,7 +426,6 @@ export default function Expenses() {
         setPartyOptions([]);
         return;
       }
-      // For other errors (RLS), show error but keep working
       setError(anyErr);
       setHasPicklists(false);
       setCatOptions([]);
@@ -212,7 +480,6 @@ export default function Expenses() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fallback: derive from rows if picklist tables missing
   const categories = useMemo(() => {
     if (hasPicklists && catOptions.length) return uniqSorted(catOptions);
     return uniqSorted(rows.map((r) => r.category));
@@ -288,8 +555,6 @@ export default function Expenses() {
     setExpCategory("");
     setExpParty("");
     setExpDesc("");
-    setNewCatName("");
-    setNewPartyName("");
     setEditId(null);
   }
 
@@ -316,46 +581,13 @@ export default function Expenses() {
 
     if (ins.error) {
       const msg = String(ins.error.message || "").toLowerCase();
-      // ignore duplicates
+      // تجاهل خطأ التكرار إذا كان العنصر موجود مسبقاً
       if (ins.error.code === "23505" || msg.includes("duplicate")) {
         return { ok: true };
       }
-      setError(ins.error);
       return { ok: false };
     }
     return { ok: true };
-  }
-
-  async function addNewCategory() {
-    const name = newCatName.trim();
-    if (!name) return;
-
-    const r = await safeInsertPicklist("expense_categories", name);
-    if (!r.ok) {
-      toast("فشل إضافة الفئة.", "danger");
-      return;
-    }
-
-    await loadPicklists();
-    setExpCategory(name);
-    setNewCatName("");
-    toast("تم إضافة الفئة.", "ok");
-  }
-
-  async function addNewParty() {
-    const name = newPartyName.trim();
-    if (!name) return;
-
-    const r = await safeInsertPicklist("expense_parties", name);
-    if (!r.ok) {
-      toast("فشل إضافة شخص/المتجر.", "danger");
-      return;
-    }
-
-    await loadPicklists();
-    setExpParty(name);
-    setNewPartyName("");
-    toast("تم إضافة شخص/المتجر.", "ok");
   }
 
   async function saveExpense() {
@@ -369,38 +601,47 @@ export default function Expenses() {
       return;
     }
 
-    const payload = {
-      spent_on: expDate,
-      amount,
-      category: expCategory?.trim() || null,
-      party: expParty?.trim() || null,
-      description: expDesc?.trim() || null,
-    };
+    setSaving(true);
+    try {
+      // حفظ الفئة الجديدة إذا لم تكن موجودة
+      if (expCategory?.trim()) {
+        await safeInsertPicklist("expense_categories", expCategory);
+      }
+      // حفظ اسم الشخص/المتجر الجديد إذا لم يكن موجود
+      if (expParty?.trim()) {
+        await safeInsertPicklist("expense_parties", expParty);
+      }
 
-    if (editId) {
-      const up = await supabase
-        .from("expenses")
-        .update(payload)
-        .eq("id", editId);
-      if (up.error) {
-        setError(up.error);
-        toast("فشل تعديل المصروف.", "danger");
-        return;
+      const payload = {
+        spent_on: expDate,
+        amount,
+        category: expCategory?.trim() || null,
+        party: expParty?.trim() || null,
+        description: expDesc?.trim() || null,
+      };
+
+      if (editId) {
+        const up = await supabase
+          .from("expenses")
+          .update(payload)
+          .eq("id", editId);
+        if (up.error) throw up.error;
+        toast("تم تعديل المصروف.", "ok");
+      } else {
+        const ins = await supabase.from("expenses").insert([payload]);
+        if (ins.error) throw ins.error;
+        toast("تم حفظ المصروف.", "ok");
       }
-      toast("تم تعديل المصروف.", "ok");
-    } else {
-      const ins = await supabase.from("expenses").insert([payload]);
-      if (ins.error) {
-        setError(ins.error);
-        toast("فشل حفظ المصروف.", "danger");
-        return;
-      }
-      toast("تم حفظ المصروف.", "ok");
+
+      setOpenAdd(false);
+      await load();
+      await loadPicklists();
+    } catch (e) {
+      setError(e);
+      toast("فشل حفظ المصروف.", "danger");
+    } finally {
+      setSaving(false);
     }
-
-    setOpenAdd(false);
-    await load();
-    await loadPicklists();
   }
 
   async function deleteExpense(id) {
@@ -415,420 +656,358 @@ export default function Expenses() {
   }
 
   return (
-    <div className="container page page--expenses" dir="rtl" lang="ar">
-      <PageHeader
-        title="المصروفات"
-        subtitle={`النطاق: ${rangeHint}`}
-        actions={
-          <div className="toolbar">
-            <button className="btn" onClick={load}>
-              تحديث
-            </button>
-            <button className="btn primary" onClick={openCreate}>
-              <Plus size={18} /> إضافة مصروف
-            </button>
+    <div className="page page--expenses" dir="rtl" lang="ar">
+      <style>{EXPENSES_STYLES}</style>
+      <div className="container">
+        {/* رأس الصفحة */}
+        <div className="expenses-header">
+          <div className="expenses-title">المصروفات</div>
+          <div className="expenses-subtitle">
+            <span style={{ color: "#cbd5e1" }}>|</span>
+            <CalendarDays size={16} /> النطاق: {rangeHint}
           </div>
-        }
-      />
-
-      <ErrorBanner error={error} />
-
-      {!hasTable ? (
-        <div className="card">
-          <EmptyState
-            icon={AlertTriangle}
-            title="جدول المصروفات غير موجود"
-            description="جدول المصروفات غير موجود في قاعدة البيانات. شغّل ملفات الـ SQL ثم حدّث الصفحة."
-          />
         </div>
-      ) : (
-        <>
-          <div className="kpiGrid4" style={{ marginBottom: 14 }}>
-            <KpiCard
-              icon={Receipt}
-              label="إجمالي المصروف"
-              value={`${fmtMoney(stats.total)} ₪`}
-              hint={
-                stats.count
-                  ? `${stats.count} ${stats.count === 1 ? "مصروف" : "مصروفات"}`
-                  : "لا توجد مصروفات"
-              }
-              variant={stats.total === 0 ? "neutral" : "warn"}
-              className="kpi--accent"
-            />
 
-            <KpiCard
-              icon={Layers}
-              label="أعلى فئة"
-              value={stats.topCat}
-              hint={
-                stats.topCat !== "—" ? `${fmtMoney(stats.topCatTotal)} ₪` : "—"
-              }
-              variant={stats.topCat !== "—" ? "info" : "neutral"}
-              className="kpi--accent"
-            />
+        {error && <ErrorBanner error={error} />}
 
-            <KpiCard
-              icon={Banknote}
-              label="متوسط المصروف"
-              value={`${fmtMoney(stats.avg)} ₪`}
-              hint={stats.count ? "متوسط لكل مصروف" : "—"}
-              variant={stats.avg === 0 ? "neutral" : "info"}
-              className="kpi--accent"
-            />
-
-            <KpiCard
-              icon={Banknote}
-              label="أكبر مصروف"
-              value={`${fmtMoney(stats.max)} ₪`}
-              hint={stats.max === 0 ? "—" : "أكبر مصروف منفرد"}
-              variant={stats.max === 0 ? "neutral" : "danger"}
-              className="kpi--accent"
+        {!hasTable ? (
+          <div className="expenses-card">
+            <EmptyState
+              icon={AlertTriangle}
+              title="جدول المصروفات غير موجود"
+              description="جدول المصروفات غير موجود في قاعدة البيانات. شغّل ملفات الـ SQL ثم حدّث الصفحة."
             />
           </div>
+        ) : (
+          <>
+            {/* بطاقات الإحصائيات */}
+            <div className="kpiGrid4" style={{ marginBottom: 20 }}>
+              <KpiCard
+                icon={Receipt}
+                label="إجمالي المصروف"
+                value={`${fmtMoney(stats.total)} ₪`}
+                hint={
+                  stats.count
+                    ? `${stats.count} ${stats.count === 1 ? "مصروف" : "مصروفات"}`
+                    : "لا توجد مصروفات"
+                }
+                variant={stats.total === 0 ? "neutral" : "warn"}
+                className="kpi--accent"
+              />
 
-          <div className="card" style={{ marginBottom: 12 }}>
-            <div
-              className="toolbar"
-              style={{ justifyContent: "space-between" }}
-            >
-              <div className="filtersBar">
-                <Control
-                  icon={Search}
-                  className=""
-                  style={{ minWidth: 260, width: "auto", flex: "1 1 320px" }}
-                >
-                  <input
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder="ابحث في المصروفات..."
-                  />
-                </Control>
+              <KpiCard
+                icon={Layers}
+                label="أعلى فئة"
+                value={stats.topCat}
+                hint={
+                  stats.topCat !== "—"
+                    ? `${fmtMoney(stats.topCatTotal)} ₪`
+                    : "—"
+                }
+                variant={stats.topCat !== "—" ? "info" : "neutral"}
+                className="kpi--accent"
+              />
 
-                <Control
-                  icon={Filter}
-                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
-                >
-                  <ModernSelect
-                    bare
-                    value={cat}
-                    onChange={setCat}
-                    placeholder="كل الفئات"
-                    options={[
-                      { value: "all", label: "كل الفئات" },
-                      ...categories.map((c) => ({ value: c, label: c })),
-                    ]}
-                  />
-                </Control>
+              <KpiCard
+                icon={Banknote}
+                label="متوسط المصروف"
+                value={`${fmtMoney(stats.avg)} ₪`}
+                hint={stats.count ? "متوسط لكل مصروف" : "—"}
+                variant={stats.avg === 0 ? "neutral" : "info"}
+                className="kpi--accent"
+              />
 
-                <Control
-                  icon={Filter}
-                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
-                >
-                  <ModernSelect
-                    bare
-                    value={partyFilter}
-                    onChange={setPartyFilter}
-                    placeholder="كل الأشخاص"
-                    options={[
-                      { value: "all", label: "كل الأشخاص" },
-                      ...parties.map((p) => ({ value: p, label: p })),
-                    ]}
-                  />
-                </Control>
+              <KpiCard
+                icon={Banknote}
+                label="أكبر مصروف"
+                value={`${fmtMoney(stats.max)} ₪`}
+                hint={stats.max === 0 ? "—" : "أكبر مصروف منفرد"}
+                variant={stats.max === 0 ? "neutral" : "danger"}
+                className="kpi--accent"
+              />
+            </div>
 
-                <Control
-                  icon={CalendarDays}
-                  style={{ minWidth: 180, width: "auto", flex: "0 0 auto" }}
-                >
-                  <ModernSelect
-                    bare
-                    value={rangePreset}
-                    onChange={setRangePreset}
-                    placeholder="هذا الشهر"
-                    options={[
-                      { value: "this_month", label: "هذا الشهر" },
-                      { value: "30d", label: "آخر 30 يوم" },
-                      { value: "custom", label: "نطاق مخصص" },
-                      { value: "all", label: "كل الوقت" },
-                    ]}
-                  />
-                </Control>
+            {/* الجدول والفلاتر */}
+            <div className="expenses-card">
+              <div className="expenses-toolbar">
+                <div className="filters-group">
+                  <div className="search-wrapper">
+                    <Search size={18} className="search-icon" />
+                    <input
+                      className="search-input"
+                      value={q}
+                      onChange={(e) => setQ(e.target.value)}
+                      placeholder="ابحث في المصروفات..."
+                    />
+                  </div>
 
-                {rangePreset === "custom" ? (
-                  <div
-                    className="filtersBar"
-                    style={{ justifyContent: "flex-start" }}
-                  >
-                    <div className="input">
+                  <div className="filter-select">
+                    <ModernSelect
+                      bare
+                      value={cat}
+                      onChange={setCat}
+                      placeholder="كل الفئات"
+                      options={[
+                        { value: "all", label: "كل الفئات" },
+                        ...categories.map((c) => ({ value: c, label: c })),
+                      ]}
+                    />
+                  </div>
+
+                  <div className="filter-select">
+                    <ModernSelect
+                      bare
+                      value={partyFilter}
+                      onChange={setPartyFilter}
+                      placeholder="كل الأشخاص"
+                      options={[
+                        { value: "all", label: "كل الأشخاص" },
+                        ...parties.map((p) => ({ value: p, label: p })),
+                      ]}
+                    />
+                  </div>
+
+                  <div className="filter-select">
+                    <ModernSelect
+                      bare
+                      value={rangePreset}
+                      onChange={setRangePreset}
+                      placeholder="هذا الشهر"
+                      options={[
+                        { value: "this_month", label: "هذا الشهر" },
+                        { value: "30d", label: "آخر 30 يوم" },
+                        { value: "custom", label: "نطاق مخصص" },
+                        { value: "all", label: "كل الوقت" },
+                      ]}
+                    />
+                  </div>
+
+                  {rangePreset === "custom" && (
+                    <div style={{ display: "flex", gap: "8px" }}>
                       <input
+                        className="search-input"
+                        style={{ padding: "10px 16px", maxWidth: "140px" }}
                         type="date"
                         value={fromDate}
                         onChange={(e) => setFromDate(e.target.value)}
                       />
-                    </div>
-                    <div className="input">
                       <input
+                        className="search-input"
+                        style={{ padding: "10px 16px", maxWidth: "140px" }}
                         type="date"
                         value={toDate}
                         onChange={(e) => setToDate(e.target.value)}
                       />
+                      <button className="btn" onClick={load}>
+                        تطبيق
+                      </button>
                     </div>
-                    <button className="btn" onClick={load}>
-                      Apply
-                    </button>
+                  )}
+                </div>
+
+                <button className="btn btn-add" onClick={openCreate}>
+                  <Plus size={18} /> إضافة مصروف
+                </button>
+              </div>
+
+              {loading ? (
+                <div
+                  style={{ padding: 40, textAlign: "center", color: "#64748b" }}
+                >
+                  جارٍ التحميل...
+                </div>
+              ) : filtered.length === 0 ? (
+                <EmptyState
+                  icon={Receipt}
+                  title={
+                    rows.length === 0 ? "لا توجد مصروفات بعد" : "لا توجد نتائج"
+                  }
+                  description={
+                    rows.length === 0
+                      ? "أضف أول مصروف للبدء بالتتبع."
+                      : "جرّب تغيير البحث أو الفلاتر."
+                  }
+                  actionLabel="إضافة مصروف"
+                  onAction={openCreate}
+                />
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="modern-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 140 }}>التاريخ</th>
+                        <th>الفئة</th>
+                        <th>شخص/المتجر</th>
+                        <th>الوصف</th>
+                        <th style={{ width: 120 }}>المبلغ</th>
+                        <th style={{ width: 100, textAlign: "center" }}>
+                          إجراءات
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((r) => (
+                        <tr key={r.id}>
+                          <td style={{ color: "#64748b", fontWeight: 600 }}>
+                            {fmtDate(r.spent_on)}
+                          </td>
+                          <td style={{ fontWeight: 700 }}>
+                            {r.category || <span className="muted">—</span>}
+                          </td>
+                          <td>{r.party || <span className="muted">—</span>}</td>
+                          <td style={{ color: "#64748b", minWidth: 200 }}>
+                            {r.description || <span className="muted">—</span>}
+                          </td>
+                          <td style={{ fontWeight: 900, color: "#0f172a" }}>
+                            {fmtMoney(r.amount)} ₪
+                          </td>
+                          <td>
+                            <div className="actions-cell">
+                              <IconButton
+                                title="تعديل"
+                                onClick={() => openEdit(r)}
+                                icon={Pencil}
+                              />
+                              <IconButton
+                                title="حذف"
+                                onClick={() =>
+                                  setConfirm({ open: true, id: r.id })
+                                }
+                                icon={Trash2}
+                                danger
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Modal الإضافة والتعديل */}
+        <Modal
+          open={openAdd}
+          title={editId ? "تعديل مصروف" : "إضافة مصروف"}
+          onClose={() => !saving && setOpenAdd(false)}
+        >
+          <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
+            <div style={{ gridColumn: "span 12" }}>
+              <h4 className="form-section-title">
+                <Receipt size={18} color="#64748b" /> تفاصيل المصروف
+              </h4>
+              <div className="grid" style={{ gap: "16px" }}>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    التاريخ *
                   </div>
-                ) : null}
+                  <input
+                    className="input"
+                    type="date"
+                    value={expDate}
+                    onChange={(e) => setExpDate(e.target.value)}
+                  />
+                </div>
+
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    المبلغ (₪) *
+                  </div>
+                  <input
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={expAmount}
+                    onChange={(e) => setExpAmount(e.target.value)}
+                    placeholder="مثال: 150"
+                  />
+                </div>
+
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الفئة
+                  </div>
+                  <CustomCombobox
+                    value={expCategory}
+                    onChange={setExpCategory}
+                    options={categories.map((c) => ({ value: c, label: c }))}
+                    placeholder="اختر أو اكتب فئة جديدة..."
+                  />
+                </div>
+
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    شخص / المتجر
+                  </div>
+                  <CustomCombobox
+                    value={expParty}
+                    onChange={setExpParty}
+                    options={parties.map((p) => ({ value: p, label: p }))}
+                    placeholder="اختر أو اكتب شخص/متجر..."
+                  />
+                </div>
+
+                <div style={{ gridColumn: "span 12" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الوصف (اختياري)
+                  </div>
+                  <input
+                    className="input"
+                    value={expDesc}
+                    onChange={(e) => setExpDesc(e.target.value)}
+                    placeholder="مثال: شراء ضيافة للطلاب..."
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {loading ? (
-            <div className="card">جارٍ التحميل...</div>
-          ) : filtered.length === 0 ? (
-            <EmptyState
-              icon={Receipt}
-              title={
-                rows.length === 0 ? "لا توجد مصروفات بعد" : "لا توجد نتائج"
-              }
-              description={
-                rows.length === 0
-                  ? "أضف أول مصروف للبدء بالتتبع."
-                  : "جرّب تغيير البحث أو الفلاتر."
-              }
-              actionLabel="إضافة مصروف"
-              onAction={openCreate}
-            />
-          ) : (
-            <div className="tableWrap">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>التاريخ</th>
-                    <th>الفئة</th>
-                    <th>شخص/المتجر</th>
-                    <th>الوصف</th>
-                    <th>المبلغ</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((r) => (
-                    <tr key={r.id}>
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        {fmtDate(r.spent_on)}
-                      </td>
-                      <td>{r.category || <span className="muted">—</span>}</td>
-                      <td>{r.party || <span className="muted">—</span>}</td>
-                      <td style={{ minWidth: 260 }}>
-                        {r.description || <span className="muted">—</span>}
-                      </td>
-                      <td style={{ fontWeight: 950, whiteSpace: "nowrap" }}>
-                        {fmtMoney(r.amount)} ₪
-                      </td>
-                      <td style={{ whiteSpace: "nowrap" }}>
-                        <div
-                          className="row"
-                          style={{ justifyContent: "flex-end" }}
-                        >
-                          <IconButton
-                            title="تعديل"
-                            onClick={() => openEdit(r)}
-                            icon={Pencil}
-                            variant="soft"
-                          />
-                          <IconButton
-                            title="حذف"
-                            onClick={() => setConfirm({ open: true, id: r.id })}
-                            icon={Trash2}
-                            variant="danger"
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
-      )}
-
-      <Modal
-        open={openAdd}
-        title={editId ? "تعديل مصروف" : "إضافة مصروف"}
-        onClose={() => setOpenAdd(false)}
-      >
-        <div className="card" style={{ border: "none", boxShadow: "none" }}>
-          {!hasPicklists ? (
             <div
-              className="muted"
-              style={{ marginBottom: 10, lineHeight: 1.4 }}
+              style={{
+                gridColumn: "span 12",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                marginTop: 10,
+              }}
             >
-              ملاحظة: جداول الخيارات غير موجودة. شغّل ملف الـ SQL ثم حدّث
-              الصفحة.
-            </div>
-          ) : null}
-
-          <div className="grid" style={{ marginBottom: 12 }}>
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="label">التاريخ</div>
-              <div className="input">
-                <input
-                  style={{
-                    width: "100%",
-                    border: "none",
-                    background: "transparent",
-                    outline: "none",
-                  }}
-                  type="date"
-                  value={expDate}
-                  onChange={(e) => setExpDate(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="label">المبلغ (₪)</div>
-              <div className="input">
-                <input
-                  style={{
-                    width: "100%",
-                    border: "none",
-                    background: "transparent",
-                    outline: "none",
-                  }}
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={expAmount}
-                  onChange={(e) => setExpAmount(e.target.value)}
-                  placeholder="e.g. 120"
-                />
-              </div>
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="label">الفئة</div>
-              <div className="input">
-                <ModernSelect
-                  bare
-                  value={expCategory || ""}
-                  onChange={setExpCategory}
-                  placeholder="اختر فئة..."
-                  options={[
-                    { value: "", label: "—" },
-                    ...categories.map((c) => ({ value: c, label: c })),
-                  ]}
-                />
-              </div>
-
-              <div className="row" style={{ gap: 10, marginTop: 10 }}>
-                <div className="input" style={{ flex: 1 }}>
-                  <input
-                    style={{
-                      width: "100%",
-                      border: "none",
-                      background: "transparent",
-                      outline: "none",
-                    }}
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="إضافة فئة جديدة..."
-                  />
-                </div>
-                <button
-                  className="btn"
-                  onClick={addNewCategory}
-                  disabled={!newCatName.trim()}
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="label">شخص/متجر</div>
-              <div className="input">
-                <ModernSelect
-                  bare
-                  value={expParty || ""}
-                  onChange={setExpParty}
-                  placeholder="اختر شخص/متجر..."
-                  options={[
-                    { value: "", label: "—" },
-                    ...parties.map((p) => ({ value: p, label: p })),
-                  ]}
-                />
-              </div>
-
-              <div className="row" style={{ gap: 10, marginTop: 10 }}>
-                <div className="input" style={{ flex: 1 }}>
-                  <input
-                    style={{
-                      width: "100%",
-                      border: "none",
-                      background: "transparent",
-                      outline: "none",
-                    }}
-                    value={newPartyName}
-                    onChange={(e) => setNewPartyName(e.target.value)}
-                    placeholder="إضافة شخص/متجر جديد..."
-                  />
-                </div>
-                <button
-                  className="btn"
-                  onClick={addNewParty}
-                  disabled={!newPartyName.trim()}
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-
-            <div style={{ gridColumn: "span 8" }}>
-              <div className="label">الوصف</div>
-              <div className="input">
-                <input
-                  style={{
-                    width: "100%",
-                    border: "none",
-                    background: "transparent",
-                    outline: "none",
-                  }}
-                  value={expDesc}
-                  onChange={(e) => setExpDesc(e.target.value)}
-                  placeholder="e.g. taxi, supplies, rent..."
-                />
-              </div>
+              <button
+                className="btn"
+                onClick={() => setOpenAdd(false)}
+                disabled={saving}
+              >
+                إلغاء
+              </button>
+              <button
+                className="btn btn-add"
+                onClick={saveExpense}
+                disabled={saving}
+              >
+                {saving ? "جاري الحفظ..." : "حفظ البيانات"}
+              </button>
             </div>
           </div>
+        </Modal>
 
-          <div className="row" style={{ gap: 10 }}>
-            <button className="btn primary" onClick={saveExpense}>
-              <Plus size={18} /> حفظ
-            </button>
-            <button className="btn" onClick={() => setOpenAdd(false)}>
-              إلغاء
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      <ConfirmDialog
-        open={confirm.open}
-        title="حذف مصروف"
-        message="هل أنت متأكد أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء."
-        confirmText="حذف"
-        cancelText="إلغاء"
-        danger
-        onCancel={() => setConfirm({ open: false, id: null })}
-        onConfirm={async () => {
-          const id = confirm.id;
-          setConfirm({ open: false, id: null });
-          if (id) await deleteExpense(id);
-        }}
-      />
+        {/* حوار التأكيد للحذف */}
+        <ConfirmDialog
+          open={confirm.open}
+          title="حذف مصروف"
+          message="هل أنت متأكد أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء."
+          confirmText="حذف"
+          cancelText="إلغاء"
+          danger
+          onCancel={() => setConfirm({ open: false, id: null })}
+          onConfirm={async () => {
+            const id = confirm.id;
+            setConfirm({ open: false, id: null });
+            if (id) await deleteExpense(id);
+          }}
+        />
+      </div>
     </div>
   );
 }
