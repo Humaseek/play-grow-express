@@ -1261,9 +1261,6 @@ export default function RunDetails() {
     setOpenEnroll(true);
   }
 
-  function openSingleEnrollNew() {
-    initEnrollBuyNew();
-  }
   function openSingleTopup(participantRow) {
     const remaining = Number(participantRow.package_sessions_remaining || 0);
     if (remaining > 0) {
@@ -2234,13 +2231,6 @@ export default function RunDetails() {
                     justifyContent: "flex-end",
                   }}
                 >
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={openSingleEnrollNew}
-                  >
-                    + إضافة طفل للدورة
-                  </button>
                   <button type="button" className="btn" onClick={openBulkModal}>
                     + إضافة مجموعة
                   </button>
