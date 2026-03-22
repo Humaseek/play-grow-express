@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
+// 1. تم إضافة RefreshCcw وجميع الأيقونات المطلوبة
 import {
   UserRound,
   Phone,
@@ -17,10 +18,18 @@ import {
   CheckCircle2,
   AlertOctagon,
   Heart,
+  RefreshCcw,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
 import Badge from "../components/Badge";
+import EmptyState from "../components/EmptyState"; // تأكدنا من استيراده أيضاً
+
+// دالة تنسيق المبالغ المالية
+function fmtMoney(n) {
+  const x = Number(n || 0);
+  return x.toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
 
 // ============================================================================
 // CSS STYLES (مدمجة هنا لمنع أخطاء Vercel)
@@ -297,7 +306,7 @@ export default function ChildDetails() {
       setLoading(true);
       setError(null);
       try {
-        // 1. جلب بيانات الطفل من الجدول الحقيقي (حسب Schema الخاص بك)
+        // 1. جلب بيانات الطفل
         const { data: childData, error: childErr } = await supabase
           .from("children")
           .select("*")
@@ -422,7 +431,7 @@ export default function ChildDetails() {
             <button
               className="btn-back"
               onClick={() => navigate("/children")}
-              title="رجوع"
+              title="رجوع للطلاب"
             >
               <ArrowRight size={20} />
             </button>
@@ -450,9 +459,9 @@ export default function ChildDetails() {
           <div className="ph-actions">
             <button
               className="btn-payment"
-              onClick={() => navigate("/payments")} // يمكن تمرير الـ ID هنا مستقبلاً
+              onClick={() => navigate("/payments")}
             >
-              <CreditCard size={18} /> دفع رسوم
+              <CreditCard size={18} /> إضافة دفعة
             </button>
             <button className="btn-save" onClick={handleSave} disabled={saving}>
               <Save size={18} /> {saving ? "جاري الحفظ..." : "حفظ التعديلات"}
@@ -672,7 +681,9 @@ export default function ChildDetails() {
                           >
                             {enr.enrollment_status === "active"
                               ? "نشط"
-                              : enr.enrollment_status}
+                              : enr.enrollment_status === "completed"
+                                ? "مكتمل"
+                                : "منسحب"}
                           </Badge>
                         </td>
                         <td style={{ fontWeight: 800 }}>
