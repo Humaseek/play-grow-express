@@ -663,8 +663,10 @@ export default function RunDetails() {
   const [openBulk, setOpenBulk] = useState(false);
   const [bulkQ, setBulkQ] = useState("");
   const [bulkSelected, setBulkSelected] = useState({});
-  const [bulkSessions, setBulkSessions] = useState(8);
-
+  // حالات تخصيص الحصص والسعر للمجموعة
+  const [bulkSessionsMode, setBulkSessionsMode] = useState("unified");
+  const [bulkUnifiedSessions, setBulkUnifiedSessions] = useState(8);
+  const [bulkPerChildSessions, setBulkPerChildSessions] = useState({});
   const [bulkPriceMode, setBulkPriceMode] = useState("unified");
   const [bulkUnifiedPrice, setBulkUnifiedPrice] = useState("");
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
@@ -1312,7 +1314,9 @@ export default function RunDetails() {
     setOpenBulk(true);
     setBulkQ("");
     setBulkSelected({});
-    setBulkSessions(defaultSessionsTotal);
+    setBulkSessionsMode("unified");
+    setBulkUnifiedSessions(defaultSessionsTotal);
+    setBulkPerChildSessions({});
     setBulkPriceMode("unified");
     setBulkUnifiedPrice(String(defaultPrice));
     setBulkPerChildPrice({});
@@ -1334,6 +1338,7 @@ export default function RunDetails() {
   function bulkClearSelection() {
     setBulkSelected({});
     setBulkPerChildPrice({});
+    setBulkPerChildSessions({});
   }
 
   async function bumpEnrollmentAllocated(enrollmentId, delta) {
@@ -1492,14 +1497,23 @@ export default function RunDetails() {
       let failed = 0;
       for (const childId of bulkSelectedIds) {
         const cid = Number(childId);
+
+        let sessionsNum =
+          bulkSessionsMode === "unified"
+            ? Number(bulkUnifiedSessions)
+            : Number(bulkPerChildSessions[cid]);
+        if (isNaN(sessionsNum) || sessionsNum < 0)
+          sessionsNum = Number(defaultSessionsTotal) || 0;
+
         let priceNum =
           bulkPriceMode === "unified"
             ? Number(bulkUnifiedPrice)
             : Number(bulkPerChildPrice[cid]);
+
         const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
           p_run_id: Number(runId),
           p_child_id: cid,
-          p_sessions: Number(bulkSessions),
+          p_sessions: sessionsNum,
           p_price_total: Number(priceNum) || 0,
         });
         if (rpc2.error) failed += 1;
@@ -1731,7 +1745,6 @@ export default function RunDetails() {
           .from("payments")
           .insert([{ enrollment_id: Number(payEnrollmentId), ...p }]);
 
-      // التعديل هنا:
       setPayEditId(null);
       setPayLocked(false);
       closeSubModalAndReopen(setOpenPay);
@@ -3981,8 +3994,13 @@ export default function RunDetails() {
                         <th style={{ textAlign: "right" }}>الصف</th>
                         <th style={{ textAlign: "right" }}>الجنس</th>
                         <th style={{ textAlign: "right" }}>هاتف الأم</th>
+                        {bulkSessionsMode === "perChild" && (
+                          <th style={{ width: 120, textAlign: "right" }}>
+                            الحصص
+                          </th>
+                        )}
                         {bulkPriceMode === "perChild" && (
-                          <th style={{ width: 150, textAlign: "right" }}>
+                          <th style={{ width: 120, textAlign: "right" }}>
                             السعر
                           </th>
                         )}
@@ -4021,6 +4039,25 @@ export default function RunDetails() {
                                 {c.mother_phone ?? "-"}
                               </span>
                             </td>
+                            {bulkSessionsMode === "perChild" && (
+                              <td>
+                                <input
+                                  className="input"
+                                  style={{ minWidth: 90 }}
+                                  type="number"
+                                  min="0"
+                                  value={bulkPerChildSessions[c.id] ?? ""}
+                                  onChange={(e) =>
+                                    setBulkPerChildSessions((prev) => ({
+                                      ...prev,
+                                      [c.id]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder={String(defaultSessionsTotal)}
+                                  disabled={!checked}
+                                />
+                              </td>
+                            )}
                             {bulkPriceMode === "perChild" && (
                               <td>
                                 <input
@@ -4051,16 +4088,41 @@ export default function RunDetails() {
             </div>
             <hr className="sep" />
             <div className="grid">
-              <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">عدد الحصص (الباقة)</div>
-                <input
-                  className="input"
-                  type="number"
-                  value={bulkSessions}
-                  onChange={(e) => setBulkSessions(e.target.value)}
+              <div style={{ gridColumn: "span 3" }}>
+                <div className="muted">توزيع الحصص</div>
+                <ModernSelect
+                  value={bulkSessionsMode}
+                  onChange={(v) => {
+                    setBulkSessionsMode(v);
+                    if (v === "unified") setBulkPerChildSessions({});
+                  }}
+                  menuWidth="trigger"
+                  options={[
+                    { value: "unified", label: "موحّد للجميع" },
+                    { value: "perChild", label: "تخصيص لكل طفل" },
+                  ]}
                 />
               </div>
-              <div style={{ gridColumn: "span 4" }}>
+              <div style={{ gridColumn: "span 3" }}>
+                <div className="muted">
+                  {bulkSessionsMode === "unified"
+                    ? "عدد الحصص (الباقة)"
+                    : "الحصص"}
+                </div>
+                {bulkSessionsMode === "unified" ? (
+                  <input
+                    className="input"
+                    type="number"
+                    value={bulkUnifiedSessions}
+                    onChange={(e) => setBulkUnifiedSessions(e.target.value)}
+                  />
+                ) : (
+                  <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+                    اكتب العدد لكل طفل داخل الجدول.
+                  </div>
+                )}
+              </div>
+              <div style={{ gridColumn: "span 3" }}>
                 <div className="muted">طريقة التسعير</div>
                 <ModernSelect
                   value={bulkPriceMode}
@@ -4071,11 +4133,11 @@ export default function RunDetails() {
                   menuWidth="trigger"
                   options={[
                     { value: "unified", label: "سعر موحّد للجميع" },
-                    { value: "perChild", label: "سعر لكل طفل" },
+                    { value: "perChild", label: "تخصيص لكل طفل" },
                   ]}
                 />
               </div>
-              <div style={{ gridColumn: "span 4" }}>
+              <div style={{ gridColumn: "span 3" }}>
                 <div className="muted">
                   {bulkPriceMode === "unified" ? "سعر الباقة" : "الأسعار"}
                 </div>
@@ -4122,253 +4184,6 @@ export default function RunDetails() {
                   إغلاق
                 </button>
               </div>
-            </div>
-          </div>
-        </Modal>
-
-        {/* =========================================================================
-            نوافذ المصاريف والدفعات المستعادة (لا تحذفها أبدًا)
-        ========================================================================= */}
-
-        <Modal
-          open={openExpenseModal}
-          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
-          onClose={() => {
-            setOpenExpenseModal(false);
-            resetExpenseForm();
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">التاريخ</div>
-              <input
-                className="input"
-                type="date"
-                value={expDate}
-                onChange={(e) => setExpDate(e.target.value)}
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">المبلغ</div>
-              <input
-                className="input"
-                type="number"
-                step="0.01"
-                min="0"
-                value={expAmount}
-                onChange={(e) => setExpAmount(e.target.value)}
-                placeholder="مثال: 50"
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">التصنيف</div>
-              {expHasPicklists ? (
-                <ModernSelect
-                  value={expCategory || ""}
-                  onChange={(v) => setExpCategory(v)}
-                  options={[
-                    { value: "", label: "—" },
-                    ...expCategories.map((x) => ({ value: x, label: x })),
-                  ]}
-                />
-              ) : (
-                <input
-                  className="input"
-                  value={expCategory}
-                  onChange={(e) => setExpCategory(e.target.value)}
-                  placeholder="مثال: معاشات"
-                />
-              )}
-              {expHasPicklists && (
-                <div className="row" style={{ marginTop: 8, gap: 8 }}>
-                  <input
-                    className="input"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="إضافة تصنيف جديد..."
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => addPicklistValue("category", newCatName)}
-                  >
-                    إضافة
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">الشخص</div>
-              {expHasPicklists ? (
-                <ModernSelect
-                  value={expParty || ""}
-                  onChange={(v) => setExpParty(v)}
-                  options={[
-                    { value: "", label: "—" },
-                    ...expParties.map((x) => ({ value: x, label: x })),
-                  ]}
-                />
-              ) : (
-                <input
-                  className="input"
-                  value={expParty}
-                  onChange={(e) => setExpParty(e.target.value)}
-                  placeholder="مثال: سامر"
-                />
-              )}
-              {expHasPicklists && (
-                <div className="row" style={{ marginTop: 8, gap: 8 }}>
-                  <input
-                    className="input"
-                    value={newPartyName}
-                    onChange={(e) => setNewPartyName(e.target.value)}
-                    placeholder="إضافة شخص جديد..."
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => addPicklistValue("party", newPartyName)}
-                  >
-                    إضافة
-                  </button>
-                </div>
-              )}
-            </div>
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الوصف</div>
-              <input
-                className="input"
-                value={expDesc}
-                onChange={(e) => setExpDesc(e.target.value)}
-                placeholder="اختياري..."
-              />
-            </div>
-            <div className="row" style={{ gridColumn: "span 12" }}>
-              <button
-                type="button"
-                className="btn primary"
-                onClick={saveExpense}
-                disabled={expSaving}
-              >
-                {expSaving ? "حفظ..." : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setOpenExpenseModal(false);
-                  resetExpenseForm();
-                }}
-              >
-                إلغاء
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal
-          open={openPay}
-          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
-          onClose={() => {
-            setPayEditId(null);
-            setPayLocked(false);
-            closeSubModalAndReopen(setOpenPay);
-          }}
-        >
-          <div className="grid">
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">الطفل</div>
-              <ModernSelect
-                value={payEnrollmentId}
-                onChange={setPayEnrollmentId}
-                menuWidth="trigger"
-                disabled={paySaving || !!payEditId || payLocked}
-                placeholder="— اختر طفل —"
-                options={[
-                  { value: "", label: "— اختر طفل —" },
-                  ...participants
-                    .filter((p) => p.enrollment_status === "active")
-                    .map((p) => ({
-                      value: p.enrollment_id,
-                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
-                    })),
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">المبلغ (₪)</div>
-              <input
-                className="input"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                value={payAmount}
-                onChange={(e) => setPayAmount(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">طريقة الدفع</div>
-              <ModernSelect
-                value={payMethod}
-                onChange={setPayMethod}
-                menuWidth="trigger"
-                options={[
-                  { value: "cash", label: "نقداً" },
-                  { value: "card", label: "بطاقة ائتمان" },
-                  { value: "transfer", label: "حوالة بنكية" },
-                  { value: "other", label: "أخرى" },
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 4" }}>
-              <div className="muted">تاريخ الدفعة</div>
-              <input
-                className="input"
-                type="date"
-                value={payDate}
-                onChange={(e) => setPayDate(e.target.value)}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">ملاحظات</div>
-              <input
-                className="input"
-                placeholder="اختياري"
-                value={payNote}
-                onChange={(e) => setPayNote(e.target.value)}
-              />
-            </div>
-
-            <div
-              className="row"
-              style={{ gridColumn: "span 12", marginTop: 10 }}
-            >
-              <button
-                type="button"
-                className="btn primary"
-                disabled={paySaving || !payEnrollmentId || !payAmount}
-                onClick={addPayment}
-              >
-                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setPayEditId(null);
-                  setPayLocked(false);
-                  closeSubModalAndReopen(setOpenPay);
-                }}
-              >
-                إلغاء
-              </button>
             </div>
           </div>
         </Modal>
