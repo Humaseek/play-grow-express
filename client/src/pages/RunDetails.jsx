@@ -1430,6 +1430,38 @@ export default function RunDetails() {
   );
   const bulkSelectedCount = bulkSelectedIds.length;
 
+  // -- الدوال المفقودة اللي رجعناها --
+  function openBulkModal() {
+    setOpenBulk(true);
+    setBulkQ("");
+    setBulkSelected({});
+    setBulkPerChildSessions({});
+    setBulkPerChildPrice({});
+  }
+
+  function toggleBulkChild(childId) {
+    setBulkSelected((prev) => {
+      const next = { ...prev };
+      next[String(childId)] = !next[String(childId)];
+      return next;
+    });
+  }
+
+  function bulkSelectAllFiltered() {
+    setBulkSelected((prev) => {
+      const next = { ...prev };
+      for (const c of bulkCandidates) next[String(c.id)] = true;
+      return next;
+    });
+  }
+
+  function bulkClearSelection() {
+    setBulkSelected({});
+    setBulkPerChildPrice({});
+    setBulkPerChildSessions({});
+  }
+  // -----------------------------------
+
   async function bumpEnrollmentAllocated(enrollmentId, delta) {
     const id = Number(enrollmentId);
     const d = Number(delta);
@@ -1613,9 +1645,7 @@ export default function RunDetails() {
         failed > 0 ? "warn" : "ok",
       );
       setOpenBulk(false);
-      setBulkSelected({});
-      setBulkPerChildPrice({});
-      setBulkPerChildSessions({});
+      bulkClearSelection();
     } catch {
       toast("Bulk enroll failed.", "danger");
     } finally {
@@ -2334,38 +2364,13 @@ export default function RunDetails() {
                     justifyContent: "flex-end",
                   }}
                 >
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setBulkQ("");
-                      setBulkSelected({});
-                      setBulkPerChildSessions({});
-                      setBulkPerChildPrice({});
-                      setOpenBulk(true);
-                    }}
-                  >
+                  <button type="button" className="btn" onClick={openBulkModal}>
                     + إضافة مجموعة
                   </button>
                   <button
                     type="button"
                     className="btn primary"
-                    onClick={() => {
-                      setNewChildForm({
-                        name: "",
-                        age: "",
-                        class: "",
-                        gender: "male",
-                        country_name: "",
-                        mother_name: "",
-                        mother_phone: "",
-                        father_name: "",
-                        father_phone: "",
-                        notes: "",
-                      });
-                      setNewChildEnrollNow(true);
-                      setOpenNewChild(true);
-                    }}
+                    onClick={openCreateEnroll}
                   >
                     <Plus size={16} /> إضافة وتسجيل
                   </button>
@@ -3868,14 +3873,24 @@ export default function RunDetails() {
               <button
                 type="button"
                 className="btn"
-                onClick={bulkSelectAllFiltered}
+                onClick={() => {
+                  setBulkSelected((prev) => {
+                    const next = { ...prev };
+                    for (const c of bulkCandidates) next[String(c.id)] = true;
+                    return next;
+                  });
+                }}
               >
                 تحديد الكل
               </button>
               <button
                 type="button"
                 className="btn danger"
-                onClick={bulkClearSelection}
+                onClick={() => {
+                  setBulkSelected({});
+                  setBulkPerChildPrice({});
+                  setBulkPerChildSessions({});
+                }}
               >
                 إلغاء التحديد
               </button>
@@ -3938,7 +3953,13 @@ export default function RunDetails() {
                               <input
                                 type="checkbox"
                                 checked={checked}
-                                onChange={() => toggleBulkChild(c.id)}
+                                onChange={() => {
+                                  setBulkSelected((prev) => {
+                                    const next = { ...prev };
+                                    next[String(c.id)] = !next[String(c.id)];
+                                    return next;
+                                  });
+                                }}
                               />
                             </td>
                             <td style={{ fontWeight: 850 }}>{c.name}</td>
