@@ -721,13 +721,12 @@ export default function RunDetails() {
   const [enrollSaving, setEnrollSaving] = useState(false);
 
   const [openNewChild, setOpenNewChild] = useState(false);
-  // تحديث حالة الفورم عشان تدعم القيم النصية للبلد والصف
   const [newChildForm, setNewChildForm] = useState({
     name: "",
     age: "",
     class: "",
     gender: "male",
-    country_name: "", // بدل country_id
+    country_name: "",
     mother_name: "",
     mother_phone: "",
     father_name: "",
@@ -737,34 +736,15 @@ export default function RunDetails() {
   const [newChildSaving, setNewChildSaving] = useState(false);
 
   const [countries, setCountries] = useState([]);
-  const [classes, setClasses] = useState([]); // لخيارات الصف
+  const [classes, setClasses] = useState([]);
   const [countriesLoading, setCountriesLoading] = useState(false);
   const [newChildEnrollNow, setNewChildEnrollNow] = useState(false);
-
-  const openCreateEnroll = () => {
-    // تصفير الفورم لما نفتحها
-    setNewChildForm({
-      name: "",
-      age: "",
-      class: "",
-      gender: "male",
-      country_name: "",
-      mother_name: "",
-      mother_phone: "",
-      father_name: "",
-      father_phone: "",
-      notes: "",
-    });
-    setNewChildEnrollNow(true);
-    setOpenNewChild(true);
-  };
 
   async function loadFormPicklists() {
     setCountriesLoading(true);
     try {
       const [cRes, clRes] = await Promise.all([
         supabase.from("countries").select("id,name").order("name"),
-        // في حال كان جدول child_classes غير موجود، سيتم تجاهل الخطأ للأسفل
         supabase.from("child_classes").select("id,name").order("name"),
       ]);
       if (cRes.data) setCountries(cRes.data);
@@ -810,7 +790,7 @@ export default function RunDetails() {
     id: null,
     sessions_total: "",
     price_total: "",
-    created_at: "", // لحفظ وتعديل تاريخ الباقة
+    created_at: "",
   });
   const [editPkgSaving, setEditPkgSaving] = useState(false);
 
@@ -818,13 +798,12 @@ export default function RunDetails() {
   const [payEnrollmentId, setPayEnrollmentId] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
-  const [payDate, setPayDate] = useState(isoDate(new Date())); // التاريخ كمدخل منفصل
+  const [payDate, setPayDate] = useState(isoDate(new Date()));
   const [payNote, setPayNote] = useState("");
   const [paySaving, setPaySaving] = useState(false);
   const [payEditId, setPayEditId] = useState(null);
   const [payLocked, setPayLocked] = useState(false);
 
-  // لحفظ حالة العودة لإدارة الطالب بعد إغلاق مودال فرعي
   const [shouldReopenManage, setShouldReopenManage] = useState(false);
 
   const [firstStart, setFirstStart] = useState("");
@@ -916,7 +895,6 @@ export default function RunDetails() {
         if (existingC) {
           countryId = existingC.id;
         } else {
-          // إضافة البلد الجديد
           const created = await supabase
             .from("countries")
             .insert([{ name: typedCountry }])
@@ -930,7 +908,6 @@ export default function RunDetails() {
       if (typedClass) {
         const existingCl = classes.find((c) => c.name === typedClass);
         if (!existingCl) {
-          // إضافة الصف الجديد بصمت لجدول الفئات (إن وجد)
           await supabase.from("child_classes").insert([{ name: typedClass }]);
         }
       }
@@ -1421,6 +1398,7 @@ export default function RunDetails() {
         )
       : availableChildren;
   }, [availableChildren, bulkQ]);
+
   const bulkSelectedIds = useMemo(
     () =>
       Object.keys(bulkSelected)
@@ -1428,39 +1406,8 @@ export default function RunDetails() {
         .map(Number),
     [bulkSelected],
   );
+
   const bulkSelectedCount = bulkSelectedIds.length;
-
-  // -- الدوال المفقودة اللي رجعناها --
-  function openBulkModal() {
-    setOpenBulk(true);
-    setBulkQ("");
-    setBulkSelected({});
-    setBulkPerChildSessions({});
-    setBulkPerChildPrice({});
-  }
-
-  function toggleBulkChild(childId) {
-    setBulkSelected((prev) => {
-      const next = { ...prev };
-      next[String(childId)] = !next[String(childId)];
-      return next;
-    });
-  }
-
-  function bulkSelectAllFiltered() {
-    setBulkSelected((prev) => {
-      const next = { ...prev };
-      for (const c of bulkCandidates) next[String(c.id)] = true;
-      return next;
-    });
-  }
-
-  function bulkClearSelection() {
-    setBulkSelected({});
-    setBulkPerChildPrice({});
-    setBulkPerChildSessions({});
-  }
-  // -----------------------------------
 
   async function bumpEnrollmentAllocated(enrollmentId, delta) {
     const id = Number(enrollmentId);
@@ -1645,7 +1592,9 @@ export default function RunDetails() {
         failed > 0 ? "warn" : "ok",
       );
       setOpenBulk(false);
-      bulkClearSelection();
+      setBulkSelected({});
+      setBulkPerChildPrice({});
+      setBulkPerChildSessions({});
     } catch {
       toast("Bulk enroll failed.", "danger");
     } finally {
@@ -1733,6 +1682,7 @@ export default function RunDetails() {
     });
     setOpenSession(true);
   }
+
   function openEditSession(s) {
     const toLocal = (d) => {
       const pad = (n) => String(n).padStart(2, "0");
@@ -1793,24 +1743,10 @@ export default function RunDetails() {
       .eq("id", sessionId);
     await loadFixed();
   }
+
   async function deleteSession(sessionId) {
     await supabase.from("course_sessions").delete().eq("id", sessionId);
     await loadFixed();
-  }
-
-  function openPaymentModalFor(pRow, mode = "custom") {
-    setPayEnrollmentId(String(pRow.enrollment_id));
-    setPayLocked(true);
-    setPayEditId(null);
-    setPayAmount(
-      mode === "remaining" && Number(pRow.balance) > 0
-        ? String(Number(pRow.balance).toFixed(2))
-        : "",
-    );
-    setPayMethod("cash");
-    setPayDate(isoDate(new Date()));
-    setPayNote("");
-    setOpenPay(true);
   }
 
   function openNewPaymentModal() {
@@ -2364,13 +2300,38 @@ export default function RunDetails() {
                     justifyContent: "flex-end",
                   }}
                 >
-                  <button type="button" className="btn" onClick={openBulkModal}>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setBulkQ("");
+                      setBulkSelected({});
+                      setBulkPerChildSessions({});
+                      setBulkPerChildPrice({});
+                      setOpenBulk(true);
+                    }}
+                  >
                     + إضافة مجموعة
                   </button>
                   <button
                     type="button"
                     className="btn primary"
-                    onClick={openCreateEnroll}
+                    onClick={() => {
+                      setNewChildForm({
+                        name: "",
+                        age: "",
+                        class: "",
+                        gender: "male",
+                        country_name: "",
+                        mother_name: "",
+                        mother_phone: "",
+                        father_name: "",
+                        father_phone: "",
+                        notes: "",
+                      });
+                      setNewChildEnrollNow(true);
+                      setOpenNewChild(true);
+                    }}
                   >
                     <Plus size={16} /> إضافة وتسجيل
                   </button>
@@ -2772,7 +2733,16 @@ export default function RunDetails() {
                 <button
                   type="button"
                   className="btn primary"
-                  onClick={openNewPaymentModal}
+                  onClick={() => {
+                    setPayEditId(null);
+                    setPayLocked(false);
+                    setPayEnrollmentId("");
+                    setPayAmount("");
+                    setPayMethod("cash");
+                    setPayDate(isoDate(new Date()));
+                    setPayNote("");
+                    setOpenPay(true);
+                  }}
                 >
                   + إضافة دفعة
                 </button>
@@ -3246,10 +3216,20 @@ export default function RunDetails() {
                       className="actionSquare"
                       disabled={Number(manageP.balance || 0) <= 0}
                       onClick={() => {
+                        const currentP = manageP;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
-                          openPaymentModalFor(manageP, "remaining");
+                          setPayEnrollmentId(String(currentP.enrollment_id));
+                          setPayLocked(true);
+                          setPayEditId(null);
+                          setPayAmount(
+                            String(Number(currentP.balance).toFixed(2)),
+                          );
+                          setPayMethod("cash");
+                          setPayDate(isoDate(new Date()));
+                          setPayNote("");
+                          setOpenPay(true);
                         }, 150);
                       }}
                     >
@@ -3267,10 +3247,18 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
+                        const currentP = manageP;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
-                          openPaymentModalFor(manageP, "custom");
+                          setPayEnrollmentId(String(currentP.enrollment_id));
+                          setPayLocked(true);
+                          setPayEditId(null);
+                          setPayAmount("");
+                          setPayMethod("cash");
+                          setPayDate(isoDate(new Date()));
+                          setPayNote("");
+                          setOpenPay(true);
                         }, 150);
                       }}
                     >
@@ -3280,10 +3268,11 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
+                        const currentP = manageP;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
-                          openPaymentHistory(manageP);
+                          openPaymentHistory(currentP);
                         }, 150);
                       }}
                     >
@@ -3318,10 +3307,11 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
+                        const currentP = manageP;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
-                          openSingleTopup(manageP);
+                          openSingleTopup(currentP);
                         }, 150);
                       }}
                     >
@@ -3331,10 +3321,11 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
+                        const currentP = manageP;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
-                          fetchPkgHistory(manageP);
+                          fetchPkgHistory(currentP);
                         }, 150);
                       }}
                     >
@@ -3344,10 +3335,11 @@ export default function RunDetails() {
                     <button
                       className="actionSquare"
                       onClick={() => {
+                        const currentP = manageP;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
-                          fetchAttHistory(manageP);
+                          fetchAttHistory(currentP);
                         }, 150);
                       }}
                     >
@@ -3746,7 +3738,7 @@ export default function RunDetails() {
                   { value: "", label: "— اختر طفل —" },
                   ...((enrollLocked ? children : availableChildren) || []).map(
                     (c) => ({
-                      value: c.id,
+                      value: String(c.id),
                       label: `${c.name} — ${c.class ?? "-"} — العمر: ${c.age ?? "-"}`,
                     }),
                   ),
@@ -3845,218 +3837,221 @@ export default function RunDetails() {
         </Modal>
 
         <Modal
-          open={openBulk}
-          title="إضافة مجموعة"
-          onClose={() => setOpenBulk(false)}
+          open={openNewChild}
+          title={newChildEnrollNow ? "إضافة طفل وتسجيله" : "إضافة طفل جديد"}
+          onClose={() => setOpenNewChild(false)}
         >
-          <div dir="rtl" lang="ar" className="modal-wide-1000">
-            <div className="muted" style={{ lineHeight: 1.5 }}>
-              اختر الأطفال ثم اضغط <b>إضافة</b>.
-            </div>
-            <hr className="sep" />
-            <div
-              className="row"
-              style={{
-                gap: 10,
-                flexWrap: "wrap",
-                justifyContent: "flex-start",
-                alignItems: "center",
-              }}
-            >
-              <input
-                className="input"
-                style={{ width: 280 }}
-                placeholder="ابحث عن طفل..."
-                value={bulkQ}
-                onChange={(e) => setBulkQ(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  setBulkSelected((prev) => {
-                    const next = { ...prev };
-                    for (const c of bulkCandidates) next[String(c.id)] = true;
-                    return next;
-                  });
-                }}
-              >
-                تحديد الكل
-              </button>
-              <button
-                type="button"
-                className="btn danger"
-                onClick={() => {
-                  setBulkSelected({});
-                  setBulkPerChildPrice({});
-                  setBulkPerChildSessions({});
-                }}
-              >
-                إلغاء التحديد
-              </button>
-              <div className="muted" style={{ marginInlineStart: "auto" }}>
-                المحدد: <b>{bulkSelectedCount}</b>
+          <div className="grid" style={{ gap: "24px", padding: "10px 0" }}>
+            {/* معلومات الطفل */}
+            <div style={{ gridColumn: "span 12" }}>
+              <h4 className="form-section-title">
+                <Users size={18} color="#64748b" /> البيانات الأساسية
+              </h4>
+              <div className="grid">
+                <div style={{ gridColumn: "span 12" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الاسم الرباعي *
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({ ...p, name: e.target.value }))
+                    }
+                    placeholder="مثال: أحمد محمد علي"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    العمر *
+                  </div>
+                  <input
+                    className="input"
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={newChildForm.age}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({ ...p, age: e.target.value }))
+                    }
+                    placeholder="بالسنوات"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الجنس
+                  </div>
+                  <ModernSelect
+                    value={newChildForm.gender}
+                    onChange={(v) =>
+                      setNewChildForm((p) => ({ ...p, gender: v }))
+                    }
+                    options={[
+                      { value: "male", label: "ذكر" },
+                      { value: "female", label: "أنثى" },
+                    ]}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الصف
+                  </div>
+                  <CustomCombobox
+                    value={newChildForm.class}
+                    onChange={(v) =>
+                      setNewChildForm((p) => ({ ...p, class: v }))
+                    }
+                    options={classes.map((c) => ({
+                      value: c.name,
+                      label: c.name,
+                    }))}
+                    placeholder="اختر أو اكتب صفاً..."
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    البلد / المدينة
+                  </div>
+                  <CustomCombobox
+                    value={newChildForm.country_name}
+                    onChange={(v) =>
+                      setNewChildForm((p) => ({ ...p, country_name: v }))
+                    }
+                    options={countries.map((c) => ({
+                      value: c.name,
+                      label: c.name,
+                    }))}
+                    placeholder="اختر أو اكتب بلداً..."
+                    disabled={countriesLoading}
+                  />
+                </div>
               </div>
             </div>
-            <div style={{ marginTop: 12 }}>
-              {bulkCandidates.length === 0 ? (
-                <div className="card">لا يوجد أطفال.</div>
-              ) : (
-                <div
-                  className="card"
-                  style={{
-                    padding: 0,
-                    overflow: "auto",
-                    maxHeight: "55vh",
-                    direction: "rtl",
-                  }}
-                >
-                  <table className="table" style={{ margin: 0, minWidth: 720 }}>
-                    <thead
-                      style={{
-                        position: "sticky",
-                        top: 0,
-                        background: "white",
-                        zIndex: 2,
-                      }}
-                    >
-                      <tr>
-                        <th style={{ width: 70, textAlign: "right" }}>
-                          اختيار
-                        </th>
-                        <th style={{ textAlign: "right" }}>الاسم</th>
-                        <th style={{ textAlign: "right" }}>العمر</th>
-                        <th style={{ textAlign: "right" }}>الصف</th>
-                        <th style={{ textAlign: "right" }}>الجنس</th>
-                        <th style={{ textAlign: "right" }}>هاتف الأم</th>
-                        <th style={{ width: 100, textAlign: "center" }}>
-                          الحصص
-                        </th>
-                        <th style={{ width: 120, textAlign: "center" }}>
-                          السعر
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bulkCandidates.map((c) => {
-                        const checked = !!bulkSelected[String(c.id)];
-                        const genderLabel =
-                          c.gender === "male"
-                            ? "ذكر"
-                            : c.gender === "female"
-                              ? "أنثى"
-                              : (c.gender ?? "-");
 
-                        return (
-                          <tr key={c.id}>
-                            <td>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => {
-                                  setBulkSelected((prev) => {
-                                    const next = { ...prev };
-                                    next[String(c.id)] = !next[String(c.id)];
-                                    return next;
-                                  });
-                                }}
-                              />
-                            </td>
-                            <td style={{ fontWeight: 850 }}>{c.name}</td>
-                            <td className="muted">{c.age ?? "-"}</td>
-                            <td className="muted">{c.class ?? "-"}</td>
-                            <td className="muted">{genderLabel}</td>
-                            <td className="muted">
-                              <span
-                                style={{
-                                  direction: "ltr",
-                                  unicodeBidi: "embed",
-                                }}
-                              >
-                                {c.mother_phone ?? "-"}
-                              </span>
-                            </td>
-                            <td>
-                              <input
-                                className="input"
-                                style={{
-                                  width: "100%",
-                                  minWidth: 70,
-                                  height: 38,
-                                  textAlign: "center",
-                                }}
-                                type="number"
-                                min="0"
-                                value={
-                                  bulkPerChildSessions[c.id] ??
-                                  defaultSessionsTotal ??
-                                  ""
-                                }
-                                onChange={(e) =>
-                                  setBulkPerChildSessions((prev) => ({
-                                    ...prev,
-                                    [c.id]: e.target.value,
-                                  }))
-                                }
-                                disabled={!checked}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                className="input"
-                                style={{
-                                  width: "100%",
-                                  minWidth: 90,
-                                  height: 38,
-                                  textAlign: "center",
-                                }}
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={
-                                  bulkPerChildPrice[c.id] ?? defaultPrice ?? ""
-                                }
-                                onChange={(e) =>
-                                  setBulkPerChildPrice((prev) => ({
-                                    ...prev,
-                                    [c.id]: e.target.value,
-                                  }))
-                                }
-                                disabled={!checked}
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+            {/* معلومات الأهل */}
+            <div style={{ gridColumn: "span 12" }}>
+              <h4 className="form-section-title">
+                <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
+              </h4>
+              <div className="grid">
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    اسم الأم
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.mother_name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        mother_name: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                  />
                 </div>
-              )}
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    هاتف الأم
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.mother_phone}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        mother_phone: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                    dir="ltr"
+                    style={{ textAlign: "right" }}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    اسم الأب
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.father_name}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        father_name: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    هاتف الأب
+                  </div>
+                  <input
+                    className="input"
+                    value={newChildForm.father_phone}
+                    onChange={(e) =>
+                      setNewChildForm((p) => ({
+                        ...p,
+                        father_phone: e.target.value,
+                      }))
+                    }
+                    placeholder="اختياري"
+                    dir="ltr"
+                    style={{ textAlign: "right" }}
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* ملاحظات إضافية */}
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                ملاحظات إضافية
+              </div>
+              <textarea
+                className="input"
+                rows={3}
+                value={newChildForm.notes}
+                onChange={(e) =>
+                  setNewChildForm((p) => ({ ...p, notes: e.target.value }))
+                }
+                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+                style={{ resize: "vertical" }}
+              />
+            </div>
+
             <div
-              className="row"
               style={{
-                justifyContent: "flex-start",
+                gridColumn: "span 12",
+                display: "flex",
+                justifyContent: "flex-end",
                 gap: 10,
-                marginTop: 16,
+                paddingTop: 8,
               }}
             >
               <button
                 type="button"
-                className="btn primary"
-                disabled={bulkSaving || bulkSelectedCount === 0}
-                onClick={bulkPurchaseAndEnroll}
+                className="btn"
+                onClick={() => setOpenNewChild(false)}
+                disabled={newChildSaving}
               >
-                {bulkSaving
-                  ? "جارٍ الإضافة..."
-                  : `إضافة (${bulkSelectedCount})`}
+                إلغاء
               </button>
               <button
                 type="button"
-                className="btn"
-                onClick={() => setOpenBulk(false)}
+                className="btn btn-primary"
+                onClick={() =>
+                  createChildInline({ enrollNow: newChildEnrollNow })
+                }
+                disabled={newChildSaving}
               >
-                إغلاق
+                {newChildSaving
+                  ? "جاري الحفظ..."
+                  : newChildEnrollNow
+                    ? "حفظ وتسجيل بالدورة"
+                    : "حفظ الطالب"}
               </button>
             </div>
           </div>
