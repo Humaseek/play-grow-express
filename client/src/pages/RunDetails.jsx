@@ -729,6 +729,8 @@ export default function RunDetails() {
   const [bulkSelected, setBulkSelected] = useState({});
   const [bulkPerChildSessions, setBulkPerChildSessions] = useState({});
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
+  // حالة جديدة للتحكم بتاريخ الإضافة لكل طفل في المجموعة
+  const [bulkPerChildDate, setBulkPerChildDate] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
   const [openHistory, setOpenHistory] = useState(false);
@@ -1221,6 +1223,7 @@ export default function RunDetails() {
     setBulkSelected({});
     setBulkPerChildSessions({});
     setBulkPerChildPrice({});
+    setBulkPerChildDate({});
   }
 
   function toggleBulkChild(childId) {
@@ -1243,6 +1246,7 @@ export default function RunDetails() {
     setBulkSelected({});
     setBulkPerChildPrice({});
     setBulkPerChildSessions({});
+    setBulkPerChildDate({});
   }
 
   function openNewPaymentModal() {
@@ -1581,14 +1585,63 @@ export default function RunDetails() {
         if (isNaN(priceNum) || priceNum < 0)
           priceNum = Number(defaultPrice) || 0;
 
+        // الحصول على التاريخ المحدد أو تاريخ اليوم كافتراضي
+        const dateStr =
+          bulkPerChildDate[cid] !== undefined
+            ? bulkPerChildDate[cid]
+            : isoDate(new Date());
+
         const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
           p_run_id: Number(runId),
           p_child_id: cid,
           p_sessions: sessionsNum,
           p_price_total: priceNum,
         });
-        if (rpc2.error) failed += 1;
-        else added += 1;
+
+        if (rpc2.error) {
+          failed += 1;
+        } else {
+          added += 1;
+
+          // بعد النجاح في التسجيل، نقوم بتحديث تاريخ الباقة والاشتراك للتاريخ المحدد
+          if (dateStr) {
+            const isoD = updateDateKeepTime(dateStr);
+
+            // تحديث تاريخ الباقة (course_packages)
+            const { data: pkgData } = await supabase
+              .from("course_packages")
+              .select("id")
+              .eq("child_id", cid)
+              .eq("course_id", summary.template_id)
+              .order("id", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (pkgData) {
+              await supabase
+                .from("course_packages")
+                .update({ created_at: isoD })
+                .eq("id", pkgData.id);
+            }
+
+            // تحديث تاريخ التسجيل (enrollments)
+            const { data: enrollData } = await supabase
+              .from("enrollments")
+              .select("id")
+              .eq("child_id", cid)
+              .eq("run_id", Number(runId))
+              .order("id", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            if (enrollData) {
+              await supabase
+                .from("enrollments")
+                .update({ created_at: isoD })
+                .eq("id", enrollData.id);
+            }
+          }
+        }
       }
       await loadFixed();
       setTab("participants");
@@ -1599,7 +1652,7 @@ export default function RunDetails() {
       setOpenBulk(false);
       bulkClearSelection();
     } catch {
-      toast("Bulk enroll failed.", "danger");
+      toast("فشلت عملية الإضافة.", "danger");
     } finally {
       setBulkSaving(false);
     }
@@ -4148,7 +4201,9 @@ export default function RunDetails() {
                         <th style={{ textAlign: "right" }}>الصف</th>
                         <th style={{ textAlign: "right" }}>الجنس</th>
                         <th style={{ textAlign: "right" }}>هاتف الأم</th>
-                        <th style={{ textAlign: "right" }}>تاريخ الإضافة</th>
+                        <th style={{ textAlign: "right", width: 140 }}>
+                          تاريخ الإضافة
+                        </th>
                         <th style={{ width: 100, textAlign: "center" }}>
                           الحصص
                         </th>
@@ -4190,7 +4245,31 @@ export default function RunDetails() {
                                 {c.mother_phone ?? "-"}
                               </span>
                             </td>
-                            <td className="muted">{fmtDate(c.created_at)}</td>
+                            <td>
+                              <input
+                                className="input"
+                                style={{
+                                  width: "100%",
+                                  minWidth: 130,
+                                  height: 38,
+                                  textAlign: "center",
+                                  fontSize: 13,
+                                }}
+                                type="date"
+                                value={
+                                  bulkPerChildDate[c.id] !== undefined
+                                    ? bulkPerChildDate[c.id]
+                                    : isoDate(new Date())
+                                }
+                                onChange={(e) =>
+                                  setBulkPerChildDate((prev) => ({
+                                    ...prev,
+                                    [c.id]: e.target.value,
+                                  }))
+                                }
+                                disabled={!checked}
+                              />
+                            </td>
                             <td>
                               <input
                                 className="input"
