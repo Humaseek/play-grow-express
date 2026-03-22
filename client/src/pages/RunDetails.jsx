@@ -679,9 +679,6 @@ export default function RunDetails() {
   const [expDesc, setExpDesc] = useState("");
   const [expSaving, setExpSaving] = useState(false);
 
-  const [newCatName, setNewCatName] = useState("");
-  const [newPartyName, setNewPartyName] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -702,7 +699,6 @@ export default function RunDetails() {
   const [enrollSaving, setEnrollSaving] = useState(false);
 
   const [openNewChild, setOpenNewChild] = useState(false);
-  // تحديث حالة الفورم عشان تدعم القيم النصية للبلد والصف
   const [newChildForm, setNewChildForm] = useState({
     name: "",
     age: "",
@@ -3194,7 +3190,6 @@ export default function RunDetails() {
                       disabled={Number(manageP.balance || 0) <= 0}
                       onClick={() => {
                         const currentP = manageP;
-                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3217,7 +3212,6 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
-                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3232,7 +3226,6 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
-                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3272,7 +3265,6 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
-                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3287,7 +3279,6 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
-                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -3302,7 +3293,6 @@ export default function RunDetails() {
                       className="actionSquare"
                       onClick={() => {
                         const currentP = manageP;
-                        if (!currentP) return;
                         setOpenإدارة(false);
                         setShouldReopenManage(true);
                         setTimeout(() => {
@@ -4298,100 +4288,103 @@ export default function RunDetails() {
           </div>
         </Modal>
 
-        {/* =========================================================================
-            نوافذ المصاريف (المستعادة لتعمل بالشكل الصحيح)
-        ========================================================================= */}
         <Modal
-          open={openExpenseModal}
-          title={expenseEditId ? "تعديل مصروف" : "إضافة مصروف"}
+          open={openPay}
+          title={payEditId ? "تعديل دفعة" : "إضافة دفعة"}
           onClose={() => {
-            setOpenExpenseModal(false);
-            resetExpenseForm();
+            setPayEditId(null);
+            setPayLocked(false);
+            closeSubModalAndReopen(setOpenPay);
           }}
         >
           <div className="grid">
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted" style={{ marginBottom: 6 }}>
-                التاريخ
-              </div>
-              <input
-                className="input"
-                type="date"
-                value={expDate}
-                onChange={(e) => setExpDate(e.target.value)}
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">الطفل</div>
+              <ModernSelect
+                value={payEnrollmentId}
+                onChange={setPayEnrollmentId}
+                menuWidth="trigger"
+                disabled={paySaving || !!payEditId || payLocked}
+                placeholder="— اختر طفل —"
+                options={[
+                  { value: "", label: "— اختر طفل —" },
+                  ...participants
+                    .filter((p) => p.enrollment_status === "active")
+                    .map((p) => ({
+                      value: String(p.enrollment_id),
+                      label: `${p.child_name} — المتبقي: ₪${Number(p.balance).toFixed(2)}`,
+                    })),
+                ]}
               />
             </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted" style={{ marginBottom: 6 }}>
-                المبلغ
-              </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">المبلغ (₪)</div>
               <input
                 className="input"
                 type="number"
+                min="0.01"
                 step="0.01"
-                min="0"
-                value={expAmount}
-                onChange={(e) => setExpAmount(e.target.value)}
-                placeholder="مثال: 50"
+                placeholder="0.00"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
               />
             </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted" style={{ marginBottom: 6 }}>
-                التصنيف
-              </div>
-              <CustomCombobox
-                value={expCategory}
-                onChange={(v) => setExpCategory(v)}
-                options={expCategories.map((x) => ({
-                  value: x,
-                  label: x,
-                }))}
-                placeholder="اختر أو اكتب تصنيفاً..."
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">طريقة الدفع</div>
+              <ModernSelect
+                value={payMethod}
+                onChange={setPayMethod}
+                menuWidth="trigger"
+                options={[
+                  { value: "cash", label: "نقداً" },
+                  { value: "card", label: "بطاقة ائتمان" },
+                  { value: "transfer", label: "حوالة بنكية" },
+                  { value: "other", label: "أخرى" },
+                ]}
               />
             </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted" style={{ marginBottom: 6 }}>
-                الشخص
-              </div>
-              <CustomCombobox
-                value={expParty}
-                onChange={(v) => setExpParty(v)}
-                options={expParties.map((x) => ({
-                  value: x,
-                  label: x,
-                }))}
-                placeholder="اختر أو اكتب شخصاً..."
-              />
-            </div>
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted" style={{ marginBottom: 6 }}>
-                الوصف
-              </div>
+
+            <div style={{ gridColumn: "span 4" }}>
+              <div className="muted">تاريخ الدفعة</div>
               <input
                 className="input"
-                value={expDesc}
-                onChange={(e) => setExpDesc(e.target.value)}
-                placeholder="اختياري..."
+                type="date"
+                value={payDate}
+                onChange={(e) => setPayDate(e.target.value)}
               />
             </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">ملاحظات</div>
+              <input
+                className="input"
+                placeholder="اختياري"
+                value={payNote}
+                onChange={(e) => setPayNote(e.target.value)}
+              />
+            </div>
+
             <div
               className="row"
-              style={{ gridColumn: "span 12", marginTop: 20 }}
+              style={{ gridColumn: "span 12", marginTop: 10 }}
             >
               <button
                 type="button"
                 className="btn primary"
-                onClick={saveExpense}
-                disabled={expSaving}
+                disabled={paySaving || !payEnrollmentId || !payAmount}
+                onClick={addPayment}
               >
-                {expSaving ? "جاري الحفظ..." : "حفظ"}
+                {paySaving ? "جاري الحفظ..." : payEditId ? "تحديث" : "حفظ"}
               </button>
               <button
                 type="button"
                 className="btn"
                 onClick={() => {
-                  setOpenExpenseModal(false);
-                  resetExpenseForm();
+                  setPayEditId(null);
+                  setPayLocked(false);
+                  closeSubModalAndReopen(setOpenPay);
                 }}
               >
                 إلغاء
@@ -4399,7 +4392,6 @@ export default function RunDetails() {
             </div>
           </div>
         </Modal>
-        {/* ========================================================================= */}
 
         <ConfirmDialog
           open={confirm.open}
