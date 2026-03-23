@@ -1547,74 +1547,23 @@ export default function RunDetails() {
         const sessionsToAdd = Number(buySessions) || 0;
         const priceToAdd = Number(buyPriceTotal) || 0;
 
-        if (existing.package_id) {
-          const newSessionsTotal =
-            Number(existing.package_sessions_total || 0) + sessionsToAdd;
-          const newPriceTotal = Number(existing.agreed_price || 0) + priceToAdd;
+        // التعديل: إدراج باقة جديدة منفصلة بدل ما نعدل القديمة!
+        const insPkg = await supabase.from("course_packages").insert([
+          {
+            course_id: summary.template_id,
+            child_id: existing.child_id,
+            sessions_total: sessionsToAdd,
+            price_total: priceToAdd,
+            status: "active",
+          },
+        ]);
 
-          const u1 = await supabase
-            .from("course_packages")
-            .update({
-              sessions_total: newSessionsTotal,
-              price_total: newPriceTotal,
-            })
-            .eq("id", existing.package_id);
-          if (u1.error) throw u1.error;
-
-          const u1_enroll = await supabase
-            .from("enrollments")
-            .update({ agreed_price: newPriceTotal })
-            .eq("id", existing.enrollment_id);
-          if (u1_enroll.error) throw u1_enroll.error;
-        } else {
-          const prevAgreed = Number(existing.agreed_price || 0);
-          const newPriceTotal = prevAgreed + priceToAdd;
-
-          const insPkg = await supabase
-            .from("course_packages")
-            .insert([
-              {
-                course_id: summary.template_id,
-                child_id: existing.child_id,
-                sessions_total: sessionsToAdd,
-                price_total: newPriceTotal,
-                status: "active",
-              },
-            ])
-            .select("id")
-            .single();
-
-          if (insPkg.error) throw insPkg.error;
-
-          const u2 = await supabase
-            .from("enrollments")
-            .update({
-              package_id: insPkg.data.id,
-              agreed_price: newPriceTotal,
-            })
-            .eq("id", existing.enrollment_id);
-
-          if (u2.error) throw u2.error;
-        }
+        if (insPkg.error) throw insPkg.error;
 
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
 
-        // هنا بنعمل قيد (Log) منفصل في سجل الدفعات يوثق إنك ضفت جلسات جديدة
-        if (sessionsToAdd > 0 || priceToAdd > 0) {
-          await supabase.from("payments").insert([
-            {
-              enrollment_id: existing.enrollment_id,
-              package_id: existing.package_id || null,
-              amount: 0,
-              method: "other",
-              note: `تعديل اشتراك: إضافة ${sessionsToAdd} حصص (بقيمة ${priceToAdd} ₪ للمتفق عليه)`,
-              created_at: new Date().toISOString(),
-            },
-          ]);
-        }
-
         await loadFixed();
-        toast("تم شحن رصيد الجلسات بنجاح.", "ok");
+        toast("تم إضافة الجلسات كباقة جديدة بنجاح.", "ok");
         closeSubModalAndReopen(setOpenEnroll);
         if (!enrollLocked && !shouldReopenManage) setTab("participants");
         return;
@@ -1998,16 +1947,14 @@ export default function RunDetails() {
     setHistoryEnrollment(pRow);
     setOpenHistory(true);
     setHistoryLoading(true);
-    if (!pRow.package_id) {
-      setHistoryRows([]);
-      setHistoryLoading(false);
-      return;
-    }
+
+    // التعديل: إظهار الدفعات برقم التسجيل عشان تظهر كلها بغض النظر عن الباقة
     const { data } = await supabase
       .from("payments")
       .select("id,enrollment_id,amount,method,note,created_at")
-      .eq("package_id", pRow.package_id)
+      .eq("enrollment_id", pRow.enrollment_id)
       .order("created_at", { ascending: false });
+
     setHistoryRows(data ?? []);
     setHistoryLoading(false);
   }
