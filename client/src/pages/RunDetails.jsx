@@ -2420,7 +2420,7 @@ export default function RunDetails() {
                   }}
                 >
                   <button type="button" className="btn" onClick={openBulkModal}>
-                    + إضافة مجموعة
+                    + إضافة طفل للدورة
                   </button>
                   <button
                     type="button"
