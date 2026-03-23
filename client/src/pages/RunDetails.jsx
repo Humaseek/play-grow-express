@@ -1759,18 +1759,51 @@ export default function RunDetails() {
     if (!firstStart) return;
     setGenLoading(true);
     try {
-      await supabase.rpc("generate_weekly_sessions_for_run", {
-        p_run_id: Number(runId),
-        p_first_start: new Date(firstStart).toISOString(),
-        p_duration_minutes: Number(durationMinutes),
-        p_count: Number(count),
-        p_interval_days: Number(intervalDays),
-      });
-      toast("Sessions generated.", "ok");
+      // بناء الجلسات من المتصفح لضمان توافق التوقيت المحلي مع التوقيت الصيفي/الشتوي
+      const [datePart, timePart] = firstStart.split("T");
+      const [y, m, d] = datePart.split("-");
+      const [hh, mm] = timePart.split(":");
+      const baseYear = parseInt(y, 10);
+      const baseMonth = parseInt(m, 10) - 1;
+      const baseDay = parseInt(d, 10);
+      const baseHours = parseInt(hh, 10);
+      const baseMins = parseInt(mm, 10);
+
+      const sessionsToInsert = [];
+      const c = Number(count) || 1;
+      const interval = Number(intervalDays) || 7;
+      const dur = Number(durationMinutes) || 60;
+
+      for (let i = 0; i < c; i++) {
+        const start = new Date(
+          baseYear,
+          baseMonth,
+          baseDay + i * interval,
+          baseHours,
+          baseMins,
+        );
+        const end = new Date(start.getTime() + dur * 60000);
+
+        sessionsToInsert.push({
+          run_id: Number(runId),
+          course_id: Number(summary.template_id),
+          start_at: start.toISOString(),
+          end_at: end.toISOString(),
+          status: "scheduled",
+        });
+      }
+
+      const { error } = await supabase
+        .from("course_sessions")
+        .insert(sessionsToInsert);
+      if (error) throw error;
+
+      toast("تم إنشاء الجلسات بنجاح.", "ok");
       await loadFixed();
       setTab("sessions");
-    } catch {
-      toast("Failed.", "danger");
+    } catch (e) {
+      console.error("Generate Sessions Error:", e);
+      toast("فشل إنشاء الجلسات.", "danger");
     } finally {
       setGenLoading(false);
     }
