@@ -47,18 +47,18 @@ const PROFILE_STYLES = `
   margin: 0 auto;
 }
 
-/* الرأس (Header) المطور */
+/* الرأس (Header) المطور والناعم */
 .header-section {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
   margin-bottom: 32px;
   background: white;
   padding: 32px 40px;
   border-radius: 24px;
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.03);
   position: relative;
-  border-right: 6px solid #3b82f6; /* لمسة جمالية على اليمين */
+  border-right: 6px solid #3b82f6; 
 }
 
 .btn-back {
@@ -77,33 +77,19 @@ const PROFILE_STYLES = `
 .btn-back:hover { 
   background: #f1f5f9; 
   color: #0f172a; 
-  transform: translateX(6px); /* حركة لليمين تدل على الرجوع */
+  transform: translateX(6px); 
   border-color: #cbd5e1;
 }
 
 .header-user-info {
   display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.avatar-large {
-  width: 80px;
-  height: 80px;
-  border-radius: 24px;
-  background: #eff6ff; /* أزرق فاتح مريح */
-  color: #2563eb;
-  display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  font-size: 36px;
-  font-weight: 900;
-  border: 2px solid #bfdbfe;
 }
 
 .user-name-title {
-  margin: 0 0 10px 0;
-  font-size: 30px;
+  margin: 0;
+  font-size: 32px; /* كبرنا الخط ليكون أوضح بعد إزالة الصورة */
   font-weight: 900;
   color: #0f172a;
   letter-spacing: -0.5px;
@@ -113,6 +99,7 @@ const PROFILE_STYLES = `
   display: flex;
   gap: 12px;
   align-items: center;
+  margin-top: 8px; /* مسافة خفيفة بين الاسم والشارة */
 }
 
 /* البطاقات المالية (Stats) */
@@ -529,7 +516,7 @@ export default function ChildDetails() {
     <div className="dashboard-wrapper">
       <style>{PROFILE_STYLES}</style>
       <div className="max-w-container">
-        {/* === القسم الأول: الهيدر المطور === */}
+        {/* === القسم الأول: الهيدر المطور والناعم === */}
         <div className="header-section">
           <button
             className="btn-back"
@@ -540,24 +527,15 @@ export default function ChildDetails() {
           </button>
 
           <div className="header-user-info">
-            <div className="avatar-large">{child.name.charAt(0)}</div>
-            <div>
-              <h1 className="user-name-title">{child.name}</h1>
+            <h1 className="user-name-title">{child.name}</h1>
+            {child.country && (
               <div className="badges-row">
-                <Badge variant="neutral">
-                  <span style={{ color: "#64748b", fontWeight: 800 }}>
-                    رقم الملف:
-                  </span>{" "}
-                  {child.id}
+                <Badge variant="info">
+                  <MapPin size={14} style={{ marginLeft: "4px" }} />{" "}
+                  {child.country}
                 </Badge>
-                {child.country && (
-                  <Badge variant="info">
-                    <MapPin size={14} style={{ marginLeft: "4px" }} />{" "}
-                    {child.country}
-                  </Badge>
-                )}
               </div>
-            </div>
+            )}
           </div>
         </div>
 
