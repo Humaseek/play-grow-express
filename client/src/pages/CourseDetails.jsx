@@ -200,12 +200,12 @@ export default function CourseDetails() {
 
       if (u.error) throw u.error;
 
-      toast("تم تحديث الفوج.", "ok");
+      toast("تم تحديث الجلسة.", "ok");
       setEditOpen(false);
       await load();
     } catch (e) {
       setError(e);
-      toast("فشل تحديث الفوج.", "danger");
+      toast("فشل تحديث الجلسة.", "danger");
     } finally {
       setSaving(false);
     }
@@ -219,8 +219,8 @@ export default function CourseDetails() {
       const finalLabel = label.trim()
         ? label.trim()
         : firstStart
-          ? `فوج ${new Date(firstStart).toLocaleDateString("en-US")}`
-          : "فوج جديد";
+          ? `جلسة ${new Date(firstStart).toLocaleDateString("en-US")}`
+          : "جلسة جديدة";
 
       const ins = await supabase
         .from("course_runs")
@@ -257,7 +257,7 @@ export default function CourseDetails() {
         await autoEnrollPackages(runId);
       }
 
-      toast("تم إنشاء الفوج.", "ok");
+      toast("تم إنشاء الجلسة.", "ok");
 
       setOpen(false);
       resetCreateForm();
@@ -265,7 +265,7 @@ export default function CourseDetails() {
       navigate(`/runs/${runId}`);
     } catch (e) {
       setError(e);
-      toast("فشل إنشاء الفوج.", "danger");
+      toast("فشل إنشاء الجلسة.", "danger");
     } finally {
       setSaving(false);
     }
@@ -281,11 +281,11 @@ export default function CourseDetails() {
 
     if (u.error) {
       setError(u.error);
-      toast("فشل تحديث حالة الفوج.", "danger");
+      toast("فشل تحديث حالة الجلسة.", "danger");
       return;
     }
 
-    toast("تم تحديث حالة الفوج.", "ok");
+    toast("تم تحديث حالة الجلسة.", "ok");
     await load();
   }
 
@@ -295,11 +295,11 @@ export default function CourseDetails() {
 
     if (d.error) {
       setError(d.error);
-      toast("فشل حذف الفوج.", "danger");
+      toast("فشل حذف الجلسة.", "danger");
       return;
     }
 
-    toast("تم حذف الفوج.", "ok");
+    toast("تم حذف الجلسة.", "ok");
     await load();
   }
 
@@ -464,7 +464,7 @@ export default function CourseDetails() {
               رجوع
             </button>
             <button className="btn primary" onClick={openCreateRunModal}>
-              <Plus size={18} /> فوج جديد
+              <Plus size={18} /> جلسة جديدة
             </button>
           </>
         }
@@ -476,7 +476,7 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.activeCount ? "ok" : "neutral"}
-            label="الأفواج الفعّالة"
+            label="الجلسات الفعّالة"
             value={stats.activeCount}
             hint={stats.totalRuns ? `` : ""}
             icon={Layers}
@@ -517,12 +517,12 @@ export default function CourseDetails() {
       {sortedRuns.length === 0 ? (
         <div className="card" style={{ marginTop: 12 }}>
           <EmptyState
-            title="لا يوجد أفواج"
-            description="أنشئ أول فوج للدورة."
+            title="لا يوجد جلسات"
+            description="أنشئ أول جلسة للدورة."
             icon={Layers}
             actions={
               <button className="btn primary" onClick={openCreateRunModal}>
-                <Plus size={18} /> فوج جديد
+                <Plus size={18} /> جلسة جديدة
               </button>
             }
           />
@@ -530,7 +530,7 @@ export default function CourseDetails() {
       ) : (
         <div className="cardsGrid" style={{ marginTop: 12 }}>
           {sortedRuns.map((r) => {
-            const title = r.label || `فوج #${r.run_id}`;
+            const title = r.label || `جلسة #${r.run_id}`;
             const isActive = r.status === "active";
 
             return (
@@ -590,7 +590,7 @@ export default function CourseDetails() {
                 >
                   <IconButton
                     icon={Pencil}
-                    title="تعديل الفوج"
+                    title="تعديل الجلسة"
                     variant="soft"
                     size="sm"
                     onClick={() => openEditRunModal(r)}
@@ -601,7 +601,7 @@ export default function CourseDetails() {
                   {isActive ? (
                     <IconButton
                       icon={CheckCircle2}
-                      title="إنهاء الفوج"
+                      title="إنهاء الجلسة"
                       variant="soft"
                       size="sm"
                       onClick={() =>
@@ -609,7 +609,7 @@ export default function CourseDetails() {
                           open: true,
                           type: "done",
                           runId: r.run_id,
-                          text: `إنهاء الفوج: ${title}`,
+                          text: `إنهاء الجلسة: ${title}`,
                         })
                       }
                     >
@@ -618,7 +618,7 @@ export default function CourseDetails() {
                   ) : (
                     <IconButton
                       icon={RotateCcw}
-                      title="إعادة تفعيل الفوج"
+                      title="إعادة تفعيل الجلسة"
                       variant="ghost"
                       size="sm"
                       onClick={() =>
@@ -626,7 +626,7 @@ export default function CourseDetails() {
                           open: true,
                           type: "reactivate",
                           runId: r.run_id,
-                          text: `إعادة تفعيل الفوج: ${title}`,
+                          text: `إعادة تفعيل الجلسة: ${title}`,
                         })
                       }
                     >
@@ -636,7 +636,7 @@ export default function CourseDetails() {
 
                   <IconButton
                     icon={Trash2}
-                    title="حذف الفوج"
+                    title="حذف الجلسة"
                     variant="danger"
                     size="sm"
                     onClick={() =>
@@ -644,7 +644,7 @@ export default function CourseDetails() {
                         open: true,
                         type: "delete",
                         runId: r.run_id,
-                        text: `حذف الفوج: ${title}`,
+                        text: `حذف الجلسة: ${title}`,
                       })
                     }
                   >
@@ -657,19 +657,19 @@ export default function CourseDetails() {
         </div>
       )}
 
-      <Modal open={open} title="إنشاء فوج" onClose={() => setOpen(false)}>
-        <div className="muted">فوج جديد للدورة.</div>
+      <Modal open={open} title="إنشاء جلسة" onClose={() => setOpen(false)}>
+        <div className="muted">جلسة جديدة للدورة.</div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">اسم الفوج (اختياري)</div>
+            <div className="muted">اسم الجلسة (اختياري)</div>
             <input
               className="input"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="مثال: فوج الأحد - شباط 2026"
+              placeholder="مثال: جلسة الأحد - شباط 2026"
             />
           </div>
 
@@ -750,7 +750,7 @@ export default function CourseDetails() {
               type="button"
               onClick={createRun}
             >
-              {saving ? "جارٍ الإنشاء..." : "إنشاء فوج"}
+              {saving ? "جارٍ الإنشاء..." : "إنشاء جلسة"}
             </button>
             <button
               className="btn"
@@ -765,21 +765,21 @@ export default function CourseDetails() {
 
       <Modal
         open={editOpen}
-        title="تعديل الفوج"
+        title="تعديل الجلسة"
         onClose={() => setEditOpen(false)}
       >
-        <div className="muted">تعديل بيانات الفوج وإجراءاته الأساسية.</div>
+        <div className="muted">تعديل بيانات الجلسة وإجراءاتها الأساسية.</div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">اسم الفوج</div>
+            <div className="muted">اسم الجلسة</div>
             <input
               className="input"
               value={editLabel}
               onChange={(e) => setEditLabel(e.target.value)}
-              placeholder="مثال: فوج الأحد - شباط 2026"
+              placeholder="مثال: جلسة الأحد - شباط 2026"
             />
           </div>
 
@@ -842,11 +842,11 @@ export default function CourseDetails() {
                       open: true,
                       type: "canceled",
                       runId: editRunId,
-                      text: `إلغاء الفوج: ${editLabel || "هذا الفوج"}`,
+                      text: `إلغاء الجلسة: ${editLabel || "هذه الجلسة"}`,
                     });
                   }}
                 >
-                  <Ban size={16} /> إلغاء الفوج
+                  <Ban size={16} /> إلغاء الجلسة
                 </button>
               </div>
             </div>
