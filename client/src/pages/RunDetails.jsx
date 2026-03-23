@@ -1547,7 +1547,7 @@ export default function RunDetails() {
         const sessionsToAdd = Number(buySessions) || 0;
         const priceToAdd = Number(buyPriceTotal) || 0;
 
-        // تعديل مباشر بالـ Frontend لتجنب أي مشاكل أو Validation مخفي جوا الـ SQL
+        // التعديل المباشر لتجنب أي مشاكل في الـ RPC
         if (existing.package_id) {
           const newSessionsTotal =
             Number(existing.package_sessions_total || 0) + sessionsToAdd;
@@ -1562,14 +1562,34 @@ export default function RunDetails() {
             .eq("id", existing.package_id);
           if (u1.error) throw u1.error;
         } else {
-          const newPriceTotal = Number(existing.agreed_price || 0) + priceToAdd;
-          const u1 = await supabase
+          const prevAgreed = Number(existing.agreed_price || 0);
+          const newPriceTotal = prevAgreed + priceToAdd;
+
+          const insPkg = await supabase
+            .from("course_packages")
+            .insert([
+              {
+                course_id: summary.template_id,
+                child_id: existing.child_id,
+                sessions_total: sessionsToAdd,
+                price_total: newPriceTotal,
+                status: "active",
+              },
+            ])
+            .select("id")
+            .single();
+
+          if (insPkg.error) throw insPkg.error;
+
+          const u2 = await supabase
             .from("enrollments")
             .update({
+              package_id: insPkg.data.id,
               agreed_price: newPriceTotal,
             })
             .eq("id", existing.enrollment_id);
-          if (u1.error) throw u1.error;
+
+          if (u2.error) throw u2.error;
         }
 
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
