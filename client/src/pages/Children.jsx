@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
+// إضافة الاستيراد الخاص بـ useNavigate للانتقال بين الصفحات
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -233,7 +235,11 @@ const CHILDREN_STYLES = `
   transition: background 0.15s ease;
 }
 
-.modern-table tr:hover td {
+/* إضافة تأثير مريح عند التحويم على الصف */
+.modern-table tr.clickable-row {
+  cursor: pointer;
+}
+.modern-table tr.clickable-row:hover td {
   background: #f8fafc;
 }
 
@@ -312,6 +318,9 @@ const CHILDREN_STYLES = `
 `;
 
 export default function Children() {
+  // تعريف دالة التنقل
+  const navigate = useNavigate();
+
   // حالة البيانات الأساسية
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -598,7 +607,11 @@ export default function Children() {
                 </thead>
                 <tbody>
                   {filteredChildren.map((child) => (
-                    <tr key={child.id}>
+                    <tr
+                      key={child.id}
+                      className="clickable-row"
+                      onClick={() => navigate(`/children/${child.id}`)}
+                    >
                       <td className="child-id" style={{ textAlign: "center" }}>
                         {child.id}
                       </td>
@@ -619,21 +632,26 @@ export default function Children() {
                       </td>
                       <td>
                         <div className="actions-cell">
+                          {/* استخدام e.stopPropagation لمنع الدخول لصفحة الطفل عند الضغط على تعديل أو حذف */}
                           <IconButton
-                            onClick={() => openEditModal(child)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(child);
+                            }}
                             title="تعديل"
                           >
                             <Pencil size={16} />
                           </IconButton>
                           <IconButton
                             danger
-                            onClick={() =>
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setConfirm({
                                 open: true,
                                 id: child.id,
                                 text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                              })
-                            }
+                              });
+                            }}
                             title="حذف"
                           >
                             <Trash2 size={16} />
