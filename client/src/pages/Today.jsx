@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useOutletContext, Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
@@ -30,12 +30,14 @@ import {
   Activity,
   CheckSquare,
   Briefcase,
+  ChevronDown, // أضفنا أيقونة السهم للقائمة المنسدلة
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import Badge from "../components/Badge";
+import Modal from "../components/Modal"; // استيراد المودال
 
 // ============================================================================
 // 1. الدوال المساعدة الأساسية (تم حمايتها والتأكد من وجودها)
@@ -200,6 +202,112 @@ function getRangeAndBins(preset, customStart, customEnd) {
   }
 
   return { fromIso: start.toISOString(), toIso: end.toISOString(), bins };
+}
+
+// ============================================================================
+// مكون القائمة المنسدلة (للمصاريف)
+// ============================================================================
+function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filtered = options.filter((o) =>
+    (o.label || "").toLowerCase().includes((value || "").toLowerCase()),
+  );
+
+  return (
+    <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
+      <input
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value);
+          setIsOpen(true);
+        }}
+        onFocus={() => setIsOpen(true)}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="off"
+        style={{
+          width: "100%",
+          padding: "12px 16px",
+          paddingLeft: 36,
+          borderRadius: "12px",
+          border: "1px solid #e2e8f0",
+          outline: "none",
+          fontFamily: "inherit",
+          fontSize: "15px",
+        }}
+      />
+      <ChevronDown
+        size={16}
+        style={{
+          position: "absolute",
+          left: 12,
+          top: "50%",
+          transform: `translateY(-50%) ${isOpen ? "rotate(180deg)" : "rotate(0deg)"}`,
+          color: "#94a3b8",
+          pointerEvents: "none",
+          transition: "transform 0.2s ease",
+        }}
+      />
+      {isOpen && filtered.length > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            zIndex: 50,
+            background: "#fff",
+            border: "1px solid rgba(15,23,42,0.08)",
+            borderRadius: "14px",
+            maxHeight: "200px",
+            overflowY: "auto",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.05)",
+            padding: "4px",
+          }}
+        >
+          {filtered.map((opt, i) => (
+            <div
+              key={i}
+              style={{
+                padding: "10px 14px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#334155",
+                borderRadius: "10px",
+                transition: "background 0.15s ease",
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "#f8fafc")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
+            >
+              {opt.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ============================================================================
@@ -1019,6 +1127,22 @@ export default function Dashboard() {
     sessionId: null,
   });
 
+  // ==========================================
+  // حالات وإعدادات إضافة مصروف (من قلب الداشبورد)
+  // ==========================================
+  const [openExpAdd, setOpenExpAdd] = useState(false);
+  const [expDate, setExpDate] = useState(
+    () => new Date().toISOString().split("T")[0],
+  );
+  const [expAmount, setExpAmount] = useState("");
+  const [expCategory, setExpCategory] = useState("");
+  const [expParty, setExpParty] = useState("");
+  const [expDesc, setExpDesc] = useState("");
+  const [savingExp, setSavingExp] = useState(false);
+
+  const [catOptions, setCatOptions] = useState([]);
+  const [partyOptions, setPartyOptions] = useState([]);
+
   // تحديث الساعة الحية
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -1242,6 +1366,93 @@ export default function Dashboard() {
     }
     toast("تم تحديث الجلسة بنجاح.", "ok");
     loadDashboard();
+  }
+
+  // ============================================================================
+  // دوال نافذة المصاريف السريعة
+  // ============================================================================
+  async function loadPicklists() {
+    const [catsRes, partiesRes] = await Promise.all([
+      supabase
+        .from("expense_categories")
+        .select("name")
+        .order("name", { ascending: true }),
+      supabase
+        .from("expense_parties")
+        .select("name")
+        .order("name", { ascending: true }),
+    ]);
+    if (!catsRes.error && !partiesRes.error) {
+      setCatOptions((catsRes.data || []).map((x) => x.name).filter(Boolean));
+      setPartyOptions(
+        (partiesRes.data || []).map((x) => x.name).filter(Boolean),
+      );
+    }
+  }
+
+  async function safeInsertPicklist(tableName, rawName) {
+    const name = String(rawName || "").trim();
+    if (!name) return { ok: false };
+    const ins = await supabase.from(tableName).insert([{ name }]);
+    if (ins.error) {
+      const msg = String(ins.error.message || "").toLowerCase();
+      if (ins.error.code === "23505" || msg.includes("duplicate"))
+        return { ok: true };
+      return { ok: false };
+    }
+    return { ok: true };
+  }
+
+  const openExpenseModal = () => {
+    setExpDate(new Date().toISOString().split("T")[0]);
+    setExpAmount("");
+    setExpCategory("");
+    setExpParty("");
+    setExpDesc("");
+    loadPicklists();
+    setOpenExpAdd(true);
+  };
+
+  async function handleSaveExpense() {
+    const amount = Number(expAmount);
+    if (!expDate) {
+      toast("الرجاء اختيار التاريخ.", "warn");
+      return;
+    }
+    if (!amount || amount <= 0) {
+      toast("الرجاء إدخال مبلغ صحيح.", "warn");
+      return;
+    }
+
+    setSavingExp(true);
+    try {
+      if (expCategory?.trim())
+        await safeInsertPicklist("expense_categories", expCategory);
+      if (expParty?.trim())
+        await safeInsertPicklist("expense_parties", expParty);
+
+      const payload = {
+        spent_on: expDate,
+        amount,
+        category: expCategory?.trim() || null,
+        party: expParty?.trim() || null,
+        description: expDesc?.trim() || null,
+      };
+
+      const ins = await supabase.from("expenses").insert([payload]);
+      if (ins.error) throw ins.error;
+
+      toast("تم صرف المبلغ وحفظ المصروف بنجاح.", "ok");
+      setOpenExpAdd(false);
+
+      // تحديث بيانات الداشبورد مباشرة
+      loadDashboard();
+    } catch (e) {
+      console.error(e);
+      toast("فشل حفظ المصروف.", "danger");
+    } finally {
+      setSavingExp(false);
+    }
   }
 
   const todayFormatted = useMemo(() => {
@@ -1733,12 +1944,13 @@ export default function Dashboard() {
                     </div>
                     قبض دفعة
                   </Link>
-                  <Link to="/expenses" className="qa-btn danger">
+                  {/* هنا تم التعديل لفتح المودال مباشرة من الداشبورد */}
+                  <div onClick={openExpenseModal} className="qa-btn danger">
                     <div className="qa-icon-wrap">
                       <Receipt size={28} />
                     </div>
                     صرف مبلغ
-                  </Link>
+                  </div>
                   <Link to="/children" className="qa-btn primary">
                     <div className="qa-icon-wrap">
                       <UserPlus size={28} />
@@ -1976,6 +2188,193 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        {/* ============================================================================ */}
+        {/* نافذة إضافة مصروف مخفية داخل الداشبورد للسرعة (Quick Add) */}
+        {/* ============================================================================ */}
+        <Modal
+          open={openExpAdd}
+          title="إضافة مصروف جديد"
+          onClose={() => !savingExp && setOpenExpAdd(false)}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              padding: "10px 0",
+            }}
+          >
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 45%" }}>
+                <div
+                  style={{
+                    marginBottom: 6,
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
+                >
+                  التاريخ *
+                </div>
+                <input
+                  type="date"
+                  value={expDate}
+                  onChange={(e) => setExpDate(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                    outline: "none",
+                    fontFamily: "inherit",
+                    fontSize: "15px",
+                  }}
+                />
+              </div>
+              <div style={{ flex: "1 1 45%" }}>
+                <div
+                  style={{
+                    marginBottom: 6,
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
+                >
+                  المبلغ (₪) *
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={expAmount}
+                  onChange={(e) => setExpAmount(e.target.value)}
+                  placeholder="مثال: 150"
+                  style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    borderRadius: "12px",
+                    border: "1px solid #e2e8f0",
+                    outline: "none",
+                    fontFamily: "inherit",
+                    fontSize: "15px",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 45%" }}>
+                <div
+                  style={{
+                    marginBottom: 6,
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
+                >
+                  الفئة
+                </div>
+                <CustomCombobox
+                  value={expCategory}
+                  onChange={setExpCategory}
+                  options={catOptions.map((c) => ({ value: c, label: c }))}
+                  placeholder="اختر أو اكتب فئة..."
+                />
+              </div>
+              <div style={{ flex: "1 1 45%" }}>
+                <div
+                  style={{
+                    marginBottom: 6,
+                    fontSize: "14px",
+                    fontWeight: 700,
+                    color: "#64748b",
+                  }}
+                >
+                  شخص / المتجر
+                </div>
+                <CustomCombobox
+                  value={expParty}
+                  onChange={setExpParty}
+                  options={partyOptions.map((p) => ({ value: p, label: p }))}
+                  placeholder="اختر أو اكتب متجر..."
+                />
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  marginBottom: 6,
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#64748b",
+                }}
+              >
+                الوصف (اختياري)
+              </div>
+              <input
+                value={expDesc}
+                onChange={(e) => setExpDesc(e.target.value)}
+                placeholder="مثال: ضيافة للطلاب، قرطاسية..."
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  outline: "none",
+                  fontFamily: "inherit",
+                  fontSize: "15px",
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                marginTop: 10,
+              }}
+            >
+              <button
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "14px",
+                  border: "1px solid #e2e8f0",
+                  background: "white",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  color: "#64748b",
+                }}
+                onClick={() => setOpenExpAdd(false)}
+                disabled={savingExp}
+              >
+                إلغاء
+              </button>
+              <button
+                style={{
+                  background: "#ef4444",
+                  color: "white",
+                  padding: "12px 24px",
+                  borderRadius: "14px",
+                  border: "none",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+                onClick={handleSaveExpense}
+                disabled={savingExp}
+              >
+                <Receipt size={18} />
+                {savingExp ? "جاري الحفظ..." : "حفظ المصروف"}
+              </button>
+            </div>
+          </div>
+        </Modal>
 
         {/* ============================================================================ */}
         {/* حوار التأكيد */}
