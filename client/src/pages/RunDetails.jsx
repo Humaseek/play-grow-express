@@ -1432,23 +1432,22 @@ export default function RunDetails() {
     const id = Number(enrollmentId);
     const d = Number(delta);
     if (!id || !d) return;
+
+    // تعديل مباشر بدون استخدام دوال SQL عشان ما تصير تعقيدات بالحصص المتاحة (Validation)
     const cur = await supabase
       .from("enrollments")
       .select("sessions_allocated")
       .eq("id", id)
       .maybeSingle();
+
     const next = Math.max(0, Number(cur.data?.sessions_allocated ?? 0) + d);
-    const rpc = await supabase.rpc("adjust_enrollment_allocated_sessions", {
-      p_enrollment_id: id,
-      p_new_allocated: next,
-    });
-    if (rpc.error && !rpc.error.message.includes("Could not find the function"))
-      throw rpc.error;
-    if (rpc.error)
-      await supabase
-        .from("enrollments")
-        .update({ sessions_allocated: next })
-        .eq("id", id);
+
+    const u = await supabase
+      .from("enrollments")
+      .update({ sessions_allocated: next })
+      .eq("id", id);
+
+    if (u.error) throw u.error;
   }
 
   async function reactivateWithdrawnEnrollment(childId) {
@@ -1464,21 +1463,26 @@ export default function RunDetails() {
         ? (Number(buyUnitPrice) || 0) * s
         : Number(buyPriceTotal) || 0;
     try {
-      await supabase
+      const u1 = await supabase
         .from("enrollments")
         .update({ status: "active" })
         .eq("id", existing.enrollment_id);
+      if (u1.error) throw u1.error;
+
       if (existing.package_id) {
-        await supabase
+        const newSessionsTotal =
+          Number(existing.package_sessions_total || 0) + s;
+        const u2 = await supabase
           .from("course_packages")
-          .update({ status: "active", price_total: priceTotalNum })
+          .update({
+            status: "active",
+            price_total: priceTotalNum,
+            sessions_total: newSessionsTotal,
+          })
           .eq("id", existing.package_id);
-        if (s > 0)
-          await supabase.rpc("adjust_package_sessions_total", {
-            p_package_id: Number(existing.package_id),
-            p_delta: s,
-          });
+        if (u2.error) throw u2.error;
       }
+
       if (s > 0) await bumpEnrollmentAllocated(existing.enrollment_id, s);
 
       await loadFixed();
@@ -1486,7 +1490,8 @@ export default function RunDetails() {
       closeSubModalAndReopen(setOpenEnroll);
       if (!enrollLocked && !shouldReopenManage) setTab("participants");
       return true;
-    } catch {
+    } catch (e) {
+      console.error(e);
       toast("فشلت إعادة التسجيل.", "danger");
       return true;
     }
@@ -1503,6 +1508,7 @@ export default function RunDetails() {
       const existing = participants.find(
         (p) => Number(p.child_id) === Number(selectedChildId),
       );
+
       if (enrollMode === "use_existing") {
         if (Number(pkgInfo?.sessions_remaining ?? 0) <= 0) {
           toast("هذا الطفل لا يملك رصيد كافٍ.", "warn");
@@ -1539,36 +1545,37 @@ export default function RunDetails() {
         }
 
         const sessionsToAdd = Number(buySessions) || 0;
+        const priceToAdd = Number(buyPriceTotal) || 0;
 
-        // تعديل الترتيب عشان الفحص بالداتابيس (Validation) يمر بنجاح
+        // تعديل مباشر بالـ Frontend لتجنب أي مشاكل أو Validation مخفي جوا الـ SQL
         if (existing.package_id) {
-          await supabase.rpc("adjust_package_sessions_total", {
-            p_package_id: Number(existing.package_id),
-            p_delta: sessionsToAdd,
-          });
-          await supabase
+          const newSessionsTotal =
+            Number(existing.package_sessions_total || 0) + sessionsToAdd;
+          const newPriceTotal = Number(existing.agreed_price || 0) + priceToAdd;
+
+          const u1 = await supabase
             .from("course_packages")
             .update({
-              price_total:
-                Number(existing.agreed_price || 0) +
-                (Number(buyPriceTotal) || 0),
+              sessions_total: newSessionsTotal,
+              price_total: newPriceTotal,
             })
             .eq("id", existing.package_id);
+          if (u1.error) throw u1.error;
         } else {
-          await supabase
+          const newPriceTotal = Number(existing.agreed_price || 0) + priceToAdd;
+          const u1 = await supabase
             .from("enrollments")
             .update({
-              agreed_price:
-                Number(existing.agreed_price || 0) +
-                (Number(buyPriceTotal) || 0),
+              agreed_price: newPriceTotal,
             })
             .eq("id", existing.enrollment_id);
+          if (u1.error) throw u1.error;
         }
 
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
 
         await loadFixed();
-        toast("تم شحن رصيد الجلسات.", "ok");
+        toast("تم شحن رصيد الجلسات بنجاح.", "ok");
         closeSubModalAndReopen(setOpenEnroll);
         if (!enrollLocked && !shouldReopenManage) setTab("participants");
         return;
@@ -1580,8 +1587,10 @@ export default function RunDetails() {
         (await reactivateWithdrawnEnrollment(selectedChildId))
       )
         return;
+
       await purchaseAndEnrollSpecificChild(selectedChildId);
     } catch (e) {
+      console.error("Topup Error:", e);
       if (String(e?.message || e).includes("uq_run_child"))
         toast("مسجل بالفعل.", "warn");
       else toast("فشلت العملية.", "danger");
@@ -2043,36 +2052,33 @@ export default function RunDetails() {
     }
   }
 
-  function quickAdjustFromإدارة(delta) {
-    if (!manageP) return;
-    if (!manageP.package_id) {
-      toast("No package linked.", "warn");
-      return;
-    }
-    if (delta < 0) {
-      setConfirm({
-        open: true,
-        type: "pkgDelta",
-        id: { packageId: manageP.package_id, delta },
-        text: `تأكيد خصم ${Math.abs(delta)} جلسة من باقة ${manageP.child_name}`,
-      });
-      return;
-    }
-    doAdjustPackageTotal(manageP.package_id, delta);
-  }
-
   async function doAdjustPackageTotal(packageId, delta) {
     try {
-      await supabase.rpc("adjust_package_sessions_total", {
-        p_package_id: Number(packageId),
-        p_delta: Number(delta),
-      });
+      const { data: pkg } = await supabase
+        .from("course_packages")
+        .select("sessions_total")
+        .eq("id", packageId)
+        .single();
+      const newTotal = Math.max(
+        0,
+        Number(pkg?.sessions_total || 0) + Number(delta),
+      );
+
+      const u = await supabase
+        .from("course_packages")
+        .update({ sessions_total: newTotal })
+        .eq("id", packageId);
+      if (u.error) throw u.error;
+
       toast(
-        delta > 0 ? ` Add ${Math.abs(delta)} .` : ` ${Math.abs(delta)} .`,
+        delta > 0
+          ? `تم إضافة ${Math.abs(delta)} جلسة.`
+          : `تم خصم ${Math.abs(delta)} جلسة.`,
         "ok",
       );
       await loadFixed();
-    } catch {
+    } catch (e) {
+      console.error(e);
       toast("فشل التعديل.", "danger");
     }
   }
