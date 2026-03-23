@@ -20,7 +20,7 @@ import {
   Clock,
   MapPin,
   Activity,
-  RefreshCcw, // <-- أضفنا هذه هنا
+  RefreshCcw,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -31,7 +31,7 @@ function fmtMoney(n) {
   return Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-// --- تصميم الـ CSS المدمج (محسن بالكامل لمعالجة مشاكل الصورة) ---
+// --- تصميم الـ CSS المدمج ---
 const PROFILE_STYLES = `
 /* إعدادات عامة */
 .dashboard-wrapper {
@@ -256,12 +256,12 @@ const PROFILE_STYLES = `
 }
 .contact-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
 
-/* الجداول الاحترافية - تم حل مشكلة الصورة هنا */
+/* الجداول الاحترافية */
 .table-responsive { overflow-x: auto; border-radius: 16px; border: 1px solid #e2e8f0; }
 
 .data-table {
   width: 100%;
-  border-collapse: collapse; /* استخدام collapse يمنع مشاكل المسافات */
+  border-collapse: collapse;
   text-align: right;
   background: white;
 }
@@ -287,6 +287,38 @@ const PROFILE_STYLES = `
 
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tbody tr:hover { background-color: #f8fafc; }
+
+/* تأثيرات رابط الدورة */
+.course-link-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 6px 10px;
+  border-radius: 10px;
+  margin-right: -10px;
+}
+.course-link-group:hover {
+  background: #eff6ff;
+}
+.course-link-group:hover .course-title-text {
+  color: #3b82f6;
+}
+.course-title-text {
+  font-weight: 900;
+  color: #0f172a;
+  font-size: 16px;
+  transition: color 0.2s;
+}
+.run-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+}
 
 /* الشارات (Badges) */
 .badge-pro {
@@ -349,7 +381,7 @@ export default function ChildDetails() {
       try {
         // 1. جلب بيانات الطالب الأساسية
         const { data: childData, error: childErr } = await supabase
-          .from("children_view") // استخدام الـ view عشان نجيب اسم الدولة كمان لو موجود
+          .from("children_view")
           .select("*")
           .eq("id", childId)
           .single();
@@ -357,14 +389,31 @@ export default function ChildDetails() {
         if (childErr) throw childErr;
         setChild(childData);
 
-        // 2. جلب الاشتراكات مع الإحصائيات الدقيقة
-        const { data: enrData, error: enrErr } = await supabase
-          .from("run_participants_view") // هذا الـ view يجلب الحضور، والباكجات، وكل التفاصيل
+        // 2. جلب الاشتراكات ودمجها للحصول على اسم الدورة والحضور معاً
+        const { data: rpData, error: rpErr } = await supabase
+          .from("run_participants_view")
           .select("*")
           .eq("child_id", childId);
 
-        if (enrErr) throw enrErr;
-        setEnrollments(enrData || []);
+        const { data: ceData } = await supabase
+          .from("child_enrollments_view")
+          .select("enrollment_id, title, label")
+          .eq("child_id", childId);
+
+        if (rpErr) throw rpErr;
+
+        const mergedEnrollments = (rpData || []).map((enr) => {
+          const courseInfo =
+            (ceData || []).find((c) => c.enrollment_id === enr.enrollment_id) ||
+            {};
+          return {
+            ...enr,
+            title: courseInfo.title,
+            label: courseInfo.label,
+          };
+        });
+
+        setEnrollments(mergedEnrollments);
 
         // 3. جلب الدفعات الخاصة بالطالب
         const { data: payData, error: payErr } = await supabase
@@ -422,7 +471,7 @@ export default function ChildDetails() {
   const totalPaid = enrollments.reduce(
     (sum, e) => sum + Number(e.paid_amount || 0),
     0,
-  ); // نعتمد على الـ view لأدق نتيجة
+  );
   const totalBalance = totalAgreed - totalPaid;
   const debtPercentage =
     totalAgreed > 0 ? (totalBalance / totalAgreed) * 100 : 0;
@@ -708,28 +757,29 @@ export default function ChildDetails() {
                     {enrollments.map((enr) => (
                       <tr key={enr.enrollment_id}>
                         <td>
+                          {/* رابط قابل للنقر يوجه لصفحة الدورة */}
                           <div
-                            style={{
-                              fontWeight: 900,
-                              color: "#0f172a",
-                              fontSize: "16px",
-                            }}
+                            className="course-link-group"
+                            onClick={() => navigate(`/runs/${enr.run_id}`)}
+                            title="اضغط للانتقال إلى تفاصيل الفوج"
                           >
-                            {enr.child_name || "دورة"}{" "}
-                            {/* استخدمنا child_name مؤقتاً لو الدورة مش جاية من الفيو، لكن في الفيو تبعك title غير موجود في run_participants_view مباشرة، بنعوض عنه بالـ label */}
-                            <span style={{ color: "#3b82f6" }}>
-                              {" "}
-                              {enr.label}
+                            <span className="course-title-text">
+                              {enr.title || "دورة غير مسماة"}
                             </span>
+                            {enr.label && (
+                              <span className="run-badge">{enr.label}</span>
+                            )}
                           </div>
+
                           <div
                             style={{
                               fontSize: "13px",
                               color: "#64748b",
-                              marginTop: "6px",
+                              marginTop: "4px",
                               display: "flex",
                               alignItems: "center",
                               gap: "4px",
+                              paddingRight: "10px",
                             }}
                           >
                             <Clock size={14} /> الحصص المخصصة:{" "}
