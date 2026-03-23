@@ -1701,6 +1701,12 @@ export default function RunDetails() {
       }
 
       toast("تم الحذف بنجاح.", "ok");
+
+      // --- الأسطر الجديدة لإغلاق المودال وتفريغ البيانات ---
+      setOpenإدارة(false);
+      setإدارةP(null);
+      // ---------------------------------------------------
+
       await loadFixed();
     } catch {
       toast("Failed to remove.", "danger");
