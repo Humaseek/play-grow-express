@@ -1547,7 +1547,6 @@ export default function RunDetails() {
         const sessionsToAdd = Number(buySessions) || 0;
         const priceToAdd = Number(buyPriceTotal) || 0;
 
-        // التعديل المباشر لتجنب أي مشاكل في الـ RPC
         if (existing.package_id) {
           const newSessionsTotal =
             Number(existing.package_sessions_total || 0) + sessionsToAdd;
@@ -1561,6 +1560,12 @@ export default function RunDetails() {
             })
             .eq("id", existing.package_id);
           if (u1.error) throw u1.error;
+
+          const u1_enroll = await supabase
+            .from("enrollments")
+            .update({ agreed_price: newPriceTotal })
+            .eq("id", existing.enrollment_id);
+          if (u1_enroll.error) throw u1_enroll.error;
         } else {
           const prevAgreed = Number(existing.agreed_price || 0);
           const newPriceTotal = prevAgreed + priceToAdd;
