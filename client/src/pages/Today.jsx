@@ -30,17 +30,19 @@ import {
   Activity,
   CheckSquare,
   Briefcase,
-  ChevronDown, // أضفنا أيقونة السهم للقائمة المنسدلة
+  ChevronDown,
+  Search, // تم استيراد أيقونة البحث لدفعات
+  UserRound, // تم استيرادها لاختيار الطالب
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import Badge from "../components/Badge";
-import Modal from "../components/Modal"; // استيراد المودال
+import Modal from "../components/Modal";
 
 // ============================================================================
-// 1. الدوال المساعدة الأساسية (تم حمايتها والتأكد من وجودها)
+// 1. الدوال المساعدة الأساسية
 // ============================================================================
 
 function fmtMoney(n) {
@@ -93,6 +95,17 @@ function addDays(d, n) {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
   return x;
+}
+
+function toInputDatetimeLocal(dt) {
+  const d = dt ? new Date(dt) : new Date();
+  const pad = (x) => String(x).padStart(2, "0");
+  const y = d.getFullYear();
+  const mo = pad(d.getMonth() + 1);
+  const da = pad(d.getDate());
+  const h = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${y}-${mo}-${da}T${h}:${mi}`;
 }
 
 // دالة لمعالجة فترات الفلتر الذكي وتقسيمها للمخطط البياني
@@ -311,7 +324,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
 }
 
 // ============================================================================
-// 2. مكونات الرسوم البيانية (SVG Charts) - مبنية برمجياً للأداء العالي
+// 2. مكونات الرسوم البيانية (SVG Charts)
 // ============================================================================
 
 const Sparkline = ({ data, color, type = "line" }) => {
@@ -460,7 +473,6 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
   );
 };
 
-// Donut Chart للمصاريف
 const ExpenseDonutChart = ({ data }) => {
   if (!data || data.length === 0)
     return (
@@ -508,7 +520,6 @@ const ExpenseDonutChart = ({ data }) => {
               <path key={i} d={pathData} fill={colors[i % colors.length]} />
             );
           })}
-          {/* الدائرة الداخلية لعمل شكل الـ Donut */}
           <circle cx="0" cy="0" r="0.6" fill="#fff" />
         </svg>
         <div
@@ -578,7 +589,7 @@ const ExpenseDonutChart = ({ data }) => {
 };
 
 // ============================================================================
-// 3. CSS Styles (Enterprise Dashboard UI)
+// 3. CSS Styles
 // ============================================================================
 const DASHBOARD_STYLES = `
 .page--dashboard {
@@ -835,7 +846,7 @@ const DASHBOARD_STYLES = `
   gap: 10px;
 }
 
-/* Timeline مضاد للكسر */
+/* Timeline */
 .timeline-list {
   display: flex;
   flex-direction: column;
@@ -871,7 +882,6 @@ const DASHBOARD_STYLES = `
 }
 .tl-row:last-child .tl-line { display: none; }
 
-/* تأثير النبض للجلسة المجدولة */
 @keyframes pulse-ring {
   0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
   70% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
@@ -1081,6 +1091,96 @@ const DASHBOARD_STYLES = `
   animation: shimmer 1.5s infinite linear;
   border-radius: 8px;
 }
+
+/* تنسيقات نافذة قبض الدفعة من ملف Payments */
+.search-wrapper {
+  position: relative;
+  width: 100%;
+}
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 14px;
+  transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
+}
+.search-input:focus {
+  border-color: #3b82f6;
+}
+.search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 16px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.enrollment-picker-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+.enrollment-picker-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.enrollment-picker-item:last-child {
+  border-bottom: none;
+}
+.enrollment-picker-item:hover {
+  background: #f8fafc;
+}
+.enrollment-picker-item.selected {
+  background: #f0fdf4;
+  border-right: 4px solid #16a34a;
+}
+.epi-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.epi-name {
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 15px;
+}
+.epi-meta {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+.epi-balance {
+  font-weight: 900;
+  font-size: 14px;
+  color: #16a34a;
+  direction: rtl;
+}
+.epi-balance.debt {
+  color: #dc2626;
+}
 `;
 
 export default function Dashboard() {
@@ -1095,7 +1195,7 @@ export default function Dashboard() {
   const [time, setTime] = useState(new Date());
 
   // Tab State
-  const [activeTab, setActiveTab] = useState("overview"); // overview, financial, schedule
+  const [activeTab, setActiveTab] = useState("overview");
 
   // فلاتر الوقت الذكية
   const [preset, setPreset] = useState("this_month");
@@ -1118,7 +1218,7 @@ export default function Dashboard() {
     todaySessions: [],
     debtors: [],
     recentTransactions: [],
-    expenseCategories: [], // بيانات الرسم الدائري
+    expenseCategories: [],
   });
 
   const [confirm, setConfirm] = useState({
@@ -1128,7 +1228,7 @@ export default function Dashboard() {
   });
 
   // ==========================================
-  // حالات وإعدادات إضافة مصروف (من قلب الداشبورد)
+  // حالات وإعدادات إضافة مصروف
   // ==========================================
   const [openExpAdd, setOpenExpAdd] = useState(false);
   const [expDate, setExpDate] = useState(
@@ -1142,6 +1242,20 @@ export default function Dashboard() {
 
   const [catOptions, setCatOptions] = useState([]);
   const [partyOptions, setPartyOptions] = useState([]);
+
+  // ==========================================
+  // حالات وإعدادات إضافة دفعة (قبض دفعة)
+  // ==========================================
+  const [openPayAdd, setOpenPayAdd] = useState(false);
+  const [payEnrId, setPayEnrId] = useState("");
+  const [payAmt, setPayAmt] = useState("");
+  const [payMethod, setPayMethod] = useState("cash");
+  const [payNote, setPayNote] = useState("");
+  const [payAt, setPayAt] = useState(toInputDatetimeLocal(new Date()));
+  const [savingPay, setSavingPay] = useState(false);
+
+  const [pickerRows, setPickerRows] = useState([]);
+  const [pickerQ, setPickerQ] = useState("");
 
   // تحديث الساعة الحية
   useEffect(() => {
@@ -1245,7 +1359,6 @@ export default function Dashboard() {
       }
 
       // --- Processing ---
-
       const enrichedSessions = (sessionsToday || []).map((session) => {
         const runInfo = (runsSummary || []).find(
           (r) => r.run_id === session.run_id,
@@ -1300,7 +1413,6 @@ export default function Dashboard() {
       );
       const netProfit = totalIncome - totalExpense;
 
-      // Group expenses by category for Donut Chart
       const expCatMap = new Map();
       (expensesData || []).forEach((e) => {
         const cat = e.category || "أخرى";
@@ -1369,7 +1481,7 @@ export default function Dashboard() {
   }
 
   // ============================================================================
-  // دوال نافذة المصاريف السريعة
+  // دوال نافذة المصاريف
   // ============================================================================
   async function loadPicklists() {
     const [catsRes, partiesRes] = await Promise.all([
@@ -1444,14 +1556,109 @@ export default function Dashboard() {
 
       toast("تم صرف المبلغ وحفظ المصروف بنجاح.", "ok");
       setOpenExpAdd(false);
-
-      // تحديث بيانات الداشبورد مباشرة
       loadDashboard();
     } catch (e) {
       console.error(e);
       toast("فشل حفظ المصروف.", "danger");
     } finally {
       setSavingExp(false);
+    }
+  }
+
+  // ============================================================================
+  // دوال نافذة قبض الدفعة
+  // ============================================================================
+  async function loadPaymentPicklists() {
+    const [pRes, cRes] = await Promise.all([
+      supabase
+        .from("run_participants_view")
+        .select("enrollment_id, child_name, run_id, balance"),
+      supabase.from("course_runs_summary_view").select("run_id, title, label"),
+    ]);
+
+    if (!pRes.error && !cRes.error) {
+      const runsMap = {};
+      (cRes.data || []).forEach((r) => {
+        runsMap[r.run_id] = r;
+      });
+
+      const merged = (pRes.data || []).map((p) => ({
+        enrollment_id: p.enrollment_id,
+        child_name: p.child_name || "—",
+        course_title: runsMap[p.run_id]?.title || "—",
+        run_label: runsMap[p.run_id]?.label || "—",
+        balance: Number(p.balance || 0),
+      }));
+
+      merged.sort((a, b) => a.child_name.localeCompare(b.child_name, "ar"));
+      setPickerRows(merged);
+    }
+  }
+
+  const openPaymentModal = () => {
+    setPayEnrId("");
+    setPayAmt("");
+    setPayMethod("cash");
+    setPayNote("");
+    setPickerQ("");
+    setPayAt(toInputDatetimeLocal(new Date()));
+    loadPaymentPicklists();
+    setOpenPayAdd(true);
+  };
+
+  const pickerFiltered = useMemo(() => {
+    const s = pickerQ.trim().toLowerCase();
+    if (!s) return pickerRows;
+    return pickerRows.filter((r) => {
+      const cName = String(r.child_name || "").toLowerCase();
+      const crs = String(r.course_title || "").toLowerCase();
+      return cName.includes(s) || crs.includes(s);
+    });
+  }, [pickerRows, pickerQ]);
+
+  useEffect(() => {
+    if (payEnrId) {
+      const match = pickerRows.find((r) => r.enrollment_id === payEnrId);
+      if (match && Number(match.balance) > 0 && !payAmt) {
+        setPayAmt(match.balance);
+      }
+    }
+  }, [payEnrId]);
+
+  async function handleSavePayment() {
+    if (!payEnrId) {
+      toast("الرجاء اختيار الطالب والاشتراك.", "warn");
+      return;
+    }
+    const val = Number(payAmt);
+    if (!val || val <= 0) {
+      toast("أدخل مبلغًا صحيحًا.", "warn");
+      return;
+    }
+
+    setSavingPay(true);
+    try {
+      const payload = {
+        enrollment_id: payEnrId,
+        amount: val,
+        method: payMethod,
+        note: payNote.trim() || null,
+        created_at: new Date(payAt).toISOString(),
+      };
+
+      const { error: insErr } = await supabase
+        .from("payments")
+        .insert([payload]);
+      if (insErr) throw insErr;
+
+      toast("تم تسجيل الدفعة بنجاح.", "ok");
+      setOpenPayAdd(false);
+      loadDashboard();
+    } catch (e) {
+      toast("حدث خطأ أثناء الحفظ.", "danger");
+      console.error(e);
+    } finally {
+      setSavingPay(false);
     }
   }
 
@@ -1938,13 +2145,14 @@ export default function Dashboard() {
             >
               <div className="bento-item" style={{ padding: "24px 24px 16px" }}>
                 <div className="quick-actions-grid">
-                  <Link to="/payments" className="qa-btn success">
+                  {/* هنا التعديل لكبسة "قبض دفعة" لفتح المودال مباشرة */}
+                  <div onClick={openPaymentModal} className="qa-btn success">
                     <div className="qa-icon-wrap">
                       <CreditCard size={28} />
                     </div>
                     قبض دفعة
-                  </Link>
-                  {/* هنا تم التعديل لفتح المودال مباشرة من الداشبورد */}
+                  </div>
+
                   <div onClick={openExpenseModal} className="qa-btn danger">
                     <div className="qa-icon-wrap">
                       <Receipt size={28} />
@@ -2190,7 +2398,7 @@ export default function Dashboard() {
         )}
 
         {/* ============================================================================ */}
-        {/* نافذة إضافة مصروف مخفية داخل الداشبورد للسرعة (Quick Add) */}
+        {/* نافذة إضافة مصروف (Quick Add) */}
         {/* ============================================================================ */}
         <Modal
           open={openExpAdd}
@@ -2371,6 +2579,252 @@ export default function Dashboard() {
               >
                 <Receipt size={18} />
                 {savingExp ? "جاري الحفظ..." : "حفظ المصروف"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* ============================================================================ */}
+        {/* نافذة قبض دفعة (Quick Add) */}
+        {/* ============================================================================ */}
+        <Modal
+          open={openPayAdd}
+          title="تسجيل دفعة واردة"
+          onClose={() => !savingPay && setOpenPayAdd(false)}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              padding: "10px 0",
+            }}
+          >
+            <div style={{ gridColumn: "span 12" }}>
+              <h4 className="form-section-title">
+                <UserRound size={18} color="#64748b" /> اختيار الاشتراك
+              </h4>
+              <div
+                className="search-wrapper"
+                style={{ maxWidth: "100%", marginBottom: 12 }}
+              >
+                <Search size={18} className="search-icon" />
+                <input
+                  className="search-input"
+                  value={pickerQ}
+                  onChange={(e) => setPickerQ(e.target.value)}
+                  placeholder="ابحث باسم الطالب أو الدورة..."
+                />
+              </div>
+
+              {/* قائمة الاختيار التفاعلية */}
+              <div className="enrollment-picker-list">
+                {pickerFiltered.length === 0 ? (
+                  <div
+                    style={{
+                      padding: 20,
+                      textAlign: "center",
+                      color: "#94a3b8",
+                    }}
+                  >
+                    لا توجد اشتراكات متطابقة
+                  </div>
+                ) : (
+                  pickerFiltered.map((r) => {
+                    const isSelected = payEnrId === r.enrollment_id;
+                    const isDebt = Number(r.balance) > 0;
+                    return (
+                      <div
+                        key={r.enrollment_id}
+                        className={`enrollment-picker-item ${isSelected ? "selected" : ""}`}
+                        onClick={() => setPayEnrId(r.enrollment_id)}
+                      >
+                        <div className="epi-main">
+                          <div className="epi-name">{r.child_name}</div>
+                          <div className="epi-meta">
+                            {r.course_title} — {r.run_label}
+                          </div>
+                        </div>
+                        <div className={`epi-balance ${isDebt ? "debt" : ""}`}>
+                          {isDebt
+                            ? `متبقي عليه: ${r.balance} ₪`
+                            : "مدفوع بالكامل"}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* تفعيل باقي الحقول فقط إذا تم اختيار اشتراك */}
+            {payEnrId && (
+              <div style={{ gridColumn: "span 12" }}>
+                <h4 className="form-section-title">
+                  <CreditCard size={18} color="#64748b" /> تفاصيل الدفعة
+                </h4>
+                <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+                  <div style={{ flex: "1 1 45%" }}>
+                    <div
+                      style={{
+                        marginBottom: 6,
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        color: "#64748b",
+                      }}
+                    >
+                      المبلغ (₪) *
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={payAmt}
+                      onChange={(e) => setPayAmt(e.target.value)}
+                      placeholder="أدخل المبلغ..."
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "12px",
+                        border: "1px solid #e2e8f0",
+                        outline: "none",
+                        fontFamily: "inherit",
+                        fontSize: "15px",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ flex: "1 1 45%" }}>
+                    <div
+                      style={{
+                        marginBottom: 6,
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        color: "#64748b",
+                      }}
+                    >
+                      طريقة الدفع
+                    </div>
+                    <select
+                      value={payMethod}
+                      onChange={(e) => setPayMethod(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "12px",
+                        border: "1px solid #e2e8f0",
+                        outline: "none",
+                        fontFamily: "inherit",
+                        fontSize: "15px",
+                        background: "#fff",
+                      }}
+                    >
+                      <option value="cash">كاش</option>
+                      <option value="card">بطاقة</option>
+                      <option value="transfer">تحويل بنكي</option>
+                      <option value="other">أخرى</option>
+                    </select>
+                  </div>
+
+                  <div style={{ flex: "1 1 45%" }}>
+                    <div
+                      style={{
+                        marginBottom: 6,
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        color: "#64748b",
+                      }}
+                    >
+                      التاريخ والوقت *
+                    </div>
+                    <input
+                      type="datetime-local"
+                      value={payAt}
+                      onChange={(e) => setPayAt(e.target.value)}
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "12px",
+                        border: "1px solid #e2e8f0",
+                        outline: "none",
+                        fontFamily: "inherit",
+                        fontSize: "15px",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ flex: "1 1 100%" }}>
+                    <div
+                      style={{
+                        marginBottom: 6,
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        color: "#64748b",
+                      }}
+                    >
+                      ملاحظة (اختياري)
+                    </div>
+                    <input
+                      value={payNote}
+                      onChange={(e) => setPayNote(e.target.value)}
+                      placeholder="أي ملاحظات حول الدفعة..."
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "12px",
+                        border: "1px solid #e2e8f0",
+                        outline: "none",
+                        fontFamily: "inherit",
+                        fontSize: "15px",
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                marginTop: 10,
+              }}
+            >
+              <button
+                style={{
+                  padding: "12px 24px",
+                  borderRadius: "14px",
+                  border: "1px solid #e2e8f0",
+                  background: "white",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  color: "#64748b",
+                }}
+                onClick={() => setOpenPayAdd(false)}
+                disabled={savingPay}
+              >
+                إلغاء
+              </button>
+              <button
+                style={{
+                  background: "#10b981",
+                  color: "white",
+                  padding: "12px 24px",
+                  borderRadius: "14px",
+                  border: "none",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 12px rgba(16, 185, 129, 0.25)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+                onClick={handleSavePayment}
+                disabled={savingPay || !payEnrId}
+              >
+                <CreditCard size={18} />
+                {savingPay ? "جاري الحفظ..." : "حفظ الدفعة"}
               </button>
             </div>
           </div>
