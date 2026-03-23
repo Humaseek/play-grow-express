@@ -22,6 +22,7 @@ import {
   Search,
   Filter,
   AlertTriangle,
+  Pencil, // <-- تم استدعاء أيقونة التعديل هنا
 } from "lucide-react";
 
 // --- دوال مساعدة ---
@@ -340,7 +341,10 @@ export default function Payments() {
 
   const [openAdd, setOpenAdd] = useState(false);
 
-  // لحالة الإضافة
+  // حالة جديدة لتمييز وضع التعديل (تحمل ID الدفعة المراد تعديلها)
+  const [editPayId, setEditPayId] = useState(null);
+
+  // لحالة الإضافة/التعديل
   const [pickerRows, setPickerRows] = useState([]);
   const [pickerQ, setPickerQ] = useState("");
   const [payEnrId, setPayEnrId] = useState("");
@@ -445,17 +449,8 @@ export default function Payments() {
     return { total, count, avg, max };
   }, [filtered]);
 
-  async function openCreate() {
-    setOpenAdd(true);
-    setPickerQ("");
-    setPayEnrId("");
-    setPayAmt("");
-    setPayMethod("cash");
-    setPayNote("");
-    setPayAt(toInputDatetimeLocal(new Date()));
-
-    // استخدام Promise.all لدمج بيانات الرصيد الحقيقي من run_participants_view
-    // مع أسماء الدورات من course_runs_summary_view
+  // دالة مشتركة لجلب بيانات قائمة الاختيار (Picker)
+  async function loadPickerData() {
     const [pRes, cRes] = await Promise.all([
       supabase
         .from("run_participants_view")
@@ -481,6 +476,31 @@ export default function Payments() {
       merged.sort((a, b) => a.child_name.localeCompare(b.child_name, "ar"));
       setPickerRows(merged);
     }
+  }
+
+  async function openCreate() {
+    setEditPayId(null);
+    setOpenAdd(true);
+    setPickerQ("");
+    setPayEnrId("");
+    setPayAmt("");
+    setPayMethod("cash");
+    setPayNote("");
+    setPayAt(toInputDatetimeLocal(new Date()));
+    await loadPickerData();
+  }
+
+  // دالة جديدة لفتح نافذة التعديل
+  async function openEdit(payment) {
+    setEditPayId(payment.id);
+    setOpenAdd(true);
+    setPickerQ("");
+    setPayEnrId(payment.enrollment_id);
+    setPayAmt(payment.amount);
+    setPayMethod(payment.method || "cash");
+    setPayNote(payment.note || "");
+    setPayAt(toInputDatetimeLocal(payment.created_at));
+    await loadPickerData();
   }
 
   const pickerFiltered = useMemo(() => {
@@ -523,13 +543,25 @@ export default function Payments() {
         note: payNote.trim() || null,
         created_at: new Date(payAt).toISOString(),
       };
-      const { error: insErr } = await supabase
-        .from("payments")
-        .insert([payload]);
-      if (insErr) throw insErr;
 
-      toast("تم تسجيل الدفعة بنجاح.", "ok");
+      // التحقق مما إذا كنا في وضع الإضافة أم التعديل
+      if (editPayId) {
+        const { error: updErr } = await supabase
+          .from("payments")
+          .update(payload)
+          .eq("id", editPayId);
+        if (updErr) throw updErr;
+        toast("تم تعديل الدفعة بنجاح.", "ok");
+      } else {
+        const { error: insErr } = await supabase
+          .from("payments")
+          .insert([payload]);
+        if (insErr) throw insErr;
+        toast("تم تسجيل الدفعة بنجاح.", "ok");
+      }
+
       setOpenAdd(false);
+      setEditPayId(null);
       await load();
     } catch (e) {
       toast("حدث خطأ أثناء الحفظ.", "danger");
@@ -690,7 +722,7 @@ export default function Payments() {
                     <th>طريقة الدفع</th>
                     <th>ملاحظة</th>
                     <th style={{ width: 120 }}>المبلغ</th>
-                    <th style={{ width: 80, textAlign: "center" }}>إجراءات</th>
+                    <th style={{ width: 100, textAlign: "center" }}>إجراءات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -763,6 +795,12 @@ export default function Payments() {
 
                       <td>
                         <div className="actions-cell">
+                          {/* زر التعديل تمت إضافته هنا */}
+                          <IconButton
+                            title="تعديل"
+                            onClick={() => openEdit(r)}
+                            icon={Pencil}
+                          />
                           <IconButton
                             title="حذف"
                             onClick={() => setConfirm({ open: true, id: r.id })}
@@ -780,11 +818,16 @@ export default function Payments() {
         </div>
       </div>
 
-      {/* نافذة الإضافة */}
+      {/* نافذة الإضافة/التعديل */}
       <Modal
         open={openAdd}
-        title="إضافة دفعة جديدة"
-        onClose={() => !saving && setOpenAdd(false)}
+        title={editPayId ? "تعديل الدفعة" : "إضافة دفعة جديدة"}
+        onClose={() => {
+          if (!saving) {
+            setOpenAdd(false);
+            setEditPayId(null);
+          }
+        }}
       >
         <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
           <div style={{ gridColumn: "span 12" }}>
@@ -916,7 +959,10 @@ export default function Payments() {
           >
             <button
               className="btn"
-              onClick={() => setOpenAdd(false)}
+              onClick={() => {
+                setOpenAdd(false);
+                setEditPayId(null);
+              }}
               disabled={saving}
             >
               إلغاء
@@ -926,7 +972,11 @@ export default function Payments() {
               onClick={createPayment}
               disabled={saving || !payEnrId}
             >
-              {saving ? "جاري الحفظ..." : "حفظ الدفعة"}
+              {saving
+                ? "جاري الحفظ..."
+                : editPayId
+                  ? "تحديث الدفعة"
+                  : "حفظ الدفعة"}
             </button>
           </div>
         </div>
