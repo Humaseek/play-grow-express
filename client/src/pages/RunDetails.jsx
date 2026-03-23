@@ -979,7 +979,7 @@ export default function RunDetails() {
   }, []);
 
   useEffect(() => {
-    if (!openإدارة || !manageP) return;
+    if (!manageP) return;
     const updated = participants.find(
       (x) => Number(x.enrollment_id) === Number(manageP.enrollment_id),
     );
