@@ -674,7 +674,11 @@ export default function CourseDetails() {
           </div>
 
           <div style={{ gridColumn: isWorkshop ? "span 12" : "span 6" }}>
-            <div className="muted">بداية أول جلسة (تاريخ/وقت)</div>
+            <div className="muted">
+              {isWorkshop
+                ? "موعد الجلسة (تاريخ/وقت)"
+                : "بداية أول جلسة (تاريخ/وقت)"}
+            </div>
             <input
               className="input"
               type="datetime-local"
