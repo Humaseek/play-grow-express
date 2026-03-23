@@ -4674,7 +4674,12 @@ export default function RunDetails() {
             }
 
             if (type === "deleteSession") await deleteSession(id);
-            if (type === "deletePayment") await deletePayment(id);
+            if (type === "deletePayment") {
+              await deletePayment(id);
+              if (openHistory && historyEnrollment) {
+                openPaymentHistory(historyEnrollment);
+              }
+            }
             if (type === "deleteExpense") await deleteExpense(id);
           }}
         />
