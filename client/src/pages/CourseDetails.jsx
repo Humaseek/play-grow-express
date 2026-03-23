@@ -241,15 +241,45 @@ export default function CourseDetails() {
 
       let sessionsGenerated = false;
       if (createSessions && firstStart) {
-        const iso = new Date(firstStart).toISOString();
-        const rpc = await supabase.rpc("generate_weekly_sessions_for_run", {
-          p_run_id: Number(runId),
-          p_first_start: iso,
-          p_duration_minutes: Number(durationMinutes),
-          p_count: Number(count),
-          p_interval_days: Number(intervalDays),
-        });
-        if (rpc.error) throw rpc.error;
+        // إنشاء الجلسات من خلال المتصفح لضمان عدم تأثر التوقيت المحلي بالتوقيت الصيفي
+        const [datePart, timePart] = firstStart.split("T");
+        const [y, m, d] = datePart.split("-");
+        const [hh, mm] = timePart.split(":");
+        const baseYear = parseInt(y, 10);
+        const baseMonth = parseInt(m, 10) - 1;
+        const baseDay = parseInt(d, 10);
+        const baseHours = parseInt(hh, 10);
+        const baseMins = parseInt(mm, 10);
+
+        const sessionsToInsert = [];
+        const sessionCount = Number(count) || 1;
+        const interval = Number(intervalDays) || 7;
+        const duration = Number(durationMinutes) || 60;
+
+        for (let i = 0; i < sessionCount; i++) {
+          const start = new Date(
+            baseYear,
+            baseMonth,
+            baseDay + i * interval,
+            baseHours,
+            baseMins,
+          );
+          const end = new Date(start.getTime() + duration * 60000);
+
+          sessionsToInsert.push({
+            run_id: Number(runId),
+            course_id: Number(courseId),
+            start_at: start.toISOString(),
+            end_at: end.toISOString(),
+            status: "scheduled",
+          });
+        }
+
+        const insSessions = await supabase
+          .from("course_sessions")
+          .insert(sessionsToInsert);
+        if (insSessions.error) throw insSessions.error;
+
         sessionsGenerated = true;
       }
 
