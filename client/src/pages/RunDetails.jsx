@@ -4134,7 +4134,7 @@ export default function RunDetails() {
 
         <Modal
           open={openBulk}
-          title="إضافة مجموعة"
+          title="إضافة اطفال للدورة"
           onClose={() => setOpenBulk(false)}
         >
           <div dir="rtl" lang="ar" className="modal-wide-1000">
