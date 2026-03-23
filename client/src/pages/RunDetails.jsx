@@ -724,13 +724,17 @@ export default function RunDetails() {
   const [pkgLoading, setPkgLoading] = useState(false);
   const [enrollMode, setEnrollMode] = useState("buy_new");
 
+  // --- Bulk Enroll State ---
   const [openBulk, setOpenBulk] = useState(false);
+  const [bulkStep, setBulkStep] = useState(1);
   const [bulkQ, setBulkQ] = useState("");
   const [bulkSelected, setBulkSelected] = useState({});
   const [bulkPerChildSessions, setBulkPerChildSessions] = useState({});
   const [bulkPerChildPrice, setBulkPerChildPrice] = useState({});
-  // حالة جديدة للتحكم بتاريخ الإضافة لكل طفل في المجموعة
   const [bulkPerChildDate, setBulkPerChildDate] = useState({});
+  // جديد: للورشات
+  const [bulkPerChildPaid, setBulkPerChildPaid] = useState({});
+  const [bulkPerChildPayMethod, setBulkPerChildPayMethod] = useState({});
   const [bulkSaving, setBulkSaving] = useState(false);
 
   const [openHistory, setOpenHistory] = useState(false);
@@ -1219,11 +1223,14 @@ export default function RunDetails() {
 
   function openBulkModal() {
     setOpenBulk(true);
+    setBulkStep(1); // إرجاع للخطوة الأولى
     setBulkQ("");
     setBulkSelected({});
     setBulkPerChildSessions({});
     setBulkPerChildPrice({});
     setBulkPerChildDate({});
+    setBulkPerChildPaid({});
+    setBulkPerChildPayMethod({});
   }
 
   function toggleBulkChild(childId) {
@@ -1247,6 +1254,8 @@ export default function RunDetails() {
     setBulkPerChildPrice({});
     setBulkPerChildSessions({});
     setBulkPerChildDate({});
+    setBulkPerChildPaid({});
+    setBulkPerChildPayMethod({});
   }
 
   function openNewPaymentModal() {
@@ -1575,17 +1584,17 @@ export default function RunDetails() {
       for (const childId of bulkSelectedIds) {
         const cid = Number(childId);
 
-        let sessionsNum = Number(
-          bulkPerChildSessions[cid] ?? defaultSessionsTotal,
-        );
+        // إذا ورشة فعدد الجلسات 1، وإلا نقرأ القيمة المدخلة
+        let sessionsNum = isWorkshop
+          ? 1
+          : Number(bulkPerChildSessions[cid] ?? defaultSessionsTotal);
         if (isNaN(sessionsNum) || sessionsNum < 0)
-          sessionsNum = Number(defaultSessionsTotal) || 0;
+          sessionsNum = isWorkshop ? 1 : Number(defaultSessionsTotal) || 0;
 
         let priceNum = Number(bulkPerChildPrice[cid] ?? defaultPrice);
         if (isNaN(priceNum) || priceNum < 0)
           priceNum = Number(defaultPrice) || 0;
 
-        // الحصول على التاريخ المحدد أو تاريخ اليوم كافتراضي
         const dateStr =
           bulkPerChildDate[cid] !== undefined
             ? bulkPerChildDate[cid]
@@ -1603,29 +1612,12 @@ export default function RunDetails() {
         } else {
           added += 1;
 
-          // بعد النجاح في التسجيل، نقوم بتحديث تاريخ الباقة والاشتراك للتاريخ المحدد
-          if (dateStr) {
-            const isoD = updateDateKeepTime(dateStr);
+          // جلب بيانات الاشتراك الجديد لتحديث التواريخ أو إضافة المدفوعات/الحضور
+          let enrollData = null;
+          let pkgData = null;
 
-            // تحديث تاريخ الباقة (course_packages)
-            const { data: pkgData } = await supabase
-              .from("course_packages")
-              .select("id")
-              .eq("child_id", cid)
-              .eq("course_id", summary.template_id)
-              .order("id", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            if (pkgData) {
-              await supabase
-                .from("course_packages")
-                .update({ created_at: isoD })
-                .eq("id", pkgData.id);
-            }
-
-            // تحديث تاريخ التسجيل (enrollments)
-            const { data: enrollData } = await supabase
+          if (dateStr || isWorkshop) {
+            const enrollRes = await supabase
               .from("enrollments")
               .select("id")
               .eq("child_id", cid)
@@ -1633,12 +1625,64 @@ export default function RunDetails() {
               .order("id", { ascending: false })
               .limit(1)
               .maybeSingle();
+            if (enrollRes.data) enrollData = enrollRes.data;
 
+            const pkgRes = await supabase
+              .from("course_packages")
+              .select("id")
+              .eq("child_id", cid)
+              .eq("course_id", summary.template_id)
+              .order("id", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (pkgRes.data) pkgData = pkgRes.data;
+          }
+
+          const isoD = updateDateKeepTime(dateStr);
+
+          // تحديث التواريخ إذا تم تغييرها
+          if (dateStr) {
+            if (pkgData) {
+              await supabase
+                .from("course_packages")
+                .update({ created_at: isoD })
+                .eq("id", pkgData.id);
+            }
             if (enrollData) {
               await supabase
                 .from("enrollments")
                 .update({ created_at: isoD })
                 .eq("id", enrollData.id);
+            }
+          }
+
+          // الدفع المباشر للورشات
+          if (isWorkshop && bulkPerChildPaid[cid] && enrollData) {
+            await supabase.from("payments").insert([
+              {
+                enrollment_id: enrollData.id,
+                amount: priceNum,
+                method: bulkPerChildPayMethod[cid] || "cash",
+                created_at: isoD,
+                note: "دفع مباشر عند الإضافة للورشة",
+              },
+            ]);
+          }
+
+          // تسجيل الحضور التلقائي للورشات
+          if (isWorkshop && enrollData) {
+            const { data: runSessions } = await supabase
+              .from("course_sessions")
+              .select("id")
+              .eq("run_id", Number(runId));
+            if (runSessions && runSessions.length > 0) {
+              const attPayload = runSessions.map((rs) => ({
+                enrollment_id: enrollData.id,
+                session_id: rs.id,
+                status: "present",
+                created_at: isoD,
+              }));
+              await supabase.from("attendance").insert(attPayload);
             }
           }
         }
@@ -1702,10 +1746,8 @@ export default function RunDetails() {
 
       toast("تم الحذف بنجاح.", "ok");
 
-      // --- الأسطر الجديدة لإغلاق المودال وتفريغ البيانات ---
       setOpenإدارة(false);
       setإدارةP(null);
-      // ---------------------------------------------------
 
       await loadFixed();
     } catch {
@@ -2011,7 +2053,6 @@ export default function RunDetails() {
     setOpenExpenseModal(true);
   }
 
-  // الدوال المفقودة للمصاريف اللي كانت تمنع زر الحفظ من العمل:
   async function saveExpense() {
     if (!expAmount) {
       toast("يرجى إدخال المبلغ.", "warn");
@@ -2081,6 +2122,11 @@ export default function RunDetails() {
         </div>
       </div>
     );
+
+  // --- Helpers for Step 2 ---
+  const selectedChildrenForStep2 = bulkCandidates.filter(
+    (c) => bulkSelected[String(c.id)],
+  );
 
   // --- MAIN RETURN ---
   return (
@@ -2670,7 +2716,7 @@ export default function RunDetails() {
                 <div
                   style={{ display: "flex", flexDirection: "column", gap: 20 }}
                 >
-                  {/* زر عرض الجلسات السابقة (المنقول لأعلى) */}
+                  {/* زر عرض الجلسات السابقة */}
                   {pastSessions.length > 0 && (
                     <div>
                       <button
@@ -2713,7 +2759,6 @@ export default function RunDetails() {
                         }}
                       >
                         {upcomingSessions.map((s) => {
-                          // تحديد لون الجلسة حسب الحالة (بدون كلمات)
                           let rowBg = "#fff";
                           let rowBorder = "1px solid rgba(15, 23, 42, 0.08)";
 
@@ -2724,7 +2769,6 @@ export default function RunDetails() {
                             rowBg = "rgba(239, 68, 68, 0.06)";
                             rowBorder = "1px solid rgba(239, 68, 68, 0.25)";
                           } else {
-                            // scheduled
                             rowBg = "rgba(14, 165, 233, 0.06)";
                             rowBorder = "1px solid rgba(14, 165, 233, 0.25)";
                           }
@@ -2742,7 +2786,6 @@ export default function RunDetails() {
                                 alignItems: "center",
                                 background: rowBg,
                                 border: rowBorder,
-                                // إضافة خط ملون جانبي عشان يبين الحالة بوضوح أكبر
                                 borderRight:
                                   s.status === "done"
                                     ? "4px solid #00ac47"
@@ -4134,233 +4177,377 @@ export default function RunDetails() {
 
         <Modal
           open={openBulk}
-          title="إضافة اطفال للدورة"
+          title="إضافة أطفال للدورة"
           onClose={() => setOpenBulk(false)}
         >
           <div dir="rtl" lang="ar" className="modal-wide-1000">
-            <div className="muted" style={{ lineHeight: 1.5 }}>
-              اختر الأطفال ثم اضغط <b>إضافة</b>.
-            </div>
-            <hr className="sep" />
-            <div
-              className="row"
-              style={{
-                gap: 10,
-                flexWrap: "wrap",
-                justifyContent: "flex-start",
-                alignItems: "center",
-              }}
-            >
-              <input
-                className="input"
-                style={{ width: 280 }}
-                placeholder="ابحث عن طفل..."
-                value={bulkQ}
-                onChange={(e) => setBulkQ(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn"
-                onClick={bulkSelectAllFiltered}
-              >
-                تحديد الكل
-              </button>
-              <button
-                type="button"
-                className="btn danger"
-                onClick={bulkClearSelection}
-              >
-                إلغاء التحديد
-              </button>
-              <div className="muted" style={{ marginInlineStart: "auto" }}>
-                المحدد: <b>{bulkSelectedCount}</b>
-              </div>
-            </div>
-            <div style={{ marginTop: 12 }}>
-              {bulkCandidates.length === 0 ? (
-                <div className="card">لا يوجد أطفال.</div>
-              ) : (
+            {bulkStep === 1 && (
+              <>
+                <div className="muted" style={{ lineHeight: 1.5 }}>
+                  <strong>الخطوة 1:</strong> اختر الأطفال من القائمة ثم اضغط{" "}
+                  <b>التالي</b> لإدخال تفاصيل الدفع.
+                </div>
+                <hr className="sep" />
                 <div
-                  className="card"
+                  className="row"
                   style={{
-                    padding: 0,
-                    overflow: "auto",
-                    maxHeight: "55vh",
-                    direction: "rtl",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-start",
+                    alignItems: "center",
                   }}
                 >
-                  <table className="table" style={{ margin: 0, minWidth: 720 }}>
-                    <thead
+                  <input
+                    className="input"
+                    style={{ width: 280 }}
+                    placeholder="ابحث عن طفل..."
+                    value={bulkQ}
+                    onChange={(e) => setBulkQ(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={bulkSelectAllFiltered}
+                  >
+                    تحديد الكل
+                  </button>
+                  <button
+                    type="button"
+                    className="btn danger"
+                    onClick={bulkClearSelection}
+                  >
+                    إلغاء التحديد
+                  </button>
+                  <div className="muted" style={{ marginInlineStart: "auto" }}>
+                    المحدد: <b>{bulkSelectedCount}</b>
+                  </div>
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  {bulkCandidates.length === 0 ? (
+                    <div className="card">لا يوجد أطفال.</div>
+                  ) : (
+                    <div
+                      className="card"
                       style={{
-                        position: "sticky",
-                        top: 0,
-                        background: "white",
-                        zIndex: 2,
+                        padding: 0,
+                        overflow: "auto",
+                        maxHeight: "50vh",
+                        direction: "rtl",
                       }}
                     >
-                      <tr>
-                        <th style={{ width: 70, textAlign: "right" }}>
-                          اختيار
-                        </th>
-                        <th style={{ textAlign: "right" }}>الاسم</th>
-                        <th style={{ textAlign: "right" }}>العمر</th>
-                        <th style={{ textAlign: "right" }}>الصف</th>
-                        <th style={{ textAlign: "right" }}>الجنس</th>
-                        <th style={{ textAlign: "right" }}>هاتف الأم</th>
-                        <th style={{ textAlign: "right", width: 140 }}>
-                          تاريخ الإضافة
-                        </th>
-                        <th style={{ width: 100, textAlign: "center" }}>
-                          الحصص
-                        </th>
-                        <th style={{ width: 120, textAlign: "center" }}>
-                          السعر
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bulkCandidates.map((c) => {
-                        const checked = !!bulkSelected[String(c.id)];
-                        const genderLabel =
-                          c.gender === "male"
-                            ? "ذكر"
-                            : c.gender === "female"
-                              ? "أنثى"
-                              : (c.gender ?? "-");
-
-                        return (
-                          <tr key={c.id}>
-                            <td>
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => toggleBulkChild(c.id)}
-                              />
-                            </td>
-                            <td style={{ fontWeight: 850 }}>{c.name}</td>
-                            <td className="muted">{c.age ?? "-"}</td>
-                            <td className="muted">{c.class ?? "-"}</td>
-                            <td className="muted">{genderLabel}</td>
-                            <td className="muted">
-                              <span
-                                style={{
-                                  direction: "ltr",
-                                  unicodeBidi: "embed",
-                                }}
-                              >
-                                {c.mother_phone ?? "-"}
-                              </span>
-                            </td>
-                            <td>
-                              <input
-                                className="input"
-                                style={{
-                                  width: "100%",
-                                  minWidth: 130,
-                                  height: 38,
-                                  textAlign: "center",
-                                  fontSize: 13,
-                                }}
-                                type="date"
-                                value={
-                                  bulkPerChildDate[c.id] !== undefined
-                                    ? bulkPerChildDate[c.id]
-                                    : isoDate(new Date())
-                                }
-                                onChange={(e) =>
-                                  setBulkPerChildDate((prev) => ({
-                                    ...prev,
-                                    [c.id]: e.target.value,
-                                  }))
-                                }
-                                disabled={!checked}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                className="input"
-                                style={{
-                                  width: "100%",
-                                  minWidth: 70,
-                                  height: 38,
-                                  textAlign: "center",
-                                }}
-                                type="number"
-                                min="0"
-                                value={
-                                  bulkPerChildSessions[c.id] !== undefined
-                                    ? bulkPerChildSessions[c.id]
-                                    : defaultSessionsTotal
-                                }
-                                onChange={(e) =>
-                                  setBulkPerChildSessions((prev) => ({
-                                    ...prev,
-                                    [c.id]: e.target.value,
-                                  }))
-                                }
-                                disabled={!checked}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                className="input"
-                                style={{
-                                  width: "100%",
-                                  minWidth: 90,
-                                  height: 38,
-                                  textAlign: "center",
-                                }}
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={
-                                  bulkPerChildPrice[c.id] !== undefined
-                                    ? bulkPerChildPrice[c.id]
-                                    : defaultPrice
-                                }
-                                onChange={(e) =>
-                                  setBulkPerChildPrice((prev) => ({
-                                    ...prev,
-                                    [c.id]: e.target.value,
-                                  }))
-                                }
-                                disabled={!checked}
-                              />
-                            </td>
+                      <table
+                        className="table"
+                        style={{ margin: 0, minWidth: 600 }}
+                      >
+                        <thead
+                          style={{
+                            position: "sticky",
+                            top: 0,
+                            background: "white",
+                            zIndex: 2,
+                          }}
+                        >
+                          <tr>
+                            <th style={{ width: 70, textAlign: "right" }}>
+                              اختيار
+                            </th>
+                            <th style={{ textAlign: "right" }}>الاسم</th>
+                            <th style={{ textAlign: "right" }}>العمر</th>
+                            <th style={{ textAlign: "right" }}>الصف</th>
+                            <th style={{ textAlign: "right" }}>الجنس</th>
+                            <th style={{ textAlign: "right" }}>هاتف الأم</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody>
+                          {bulkCandidates.map((c) => {
+                            const checked = !!bulkSelected[String(c.id)];
+                            const genderLabel =
+                              c.gender === "male"
+                                ? "ذكر"
+                                : c.gender === "female"
+                                  ? "أنثى"
+                                  : (c.gender ?? "-");
+
+                            return (
+                              <tr key={c.id}>
+                                <td>
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleBulkChild(c.id)}
+                                  />
+                                </td>
+                                <td style={{ fontWeight: 850 }}>{c.name}</td>
+                                <td className="muted">{c.age ?? "-"}</td>
+                                <td className="muted">{c.class ?? "-"}</td>
+                                <td className="muted">{genderLabel}</td>
+                                <td className="muted">
+                                  <span
+                                    style={{
+                                      direction: "ltr",
+                                      unicodeBidi: "embed",
+                                    }}
+                                  >
+                                    {c.mother_phone ?? "-"}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <div
-              className="row"
-              style={{
-                justifyContent: "flex-start",
-                gap: 10,
-                marginTop: 16,
-              }}
-            >
-              <button
-                type="button"
-                className="btn primary"
-                disabled={bulkSaving || bulkSelectedCount === 0}
-                onClick={bulkPurchaseAndEnroll}
-              >
-                {bulkSaving
-                  ? "جارٍ الإضافة..."
-                  : `إضافة (${bulkSelectedCount})`}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setOpenBulk(false)}
-              >
-                إغلاق
-              </button>
-            </div>
+                <div
+                  className="row"
+                  style={{
+                    justifyContent: "flex-end",
+                    gap: 10,
+                    marginTop: 16,
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setOpenBulk(false)}
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={bulkSelectedCount === 0}
+                    onClick={() => setBulkStep(2)}
+                  >
+                    التالي (تفاصيل الدفع)
+                  </button>
+                </div>
+              </>
+            )}
+
+            {bulkStep === 2 && (
+              <>
+                <div className="muted" style={{ lineHeight: 1.5 }}>
+                  <strong>الخطوة 2:</strong> قم بتحديد السعر{" "}
+                  {!isWorkshop && "وعدد الحصص "}
+                  لكل طفل.
+                  {isWorkshop && " تفاصيل الدفع تضاف مباشرة لحساب الطالب."}
+                </div>
+                <hr className="sep" />
+                <div style={{ marginTop: 12 }}>
+                  <div
+                    className="card"
+                    style={{
+                      padding: 0,
+                      overflow: "auto",
+                      maxHeight: "55vh",
+                      direction: "rtl",
+                    }}
+                  >
+                    <table
+                      className="table"
+                      style={{ margin: 0, minWidth: 600 }}
+                    >
+                      <thead
+                        style={{
+                          position: "sticky",
+                          top: 0,
+                          background: "white",
+                          zIndex: 2,
+                        }}
+                      >
+                        <tr>
+                          <th style={{ textAlign: "right" }}>الاسم</th>
+                          <th style={{ textAlign: "right", width: 140 }}>
+                            تاريخ الإضافة
+                          </th>
+                          {!isWorkshop && (
+                            <th style={{ width: 100, textAlign: "center" }}>
+                              الحصص
+                            </th>
+                          )}
+                          <th style={{ width: 120, textAlign: "center" }}>
+                            السعر
+                          </th>
+                          {isWorkshop && (
+                            <>
+                              <th style={{ width: 80, textAlign: "center" }}>
+                                دفع؟
+                              </th>
+                              <th style={{ width: 150, textAlign: "center" }}>
+                                طريقة الدفع
+                              </th>
+                            </>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedChildrenForStep2.map((c) => {
+                          const isPaid = !!bulkPerChildPaid[c.id];
+                          return (
+                            <tr key={c.id}>
+                              <td style={{ fontWeight: 850 }}>{c.name}</td>
+                              <td>
+                                <input
+                                  className="input"
+                                  style={{
+                                    width: "100%",
+                                    minWidth: 130,
+                                    height: 38,
+                                    textAlign: "center",
+                                    fontSize: 13,
+                                  }}
+                                  type="date"
+                                  value={
+                                    bulkPerChildDate[c.id] !== undefined
+                                      ? bulkPerChildDate[c.id]
+                                      : isoDate(new Date())
+                                  }
+                                  onChange={(e) =>
+                                    setBulkPerChildDate((prev) => ({
+                                      ...prev,
+                                      [c.id]: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </td>
+                              {!isWorkshop && (
+                                <td>
+                                  <input
+                                    className="input"
+                                    style={{
+                                      width: "100%",
+                                      minWidth: 70,
+                                      height: 38,
+                                      textAlign: "center",
+                                    }}
+                                    type="number"
+                                    min="0"
+                                    value={
+                                      bulkPerChildSessions[c.id] !== undefined
+                                        ? bulkPerChildSessions[c.id]
+                                        : defaultSessionsTotal
+                                    }
+                                    onChange={(e) =>
+                                      setBulkPerChildSessions((prev) => ({
+                                        ...prev,
+                                        [c.id]: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </td>
+                              )}
+                              <td>
+                                <input
+                                  className="input"
+                                  style={{
+                                    width: "100%",
+                                    minWidth: 90,
+                                    height: 38,
+                                    textAlign: "center",
+                                  }}
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  value={
+                                    bulkPerChildPrice[c.id] !== undefined
+                                      ? bulkPerChildPrice[c.id]
+                                      : defaultPrice
+                                  }
+                                  onChange={(e) =>
+                                    setBulkPerChildPrice((prev) => ({
+                                      ...prev,
+                                      [c.id]: e.target.value,
+                                    }))
+                                  }
+                                />
+                              </td>
+                              {isWorkshop && (
+                                <>
+                                  <td style={{ textAlign: "center" }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={isPaid}
+                                      style={{ transform: "scale(1.2)" }}
+                                      onChange={(e) =>
+                                        setBulkPerChildPaid((prev) => ({
+                                          ...prev,
+                                          [c.id]: e.target.checked,
+                                        }))
+                                      }
+                                    />
+                                  </td>
+                                  <td>
+                                    {isPaid ? (
+                                      <select
+                                        className="input"
+                                        style={{ height: 38, fontSize: 13 }}
+                                        value={
+                                          bulkPerChildPayMethod[c.id] || "cash"
+                                        }
+                                        onChange={(e) =>
+                                          setBulkPerChildPayMethod((prev) => ({
+                                            ...prev,
+                                            [c.id]: e.target.value,
+                                          }))
+                                        }
+                                      >
+                                        <option value="cash">نقداً</option>
+                                        <option value="card">
+                                          بطاقة ائتمان
+                                        </option>
+                                        <option value="transfer">
+                                          حوالة بنكية
+                                        </option>
+                                        <option value="other">أخرى</option>
+                                      </select>
+                                    ) : (
+                                      <span
+                                        className="muted"
+                                        style={{ display: "block" }}
+                                      >
+                                        -
+                                      </span>
+                                    )}
+                                  </td>
+                                </>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div
+                  className="row"
+                  style={{
+                    justifyContent: "flex-start",
+                    gap: 10,
+                    marginTop: 16,
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={bulkSaving || bulkSelectedCount === 0}
+                    onClick={bulkPurchaseAndEnroll}
+                  >
+                    {bulkSaving
+                      ? "جارٍ الإضافة..."
+                      : `إضافة (${bulkSelectedCount})`}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setBulkStep(1)}
+                  >
+                    رجوع للأسماء
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </Modal>
 
