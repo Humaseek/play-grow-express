@@ -27,13 +27,25 @@ import {
 import ErrorBanner from "../components/ErrorBanner";
 import Badge from "../components/Badge";
 import Modal from "../components/Modal";
+import IconButton from "../components/IconButton"; // تأكدنا من استيراد زر الأيقونة
 
-// --- دالة تنسيق المبالغ المالية ---
+// --- دوال مساعدة ---
 function fmtMoney(n) {
   return Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-// --- تصميم الـ CSS المدمج ---
+function toInputDatetimeLocal(dt) {
+  const d = dt ? new Date(dt) : new Date();
+  const pad = (x) => String(x).padStart(2, "0");
+  const y = d.getFullYear();
+  const mo = pad(d.getMonth() + 1);
+  const da = pad(d.getDate());
+  const h = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${y}-${mo}-${da}T${h}:${mi}`;
+}
+
+// --- تصميم الـ CSS المدمج المطور ---
 const PROFILE_STYLES = `
 /* إعدادات عامة */
 .dashboard-wrapper {
@@ -49,11 +61,11 @@ const PROFILE_STYLES = `
   margin: 0 auto;
 }
 
-/* الرأس (Header) المطور والناعم */
+/* الرأس (Header) الناعم */
 .header-section {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 24px;
   margin-bottom: 32px;
   background: white;
   padding: 32px 40px;
@@ -61,12 +73,6 @@ const PROFILE_STYLES = `
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.03);
   position: relative;
   border-right: 6px solid #3b82f6; 
-}
-
-.header-user-group {
-  display: flex;
-  align-items: center;
-  gap: 24px;
 }
 
 .btn-back {
@@ -108,29 +114,6 @@ const PROFILE_STYLES = `
   gap: 12px;
   align-items: center;
   margin-top: 8px;
-}
-
-/* زر الدفع الذكي */
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 14px;
-  border: none;
-  font-weight: 800;
-  font-size: 15px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-}
-
-.btn-primary:hover {
-  background: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
 }
 
 /* البطاقات المالية (Stats) */
@@ -302,6 +285,14 @@ const PROFILE_STYLES = `
 .data-table tr:last-child td { border-bottom: none; }
 .data-table tbody tr:hover { background-color: #f8fafc; }
 
+/* خلية الإجراءات المضافة حديثاً للجدول */
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end; /* لضبط الأيقونة جهة اليسار قليلاً */
+}
+
 /* تأثيرات رابط الدورة */
 .course-link-group {
   display: inline-flex;
@@ -363,18 +354,6 @@ const PROFILE_STYLES = `
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* الحالات الفارغة */
-.empty-box {
-  text-align: center;
-  padding: 48px 24px;
-  background: #f8fafc;
-  border-radius: 16px;
-  border: 2px dashed #e2e8f0;
-  color: #64748b;
-}
-.empty-box h3 { font-size: 18px; font-weight: 800; margin: 16px 0 8px; color: #0f172a; }
-.empty-box p { font-size: 14px; margin: 0; }
-
 /* مدخلات النافذة */
 .modal-input {
   width: 100%;
@@ -388,6 +367,21 @@ const PROFILE_STYLES = `
 }
 .modal-input:focus { outline: none; border-color: #3b82f6; }
 .modal-input:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+
+/* صندوق معلومات الدورة المرتبطة بالدفع داخل النافذة (مثل الصورة 2) */
+.course-link-info-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  padding: 16px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
 `;
 
 export default function ChildDetails() {
@@ -403,13 +397,18 @@ export default function ChildDetails() {
   const [enrollments, setEnrollments] = useState([]);
   const [payments, setPayments] = useState([]);
 
-  // حالات نافذة الدفع الذكي (مرتبط بالاشتراكات)
-  const [openPayModal, setOpenPayModal] = useState(false);
-  const [payEnrId, setPayEnrId] = useState("");
+  // حالات نافذة الدفع المرتبطة بالدورة (الدفع للديون المسجلة)
+  const [openAddPayModal, setOpenAddPayModal] = useState(false);
+
+  // حالة جديدة لتخزين بيانات الاشتراك النشط للدفع (الاسم، الفوج، المعرف)
+  const [activeEnrollment, setActiveEnrollment] = useState(null);
+
+  // حالات المدخلات الأساسية للدفع
   const [payAmt, setPayAmt] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
   const [payNote, setPayNote] = useState("");
-  const [savingPay, setSavingPay] = useState(false);
+  const [payAt, setPayAt] = useState(toInputDatetimeLocal(new Date()));
+  const [savingLinkedPay, setSavingLinkedPay] = useState(false);
 
   const loadDashboardData = async () => {
     if (!childId) return;
@@ -451,11 +450,12 @@ export default function ChildDetails() {
 
       setEnrollments(mergedEnrollments);
 
-      // 3. جلب المدفوعات
+      // 3. جلب المدفوعات (فقط المرتبطة بـ enrollment_id)
       const { data: payData, error: payErr } = await supabase
         .from("payments_details_view")
         .select("*")
         .eq("child_id", childId)
+        .not("enrollment_id", "is", null) // تأكيد أننا نجلب فقط دفعات الدورات
         .order("created_at", { ascending: false });
 
       if (payErr) throw payErr;
@@ -471,47 +471,48 @@ export default function ChildDetails() {
     loadDashboardData();
   }, [childId]);
 
-  // دالة فتح نافذة الدفع بذكاء (Auto-select)
-  const handleOpenPayModal = () => {
-    setPayAmt("");
-    setPayNote("");
+  // دالة فتح نافذة الدفع للديون المسجلة (من زر الجدول)
+  const handleOpenAddPayModal = (enrollment) => {
+    // تخزين بيانات الدورة النشطة عشان نظهرها بالنافذة ونثبت الدفع عليها
+    setActiveEnrollment(enrollment);
+
+    // تجهيز المدخلات تلقائياً
     setPayMethod("cash");
-    setPayEnrId("");
+    setPayNote("");
+    setPayAt(toInputDatetimeLocal(new Date()));
 
-    // البحث عن الاشتراكات اللي عليها ديون
-    const debtEnrs = enrollments.filter((e) => Number(e.balance) > 0);
-
-    // إذا كان في دورة وحدة بس عليها دين، اختارها لحالك وعبي المبلغ
-    if (debtEnrs.length === 1) {
-      setPayEnrId(debtEnrs[0].enrollment_id);
-      setPayAmt(debtEnrs[0].balance);
-    } else if (enrollments.length === 1) {
-      // أو إذا كان مسجل بس بدورة وحدة بشكل عام
-      setPayEnrId(enrollments[0].enrollment_id);
+    // تعبئة المبلغ المتبقي (balance) كقيمة أولية للتسهيل، إذا كان أكبر من صفر
+    if (Number(enrollment.balance) > 0) {
+      setPayAmt(enrollment.balance);
+    } else {
+      setPayAmt("");
     }
 
-    setOpenPayModal(true);
+    setOpenAddPayModal(true);
   };
 
-  // دالة إرسال الدفعة (مرتبطة باشتراك)
-  const handlePaymentSubmit = async () => {
-    if (!payEnrId) {
-      toast("الرجاء اختيار الدورة المراد سداد دفعتها.", "warn");
-      return;
-    }
+  // دالة إرسال الدفعة (المرتبطة باشتراك)
+  const handleLinkedPaymentSubmit = async () => {
     const val = Number(payAmt);
     if (!val || val <= 0) {
       toast("الرجاء إدخال مبلغ صحيح أكبر من صفر.", "warn");
       return;
     }
 
-    setSavingPay(true);
+    // validate we have the linked enrollment id
+    if (!activeEnrollment || !activeEnrollment.enrollment_id) {
+      toast("خطأ في البيانات المرتبطة بالدورة.", "danger");
+      return;
+    }
+
+    setSavingLinkedPay(true);
     try {
       const payload = {
-        enrollment_id: payEnrId,
+        enrollment_id: activeEnrollment.enrollment_id, // مربوط بالمعرف الذي كبسنا بجانبه
         amount: val,
         method: payMethod,
         note: payNote.trim() || null,
+        created_at: new Date(payAt).toISOString(),
       };
 
       const { error: insErr } = await supabase
@@ -520,14 +521,14 @@ export default function ChildDetails() {
 
       if (insErr) throw insErr;
 
-      toast("تم تسجيل الدفعة بنجاح.", "ok");
-      setOpenPayModal(false);
-      await loadDashboardData(); // تحديث الأرقام
+      toast(`تم تسجيل قسط دورة "${activeEnrollment.title}" بنجاح.`, "ok");
+      setOpenAddPayModal(false);
+      await loadDashboardData(); // تحديث الأرقام والجداول
     } catch (e) {
-      toast("حدث خطأ أثناء الحفظ.", "danger");
+      toast("حدث خطأ أثناء حفظ القسط.", "danger");
       console.error(e);
     } finally {
-      setSavingPay(false);
+      setSavingLinkedPay(false);
     }
   };
 
@@ -561,11 +562,12 @@ export default function ChildDetails() {
       </div>
     );
 
-  // --- العمليات الحسابية ---
+  // --- العمليات الحسابية (للسداد المسجل) ---
   const totalAgreed = enrollments.reduce(
     (sum, e) => sum + Number(e.agreed_price || 0),
     0,
   );
+  // إجمالي المدفوع هو مجموع كل المدفوعات التي جلبناها (المرتبطة بدورات)
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
   const totalBalance = totalAgreed - totalPaid;
   const isCreditor = totalBalance < 0;
@@ -632,33 +634,27 @@ export default function ChildDetails() {
     <div className="dashboard-wrapper">
       <style>{PROFILE_STYLES}</style>
       <div className="max-w-container">
-        {/* === القسم الأول: الهيدر المطور والناعم === */}
+        {/* === القسم الأول: الهيدر الناعم === */}
         <div className="header-section">
-          <div className="header-user-group">
-            <button
-              className="btn-back"
-              onClick={() => navigate("/children")}
-              title="رجوع للقائمة"
-            >
-              <ArrowRight size={26} strokeWidth={2.5} />
-            </button>
-
-            <div className="header-user-info">
-              <h1 className="user-name-title">{child.name}</h1>
-              {child.country && (
-                <div className="badges-row">
-                  <Badge variant="info">
-                    <MapPin size={14} style={{ marginLeft: "4px" }} />{" "}
-                    {child.country}
-                  </Badge>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button className="btn-primary" onClick={handleOpenPayModal}>
-            <Banknote size={20} /> تسجيل دفعة (سداد ديون)
+          <button
+            className="btn-back"
+            onClick={() => navigate("/children")}
+            title="رجوع للقائمة"
+          >
+            <ArrowRight size={26} strokeWidth={2.5} />
           </button>
+
+          <div className="header-user-info">
+            <h1 className="user-name-title">{child.name}</h1>
+            {child.country && (
+              <div className="badges-row">
+                <Badge variant="info">
+                  <MapPin size={14} style={{ marginLeft: "4px" }} />{" "}
+                  {child.country}
+                </Badge>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* === القسم الثاني: الإحصائيات المالية === */}
@@ -857,7 +853,7 @@ export default function ChildDetails() {
             </div>
           </div>
 
-          {/* === القسم الرابع: الدورات والاشتراكات === */}
+          {/* === القسم الرابع: الدورات والاشتراكات المطور بالكبسة === */}
           <div className="bento-box col-12">
             <h2 className="section-head">
               <BookOpen color="#8b5cf6" size={24} /> الدورات المشترك بها
@@ -883,6 +879,7 @@ export default function ChildDetails() {
                       <th>السعر المتفق عليه</th>
                       <th>المدفوع</th>
                       <th>الرصيد المتبقي</th>
+                      <th>الإجراءات</th> {/* عمود جديد للكبسة كما طلبت */}
                     </tr>
                   </thead>
                   <tbody>
@@ -948,6 +945,17 @@ export default function ChildDetails() {
                           {enr.balance > 0
                             ? `${fmtMoney(enr.balance)} ₪`
                             : "مسدد بالكامل"}
+                        </td>
+
+                        {/* كبسة تسجيل قسط سياقية جنب كل دورة كما هو في الصورة 1 */}
+                        <td>
+                          <div className="actions-cell">
+                            <IconButton
+                              title="سداد قسط"
+                              onClick={() => handleOpenAddPayModal(enr)}
+                              icon={Banknote}
+                            />
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1060,63 +1068,20 @@ export default function ChildDetails() {
         </div>
       </div>
 
-      {/* نافذة الدفع المخصصة للطفل (تسجيل دفعة لاشتراك) */}
+      {/* نافذة الدفع المخصصة للطفل (تسجيل قسط مربوط بالدورة تلقائياً) */}
       <Modal
-        open={openPayModal}
-        title="تسجيل دفعة (سداد ديون)"
-        onClose={() => !savingPay && setOpenPayModal(false)}
+        open={openAddPayModal}
+        title="تسجيل قسط دورة"
+        onClose={() => !savingLinkedPay && setOpenAddPayModal(false)}
       >
         <div className="grid" style={{ gap: "16px", padding: "10px 0" }}>
           <div style={{ gridColumn: "span 12" }}>
-            <div
-              className="muted"
-              style={{
-                marginBottom: 8,
-                fontSize: 14,
-                fontWeight: 700,
-                color: "#64748b",
-              }}
-            >
-              الدورة / الاشتراك
+            {/* صندوق معلومات الدورة المرتبطة - مثل الصورة 2 */}
+            <div className="course-link-info-box">
+              <BookOpen size={18} />
+              الدورة: {activeEnrollment?.title} ({activeEnrollment?.label})
             </div>
-            <select
-              className="modal-input"
-              value={payEnrId}
-              onChange={(e) => {
-                setPayEnrId(e.target.value);
-                // تعبئة المبلغ المتبقي تلقائياً عند تغيير الدورة
-                const enr = enrollments.find(
-                  (x) => String(x.enrollment_id) === String(e.target.value),
-                );
-                if (enr && Number(enr.balance) > 0) {
-                  setPayAmt(enr.balance);
-                } else {
-                  setPayAmt("");
-                }
-              }}
-            >
-              <option value="" disabled>
-                -- الرجاء اختيار الدورة --
-              </option>
-              {enrollments.map((enr) => (
-                <option key={enr.enrollment_id} value={enr.enrollment_id}>
-                  {enr.title} ({enr.label}){" "}
-                  {enr.balance > 0
-                    ? `- متبقي ${enr.balance} ₪`
-                    : "- مسدد بالكامل"}
-                </option>
-              ))}
-            </select>
-            {enrollments.length === 0 && (
-              <div
-                style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}
-              >
-                الطالب غير مسجل في أي دورة حالياً.
-              </div>
-            )}
-          </div>
 
-          <div style={{ gridColumn: "span 12" }}>
             <div
               className="muted"
               style={{
@@ -1126,7 +1091,7 @@ export default function ChildDetails() {
                 color: "#64748b",
               }}
             >
-              المبلغ (₪) *
+              المبلغ المطلوب سداده (₪) *
             </div>
             <input
               className="modal-input"
@@ -1135,9 +1100,21 @@ export default function ChildDetails() {
               step="0.01"
               value={payAmt}
               onChange={(e) => setPayAmt(e.target.value)}
-              placeholder="أدخل قيمة الدفعة..."
-              disabled={!payEnrId}
+              placeholder="أدخل قيمة القسط..."
             />
+            {activeEnrollment && Number(activeEnrollment.balance) > 0 && (
+              <div
+                style={{
+                  color: "#64748b",
+                  fontSize: "13px",
+                  marginTop: "4px",
+                  fontWeight: "bold",
+                }}
+              >
+                المبلغ المتبقي على الدورة: {fmtMoney(activeEnrollment.balance)}{" "}
+                ₪
+              </div>
+            )}
           </div>
 
           <div style={{ gridColumn: "span 12" }}>
@@ -1174,13 +1151,33 @@ export default function ChildDetails() {
                 color: "#64748b",
               }}
             >
+              التاريخ والوقت
+            </div>
+            <input
+              className="modal-input"
+              type="datetime-local"
+              value={payAt}
+              onChange={(e) => setPayAt(e.target.value)}
+            />
+          </div>
+
+          <div style={{ gridColumn: "span 12" }}>
+            <div
+              className="muted"
+              style={{
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#64748b",
+              }}
+            >
               ملاحظة (اختياري)
             </div>
             <input
               className="modal-input"
               value={payNote}
               onChange={(e) => setPayNote(e.target.value)}
-              placeholder="أي ملاحظات حول الدفعة..."
+              placeholder="أي ملاحظات حول القسط..."
             />
           </div>
 
@@ -1204,17 +1201,30 @@ export default function ChildDetails() {
                 fontWeight: 800,
                 color: "#64748b",
               }}
-              onClick={() => setOpenPayModal(false)}
-              disabled={savingPay}
+              onClick={() => setOpenAddPayModal(false)}
+              disabled={savingLinkedPay}
             >
               إلغاء
             </button>
             <button
               className="btn-primary"
-              onClick={handlePaymentSubmit}
-              disabled={savingPay || enrollments.length === 0}
+              style={{
+                background: "#16a34a",
+                color: "white",
+                padding: "12px 24px",
+                borderRadius: "14px",
+                border: "none",
+                fontWeight: "800",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 4px 12px rgba(22, 163, 74, 0.25)",
+              }}
+              onClick={handleLinkedPaymentSubmit}
+              disabled={savingLinkedPay}
             >
-              {savingPay ? "جاري التسجيل..." : "تأكيد الدفع"}
+              {savingLinkedPay ? "جاري التسجيل..." : "تأكيد السداد"}
             </button>
           </div>
         </div>
