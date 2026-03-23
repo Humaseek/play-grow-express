@@ -1547,18 +1547,37 @@ export default function RunDetails() {
         const sessionsToAdd = Number(buySessions) || 0;
         const priceToAdd = Number(buyPriceTotal) || 0;
 
-        // التعديل: إدراج باقة جديدة منفصلة بدل ما نعدل القديمة!
-        const insPkg = await supabase.from("course_packages").insert([
-          {
-            course_id: summary.template_id,
-            child_id: existing.child_id,
-            sessions_total: sessionsToAdd,
-            price_total: priceToAdd,
-            status: "active",
-          },
-        ]);
+        // إدراج باقة جديدة كسطر منفصل تماماً!
+        const insPkg = await supabase
+          .from("course_packages")
+          .insert([
+            {
+              course_id: summary.template_id,
+              child_id: existing.child_id,
+              sessions_total: sessionsToAdd,
+              price_total: priceToAdd,
+              status: "active",
+            },
+          ])
+          .select("id")
+          .single();
 
         if (insPkg.error) throw insPkg.error;
+
+        const newPkgId = insPkg.data.id;
+
+        // تحديث التسجيل لربطه بالباقة الجديدة وتجميع السعر المتفق عليه
+        const newAgreedPrice = Number(existing.agreed_price || 0) + priceToAdd;
+
+        const uEnroll = await supabase
+          .from("enrollments")
+          .update({
+            package_id: newPkgId,
+            agreed_price: newAgreedPrice,
+          })
+          .eq("id", existing.enrollment_id);
+
+        if (uEnroll.error) throw uEnroll.error;
 
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
 
