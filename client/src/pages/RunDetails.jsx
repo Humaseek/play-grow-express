@@ -1599,6 +1599,20 @@ export default function RunDetails() {
 
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
 
+        // هنا بنعمل قيد (Log) منفصل في سجل الدفعات يوثق إنك ضفت جلسات جديدة
+        if (sessionsToAdd > 0 || priceToAdd > 0) {
+          await supabase.from("payments").insert([
+            {
+              enrollment_id: existing.enrollment_id,
+              package_id: existing.package_id || null,
+              amount: 0,
+              method: "other",
+              note: `تعديل اشتراك: إضافة ${sessionsToAdd} حصص (بقيمة ${priceToAdd} ₪ للمتفق عليه)`,
+              created_at: new Date().toISOString(),
+            },
+          ]);
+        }
+
         await loadFixed();
         toast("تم شحن رصيد الجلسات بنجاح.", "ok");
         closeSubModalAndReopen(setOpenEnroll);
