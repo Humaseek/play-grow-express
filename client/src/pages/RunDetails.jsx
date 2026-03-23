@@ -1421,9 +1421,10 @@ export default function RunDetails() {
       p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
     });
     if (rpc2.error) throw rpc2.error;
+
+    await loadFixed();
     toast("تم التسجيل بنجاح.", "ok");
     closeSubModalAndReopen(setOpenEnroll);
-    await loadFixed();
     if (!enrollLocked && !shouldReopenManage) setTab("participants");
   }
 
@@ -1479,9 +1480,10 @@ export default function RunDetails() {
           });
       }
       if (s > 0) await bumpEnrollmentAllocated(existing.enrollment_id, s);
+
+      await loadFixed();
       toast("تمت إعادة التسجيل بنجاح.", "ok");
       closeSubModalAndReopen(setOpenEnroll);
-      await loadFixed();
       if (!enrollLocked && !shouldReopenManage) setTab("participants");
       return true;
     } catch {
@@ -1518,9 +1520,9 @@ export default function RunDetails() {
           }
           throw rpc.error;
         }
+        await loadFixed();
         toast("تم التسجيل باستخدام الرصيد السابق.", "ok");
         closeSubModalAndReopen(setOpenEnroll);
-        await loadFixed();
         if (!enrollLocked && !shouldReopenManage) setTab("participants");
         return;
       }
@@ -1537,8 +1539,13 @@ export default function RunDetails() {
         }
 
         const sessionsToAdd = Number(buySessions) || 0;
-        await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
+
+        // تعديل الترتيب عشان الفحص بالداتابيس (Validation) يمر بنجاح
         if (existing.package_id) {
+          await supabase.rpc("adjust_package_sessions_total", {
+            p_package_id: Number(existing.package_id),
+            p_delta: sessionsToAdd,
+          });
           await supabase
             .from("course_packages")
             .update({
@@ -1547,14 +1554,22 @@ export default function RunDetails() {
                 (Number(buyPriceTotal) || 0),
             })
             .eq("id", existing.package_id);
-          await supabase.rpc("adjust_package_sessions_total", {
-            p_package_id: Number(existing.package_id),
-            p_delta: sessionsToAdd,
-          });
+        } else {
+          await supabase
+            .from("enrollments")
+            .update({
+              agreed_price:
+                Number(existing.agreed_price || 0) +
+                (Number(buyPriceTotal) || 0),
+            })
+            .eq("id", existing.enrollment_id);
         }
+
+        await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
+
+        await loadFixed();
         toast("تم شحن رصيد الجلسات.", "ok");
         closeSubModalAndReopen(setOpenEnroll);
-        await loadFixed();
         if (!enrollLocked && !shouldReopenManage) setTab("participants");
         return;
       }
@@ -1917,8 +1932,8 @@ export default function RunDetails() {
 
       setPayEditId(null);
       setPayLocked(false);
-      closeSubModalAndReopen(setOpenPay);
       await loadFixed();
+      closeSubModalAndReopen(setOpenPay);
     } catch {
       toast("Failed.", "danger");
     } finally {
