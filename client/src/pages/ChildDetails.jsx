@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 import {
@@ -21,10 +21,12 @@ import {
   MapPin,
   Activity,
   RefreshCcw,
+  Banknote,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
 import Badge from "../components/Badge";
+import Modal from "../components/Modal"; // تأكدنا من استيراد المودال
 
 // --- دالة تنسيق المبالغ المالية ---
 function fmtMoney(n) {
@@ -51,7 +53,7 @@ const PROFILE_STYLES = `
 .header-section {
   display: flex;
   align-items: center;
-  gap: 24px;
+  justify-content: space-between; /* لتوزيع المسافة بين معلومات الطفل وزر الدفع */
   margin-bottom: 32px;
   background: white;
   padding: 32px 40px;
@@ -59,6 +61,12 @@ const PROFILE_STYLES = `
   box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.03);
   position: relative;
   border-right: 6px solid #3b82f6; 
+}
+
+.header-user-group {
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
 .btn-back {
@@ -89,7 +97,7 @@ const PROFILE_STYLES = `
 
 .user-name-title {
   margin: 0;
-  font-size: 32px; /* كبرنا الخط ليكون أوضح بعد إزالة الصورة */
+  font-size: 32px;
   font-weight: 900;
   color: #0f172a;
   letter-spacing: -0.5px;
@@ -99,7 +107,30 @@ const PROFILE_STYLES = `
   display: flex;
   gap: 12px;
   align-items: center;
-  margin-top: 8px; /* مسافة خفيفة بين الاسم والشارة */
+  margin-top: 8px;
+}
+
+/* زر الدفع الجديد */
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 14px;
+  border: none;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35);
 }
 
 /* البطاقات المالية (Stats) */
@@ -343,12 +374,25 @@ const PROFILE_STYLES = `
 }
 .empty-box h3 { font-size: 18px; font-weight: 800; margin: 16px 0 8px; color: #0f172a; }
 .empty-box p { font-size: 14px; margin: 0; }
+
+/* مدخلات النافذة */
+.modal-input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.modal-input:focus { outline: none; border-color: #3b82f6; }
 `;
 
 export default function ChildDetails() {
   const params = useParams();
   const childId = params.id || params.childId;
   const navigate = useNavigate();
+  const { toast } = useOutletContext(); // لاستخدام رسائل التنبيه
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -357,64 +401,113 @@ export default function ChildDetails() {
   const [enrollments, setEnrollments] = useState([]);
   const [payments, setPayments] = useState([]);
 
-  useEffect(() => {
-    async function loadDashboardData() {
-      if (!childId) return;
-      setLoading(true);
-      try {
-        // 1. جلب بيانات الطالب الأساسية
-        const { data: childData, error: childErr } = await supabase
-          .from("children_view")
-          .select("*")
-          .eq("id", childId)
-          .single();
+  // حالات نافذة الدفع الخاص
+  const [openPayModal, setOpenPayModal] = useState(false);
+  const [payAmt, setPayAmt] = useState("");
+  const [payMethod, setPayMethod] = useState("cash");
+  const [payNote, setPayNote] = useState("");
+  const [savingPay, setSavingPay] = useState(false);
 
-        if (childErr) throw childErr;
-        setChild(childData);
+  const loadDashboardData = async () => {
+    if (!childId) return;
+    setLoading(true);
+    try {
+      // 1. جلب بيانات الطالب الأساسية
+      const { data: childData, error: childErr } = await supabase
+        .from("children_view")
+        .select("*")
+        .eq("id", childId)
+        .single();
 
-        // 2. جلب الاشتراكات ودمجها للحصول على اسم الدورة والحضور معاً
-        const { data: rpData, error: rpErr } = await supabase
-          .from("run_participants_view")
-          .select("*")
-          .eq("child_id", childId);
+      if (childErr) throw childErr;
+      setChild(childData);
 
-        const { data: ceData } = await supabase
-          .from("child_enrollments_view")
-          .select("enrollment_id, title, label")
-          .eq("child_id", childId);
+      // 2. جلب الاشتراكات ودمجها للحصول على اسم الدورة والحضور معاً
+      const { data: rpData, error: rpErr } = await supabase
+        .from("run_participants_view")
+        .select("*")
+        .eq("child_id", childId);
 
-        if (rpErr) throw rpErr;
+      const { data: ceData } = await supabase
+        .from("child_enrollments_view")
+        .select("enrollment_id, title, label")
+        .eq("child_id", childId);
 
-        const mergedEnrollments = (rpData || []).map((enr) => {
-          const courseInfo =
-            (ceData || []).find((c) => c.enrollment_id === enr.enrollment_id) ||
-            {};
-          return {
-            ...enr,
-            title: courseInfo.title,
-            label: courseInfo.label,
-          };
-        });
+      if (rpErr) throw rpErr;
 
-        setEnrollments(mergedEnrollments);
+      const mergedEnrollments = (rpData || []).map((enr) => {
+        const courseInfo =
+          (ceData || []).find((c) => c.enrollment_id === enr.enrollment_id) ||
+          {};
+        return {
+          ...enr,
+          title: courseInfo.title,
+          label: courseInfo.label,
+        };
+      });
 
-        // 3. جلب الدفعات الخاصة بالطالب
-        const { data: payData, error: payErr } = await supabase
-          .from("payments_details_view")
-          .select("*")
-          .eq("child_id", childId)
-          .order("created_at", { ascending: false });
+      setEnrollments(mergedEnrollments);
 
-        if (payErr) throw payErr;
-        setPayments(payData || []);
-      } catch (err) {
-        setError("حدث خطأ أثناء تحميل بيانات الطالب: " + err.message);
-      } finally {
-        setLoading(false);
-      }
+      // 3. جلب كل الدفعات الخاصة بالطالب (سواء مربوطة بدورة أو حرة)
+      const { data: payData, error: payErr } = await supabase
+        .from("payments_details_view")
+        .select("*")
+        .eq("child_id", childId)
+        .order("created_at", { ascending: false });
+
+      if (payErr) throw payErr;
+      setPayments(payData || []);
+    } catch (err) {
+      setError("حدث خطأ أثناء تحميل بيانات الطالب: " + err.message);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadDashboardData();
   }, [childId]);
+
+  // دالة تسجيل الدفعة الحرة
+  const handleSpecialPayment = async () => {
+    const val = Number(payAmt);
+    if (!val || val <= 0) {
+      toast("الرجاء إدخال مبلغ صحيح أكبر من صفر.", "warn");
+      return;
+    }
+
+    setSavingPay(true);
+    try {
+      const payload = {
+        child_id: childId,
+        amount: val,
+        method: payMethod,
+        note: payNote.trim() || null,
+      };
+
+      const { error: insErr } = await supabase
+        .from("payments")
+        .insert([payload]);
+
+      if (insErr) throw insErr;
+
+      toast("تم تسجيل الدفعة الحرة بنجاح.", "ok");
+      setOpenPayModal(false);
+      setPayAmt("");
+      setPayNote("");
+
+      // إعادة تحميل البيانات لتحديث الأرقام
+      await loadDashboardData();
+    } catch (e) {
+      toast(
+        "حدث خطأ أثناء الحفظ. تأكد من تحديث قاعدة البيانات للدفعات الحرة.",
+        "danger",
+      );
+      console.error(e);
+    } finally {
+      setSavingPay(false);
+    }
+  };
 
   // --- شاشة التحميل ---
   if (loading)
@@ -447,17 +540,24 @@ export default function ChildDetails() {
     );
 
   // --- العمليات الحسابية ---
+  // حساب إجمالي المطلوب من الاشتراكات فقط
   const totalAgreed = enrollments.reduce(
     (sum, e) => sum + Number(e.agreed_price || 0),
     0,
   );
-  const totalPaid = enrollments.reduce(
-    (sum, e) => sum + Number(e.paid_amount || 0),
-    0,
-  );
+
+  // حساب إجمالي المدفوع من كل الدفعات (المرتبطة بدورات + الحرة)
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+
+  // الرصيد المتبقي
   const totalBalance = totalAgreed - totalPaid;
+  // إذا كان الرصيد أقل من صفر، يعني أن الطالب دافع بزيادة (رصيد دائن للمركز)
+  const isCreditor = totalBalance < 0;
+
   const debtPercentage =
-    totalAgreed > 0 ? (totalBalance / totalAgreed) * 100 : 0;
+    totalAgreed > 0 && totalBalance > 0
+      ? (totalBalance / totalAgreed) * 100
+      : 0;
 
   // --- دوال مساعدة للرسم ---
   const renderEnrollmentStatus = (status) => {
@@ -518,25 +618,31 @@ export default function ChildDetails() {
       <div className="max-w-container">
         {/* === القسم الأول: الهيدر المطور والناعم === */}
         <div className="header-section">
-          <button
-            className="btn-back"
-            onClick={() => navigate("/children")}
-            title="رجوع للقائمة"
-          >
-            <ArrowRight size={26} strokeWidth={2.5} />
-          </button>
+          <div className="header-user-group">
+            <button
+              className="btn-back"
+              onClick={() => navigate("/children")}
+              title="رجوع للقائمة"
+            >
+              <ArrowRight size={26} strokeWidth={2.5} />
+            </button>
 
-          <div className="header-user-info">
-            <h1 className="user-name-title">{child.name}</h1>
-            {child.country && (
-              <div className="badges-row">
-                <Badge variant="info">
-                  <MapPin size={14} style={{ marginLeft: "4px" }} />{" "}
-                  {child.country}
-                </Badge>
-              </div>
-            )}
+            <div className="header-user-info">
+              <h1 className="user-name-title">{child.name}</h1>
+              {child.country && (
+                <div className="badges-row">
+                  <Badge variant="info">
+                    <MapPin size={14} style={{ marginLeft: "4px" }} />{" "}
+                    {child.country}
+                  </Badge>
+                </div>
+              )}
+            </div>
           </div>
+
+          <button className="btn-primary" onClick={() => setOpenPayModal(true)}>
+            <Banknote size={20} /> دفع دين خاص (حر)
+          </button>
         </div>
 
         {/* === القسم الثاني: الإحصائيات المالية === */}
@@ -572,15 +678,31 @@ export default function ChildDetails() {
           <div
             className="finance-card"
             style={{
-              background: totalBalance > 0 ? "#fffcfc" : "white",
-              borderColor: totalBalance > 0 ? "#fecaca" : "#e2e8f0",
+              background:
+                totalBalance > 0 ? "#fffcfc" : isCreditor ? "#f0fdf4" : "white",
+              borderColor:
+                totalBalance > 0
+                  ? "#fecaca"
+                  : isCreditor
+                    ? "#bbf7d0"
+                    : "#e2e8f0",
             }}
           >
             <div
               className="finance-icon-wrapper"
               style={{
-                background: totalBalance > 0 ? "#fee2e2" : "#f8fafc",
-                color: totalBalance > 0 ? "#ef4444" : "#94a3b8",
+                background:
+                  totalBalance > 0
+                    ? "#fee2e2"
+                    : isCreditor
+                      ? "#dcfce7"
+                      : "#f8fafc",
+                color:
+                  totalBalance > 0
+                    ? "#ef4444"
+                    : isCreditor
+                      ? "#16a34a"
+                      : "#94a3b8",
               }}
             >
               <TrendingDown size={32} strokeWidth={2.5} />
@@ -605,12 +727,30 @@ export default function ChildDetails() {
                     {debtPercentage.toFixed(0)}% متبقي
                   </span>
                 )}
+                {isCreditor && (
+                  <span
+                    style={{
+                      fontSize: "12px",
+                      fontWeight: "bold",
+                      color: "#16a34a",
+                    }}
+                  >
+                    رصيد إضافي (دائن)
+                  </span>
+                )}
               </div>
               <span
                 className="finance-amount"
-                style={{ color: totalBalance > 0 ? "#ef4444" : "#0f172a" }}
+                style={{
+                  color:
+                    totalBalance > 0
+                      ? "#ef4444"
+                      : isCreditor
+                        ? "#16a34a"
+                        : "#0f172a",
+                }}
               >
-                {fmtMoney(totalBalance)} ₪
+                {fmtMoney(Math.abs(totalBalance))} ₪
               </span>
               {totalBalance > 0 && (
                 <div className="progress-container">
@@ -841,19 +981,38 @@ export default function ChildDetails() {
                           {new Date(p.created_at).toLocaleDateString("en-GB")}
                         </td>
                         <td>
-                          <div style={{ fontWeight: 800, color: "#0f172a" }}>
-                            {p.course_title || "دفعة عامة"}
-                          </div>
-                          {p.run_label && (
-                            <div
+                          {p.course_title ? (
+                            <>
+                              <div
+                                style={{ fontWeight: 800, color: "#0f172a" }}
+                              >
+                                {p.course_title}
+                              </div>
+                              {p.run_label && (
+                                <div
+                                  style={{
+                                    fontSize: "12px",
+                                    color: "#94a3b8",
+                                    marginTop: "4px",
+                                  }}
+                                >
+                                  {p.run_label}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <span
                               style={{
-                                fontSize: "12px",
-                                color: "#94a3b8",
-                                marginTop: "4px",
+                                background: "#eff6ff",
+                                color: "#3b82f6",
+                                padding: "4px 10px",
+                                borderRadius: "6px",
+                                fontSize: "13px",
+                                fontWeight: 800,
                               }}
                             >
-                              {p.run_label}
-                            </div>
+                              دين خاص / دفعة حرة
+                            </span>
                           )}
                         </td>
                         <td>{renderPaymentMethod(p.method)}</td>
@@ -884,6 +1043,116 @@ export default function ChildDetails() {
           </div>
         </div>
       </div>
+
+      {/* نافذة الدفع الخاص */}
+      <Modal
+        open={openPayModal}
+        title="تسجيل دفعة حرة (دين خاص)"
+        onClose={() => !savingPay && setOpenPayModal(false)}
+      >
+        <div className="grid" style={{ gap: "16px", padding: "10px 0" }}>
+          <div style={{ gridColumn: "span 12" }}>
+            <div
+              className="muted"
+              style={{
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#64748b",
+              }}
+            >
+              المبلغ (₪) *
+            </div>
+            <input
+              className="modal-input"
+              type="number"
+              min="0"
+              step="0.01"
+              value={payAmt}
+              onChange={(e) => setPayAmt(e.target.value)}
+              placeholder="أدخل قيمة الدفعة..."
+            />
+          </div>
+
+          <div style={{ gridColumn: "span 12" }}>
+            <div
+              className="muted"
+              style={{
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#64748b",
+              }}
+            >
+              طريقة الدفع
+            </div>
+            <select
+              className="modal-input"
+              value={payMethod}
+              onChange={(e) => setPayMethod(e.target.value)}
+            >
+              <option value="cash">كاش نقدي</option>
+              <option value="card">بطاقة بنكية</option>
+              <option value="transfer">تحويل بنكي</option>
+              <option value="other">أخرى</option>
+            </select>
+          </div>
+
+          <div style={{ gridColumn: "span 12" }}>
+            <div
+              className="muted"
+              style={{
+                marginBottom: 8,
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#64748b",
+              }}
+            >
+              ملاحظة (اختياري)
+            </div>
+            <input
+              className="modal-input"
+              value={payNote}
+              onChange={(e) => setPayNote(e.target.value)}
+              placeholder="مثال: سداد ديون سابقة، رسوم إضافية..."
+            />
+          </div>
+
+          <div
+            style={{
+              gridColumn: "span 12",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "10px",
+              marginTop: "12px",
+            }}
+          >
+            <button
+              className="btn"
+              style={{
+                padding: "12px 24px",
+                borderRadius: "14px",
+                border: "1px solid #e2e8f0",
+                background: "white",
+                cursor: "pointer",
+                fontWeight: 800,
+                color: "#64748b",
+              }}
+              onClick={() => setOpenPayModal(false)}
+              disabled={savingPay}
+            >
+              إلغاء
+            </button>
+            <button
+              className="btn-primary"
+              onClick={handleSpecialPayment}
+              disabled={savingPay}
+            >
+              {savingPay ? "جاري التسجيل..." : "تأكيد الدفع"}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
