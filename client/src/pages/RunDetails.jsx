@@ -1314,12 +1314,8 @@ export default function RunDetails() {
   }
 
   function openSingleTopup(participantRow) {
-    const remaining = Number(participantRow.package_sessions_remaining || 0);
-    if (remaining > 0) {
-      toast("لا يمكن إضافة جلسات جديدة حتى يتم إنهاء الجلسات الحالية.", "warn");
-      return;
-    }
-
+    // إزالة الشرط القديم اللي كان يمنع الشراء إذا الرصيد أكبر من صفر
+    // لأنك طلبت إن كل باقة تنضاف بشكل منفصل بدون مشاكل.
     setEnrollLocked(true);
     setEnrollLockedName(participantRow.child_name);
     setSelectedChildId(String(participantRow.child_id));
@@ -1414,18 +1410,61 @@ export default function RunDetails() {
     if (!summary) return;
     const sessionsToBuy = Number(buySessions);
     const priceNum = buyPriceTotal === "" ? 0 : Number(buyPriceTotal);
-    const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
-      p_run_id: Number(runId),
-      p_child_id: Number(childId),
-      p_sessions: sessionsToBuy,
-      p_price_total: Number.isFinite(priceNum) ? priceNum : 0,
-    });
-    if (rpc2.error) throw rpc2.error;
 
-    await loadFixed();
-    toast("تم التسجيل بنجاح.", "ok");
-    closeSubModalAndReopen(setOpenEnroll);
-    if (!enrollLocked && !shouldReopenManage) setTab("participants");
+    try {
+      // 1. حساب الحصص المتاحة للتخصيص في هذا الفوج
+      const { data: futureSessions } = await supabase
+        .from("course_sessions")
+        .select("id")
+        .eq("run_id", Number(runId))
+        .eq("status", "scheduled")
+        .gte("start_at", new Date().toISOString());
+
+      const futureCount = futureSessions ? futureSessions.length : 0;
+      const alloc = Math.min(sessionsToBuy, futureCount);
+
+      // 2. إنشاء باقة جديدة (سطر جديد بالكامل)
+      const insPkg = await supabase
+        .from("course_packages")
+        .insert([
+          {
+            course_id: summary.template_id,
+            child_id: Number(childId),
+            sessions_total: sessionsToBuy,
+            price_total: priceNum,
+            status: "active",
+          },
+        ])
+        .select("id")
+        .single();
+
+      if (insPkg.error) throw insPkg.error;
+
+      // 3. إنشاء تسجيل جديد
+      const insEnroll = await supabase.from("enrollments").insert([
+        {
+          course_id: summary.template_id,
+          run_id: Number(runId),
+          child_id: Number(childId),
+          package_id: insPkg.data.id,
+          sessions_allocated: alloc,
+          agreed_price: priceNum,
+          status: "active",
+        },
+      ]);
+
+      if (insEnroll.error) throw insEnroll.error;
+
+      await loadFixed();
+      toast("تم التسجيل بنجاح.", "ok");
+      closeSubModalAndReopen(setOpenEnroll);
+      if (!enrollLocked && !shouldReopenManage) setTab("participants");
+    } catch (e) {
+      console.error(e);
+      if (String(e?.message || e).includes("uq_run_child"))
+        toast("الطالب مسجل بالفعل.", "warn");
+      else toast("فشلت عملية التسجيل.", "danger");
+    }
   }
 
   async function bumpEnrollmentAllocated(enrollmentId, delta) {
@@ -1433,7 +1472,7 @@ export default function RunDetails() {
     const d = Number(delta);
     if (!id || !d) return;
 
-    // تعديل مباشر بدون استخدام دوال SQL عشان ما تصير تعقيدات بالحصص المتاحة (Validation)
+    // تعديل مباشر
     const cur = await supabase
       .from("enrollments")
       .select("sessions_allocated")
@@ -1469,24 +1508,37 @@ export default function RunDetails() {
         .eq("id", existing.enrollment_id);
       if (u1.error) throw u1.error;
 
-      if (existing.package_id) {
-        const newSessionsTotal =
-          Number(existing.package_sessions_total || 0) + s;
-        const u2 = await supabase
-          .from("course_packages")
-          .update({
-            status: "active",
+      // إنشاء باقة جديدة بدل تحديث القديمة لتجنب المشاكل
+      const insPkg = await supabase
+        .from("course_packages")
+        .insert([
+          {
+            course_id: summary.template_id,
+            child_id: Number(childId),
+            sessions_total: s,
             price_total: priceTotalNum,
-            sessions_total: newSessionsTotal,
-          })
-          .eq("id", existing.package_id);
-        if (u2.error) throw u2.error;
-      }
+            status: "active",
+          },
+        ])
+        .select("id")
+        .single();
+
+      if (insPkg.error) throw insPkg.error;
+
+      // ربطها وتحديث السعر
+      const newAgreed = Number(existing.agreed_price || 0) + priceTotalNum;
+      await supabase
+        .from("enrollments")
+        .update({
+          package_id: insPkg.data.id,
+          agreed_price: newAgreed,
+        })
+        .eq("id", existing.enrollment_id);
 
       if (s > 0) await bumpEnrollmentAllocated(existing.enrollment_id, s);
 
       await loadFixed();
-      toast("تمت إعادة التسجيل بنجاح.", "ok");
+      toast("تمت إعادة التسجيل وباقة جديدة بنجاح.", "ok");
       closeSubModalAndReopen(setOpenEnroll);
       if (!enrollLocked && !shouldReopenManage) setTab("participants");
       return true;
@@ -1534,20 +1586,10 @@ export default function RunDetails() {
       }
 
       if (existing && existing.enrollment_status === "active") {
-        const remaining = Number(existing.package_sessions_remaining || 0);
-        if (remaining > 0) {
-          toast(
-            "لا يمكن إضافة جلسات. الطالب يمتلك رصيد جلسات حالي غير منتهي.",
-            "warn",
-          );
-          setEnrollSaving(false);
-          return;
-        }
-
         const sessionsToAdd = Number(buySessions) || 0;
         const priceToAdd = Number(buyPriceTotal) || 0;
 
-        // إدراج باقة جديدة كسطر منفصل تماماً!
+        // إدراج باقة جديدة كسطر منفصل تماماً (يعمل بنجاح بعد حذف القيد)
         const insPkg = await supabase
           .from("course_packages")
           .insert([
@@ -1566,7 +1608,7 @@ export default function RunDetails() {
 
         const newPkgId = insPkg.data.id;
 
-        // تحديث التسجيل لربطه بالباقة الجديدة وتجميع السعر المتفق عليه
+        // تحديث التسجيل لربطه بالباقة الأحدث وتجميع السعر المتفق عليه
         const newAgreedPrice = Number(existing.agreed_price || 0) + priceToAdd;
 
         const uEnroll = await supabase
@@ -1612,10 +1654,19 @@ export default function RunDetails() {
     try {
       let added = 0;
       let failed = 0;
+
+      const { data: futureSessions } = await supabase
+        .from("course_sessions")
+        .select("id")
+        .eq("run_id", Number(runId))
+        .eq("status", "scheduled")
+        .gte("start_at", new Date().toISOString());
+
+      const futureCount = futureSessions ? futureSessions.length : 0;
+
       for (const childId of bulkSelectedIds) {
         const cid = Number(childId);
 
-        // إذا ورشة فعدد الجلسات 1، وإلا نقرأ القيمة المدخلة
         let sessionsNum = isWorkshop
           ? 1
           : Number(bulkPerChildSessions[cid] ?? defaultSessionsTotal);
@@ -1631,93 +1682,87 @@ export default function RunDetails() {
             ? bulkPerChildDate[cid]
             : isoDate(new Date());
 
-        const rpc2 = await supabase.rpc("purchase_sessions_and_enroll", {
-          p_run_id: Number(runId),
-          p_child_id: cid,
-          p_sessions: sessionsNum,
-          p_price_total: priceNum,
-        });
+        const isoD = updateDateKeepTime(dateStr);
 
-        if (rpc2.error) {
+        // إنشاء الباقة مباشرة بدون الـ RPC اللي بدمج
+        const insPkg = await supabase
+          .from("course_packages")
+          .insert([
+            {
+              course_id: summary.template_id,
+              child_id: cid,
+              sessions_total: sessionsNum,
+              price_total: priceNum,
+              status: "active",
+              created_at: isoD,
+            },
+          ])
+          .select("id")
+          .single();
+
+        if (insPkg.error) {
           failed += 1;
-        } else {
-          added += 1;
+          continue;
+        }
 
-          // جلب بيانات الاشتراك الجديد لتحديث التواريخ أو إضافة المدفوعات/الحضور
-          let enrollData = null;
-          let pkgData = null;
+        const alloc = Math.min(sessionsNum, futureCount);
 
-          if (dateStr || isWorkshop) {
-            const enrollRes = await supabase
-              .from("enrollments")
-              .select("id")
-              .eq("child_id", cid)
-              .eq("run_id", Number(runId))
-              .order("id", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            if (enrollRes.data) enrollData = enrollRes.data;
+        const insEnroll = await supabase
+          .from("enrollments")
+          .insert([
+            {
+              course_id: summary.template_id,
+              run_id: Number(runId),
+              child_id: cid,
+              package_id: insPkg.data.id,
+              sessions_allocated: alloc,
+              agreed_price: priceNum,
+              status: "active",
+              created_at: isoD,
+            },
+          ])
+          .select("id")
+          .single();
 
-            const pkgRes = await supabase
-              .from("course_packages")
-              .select("id")
-              .eq("child_id", cid)
-              .eq("course_id", summary.template_id)
-              .order("id", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            if (pkgRes.data) pkgData = pkgRes.data;
-          }
+        if (insEnroll.error) {
+          failed += 1;
+          continue;
+        }
 
-          const isoD = updateDateKeepTime(dateStr);
+        added += 1;
+        const enrollData = insEnroll.data;
 
-          // تحديث التواريخ إذا تم تغييرها
-          if (dateStr) {
-            if (pkgData) {
-              await supabase
-                .from("course_packages")
-                .update({ created_at: isoD })
-                .eq("id", pkgData.id);
-            }
-            if (enrollData) {
-              await supabase
-                .from("enrollments")
-                .update({ created_at: isoD })
-                .eq("id", enrollData.id);
-            }
-          }
+        // الدفع المباشر للورشات
+        if (isWorkshop && bulkPerChildPaid[cid]) {
+          await supabase.from("payments").insert([
+            {
+              enrollment_id: enrollData.id,
+              amount: priceNum,
+              method: bulkPerChildPayMethod[cid] || "cash",
+              created_at: isoD,
+              note: "دفع مباشر عند الإضافة للورشة",
+            },
+          ]);
+        }
 
-          // الدفع المباشر للورشات
-          if (isWorkshop && bulkPerChildPaid[cid] && enrollData) {
-            await supabase.from("payments").insert([
-              {
-                enrollment_id: enrollData.id,
-                amount: priceNum,
-                method: bulkPerChildPayMethod[cid] || "cash",
-                created_at: isoD,
-                note: "دفع مباشر عند الإضافة للورشة",
-              },
-            ]);
-          }
-
-          // تسجيل الحضور التلقائي للورشات
-          if (isWorkshop && enrollData) {
-            const { data: runSessions } = await supabase
-              .from("course_sessions")
-              .select("id")
-              .eq("run_id", Number(runId));
-            if (runSessions && runSessions.length > 0) {
-              const attPayload = runSessions.map((rs) => ({
-                enrollment_id: enrollData.id,
-                session_id: rs.id,
-                status: "present",
-                created_at: isoD,
-              }));
-              await supabase.from("attendance").insert(attPayload);
-            }
+        // تسجيل الحضور التلقائي للورشات
+        if (isWorkshop) {
+          const { data: runSessions } = await supabase
+            .from("course_sessions")
+            .select("id")
+            .eq("run_id", Number(runId));
+          if (runSessions && runSessions.length > 0) {
+            const attPayload = runSessions.map((rs) => ({
+              enrollment_id: enrollData.id,
+              session_id: rs.id,
+              status: "present",
+              created_at: isoD,
+            }));
+            await supabase.from("attendance").insert(attPayload);
           }
         }
       }
+
       await loadFixed();
       setTab("participants");
       toast(
@@ -1726,7 +1771,8 @@ export default function RunDetails() {
       );
       setOpenBulk(false);
       bulkClearSelection();
-    } catch {
+    } catch (e) {
+      console.error(e);
       toast("فشلت عملية الإضافة.", "danger");
     } finally {
       setBulkSaving(false);
@@ -1967,7 +2013,6 @@ export default function RunDetails() {
     setOpenHistory(true);
     setHistoryLoading(true);
 
-    // التعديل: إظهار الدفعات برقم التسجيل عشان تظهر كلها بغض النظر عن الباقة
     const { data } = await supabase
       .from("payments")
       .select("id,enrollment_id,amount,method,note,created_at")
