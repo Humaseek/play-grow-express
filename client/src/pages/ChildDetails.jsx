@@ -47,77 +47,73 @@ const PROFILE_STYLES = `
   margin: 0 auto;
 }
 
-/* الرأس (Header) */
+/* الرأس (Header) المطور */
 .header-section {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
+  gap: 28px;
   margin-bottom: 32px;
   background: white;
-  padding: 24px;
-  border-radius: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  padding: 32px 40px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.03);
+  position: relative;
+  border-right: 6px solid #3b82f6; /* لمسة جمالية على اليمين */
+}
+
+.btn-back {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-back:hover { 
+  background: #f1f5f9; 
+  color: #0f172a; 
+  transform: translateX(6px); /* حركة لليمين تدل على الرجوع */
+  border-color: #cbd5e1;
 }
 
 .header-user-info {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
 }
-
-.btn-back {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 12px;
-  cursor: pointer;
-  color: #64748b;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.btn-back:hover { background: #f8fafc; color: #0f172a; transform: translateX(4px); }
 
 .avatar-large {
-  width: 72px;
-  height: 72px;
+  width: 80px;
+  height: 80px;
   border-radius: 24px;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  color: white;
+  background: #eff6ff; /* أزرق فاتح مريح */
+  color: #2563eb;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 900;
-  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.25);
+  border: 2px solid #bfdbfe;
 }
 
 .user-name-title {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+  margin: 0 0 10px 0;
+  font-size: 30px;
   font-weight: 900;
   color: #0f172a;
   letter-spacing: -0.5px;
 }
 
-/* الأزرار */
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-  padding: 12px 28px;
-  border-radius: 14px;
-  border: none;
-  font-weight: 800;
-  font-size: 15px;
-  cursor: pointer;
-  display: inline-flex;
+.badges-row {
+  display: flex;
+  gap: 12px;
   align-items: center;
-  gap: 10px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
 }
-.btn-primary:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.35); }
 
 /* البطاقات المالية (Stats) */
 .financial-grid {
@@ -533,34 +529,36 @@ export default function ChildDetails() {
     <div className="dashboard-wrapper">
       <style>{PROFILE_STYLES}</style>
       <div className="max-w-container">
-        {/* === القسم الأول: الهيدر === */}
+        {/* === القسم الأول: الهيدر المطور === */}
         <div className="header-section">
+          <button
+            className="btn-back"
+            onClick={() => navigate("/children")}
+            title="رجوع للقائمة"
+          >
+            <ArrowRight size={26} strokeWidth={2.5} />
+          </button>
+
           <div className="header-user-info">
-            <button
-              className="btn-back"
-              onClick={() => navigate("/children")}
-              title="رجوع للقائمة"
-            >
-              <ArrowRight size={24} />
-            </button>
             <div className="avatar-large">{child.name.charAt(0)}</div>
             <div>
               <h1 className="user-name-title">{child.name}</h1>
-              <div
-                style={{ display: "flex", gap: "8px", alignItems: "center" }}
-              >
-                <Badge variant="neutral">رقم الملف: {child.id}</Badge>
+              <div className="badges-row">
+                <Badge variant="neutral">
+                  <span style={{ color: "#64748b", fontWeight: 800 }}>
+                    رقم الملف:
+                  </span>{" "}
+                  {child.id}
+                </Badge>
                 {child.country && (
                   <Badge variant="info">
-                    <MapPin size={12} /> {child.country}
+                    <MapPin size={14} style={{ marginLeft: "4px" }} />{" "}
+                    {child.country}
                   </Badge>
                 )}
               </div>
             </div>
           </div>
-          <button className="btn-primary" onClick={() => navigate("/payments")}>
-            <CreditCard size={20} /> دفع قسط جديد
-          </button>
         </div>
 
         {/* === القسم الثاني: الإحصائيات المالية === */}
