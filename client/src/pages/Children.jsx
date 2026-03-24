@@ -14,10 +14,7 @@ import {
   Plus,
   Pencil,
   Trash2,
-  MapPin,
   Phone,
-  Cake,
-  GraduationCap,
   ChevronDown,
 } from "lucide-react";
 
@@ -235,7 +232,6 @@ const CHILDREN_STYLES = `
   transition: background 0.15s ease;
 }
 
-/* إضافة تأثير مريح عند التحويم على الصف */
 .modern-table tr.clickable-row {
   cursor: pointer;
 }
@@ -291,7 +287,6 @@ const CHILDREN_STYLES = `
   align-items: center;
 }
 
-/* تنسيق شارات الجنس لتكون أوضح */
 .ModernBadge.ModernBadge-info {
   border-color: #bbf7d0 !important;
   background: #f0fdf4 !important;
@@ -304,7 +299,6 @@ const CHILDREN_STYLES = `
   color: #d97706 !important;
 }
 
-/* Modal Form Overrides */
 .form-section-title {
   margin: 0 0 16px 0;
   color: #0f172a;
@@ -315,23 +309,127 @@ const CHILDREN_STYLES = `
   align-items: center;
   gap: 8px;
 }
+
+/* =========================================
+   تنسيقات الموبايل (البطاقات والزر العائم) 
+========================================= */
+
+.mobile-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-card {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.mobile-card:hover {
+  background: #f8fafc;
+}
+
+.mobile-card:last-child {
+  border-bottom: none;
+}
+
+.mc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mc-row.mt-2 {
+  margin-top: 12px;
+}
+
+.mc-name {
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.mc-category {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.mc-details {
+  font-size: 14px;
+  color: #475569;
+}
+
+.mc-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* الزر العائم في الموبايل */
+.fab-button {
+  position: fixed;
+  bottom: 24px;
+  left: 24px; /* ليكون مناسباً لاتجاه RTL */
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: white;
+  border: none;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.fab-button:hover, .fab-button:active {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+  background: #d97706;
+}
+
+/* التجاوب (Media Queries) */
+@media (max-width: 768px) {
+  .desktop-table-container { 
+    display: none; 
+  }
+  .btn-add-desktop { 
+    display: none !important; 
+  }
+  .children-toolbar { 
+    padding: 16px; 
+  }
+  .page--children { 
+    padding-bottom: 100px; /* لتوفير مساحة للزر العائم */
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-list { 
+    display: none; 
+  }
+  .fab-button { 
+    display: none; 
+  }
+}
 `;
 
 export default function Children() {
-  // تعريف دالة التنقل
   const navigate = useNavigate();
 
-  // حالة البيانات الأساسية
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // قوائم الاختيار (Picklists)
   const [countries, setCountries] = useState([]);
   const [classes, setClasses] = useState([]);
 
-  // حالة النموذج (Modal State)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -340,7 +438,7 @@ export default function Children() {
     age: "",
     class: "",
     gender: "male",
-    country_name: "", // اسم المدينة المدخل نصياً
+    country_name: "",
     mother_name: "",
     mother_phone: "",
     father_name: "",
@@ -348,25 +446,22 @@ export default function Children() {
     notes: "",
   });
 
-  // حالة حوار التأكيد (Confirm Delete State)
   const [confirm, setConfirm] = useState({
     open: false,
     id: null,
     text: "",
   });
 
-  // تحميل البيانات الأولية وقوائم الاختيار عند التحميل
   useEffect(() => {
     loadData();
     loadPicklists();
   }, []);
 
-  // دالة جلب بيانات الأطفال
   async function loadData() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from("children_view") // جلب من الـ View لعرض اسم المدينة
+        .from("children_view")
         .select("*")
         .order("id", { ascending: false });
 
@@ -379,7 +474,6 @@ export default function Children() {
     }
   }
 
-  // دالة جلب قوائم الاختيار للمدن والصفوف
   async function loadPicklists() {
     try {
       const [cRes, clRes] = await Promise.all([
@@ -393,20 +487,18 @@ export default function Children() {
     }
   }
 
-  // تصفية الأطفال بناءً على نص البحث (باستخدام useMemo للأداء)
   const filteredChildren = useMemo(() => {
     if (!searchQuery.trim()) return children;
     const q = searchQuery.toLowerCase();
     return children.filter(
       (c) =>
-        (c.id && String(c.id).includes(q)) || // البحث بالمعرف
-        (c.name || "").toLowerCase().includes(q) || // البحث بالاسم
-        (c.mother_phone || "").includes(q) || // البحث بهاتف الأم
-        (c.father_phone || "").includes(q), // البحث بهاتف الأب
+        (c.id && String(c.id).includes(q)) ||
+        (c.name || "").toLowerCase().includes(q) ||
+        (c.mother_phone || "").includes(q) ||
+        (c.father_phone || "").includes(q),
     );
   }, [children, searchQuery]);
 
-  // فتح نموذج إضافة طفل جديد
   function openAddModal() {
     setEditingId(null);
     setFormData({
@@ -424,7 +516,6 @@ export default function Children() {
     setIsModalOpen(true);
   }
 
-  // فتح نموذج تعديل بيانات طفل موجود
   function openEditModal(child) {
     setEditingId(child.id);
     setFormData({
@@ -432,7 +523,7 @@ export default function Children() {
       age: child.age ?? "",
       class: child.class || "",
       gender: child.gender || "male",
-      country_name: child.country || "", // من الـ View بنجيب الاسم
+      country_name: child.country || "",
       mother_name: child.mother_name || "",
       mother_phone: child.mother_phone || "",
       father_name: child.father_name || "",
@@ -442,7 +533,6 @@ export default function Children() {
     setIsModalOpen(true);
   }
 
-  // دالة حفظ البيانات (إضافة أو تعديل)
   async function handleSave() {
     const name = formData.name.trim();
     const ageNum = Number(formData.age);
@@ -454,7 +544,6 @@ export default function Children() {
 
     setSaving(true);
     try {
-      // 1. إدارة قائمة المدن: الحصول على المعرف أو إنشاء مدينة جديدة
       let countryId = null;
       const typedCountry = formData.country_name.trim();
       if (typedCountry) {
@@ -471,23 +560,20 @@ export default function Children() {
         }
       }
 
-      // 2. إدارة قائمة الصفوف: إضافة الصف للقائمة إن لم يكن موجوداً
       const typedClass = formData.class.trim();
       if (typedClass) {
         const existingCl = classes.find((c) => c.name === typedClass);
         if (!existingCl) {
           await supabase.from("child_classes").insert([{ name: typedClass }]);
-          // لا نحتاج لمعرف الصف هنا لأن جدول children يحفظ اسم الصف كقيمة نصية
         }
       }
 
-      // 3. تحضير بيانات الطفل للحفظ
       const payload = {
         name,
         age: isNaN(ageNum) ? null : ageNum,
-        class: typedClass || null, // اسم الصف كقيمة نصية
+        class: typedClass || null,
         gender: formData.gender,
-        country_id: countryId, // معرف المدينة
+        country_id: countryId,
         mother_name: formData.mother_name.trim() || null,
         mother_phone: formData.mother_phone.trim() || null,
         father_name: formData.father_name.trim() || null,
@@ -495,7 +581,6 @@ export default function Children() {
         notes: formData.notes.trim() || null,
       };
 
-      // 4. تنفيذ عملية الحفظ (تعديل أو إضافة)
       if (editingId) {
         const { error } = await supabase
           .from("children")
@@ -507,10 +592,9 @@ export default function Children() {
         if (error) throw error;
       }
 
-      // 5. إغلاق النموذج وتحديث البيانات وقوائم الاختيار
       setIsModalOpen(false);
       loadData();
-      loadPicklists(); // لتحديث القوائم بالمدن أو الصفوف الجديدة
+      loadPicklists();
     } catch (e) {
       console.error(e);
       alert("حدث خطأ أثناء حفظ البيانات.");
@@ -519,19 +603,17 @@ export default function Children() {
     }
   }
 
-  // دالة حذف الطفل
   async function handleDelete(id) {
     try {
       const { error } = await supabase.from("children").delete().eq("id", id);
       if (error) {
-        // التحقق من خطأ "Constraint" لوجود ارتباطات
         if (error.message.includes("foreign key constraint")) {
           alert("لا يمكن حذف الطفل لارتباطه بدفعات أو دورات مسجلة.");
         } else {
           throw error;
         }
       } else {
-        loadData(); // تحديث البيانات بعد الحذف بنجاح
+        loadData();
       }
     } catch (e) {
       console.error(e);
@@ -539,7 +621,6 @@ export default function Children() {
     }
   }
 
-  // عرض شارة الجنس بتنسيق مخصص
   const genderLabel = (g) => {
     if (g === "male") return <Badge variant="info">ذكر</Badge>;
     if (g === "female") return <Badge variant="warning">أنثى</Badge>;
@@ -561,9 +642,8 @@ export default function Children() {
 
         {error && <ErrorBanner error={error} />}
 
-        {/* الكرت الرئيسي للجدول */}
         <div className="children-card">
-          {/* شريط الأدوات العلوي (البحث والإضافة) */}
+          {/* شريط الأدوات العلوي */}
           <div className="children-toolbar">
             <div className="search-wrapper">
               <Search size={18} className="search-icon" />
@@ -575,12 +655,15 @@ export default function Children() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <button className="btn btn-add" onClick={openAddModal}>
+            {/* زر الإضافة للشاشات الكبيرة فقط */}
+            <button
+              className="btn btn-add btn-add-desktop"
+              onClick={openAddModal}
+            >
               <Plus size={18} /> إضافة طفل
             </button>
           </div>
 
-          {/* الجدول */}
           {loading ? (
             <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
               جاري التحميل...
@@ -590,88 +673,151 @@ export default function Children() {
               لا يوجد بيانات متطابقة.
             </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table className="modern-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 60, textAlign: "center" }}>معرف</th>
-                    <th>الاسم</th>
-                    <th>العمر</th>
-                    <th>الصف</th>
-                    <th>الجنس</th>
-                    <th>المدينة</th>
-                    <th>هاتف الأم</th>
-                    <th>هاتف الأب</th>
-                    <th style={{ width: 100, textAlign: "center" }}>إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredChildren.map((child) => (
-                    <tr
-                      key={child.id}
-                      className="clickable-row"
-                      onClick={() => navigate(`/children/${child.id}`)}
-                    >
-                      <td className="child-id" style={{ textAlign: "center" }}>
-                        {child.id}
-                      </td>
-                      <td className="child-name">{child.name}</td>
-                      <td>{child.age ?? "-"}</td>
-                      <td className="muted">{child.class || "-"}</td>
-                      <td>{genderLabel(child.gender)}</td>
-                      <td className="muted">{child.country || "-"}</td>
-                      <td>
-                        <span className="phone-number">
-                          {child.mother_phone || "-"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="phone-number">
-                          {child.father_phone || "-"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="actions-cell">
-                          {/* استخدام e.stopPropagation لمنع الدخول لصفحة الطفل عند الضغط على تعديل أو حذف */}
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(child);
-                            }}
-                            title="تعديل"
-                          >
-                            <Pencil size={16} />
-                          </IconButton>
-                          <IconButton
-                            danger
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setConfirm({
-                                open: true,
-                                id: child.id,
-                                text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                              });
-                            }}
-                            title="حذف"
-                          >
-                            <Trash2 size={16} />
-                          </IconButton>
-                        </div>
-                      </td>
+            <>
+              {/* عرض الجدول المعتاد للشاشات الكبيرة (Desktop) */}
+              <div
+                className="desktop-table-container"
+                style={{ overflowX: "auto" }}
+              >
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 60, textAlign: "center" }}>معرف</th>
+                      <th>الاسم</th>
+                      <th>العمر</th>
+                      <th>الصف</th>
+                      <th>الجنس</th>
+                      <th>المدينة</th>
+                      <th>هاتف الأم</th>
+                      <th>هاتف الأب</th>
+                      <th style={{ width: 100, textAlign: "center" }}>
+                        إجراءات
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredChildren.map((child) => (
+                      <tr
+                        key={child.id}
+                        className="clickable-row"
+                        onClick={() => navigate(`/children/${child.id}`)}
+                      >
+                        <td
+                          className="child-id"
+                          style={{ textAlign: "center" }}
+                        >
+                          {child.id}
+                        </td>
+                        <td className="child-name">{child.name}</td>
+                        <td>{child.age ?? "-"}</td>
+                        <td className="muted">{child.class || "-"}</td>
+                        <td>{genderLabel(child.gender)}</td>
+                        <td className="muted">{child.country || "-"}</td>
+                        <td>
+                          <span className="phone-number">
+                            {child.mother_phone || "-"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="phone-number">
+                            {child.father_phone || "-"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="actions-cell">
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(child);
+                              }}
+                              title="تعديل"
+                            >
+                              <Pencil size={16} />
+                            </IconButton>
+                            <IconButton
+                              danger
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirm({
+                                  open: true,
+                                  id: child.id,
+                                  text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                                });
+                              }}
+                              title="حذف"
+                            >
+                              <Trash2 size={16} />
+                            </IconButton>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* عرض القائمة كبطاقات للموبايل (Mobile) */}
+              <div className="mobile-list">
+                {filteredChildren.map((child) => (
+                  <div
+                    key={child.id}
+                    className="mobile-card"
+                    onClick={() => navigate(`/children/${child.id}`)}
+                  >
+                    <div className="mc-row">
+                      <span className="mc-name">{child.name}</span>
+                      <span className="mc-category">
+                        {child.class || "غير محدد"}
+                      </span>
+                    </div>
+                    <div className="mc-row mt-2">
+                      <span className="mc-details phone-number">
+                        {child.mother_phone ||
+                          child.father_phone ||
+                          "لا يوجد رقم هاتف"}
+                      </span>
+                      <div className="mc-actions">
+                        <IconButton
+                          danger
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirm({
+                              open: true,
+                              id: child.id,
+                              text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                            });
+                          }}
+                        >
+                          <Trash2 size={20} />
+                        </IconButton>
+                        <IconButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(child);
+                          }}
+                        >
+                          <Pencil size={20} />
+                        </IconButton>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
+
+      {/* زر الإضافة العائم الخاص بالموبايل (FAB) */}
+      <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
+        <Plus size={30} strokeWidth={2.5} />
+      </button>
 
       {/* نموذج الإضافة والتعديل */}
       <Modal
         open={isModalOpen}
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
-        onClose={() => !saving && setIsModalOpen(false)} // منع الإغلاق أثناء الحفظ
+        onClose={() => !saving && setIsModalOpen(false)}
       >
         <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
           {/* قسم البيانات الأساسية */}
@@ -872,7 +1018,7 @@ export default function Children() {
         message={confirm.text}
         confirmText="نعم، احذف"
         cancelText="إلغاء"
-        danger // تلوين الزر باللون الأحمر
+        danger
         onCancel={() => setConfirm({ open: false, id: null, text: "" })}
         onConfirm={async () => {
           await handleDelete(confirm.id);
