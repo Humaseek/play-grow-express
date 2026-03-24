@@ -2232,7 +2232,9 @@ export default function Dashboard() {
                         </div>
                         <div
                           className="tl-card"
+                          onClick={() => navigate(`/runs/${s.run_id}`)}
                           style={{
+                            cursor: "pointer",
                             opacity: isPast ? 0.6 : 1, // تخفيف شفافية الجلسات السابقة
                             border: isCurrent ? "2px solid #fcd34d" : undefined, // تمييز الجلسة الحالية
                             background: isCurrent ? "#fffbeb" : undefined, // خلفية صفراء للجلسة الحالية
@@ -2333,35 +2335,38 @@ export default function Dashboard() {
                                 <button
                                   className="btn-tl btn-tl-main"
                                   disabled={s.status === "canceled"}
-                                  onClick={() =>
-                                    navigate(`/sessions/${s.id}/attendance`)
-                                  }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/sessions/${s.id}/attendance`);
+                                  }}
                                 >
                                   <ClipboardList size={18} /> أخذ الحضور
                                 </button>
                                 <button
                                   className="btn-tl btn-tl-done"
                                   disabled={s.status !== "scheduled"}
-                                  onClick={() =>
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     setConfirm({
                                       open: true,
                                       action: "done",
                                       sessionId: s.id,
-                                    })
-                                  }
+                                    });
+                                  }}
                                 >
                                   <CheckCircle2 size={18} />
                                 </button>
                                 <button
                                   className="btn-tl btn-tl-cancel"
                                   disabled={s.status !== "scheduled"}
-                                  onClick={() =>
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     setConfirm({
                                       open: true,
                                       action: "canceled",
                                       sessionId: s.id,
-                                    })
-                                  }
+                                    });
+                                  }}
                                 >
                                   <XCircle size={18} />
                                 </button>
