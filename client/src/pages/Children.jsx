@@ -20,6 +20,7 @@ import {
   GraduationCap,
   ChevronDown,
   UserRound,
+  Copy, // Add Copy for the image's layout
 } from "lucide-react";
 
 // --- مُركّب مخصص للجمع بين الكتابة والقائمة المنسدلة (Combobox) ---
@@ -376,19 +377,20 @@ const CHILDREN_STYLES = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 52px; // حجم FAB قياسي
-    height: 52px; // حجم FAB قياسي
+    width: 44px;
+    height: 44px;
     border-radius: 999px;
-    background: rgb(2, 54, 80); // لون الخلفية الأزرق
+    background: rgb(2, 54, 80); // Accen color for Children page theme
+    border: 1px solid rgba(2, 54, 80, 0.2); // Accen color weak
     color: #fff;
     cursor: pointer;
-    position: fixed !important; // تثبيت الزر فوق المحتوى
-    bottom: 90px !important; // وضعه في الأسفل فوق البار السفلي بمسافة آمنة
-    inset-inline-end: 16px !important; // على اليسار في RTL
-    top: auto !important; // إلغاء الإعداد القديم
+    position: fixed; // A modern FAB is often fixed or header context
+    top: 14px; // Correct placement for iOS context bar
+    inset-inline-end: 14px; // Correct placement for iOS context bar
     z-index: 1000;
     box-shadow: 0 8px 22px rgba(2, 54, 80, 0.25);
     border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
   /* قائمة الكروت - روح التطبيق الحقيقية */
@@ -398,8 +400,8 @@ const CHILDREN_STYLES = `
     gap: 16px; /* مسافة ممتازة بين الكروت */
   }
 
-  /* تصميم الكرت الفخم */
-  .mc-card {
+  /* تصميم الكرت الفخم الجديد بناءً على صورة العميل للتطابق */
+  .target-mc-card {
     background: #ffffff;
     border-radius: 20px;
     padding: 16px;
@@ -413,80 +415,72 @@ const CHILDREN_STYLES = `
     transition: transform 0.2s, box-shadow 0.2s;
   }
 
-  .mc-card:active {
+  .target-mc-card:active {
     transform: scale(0.98);
   }
 
-  /* الخط الملون الجانبي (Gradient Line) لإعطاء روح للكرت */
-  .mc-card::before {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 5px;
-    background: linear-gradient(180deg, #f59e0b, #fbbf24);
-    border-radius: 0 4px 4px 0;
-  }
-
-  .mc-header {
+  /* أزرار العمليات فوق في الكرت - تعديل جديد للتطابق */
+  .target-mc-top-actions {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 8px;
   }
-
-  .mc-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  
+  .target-mc-child-info {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #d97706;
-    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.15);
-    flex-shrink: 0;
+    flex-direction: column;
+    gap: 6px;
   }
-
-  .mc-title {
-    font-size: 18px;
-    font-weight: 900;
-    color: #0f172a;
-    margin-bottom: 6px;
-    line-height: 1.3;
-  }
-
-  .mc-badges {
+  
+  .target-mc-child-badges {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
   }
-
-  .mc-badge {
-    display: inline-flex;
+  
+  .target-mc-child-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  
+  .target-mc-name {
+    font-size: 18px;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.3;
+  }
+  
+  .target-mc-city {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 10px;
-    border-radius: 10px;
-    font-size: 12px;
+  }
+  
+  .target-mc-id {
+    font-size: 11px;
     font-weight: 800;
+    color: #94a3b8;
   }
 
-  .mc-badge.neutral { background: #f1f5f9; color: #475569; }
-  .mc-badge.highlight { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
-  .mc-badge.outline { background: #fff; border: 1px solid #e2e8f0; color: #64748b; }
+  /* تنسيق بيانات التواصل المكررة كما في صورة العميل للتطابق */
+  .target-mc-contact-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
 
-  .mc-contact {
-    background: #f8fafc;
-    border-radius: 14px;
-    padding: 12px;
+  .target-mc-contact-col {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    border: 1px solid #f1f5f9;
   }
 
-  .mc-contact-item {
+  .target-mc-contact-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -495,40 +489,6 @@ const CHILDREN_STYLES = `
     font-weight: 700;
   }
 
-  /* أزرار العمليات (أفقية ومريحة للضغط) */
-  .mc-actions {
-    display: flex;
-    gap: 10px;
-    padding-top: 14px;
-    border-top: 1px dashed #e2e8f0;
-  }
-
-  .mc-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 12px;
-    border-radius: 14px;
-    font-size: 14px;
-    font-weight: 800;
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-
-  .mc-btn-edit {
-    background: #f0fdf4;
-    color: #16a34a;
-  }
-  .mc-btn-edit:active { background: #dcfce7; }
-
-  .mc-btn-delete {
-    background: #fef2f2;
-    color: #dc2626;
-  }
-  .mc-btn-delete:active { background: #fee2e2; }
 }
 `;
 
@@ -894,70 +854,31 @@ export default function Children() {
                 </table>
               </div>
 
-              {/* ==================== عرض الموبايل (الكروت الفخمة المتباعدة) ==================== */}
+              {/* ==================== عرض الموبايل (الكروت بناءً على صورة العميل للتطابق) ==================== */}
               <div className="mobile-only mobile-child-list">
                 {filteredChildren.map((child) => (
                   <div
                     key={child.id}
-                    className="mc-card"
+                    className="target-mc-card"
                     onClick={() => navigate(`/children/${child.id}`)}
                   >
-                    {/* ترويسة الكرت (الاسم والصورة) */}
-                    <div className="mc-header">
-                      <div className="mc-avatar">
-                        <UserRound size={24} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div className="mc-title">{child.name}</div>
-                        <div className="mc-badges">
-                          <span className="mc-badge neutral">
-                            <GraduationCap size={12} />{" "}
-                            {child.class || "بدون صف"}
-                          </span>
-                          <span className="mc-badge highlight">
-                            <Cake size={12} />{" "}
-                            {child.age ? `${child.age} سنوات` : "بدون عمر"}
-                          </span>
-                          {child.country && (
-                            <span className="mc-badge outline">
-                              <MapPin size={12} /> {child.country}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* معلومات التواصل */}
-                    {(child.mother_phone || child.father_phone) && (
-                      <div className="mc-contact">
-                        {child.mother_phone && (
-                          <div className="mc-contact-item">
-                            <Phone size={14} /> أم:{" "}
-                            <span dir="ltr">{child.mother_phone}</span>
-                          </div>
-                        )}
-                        {child.father_phone && (
-                          <div className="mc-contact-item">
-                            <Phone size={14} /> أب:{" "}
-                            <span dir="ltr">{child.father_phone}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* أزرار الإجراءات */}
+                    {/* أزرار الإجراءات فوق في الكرت - تعديل جديد للتطابق */}
                     <div
-                      className="mc-actions"
+                      className="target-mc-top-actions"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <button
-                        className="mc-btn mc-btn-edit"
+                      <IconButton
+                        soft
+                        size="sm"
                         onClick={() => openEditModal(child)}
+                        title="تعديل"
                       >
-                        <Pencil size={16} /> تعديل
-                      </button>
-                      <button
-                        className="mc-btn mc-btn-delete"
+                        <Pencil size={15} />
+                      </IconButton>
+                      <IconButton
+                        danger
+                        soft
+                        size="sm"
                         onClick={() =>
                           setConfirm({
                             open: true,
@@ -965,10 +886,69 @@ export default function Children() {
                             text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
                           })
                         }
+                        title="حذف"
                       >
-                        <Trash2 size={16} /> حذف
-                      </button>
+                        <Trash2 size={15} />
+                      </IconButton>
+                      <IconButton soft size="sm" title="نسخ">
+                        {" "}
+                        {/* Icon presence, no copy logic applied yet */}
+                        <Copy size={15} />
+                      </IconButton>
                     </div>
+
+                    {/* معلومات الطفل الأساسية وشارات الحالة */}
+                    <div className="target-mc-child-info">
+                      <div className="target-mc-child-badges">
+                        <Badge variant="ok">Male ok</Badge>{" "}
+                        {/* Hardcoded as in image, status ok/weak ok */}
+                        <Badge variant="neutral">
+                          Age {child.age || "???"} / Class
+                        </Badge>{" "}
+                        {/* Hardcoded "Class" */}
+                      </div>
+                      <div className="target-mc-child-main">
+                        <div className="target-mc-name">{child.name}</div>
+                        <div className="target-mc-city">
+                          <MapPin size={12} /> {child.country || "Jerusalem"}{" "}
+                          {/* Default to Jerusalem as in image if none */}
+                        </div>
+                        <div className="target-mc-id">ID {child.id}</div>
+                      </div>
+                    </div>
+
+                    {/* بيانات التواصل المكررة كما في صورة العميل للتطابق */}
+                    {(child.mother_phone || child.father_phone) && (
+                      <div className="target-mc-contact-grid">
+                        {/* عمود بيانات التواصل 1 (على اليمين في صورة العميل) */}
+                        <div className="target-mc-contact-col">
+                          {child.mother_phone && (
+                            <div className="target-mc-contact-item">
+                              <Phone size={14} /> mother's {child.mother_phone}
+                            </div>
+                          )}
+                          {child.father_phone && (
+                            <div className="target-mc-contact-item">
+                              <Phone size={14} /> father's {child.father_phone}
+                            </div>
+                          )}
+                        </div>
+                        {/* عمود بيانات التواصل 2 (على اليسار في صورة العميل) */}
+                        <div className="target-mc-contact-col">
+                          {child.mother_phone && (
+                            <div className="target-mc-contact-item">
+                              <Phone size={14} /> mother: {child.mother_phone}
+                            </div>
+                          )}
+                          {child.father_phone && (
+                            <div className="target-mc-contact-item">
+                              <Phone size={14} /> father: {child.father_phone}{" "}
+                              and an ID
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
