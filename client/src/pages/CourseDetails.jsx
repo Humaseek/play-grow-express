@@ -65,6 +65,10 @@ export default function CourseDetails() {
     return (course?.kind || "").toLowerCase() === "workshop";
   }, [course]);
 
+  // متغيرات النصوص بناءً على النوع
+  const runSingular = isWorkshop ? "جلسة" : "فوج";
+  const runPlural = isWorkshop ? "جلسات" : "أفواج";
+
   const activeRuns = useMemo(
     () => runs.filter((r) => r.status === "active"),
     [runs],
@@ -136,8 +140,8 @@ export default function CourseDetails() {
       setIntervalDays(1);
     } else {
       setCreateSessions(true);
-      setCount(isWorkshop ? 1 : 8);
-      setIntervalDays(isWorkshop ? 1 : 7);
+      setCount(8);
+      setIntervalDays(7);
     }
     setLabel("");
     setFirstStart("");
@@ -200,12 +204,12 @@ export default function CourseDetails() {
 
       if (u.error) throw u.error;
 
-      toast("تم تحديث الجلسة.", "ok");
+      toast(`تم تحديث ال${runSingular}.`, "ok");
       setEditOpen(false);
       await load();
     } catch (e) {
       setError(e);
-      toast("فشل تحديث الجلسة.", "danger");
+      toast(`فشل تحديث ال${runSingular}.`, "danger");
     } finally {
       setSaving(false);
     }
@@ -219,8 +223,8 @@ export default function CourseDetails() {
       const finalLabel = label.trim()
         ? label.trim()
         : firstStart
-          ? `جلسة ${new Date(firstStart).toLocaleDateString("en-US")}`
-          : "جلسة جديدة";
+          ? `${runSingular} ${new Date(firstStart).toLocaleDateString("en-US")}`
+          : `${runSingular} جديد`;
 
       const ins = await supabase
         .from("course_runs")
@@ -241,7 +245,6 @@ export default function CourseDetails() {
 
       let sessionsGenerated = false;
       if (createSessions && firstStart) {
-        // إنشاء الجلسات من خلال المتصفح لضمان عدم تأثر التوقيت المحلي بالتوقيت الصيفي
         const [datePart, timePart] = firstStart.split("T");
         const [y, m, d] = datePart.split("-");
         const [hh, mm] = timePart.split(":");
@@ -287,7 +290,7 @@ export default function CourseDetails() {
         await autoEnrollPackages(runId);
       }
 
-      toast("تم إنشاء الجلسة.", "ok");
+      toast(`تم إنشاء ال${runSingular}.`, "ok");
 
       setOpen(false);
       resetCreateForm();
@@ -295,7 +298,7 @@ export default function CourseDetails() {
       navigate(`/runs/${runId}`);
     } catch (e) {
       setError(e);
-      toast("فشل إنشاء الجلسة.", "danger");
+      toast(`فشل إنشاء ال${runSingular}.`, "danger");
     } finally {
       setSaving(false);
     }
@@ -311,11 +314,11 @@ export default function CourseDetails() {
 
     if (u.error) {
       setError(u.error);
-      toast("فشل تحديث حالة الجلسة.", "danger");
+      toast(`فشل تحديث حالة ال${runSingular}.`, "danger");
       return;
     }
 
-    toast("تم تحديث حالة الجلسة.", "ok");
+    toast(`تم تحديث حالة ال${runSingular}.`, "ok");
     await load();
   }
 
@@ -325,11 +328,11 @@ export default function CourseDetails() {
 
     if (d.error) {
       setError(d.error);
-      toast("فشل حذف الجلسة.", "danger");
+      toast(`فشل حذف ال${runSingular}.`, "danger");
       return;
     }
 
-    toast("تم حذف الجلسة.", "ok");
+    toast(`تم حذف ال${runSingular}.`, "ok");
     await load();
   }
 
@@ -494,7 +497,7 @@ export default function CourseDetails() {
               رجوع
             </button>
             <button className="btn primary" onClick={openCreateRunModal}>
-              <Plus size={18} /> جلسة جديدة
+              <Plus size={18} /> {runSingular} جديد{isWorkshop ? "ة" : ""}
             </button>
           </>
         }
@@ -506,7 +509,7 @@ export default function CourseDetails() {
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.activeCount ? "ok" : "neutral"}
-            label="الجلسات الفعّالة"
+            label={`ال${runPlural} الفعّالة`}
             value={stats.activeCount}
             hint={stats.totalRuns ? `` : ""}
             icon={Layers}
@@ -547,12 +550,12 @@ export default function CourseDetails() {
       {sortedRuns.length === 0 ? (
         <div className="card" style={{ marginTop: 12 }}>
           <EmptyState
-            title="لا يوجد جلسات"
-            description="أنشئ أول جلسة للدورة."
+            title={`لا يوجد ${runPlural}`}
+            description={`أنشئ أول ${runSingular} للدورة.`}
             icon={Layers}
             actions={
               <button className="btn primary" onClick={openCreateRunModal}>
-                <Plus size={18} /> جلسة جديدة
+                <Plus size={18} /> {runSingular} جديد{isWorkshop ? "ة" : ""}
               </button>
             }
           />
@@ -560,7 +563,7 @@ export default function CourseDetails() {
       ) : (
         <div className="cardsGrid" style={{ marginTop: 12 }}>
           {sortedRuns.map((r) => {
-            const title = r.label || `جلسة #${r.run_id}`;
+            const title = r.label || `${runSingular} #${r.run_id}`;
             const isActive = r.status === "active";
 
             return (
@@ -620,7 +623,7 @@ export default function CourseDetails() {
                 >
                   <IconButton
                     icon={Pencil}
-                    title="تعديل الجلسة"
+                    title={`تعديل ال${runSingular}`}
                     variant="soft"
                     size="sm"
                     onClick={() => openEditRunModal(r)}
@@ -631,7 +634,7 @@ export default function CourseDetails() {
                   {isActive ? (
                     <IconButton
                       icon={CheckCircle2}
-                      title="إنهاء الجلسة"
+                      title={`إنهاء ال${runSingular}`}
                       variant="soft"
                       size="sm"
                       onClick={() =>
@@ -639,7 +642,7 @@ export default function CourseDetails() {
                           open: true,
                           type: "done",
                           runId: r.run_id,
-                          text: `إنهاء الجلسة: ${title}`,
+                          text: `إنهاء ال${runSingular}: ${title}`,
                         })
                       }
                     >
@@ -648,7 +651,7 @@ export default function CourseDetails() {
                   ) : (
                     <IconButton
                       icon={RotateCcw}
-                      title="إعادة تفعيل الجلسة"
+                      title={`إعادة تفعيل ال${runSingular}`}
                       variant="ghost"
                       size="sm"
                       onClick={() =>
@@ -656,7 +659,7 @@ export default function CourseDetails() {
                           open: true,
                           type: "reactivate",
                           runId: r.run_id,
-                          text: `إعادة تفعيل الجلسة: ${title}`,
+                          text: `إعادة تفعيل ال${runSingular}: ${title}`,
                         })
                       }
                     >
@@ -666,7 +669,7 @@ export default function CourseDetails() {
 
                   <IconButton
                     icon={Trash2}
-                    title="حذف الجلسة"
+                    title={`حذف ال${runSingular}`}
                     variant="danger"
                     size="sm"
                     onClick={() =>
@@ -674,7 +677,7 @@ export default function CourseDetails() {
                         open: true,
                         type: "delete",
                         runId: r.run_id,
-                        text: `حذف الجلسة: ${title}`,
+                        text: `حذف ال${runSingular}: ${title}`,
                       })
                     }
                   >
@@ -687,19 +690,25 @@ export default function CourseDetails() {
         </div>
       )}
 
-      <Modal open={open} title="إنشاء جلسة" onClose={() => setOpen(false)}>
-        <div className="muted">جلسة جديدة للدورة.</div>
+      <Modal
+        open={open}
+        title={`إنشاء ${runSingular}`}
+        onClose={() => setOpen(false)}
+      >
+        <div className="muted">
+          {runSingular} جديد{isWorkshop ? "ة" : ""} للدورة.
+        </div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">اسم الجلسة (اختياري)</div>
+            <div className="muted">اسم ال{runSingular} (اختياري)</div>
             <input
               className="input"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
-              placeholder="مثال: جلسة الأحد - شباط 2026"
+              placeholder={`مثال: ${runSingular} الأحد - شباط 2026`}
             />
           </div>
 
@@ -780,7 +789,7 @@ export default function CourseDetails() {
               type="button"
               onClick={createRun}
             >
-              {saving ? "جارٍ الإنشاء..." : "إنشاء جلسة"}
+              {saving ? "جارٍ الإنشاء..." : `إنشاء ${runSingular}`}
             </button>
             <button
               className="btn"
@@ -795,21 +804,24 @@ export default function CourseDetails() {
 
       <Modal
         open={editOpen}
-        title="تعديل الجلسة"
+        title={`تعديل ال${runSingular}`}
         onClose={() => setEditOpen(false)}
       >
-        <div className="muted">تعديل بيانات الجلسة وإجراءاتها الأساسية.</div>
+        <div className="muted">
+          تعديل بيانات ال{runSingular} وإجراءاته{isWorkshop ? "ا" : ""}{" "}
+          الأساسية.
+        </div>
 
         <hr className="sep" />
 
         <div className="grid">
           <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">اسم الجلسة</div>
+            <div className="muted">اسم ال{runSingular}</div>
             <input
               className="input"
               value={editLabel}
               onChange={(e) => setEditLabel(e.target.value)}
-              placeholder="مثال: جلسة الأحد - شباط 2026"
+              placeholder={`مثال: ${runSingular} الأحد - شباط 2026`}
             />
           </div>
 
@@ -872,11 +884,11 @@ export default function CourseDetails() {
                       open: true,
                       type: "canceled",
                       runId: editRunId,
-                      text: `إلغاء الجلسة: ${editLabel || "هذه الجلسة"}`,
+                      text: `إلغاء ال${runSingular}: ${editLabel || `هذ${isWorkshop ? "ه" : "ا"} ال${runSingular}`}`,
                     });
                   }}
                 >
-                  <Ban size={16} /> إلغاء الجلسة
+                  <Ban size={16} /> إلغاء ال{runSingular}
                 </button>
               </div>
             </div>
