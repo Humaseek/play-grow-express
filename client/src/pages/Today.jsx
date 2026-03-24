@@ -1366,7 +1366,7 @@ export default function Dashboard() {
         .select("run_id, title, label");
       const qDebtors = supabase
         .from("run_participants_view")
-        .select("child_name, child_id, balance, course_title, run_label") // أضفنا course_title و run_label
+        .select("child_name, child_id, balance, run_id") // جلب run_id بدلاً من الأسماء الوهمية
         .eq("enrollment_status", "active")
         .gt("balance", 0)
         .order("balance", { ascending: false });
@@ -1427,6 +1427,18 @@ export default function Dashboard() {
         );
         return {
           ...session,
+          course_title: runInfo?.title || "دورة غير محددة",
+          run_label: runInfo?.label || "فوج غير محدد",
+        };
+      });
+
+      // --- إضافة دمج بيانات الديون مع اسم الدورة ---
+      const enrichedDebtors = (debtorsData || []).map((debtor) => {
+        const runInfo = (runsSummary || []).find(
+          (r) => r.run_id === debtor.run_id,
+        );
+        return {
+          ...debtor,
           course_title: runInfo?.title || "دورة غير محددة",
           run_label: runInfo?.label || "فوج غير محدد",
         };
@@ -1512,7 +1524,7 @@ export default function Dashboard() {
         expenseTrend: expTrendArr,
         chartLabels: bins.map((b) => b.label),
         todaySessions: enrichedSessions,
-        debtors: debtorsData || [],
+        debtors: enrichedDebtors, // <--- استخدمنا البيانات المدمجة هنا
         recentTransactions: combinedTx,
         expenseCategories: expCategories,
       });
