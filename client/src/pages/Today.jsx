@@ -40,6 +40,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import Badge from "../components/Badge";
 import Modal from "../components/Modal";
+import ModernSelect from "../components/ModernSelect"; // تأكدنا من استيراده هنا
 
 // ============================================================================
 // 1. الدوال المساعدة الأساسية
@@ -218,7 +219,7 @@ function getRangeAndBins(preset, customStart, customEnd) {
 }
 
 // ============================================================================
-// مكون القائمة المنسدلة (للمصاريف)
+// مكون القائمة المنسدلة (Combobox) الأصلي
 // ============================================================================
 function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -241,6 +242,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   return (
     <div ref={wrapperRef} style={{ position: "relative", width: "100%" }}>
       <input
+        className="input"
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
@@ -250,16 +252,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
         placeholder={placeholder}
         disabled={disabled}
         autoComplete="off"
-        style={{
-          width: "100%",
-          padding: "10px 14px",
-          paddingLeft: 36,
-          borderRadius: "12px",
-          border: "1px solid #e2e8f0",
-          outline: "none",
-          fontFamily: "inherit",
-          fontSize: "14px",
-        }}
+        style={{ width: "100%" }}
       />
       <ChevronDown
         size={16}
@@ -1093,22 +1086,7 @@ const DASHBOARD_STYLES = `
   border-radius: 8px;
 }
 
-/* تنسيقات المدخلات للمودال */
-.modal-input {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  font-size: 14px;
-  transition: all 0.2s;
-  outline: none;
-  font-family: inherit;
-  background: #fff;
-}
-.modal-input:focus {
-  border-color: #3b82f6;
-}
-
+/* تنسيقات المدخلات للمودال المشتركة */
 .search-wrapper {
   position: relative;
   width: 100%;
@@ -1258,6 +1236,7 @@ export default function Dashboard() {
 
   const [catOptions, setCatOptions] = useState([]);
   const [partyOptions, setPartyOptions] = useState([]);
+  const [countriesOptions, setCountriesOptions] = useState([]); // خيارات البلدان لنموذج الأطفال
 
   // ==========================================
   // حالات وإعدادات إضافة دفعة (قبض دفعة)
@@ -1274,7 +1253,7 @@ export default function Dashboard() {
   const [pickerQ, setPickerQ] = useState("");
 
   // ==========================================
-  // حالات وإعدادات إضافة طالب جديد (Quick Add)
+  // حالات وإعدادات إضافة طالب جديد (النسخة الأصلية)
   // ==========================================
   const [openChildAdd, setOpenChildAdd] = useState(false);
   const [savingChild, setSavingChild] = useState(false);
@@ -1516,10 +1495,10 @@ export default function Dashboard() {
   }
 
   // ============================================================================
-  // دوال نافذة المصاريف
+  // دوال نافذة المصاريف وقائمة البلدان
   // ============================================================================
   async function loadPicklists() {
-    const [catsRes, partiesRes] = await Promise.all([
+    const [catsRes, partiesRes, countriesRes] = await Promise.all([
       supabase
         .from("expense_categories")
         .select("name")
@@ -1528,11 +1507,20 @@ export default function Dashboard() {
         .from("expense_parties")
         .select("name")
         .order("name", { ascending: true }),
+      supabase
+        .from("countries")
+        .select("name")
+        .order("name", { ascending: true }),
     ]);
     if (!catsRes.error && !partiesRes.error) {
       setCatOptions((catsRes.data || []).map((x) => x.name).filter(Boolean));
       setPartyOptions(
         (partiesRes.data || []).map((x) => x.name).filter(Boolean),
+      );
+    }
+    if (!countriesRes.error) {
+      setCountriesOptions(
+        (countriesRes.data || []).map((x) => x.name).filter(Boolean),
       );
     }
   }
@@ -1698,7 +1686,7 @@ export default function Dashboard() {
   }
 
   // ============================================================================
-  // دوال نافذة إضافة طالب
+  // دوال نافذة إضافة طالب (نفس نسخة الأطفال)
   // ============================================================================
   const openChildModal = () => {
     setChildData({
@@ -1714,6 +1702,7 @@ export default function Dashboard() {
       country: "",
       notes: "",
     });
+    loadPicklists(); // للتأكد من جلب البلدان
     setOpenChildAdd(true);
   };
 
@@ -1724,6 +1713,10 @@ export default function Dashboard() {
     }
     setSavingChild(true);
     try {
+      if (childData.country?.trim()) {
+        await safeInsertPicklist("countries", childData.country);
+      }
+
       const { error } = await supabase.from("children").insert([
         {
           name: childData.name.trim(),
@@ -1740,9 +1733,10 @@ export default function Dashboard() {
         },
       ]);
       if (error) throw error;
+
       toast("تمت إضافة الطالب بنجاح.", "ok");
       setOpenChildAdd(false);
-      loadDashboard();
+      loadDashboard(); // لتحديث عدد الطلاب فوراً
     } catch (error) {
       console.error(error);
       toast("حدث خطأ أثناء حفظ بيانات الطالب.", "danger");
@@ -2248,7 +2242,7 @@ export default function Dashboard() {
                     صرف مبلغ
                   </div>
 
-                  {/* التعديل هنا: كبسة إضافة طالب تفتح المودال */}
+                  {/* التعديل هنا: كبسة إضافة طالب تفتح المودال المطابق 100% */}
                   <div onClick={openChildModal} className="qa-btn primary">
                     <div className="qa-icon-wrap">
                       <UserPlus size={28} />
@@ -2922,347 +2916,154 @@ export default function Dashboard() {
         </Modal>
 
         {/* ============================================================================ */}
-        {/* نافذة إضافة طالب (Quick Add) */}
+        {/* نافذة إضافة طالب (النسخة الأصلية المطابقة لملف الأطفال) */}
         {/* ============================================================================ */}
         <Modal
           open={openChildAdd}
           title="إضافة طالب جديد"
           onClose={() => !savingChild && setOpenChildAdd(false)}
         >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-              padding: "10px 0",
-            }}
-          >
-            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-              <div style={{ flex: "1 1 100%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  اسم الطالب *
-                </div>
-                <input
-                  type="text"
-                  value={childData.name}
-                  onChange={(e) =>
-                    setChildData({ ...childData, name: e.target.value })
-                  }
-                  placeholder="الاسم الرباعي..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
-                />
-              </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  رقم الهوية
-                </div>
-                <input
-                  type="text"
-                  value={childData.id_number}
-                  onChange={(e) =>
-                    setChildData({ ...childData, id_number: e.target.value })
-                  }
-                  placeholder="رقم الهوية..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
-                />
-              </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  تاريخ الميلاد
-                </div>
-                <input
-                  type="date"
-                  value={childData.birth_date}
-                  onChange={(e) =>
-                    setChildData({ ...childData, birth_date: e.target.value })
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
-                />
-              </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  الجنس
-                </div>
-                <select
-                  value={childData.gender}
-                  onChange={(e) =>
-                    setChildData({ ...childData, gender: e.target.value })
-                  }
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                    background: "#fff",
-                  }}
-                >
-                  <option value="male">ذكر</option>
-                  <option value="female">أنثى</option>
-                </select>
-              </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  الصف الدراسي
-                </div>
-                <input
-                  type="text"
-                  value={childData.class}
-                  onChange={(e) =>
-                    setChildData({ ...childData, class: e.target.value })
-                  }
-                  placeholder="مثال: الأول، الثاني..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
-                />
-              </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  اسم الأم
-                </div>
-                <input
-                  type="text"
-                  value={childData.mother_name}
-                  onChange={(e) =>
-                    setChildData({ ...childData, mother_name: e.target.value })
-                  }
-                  placeholder="اسم الأم..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
-                />
-              </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  رقم هاتف الأم
-                </div>
-                <input
-                  type="text"
-                  value={childData.mother_phone}
-                  onChange={(e) =>
-                    setChildData({ ...childData, mother_phone: e.target.value })
-                  }
-                  placeholder="رقم التواصل..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
-                />
-              </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  اسم الأب
-                </div>
-                <input
-                  type="text"
-                  value={childData.father_name}
-                  onChange={(e) =>
-                    setChildData({ ...childData, father_name: e.target.value })
-                  }
-                  placeholder="اسم الأب..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
-                />
-              </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  رقم هاتف الأب
-                </div>
-                <input
-                  type="text"
-                  value={childData.father_phone}
-                  onChange={(e) =>
-                    setChildData({ ...childData, father_phone: e.target.value })
-                  }
-                  placeholder="رقم التواصل..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
-                />
-              </div>
-              <div style={{ flex: "1 1 100%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  البلد / المدينة
-                </div>
-                <input
-                  type="text"
-                  value={childData.country}
-                  onChange={(e) =>
-                    setChildData({ ...childData, country: e.target.value })
-                  }
-                  placeholder="مثال: الطيبة، قلنسوة..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
-                />
-              </div>
-              <div style={{ flex: "1 1 100%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  ملاحظات (طبية، حساسية، إلخ)
-                </div>
-                <textarea
-                  rows="3"
-                  value={childData.notes}
-                  onChange={(e) =>
-                    setChildData({ ...childData, notes: e.target.value })
-                  }
-                  placeholder="أي تفاصيل مهمة..."
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                    resize: "vertical",
-                  }}
-                />
-              </div>
+          <div className="grid">
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">اسم الطالب *</div>
+              <input
+                className="input"
+                value={childData.name}
+                onChange={(e) =>
+                  setChildData({ ...childData, name: e.target.value })
+                }
+                placeholder="الاسم الرباعي"
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">رقم الهوية</div>
+              <input
+                className="input"
+                value={childData.id_number}
+                onChange={(e) =>
+                  setChildData({ ...childData, id_number: e.target.value })
+                }
+                placeholder="اختياري"
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">تاريخ الميلاد</div>
+              <input
+                type="date"
+                className="input"
+                value={childData.birth_date}
+                onChange={(e) =>
+                  setChildData({ ...childData, birth_date: e.target.value })
+                }
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">الجنس</div>
+              <ModernSelect
+                value={childData.gender}
+                onChange={(val) => setChildData({ ...childData, gender: val })}
+                options={[
+                  { value: "male", label: "ذكر" },
+                  { value: "female", label: "أنثى" },
+                ]}
+                menuWidth="trigger"
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">الصف الدراسي</div>
+              <input
+                className="input"
+                value={childData.class}
+                onChange={(e) =>
+                  setChildData({ ...childData, class: e.target.value })
+                }
+                placeholder="مثال: الأول، الثاني..."
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">اسم الأم</div>
+              <input
+                className="input"
+                value={childData.mother_name}
+                onChange={(e) =>
+                  setChildData({ ...childData, mother_name: e.target.value })
+                }
+                placeholder="اسم الأم"
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">رقم هاتف الأم</div>
+              <input
+                className="input"
+                value={childData.mother_phone}
+                onChange={(e) =>
+                  setChildData({ ...childData, mother_phone: e.target.value })
+                }
+                placeholder="رقم التواصل"
+                dir="ltr"
+                style={{ textAlign: "right" }}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">اسم الأب</div>
+              <input
+                className="input"
+                value={childData.father_name}
+                onChange={(e) =>
+                  setChildData({ ...childData, father_name: e.target.value })
+                }
+                placeholder="اسم الأب"
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted">رقم هاتف الأب</div>
+              <input
+                className="input"
+                value={childData.father_phone}
+                onChange={(e) =>
+                  setChildData({ ...childData, father_phone: e.target.value })
+                }
+                placeholder="رقم التواصل"
+                dir="ltr"
+                style={{ textAlign: "right" }}
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">البلد / المدينة</div>
+              <CustomCombobox
+                value={childData.country}
+                onChange={(val) => setChildData({ ...childData, country: val })}
+                options={countriesOptions.map((c) => ({ value: c, label: c }))}
+                placeholder="اختر أو اكتب اسم البلد..."
+              />
+            </div>
+
+            <div style={{ gridColumn: "span 12" }}>
+              <div className="muted">ملاحظات (طبية، حساسية، إلخ)</div>
+              <textarea
+                className="input"
+                rows="3"
+                value={childData.notes}
+                onChange={(e) =>
+                  setChildData({ ...childData, notes: e.target.value })
+                }
+                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+                style={{ resize: "vertical" }}
+              />
             </div>
 
             <div
               style={{
+                gridColumn: "span 12",
                 display: "flex",
                 justifyContent: "flex-end",
                 gap: 10,
@@ -3270,39 +3071,18 @@ export default function Dashboard() {
               }}
             >
               <button
-                style={{
-                  padding: "12px 24px",
-                  borderRadius: "14px",
-                  border: "1px solid #e2e8f0",
-                  background: "white",
-                  cursor: "pointer",
-                  fontWeight: 800,
-                  color: "#64748b",
-                }}
+                className="btn"
                 onClick={() => setOpenChildAdd(false)}
                 disabled={savingChild}
               >
                 إلغاء
               </button>
               <button
-                style={{
-                  background: "#3b82f6",
-                  color: "white",
-                  padding: "12px 24px",
-                  borderRadius: "14px",
-                  border: "none",
-                  fontWeight: "800",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
+                className="btn btn-add"
                 onClick={handleSaveChild}
                 disabled={savingChild}
               >
-                <UserPlus size={18} />
-                {savingChild ? "جاري الحفظ..." : "حفظ بيانات الطالب"}
+                {savingChild ? "جاري الحفظ..." : "حفظ البيانات"}
               </button>
             </div>
           </div>
