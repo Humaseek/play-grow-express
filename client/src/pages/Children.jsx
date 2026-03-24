@@ -20,7 +20,6 @@ import {
   GraduationCap,
   ChevronDown,
   UserRound,
-  Copy, // Add Copy for the image's layout
 } from "lucide-react";
 
 // --- مُركّب مخصص للجمع بين الكتابة والقائمة المنسدلة (Combobox) ---
@@ -121,7 +120,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   );
 }
 
-// --- تنسيقات CSS مدمجة مع تعديلات احترافية جداً وحازمة للموبايل ---
+// --- تنسيقات CSS مدمجة مع تعديلات جذرية للموبايل ---
 const CHILDREN_STYLES = `
 .page--children {
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
@@ -292,6 +291,18 @@ const CHILDREN_STYLES = `
   align-items: center;
 }
 
+.ModernBadge.ModernBadge-info {
+  border-color: #bbf7d0 !important;
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+}
+
+.ModernBadge.ModernBadge-warning {
+  border-color: #fde68a !important;
+  background: #fffbeb !important;
+  color: #d97706 !important;
+}
+
 .form-section-title {
   margin: 0 0 16px 0;
   color: #0f172a;
@@ -304,38 +315,28 @@ const CHILDREN_STYLES = `
 }
 
 /* ==========================================================================
-   MOBILE RESPONSIVE TWEAKS (HACKING THE VIBE)
+   MOBILE RESPONSIVE TWEAKS FOR THIS PAGE
    ========================================================================== */
 .mobile-only { display: none; }
 .desktop-only { display: block; }
-.mc-fab { display: none; } /* مخفي على الديسكتوب */
 
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
   .mobile-only { display: flex !important; }
   
-  /* تقليل الفراغ العلوي فوق الكروت - تعديل جديد وحازم */
-  .page--children {
-    padding: 0 12px 100px 12px !important; /* حشوة علوية صفر */
-    background: #f8fafc;
-  }
-
-  .children-header {
-    margin-bottom: 16px;
-    padding-top: 0 !important; /* إزالة المسافة تماماً */
-    margin-top: 0 !important;
-  }
-
-  .children-title {
-    font-size: 20px;
-    min-height: 44px;
-    padding: 8px 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-    border: none;
+  .children-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
   }
   
-  .children-subtitle {
-    font-size: 13px;
+  .search-wrapper {
+    max-width: 100%;
+  }
+  
+  .btn-add {
+    justify-content: center;
+    width: 100%;
   }
 
   .children-card {
@@ -344,151 +345,12 @@ const CHILDREN_STYLES = `
     box-shadow: none;
   }
   
-  /* شريط البحث المدمج - تعديل جديد */
-  .children-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 0 0 16px 0;
-    background: transparent;
-    border: none;
-    gap: 12px;
-  }
-  
-  .search-wrapper {
-    max-width: 100%;
-  }
-
-  .search-input {
-    border-radius: 16px;
-    min-height: 52px;
-    border: none;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-    padding-right: 48px;
-  }
-  .search-icon { left: 16px; }
-  
-  /* إخفاء زر الإضافة العريض على الموبايل - تعديل جديد */
-  .btn-add.mobile-add {
-    display: none !important;
-  }
-
-  /* كبسة الإضافة العائمة context FAB - تعديل جديد للتثبيت والظهور الدائم */
-  .mc-fab.mobile-only {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 999px;
-    background: rgb(2, 54, 80); // Accen color for Children page theme
-    border: 1px solid rgba(2, 54, 80, 0.2); // Accen color weak
-    color: #fff;
-    cursor: pointer;
-    position: fixed; // A modern FAB is often fixed or header context
-    top: 14px; // Correct placement for iOS context bar
-    inset-inline-end: 14px; // Correct placement for iOS context bar
-    z-index: 1000;
-    box-shadow: 0 8px 22px rgba(2, 54, 80, 0.25);
-    border: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  }
-
-  /* قائمة الكروت - روح التطبيق الحقيقية */
   .mobile-child-list {
     display: flex;
     flex-direction: column;
-    gap: 16px; /* مسافة ممتازة بين الكروت */
+    gap: 12px;
+    padding: 0 4px;
   }
-
-  /* تصميم الكرت الفخم الجديد بناءً على صورة العميل للتطابق */
-  .target-mc-card {
-    background: #ffffff;
-    border-radius: 20px;
-    padding: 16px;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(226, 232, 240, 0.6);
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-
-  .target-mc-card:active {
-    transform: scale(0.98);
-  }
-
-  /* أزرار العمليات فوق في الكرت - تعديل جديد للتطابق */
-  .target-mc-top-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-bottom: 8px;
-  }
-  
-  .target-mc-child-info {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  
-  .target-mc-child-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .target-mc-child-main {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  
-  .target-mc-name {
-    font-size: 18px;
-    font-weight: 900;
-    color: #0f172a;
-    line-height: 1.3;
-  }
-  
-  .target-mc-city {
-    font-size: 12px;
-    color: #64748b;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  
-  .target-mc-id {
-    font-size: 11px;
-    font-weight: 800;
-    color: #94a3b8;
-  }
-
-  /* تنسيق بيانات التواصل المكررة كما في صورة العميل للتطابق */
-  .target-mc-contact-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .target-mc-contact-col {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .target-mc-contact-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #475569;
-    font-weight: 700;
-  }
-
 }
 `;
 
@@ -714,7 +576,7 @@ export default function Children() {
     }
   }
 
-  // عرض شارة الجنس بتنسيق مخصص للديسكتوب
+  // عرض شارة الجنس بتنسيق مخصص
   const genderBadge = (g) => {
     if (g === "male") return <Badge variant="info">ذكر</Badge>;
     if (g === "female") return <Badge variant="warn">أنثى</Badge>;
@@ -728,23 +590,15 @@ export default function Children() {
         {/* رأس الصفحة */}
         <div className="children-header">
           <div className="children-title">الأطفال</div>
-          <div className="children-subtitle desktop-only">
+          <div className="children-subtitle">
             <span style={{ color: "#cbd5e1" }}>|</span>
             <Users size={16} /> إدارة جميع الأطفال
           </div>
-          {/* كبسة الإضافة العائمة context FAB - تعديل جديد للتثبيت والظهور الدائم */}
-          <button
-            className="mc-fab mobile-only" // New FAB, mobile only
-            onClick={openAddModal}
-            aria-label="Add Child"
-          >
-            <Plus size={20} />
-          </button>
         </div>
 
         {error && <ErrorBanner error={error} />}
 
-        {/* الكرت الرئيسي للجدول والبحث */}
+        {/* الكرت الرئيسي للجدول */}
         <div className="children-card">
           {/* شريط الأدوات العلوي (البحث والإضافة) */}
           <div className="children-toolbar">
@@ -753,18 +607,17 @@ export default function Children() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="ابحث بالاسم أو رقم الهاتف..."
+                placeholder="ابحث بالاسم، المعرف أو رقم الهاتف..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            {/* إخفاء زر الإضافة العريض على الموبايل */}
-            <button className="btn btn-add desktop-only" onClick={openAddModal}>
+            <button className="btn btn-add" onClick={openAddModal}>
               <Plus size={18} /> إضافة طفل
             </button>
           </div>
 
-          {/* المحتوى */}
+          {/* المحتوى (جدول للديسكتوب / كروت للموبايل) */}
           {loading ? (
             <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
               جاري التحميل...
@@ -854,31 +707,143 @@ export default function Children() {
                 </table>
               </div>
 
-              {/* ==================== عرض الموبايل (الكروت بناءً على صورة العميل للتطابق) ==================== */}
+              {/* ==================== عرض الموبايل (كروت List Items - Glassmorphism Light) ==================== */}
               <div className="mobile-only mobile-child-list">
                 {filteredChildren.map((child) => (
                   <div
                     key={child.id}
-                    className="target-mc-card"
+                    className="listItem clickCard hoverLift"
                     onClick={() => navigate(`/children/${child.id}`)}
+                    style={{
+                      border: "1px solid rgba(15, 23, 42, 0.08)",
+                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.02)",
+                      padding: "16px",
+                      gap: "12px",
+                    }}
                   >
-                    {/* أزرار الإجراءات فوق في الكرت - تعديل جديد للتطابق */}
+                    <div className="listItem__main" style={{ flex: 1 }}>
+                      <div
+                        className="listItem__icon"
+                        style={{
+                          background: "#fffbeb",
+                          color: "#f59e0b",
+                          width: 44,
+                          height: 44,
+                          borderRadius: 12,
+                        }}
+                      >
+                        <UserRound size={22} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div
+                          className="listItem__title"
+                          style={{ fontSize: 17, marginBottom: 4 }}
+                        >
+                          {child.name}
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "6px",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                            marginBottom: 6,
+                          }}
+                        >
+                          <Badge
+                            variant="neutral"
+                            style={{ fontSize: 11, padding: "3px 8px" }}
+                          >
+                            <GraduationCap size={11} />{" "}
+                            {child.class || "بدون صف"}
+                          </Badge>
+                          <Badge
+                            variant="info"
+                            style={{
+                              fontSize: 11,
+                              padding: "3px 8px",
+                              background: "#eff6ff",
+                              color: "#3b82f6",
+                              border: "1px solid #bfdbfe",
+                            }}
+                          >
+                            <Cake size={11} />{" "}
+                            {child.age
+                              ? `${child.age} سنوات`
+                              : "العمر غير محدد"}
+                          </Badge>
+                          {child.country && (
+                            <Badge
+                              variant="neutral"
+                              style={{
+                                fontSize: 11,
+                                padding: "3px 8px",
+                                color: "#64748b",
+                              }}
+                            >
+                              <MapPin size={10} /> {child.country}
+                            </Badge>
+                          )}
+                        </div>
+                        {/* عرض هواتف الأهل بخط صغير للوصول السريع */}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            flexWrap: "wrap",
+                            marginTop: 4,
+                          }}
+                        >
+                          {child.mother_phone && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "#475569",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
+                              <Phone size={10} /> أم:{" "}
+                              <span dir="ltr" style={{ fontWeight: "bold" }}>
+                                {child.mother_phone}
+                              </span>
+                            </span>
+                          )}
+                          {child.father_phone && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "#475569",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
+                              <Phone size={10} /> أب:{" "}
+                              <span dir="ltr" style={{ fontWeight: "bold" }}>
+                                {child.father_phone}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {/* أزرار الإجراءات داخل الكرت للموبايل */}
                     <div
-                      className="target-mc-top-actions"
+                      className="listItem__actions"
+                      style={{ flexDirection: "column", gap: 6 }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <IconButton
                         soft
-                        size="sm"
                         onClick={() => openEditModal(child)}
-                        title="تعديل"
+                        style={{ width: 36, height: 36, borderRadius: 10 }}
                       >
                         <Pencil size={15} />
                       </IconButton>
                       <IconButton
                         danger
-                        soft
-                        size="sm"
                         onClick={() =>
                           setConfirm({
                             open: true,
@@ -886,69 +851,11 @@ export default function Children() {
                             text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
                           })
                         }
-                        title="حذف"
+                        style={{ width: 36, height: 36, borderRadius: 10 }}
                       >
                         <Trash2 size={15} />
                       </IconButton>
-                      <IconButton soft size="sm" title="نسخ">
-                        {" "}
-                        {/* Icon presence, no copy logic applied yet */}
-                        <Copy size={15} />
-                      </IconButton>
                     </div>
-
-                    {/* معلومات الطفل الأساسية وشارات الحالة */}
-                    <div className="target-mc-child-info">
-                      <div className="target-mc-child-badges">
-                        <Badge variant="ok">Male ok</Badge>{" "}
-                        {/* Hardcoded as in image, status ok/weak ok */}
-                        <Badge variant="neutral">
-                          Age {child.age || "???"} / Class
-                        </Badge>{" "}
-                        {/* Hardcoded "Class" */}
-                      </div>
-                      <div className="target-mc-child-main">
-                        <div className="target-mc-name">{child.name}</div>
-                        <div className="target-mc-city">
-                          <MapPin size={12} /> {child.country || "Jerusalem"}{" "}
-                          {/* Default to Jerusalem as in image if none */}
-                        </div>
-                        <div className="target-mc-id">ID {child.id}</div>
-                      </div>
-                    </div>
-
-                    {/* بيانات التواصل المكررة كما في صورة العميل للتطابق */}
-                    {(child.mother_phone || child.father_phone) && (
-                      <div className="target-mc-contact-grid">
-                        {/* عمود بيانات التواصل 1 (على اليمين في صورة العميل) */}
-                        <div className="target-mc-contact-col">
-                          {child.mother_phone && (
-                            <div className="target-mc-contact-item">
-                              <Phone size={14} /> mother's {child.mother_phone}
-                            </div>
-                          )}
-                          {child.father_phone && (
-                            <div className="target-mc-contact-item">
-                              <Phone size={14} /> father's {child.father_phone}
-                            </div>
-                          )}
-                        </div>
-                        {/* عمود بيانات التواصل 2 (على اليسار في صورة العميل) */}
-                        <div className="target-mc-contact-col">
-                          {child.mother_phone && (
-                            <div className="target-mc-contact-item">
-                              <Phone size={14} /> mother: {child.mother_phone}
-                            </div>
-                          )}
-                          {child.father_phone && (
-                            <div className="target-mc-contact-item">
-                              <Phone size={14} /> father: {child.father_phone}{" "}
-                              and an ID
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
