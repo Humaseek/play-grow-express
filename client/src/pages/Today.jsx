@@ -1821,6 +1821,7 @@ export default function Dashboard() {
     }
   }
 
+  // التعديل 2: اليوم بالعربي والتاريخ بالإنجليزي
   const todayFormatted = useMemo(() => {
     const d = new Date();
     const arabicDay = new Intl.DateTimeFormat("ar-EG", {
@@ -1842,6 +1843,7 @@ export default function Dashboard() {
     );
   }, []);
 
+  // التعديل 3: الوقت بنظام 24 ساعة وباللغة الإنجليزية
   const currentTimeStr = new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
@@ -1866,6 +1868,7 @@ export default function Dashboard() {
         {/* ==================== Header Section ==================== */}
         <div className="dash-header">
           <div>
+            {/* التعديل 1: تغيير الاسم لـ كاترين */}
             <h1 className="dash-greeting">{getGreeting()}، كاترين</h1>
             <div className="dash-meta-pills">
               <div className="dash-pill">
@@ -2637,7 +2640,7 @@ export default function Dashboard() {
                 <div className="list-widget">
                   {dashData.recentTransactions.map((tx) => {
                     const isIncome = tx.type === "income";
-                    const Icon = isIncome ? ArrowDownRight : ArrowUpRight;
+                    const Icon = isIncome ? ArrowUpRight : ArrowDownRight;
                     const colorClass = isIncome ? "success" : "danger";
                     const bgClass = isIncome ? "#f0fdf4" : "#fef2f2";
                     const iconColor = isIncome ? "#10b981" : "#ef4444";
