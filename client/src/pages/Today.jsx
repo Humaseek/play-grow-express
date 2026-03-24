@@ -2965,7 +2965,7 @@ export default function Dashboard() {
         </Modal>
 
         {/* ============================================================================ */}
-        {/* نافذة إضافة طالب (النسخة الأصلية من ملف الأطفال) */}
+        {/* نافذة إضافة طالب (النسخة المصححة) */}
         {/* ============================================================================ */}
         <Modal
           open={openChildAdd}
@@ -2985,27 +2985,24 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={childData.name}
+                    value={formData.name}
                     onChange={(e) =>
-                      setChildData({ ...childData, name: e.target.value })
+                      setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="مثال: أحمد محمد علي"
                   />
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
                   <div className="muted" style={{ marginBottom: 6 }}>
-                    العمر
+                    تاريخ الميلاد
                   </div>
                   <input
                     className="input"
-                    type="number"
-                    min={0}
-                    max={120}
-                    value={childData.age}
+                    type="date"
+                    value={formData.birth_date}
                     onChange={(e) =>
-                      setChildData({ ...childData, age: e.target.value })
+                      setFormData({ ...formData, birth_date: e.target.value })
                     }
-                    placeholder="بالسنوات"
                   />
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
@@ -3013,8 +3010,8 @@ export default function Dashboard() {
                     الجنس
                   </div>
                   <ModernSelect
-                    value={childData.gender}
-                    onChange={(v) => setChildData({ ...childData, gender: v })}
+                    value={formData.gender}
+                    onChange={(v) => setFormData({ ...formData, gender: v })}
                     options={[
                       { value: "male", label: "ذكر" },
                       { value: "female", label: "أنثى" },
@@ -3026,8 +3023,8 @@ export default function Dashboard() {
                     الصف
                   </div>
                   <CustomCombobox
-                    value={childData.class}
-                    onChange={(v) => setChildData({ ...childData, class: v })}
+                    value={formData.class}
+                    onChange={(v) => setFormData({ ...formData, class: v })}
                     options={classes.map((c) => ({
                       value: c.name,
                       label: c.name,
@@ -3040,9 +3037,9 @@ export default function Dashboard() {
                     المدينة / البلد
                   </div>
                   <CustomCombobox
-                    value={childData.country_name}
+                    value={formData.country_name}
                     onChange={(v) =>
-                      setChildData({ ...childData, country_name: v })
+                      setFormData({ ...formData, country_name: v })
                     }
                     options={countries.map((c) => ({
                       value: c.name,
@@ -3066,10 +3063,10 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={childData.mother_phone}
+                    value={formData.mother_phone}
                     onChange={(e) =>
-                      setChildData({
-                        ...childData,
+                      setFormData({
+                        ...formData,
                         mother_phone: e.target.value,
                       })
                     }
@@ -3084,10 +3081,10 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={childData.mother_name}
+                    value={formData.mother_name}
                     onChange={(e) =>
-                      setChildData({
-                        ...childData,
+                      setFormData({
+                        ...formData,
                         mother_name: e.target.value,
                       })
                     }
@@ -3100,10 +3097,10 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={childData.father_phone}
+                    value={formData.father_phone}
                     onChange={(e) =>
-                      setChildData({
-                        ...childData,
+                      setFormData({
+                        ...formData,
                         father_phone: e.target.value,
                       })
                     }
@@ -3118,10 +3115,10 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={childData.father_name}
+                    value={formData.father_name}
                     onChange={(e) =>
-                      setChildData({
-                        ...childData,
+                      setFormData({
+                        ...formData,
                         father_name: e.target.value,
                       })
                     }
@@ -3139,9 +3136,9 @@ export default function Dashboard() {
               <textarea
                 className="input"
                 rows={3}
-                value={childData.notes}
+                value={formData.notes}
                 onChange={(e) =>
-                  setChildData({ ...childData, notes: e.target.value })
+                  setFormData({ ...formData, notes: e.target.value })
                 }
                 placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
                 style={{ resize: "vertical" }}
