@@ -9,6 +9,7 @@ import {
   TrendingDown,
   Users,
   CheckCircle2,
+  ArrowRight, // <-- تم استيراد أيقونة السهم
 } from "lucide-react";
 
 // ============================================================================
@@ -31,7 +32,7 @@ const CALENDAR_STYLES = `
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 0;
+  padding-bottom: 24px;
   margin-bottom: 20px;
 }
 
@@ -188,6 +189,28 @@ const CALENDAR_STYLES = `
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+/* تنسيق زر العودة */
+.back-btn {
+  background: white;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 800;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+.back-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  transform: translateX(4px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.05);
 }
 `;
 
@@ -455,9 +478,6 @@ export default function CalendarPage() {
     return cells;
   };
 
-  // ============================================================================
-  // التعديل هنا: تحويل الشهر والسنة للإنجليزية مع الحفاظ على الأيام بالعربي
-  // ============================================================================
   const monthLabel = new Intl.DateTimeFormat("en-GB", {
     month: "long",
     year: "numeric",
@@ -467,8 +487,15 @@ export default function CalendarPage() {
     <div className="page page--calendar" dir="rtl" lang="ar">
       <style>{CALENDAR_STYLES}</style>
       <div className="container" style={{ maxWidth: 1440 }}>
+        {/* زر العودة للوحة التحكم */}
+        <div style={{ paddingTop: "24px" }}>
+          <button onClick={() => navigate("/")} className="back-btn">
+            العودة للوحة التحكم <ArrowRight size={18} />
+          </button>
+        </div>
+
         {/* Header */}
-        <div className="cal-header-container">
+        <div className="cal-header-container" style={{ paddingTop: "16px" }}>
           <h1 className="cal-title">
             <div
               style={{
@@ -488,7 +515,6 @@ export default function CalendarPage() {
             <button className="cal-btn" onClick={handleNextMonth}>
               <ChevronRight size={20} />
             </button>
-            {/* التعديل هنا: إضافة dir="ltr" عشان تظهر الكلمة الإنجليزية بشكل صحيح */}
             <div
               className="cal-month-label"
               dir="ltr"
