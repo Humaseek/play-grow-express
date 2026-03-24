@@ -33,7 +33,7 @@ import {
   ChevronDown,
   Search,
   UserRound,
-  Phone, // مهمة لأيقونة المودال المنسوخ
+  Phone,
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -865,6 +865,7 @@ const DASHBOARD_STYLES = `
   z-index: 2;
   margin-top: 6px;
   box-shadow: 0 0 0 4px rgba(255,255,255,0.8);
+  transition: all 0.3s ease;
 }
 .tl-line {
   flex: 1;
@@ -897,7 +898,7 @@ const DASHBOARD_STYLES = `
   padding: 20px;
   margin-bottom: 24px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 .tl-card:hover {
   background: #fff;
@@ -2200,13 +2201,46 @@ export default function Dashboard() {
                         : s.status === "canceled"
                           ? "status-canceled"
                           : "status-scheduled";
+
+                    // --- منطق الوقت: لتحديد الجلسة الحالية، السابقة، والقادمة ---
+                    const nowMs = time.getTime();
+                    const startMs = new Date(s.start_at).getTime();
+                    const endMs = new Date(s.end_at).getTime();
+
+                    const isCurrent = nowMs >= startMs && nowMs <= endMs;
+                    const isPast = nowMs > endMs;
+                    // -------------------------------------------------------------
+
                     return (
                       <div key={s.id} className={`tl-row ${statusClass}`}>
                         <div className="tl-indicator">
-                          <div className="tl-dot"></div>
+                          <div
+                            className="tl-dot"
+                            style={{
+                              borderColor: isCurrent
+                                ? "#f59e0b"
+                                : isPast && s.status === "scheduled"
+                                  ? "#94a3b8"
+                                  : undefined,
+                              boxShadow: isCurrent
+                                ? "0 0 0 6px rgba(245, 158, 11, 0.2)"
+                                : undefined,
+                              animation: isCurrent ? "none" : undefined,
+                            }}
+                          ></div>
                           <div className="tl-line"></div>
                         </div>
-                        <div className="tl-card">
+                        <div
+                          className="tl-card"
+                          style={{
+                            opacity: isPast ? 0.6 : 1, // تخفيف شفافية الجلسات السابقة
+                            border: isCurrent ? "2px solid #fcd34d" : undefined, // تمييز الجلسة الحالية
+                            background: isCurrent ? "#fffbeb" : undefined, // خلفية صفراء للجلسة الحالية
+                            boxShadow: isCurrent
+                              ? "0 10px 25px -5px rgba(245, 158, 11, 0.15)"
+                              : undefined,
+                          }}
+                        >
                           <div
                             style={{
                               display: "flex",
@@ -2217,16 +2251,57 @@ export default function Dashboard() {
                           >
                             <div>
                               <div className="tl-time">
-                                <span dir="ltr">
+                                <span
+                                  dir="ltr"
+                                  style={{
+                                    color: isCurrent ? "#d97706" : undefined,
+                                  }}
+                                >
                                   {formatTimeLocally(s.start_at)}
                                 </span>
                                 <span style={{ color: "#cbd5e1" }}>-</span>
                                 <span
                                   dir="ltr"
-                                  style={{ color: "#64748b", fontSize: 15 }}
+                                  style={{
+                                    color: isCurrent ? "#d97706" : "#64748b",
+                                    fontSize: 15,
+                                  }}
                                 >
                                   {formatTimeLocally(s.end_at)}
                                 </span>
+
+                                {/* شارة الجلسة الحالية والمنتهية */}
+                                {isCurrent && (
+                                  <span
+                                    style={{
+                                      marginLeft: 8,
+                                      padding: "2px 8px",
+                                      borderRadius: 12,
+                                      background: "#f59e0b",
+                                      color: "#fff",
+                                      fontSize: 12,
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    الآن
+                                  </span>
+                                )}
+                                {isPast && s.status === "scheduled" && (
+                                  <span
+                                    style={{
+                                      marginLeft: 8,
+                                      padding: "2px 8px",
+                                      borderRadius: 12,
+                                      background: "#e2e8f0",
+                                      color: "#64748b",
+                                      fontSize: 12,
+                                      fontWeight: "bold",
+                                    }}
+                                  >
+                                    انتهى وقتها
+                                  </span>
+                                )}
+
                                 {s.status === "done" && (
                                   <Badge variant="ok" style={{ marginLeft: 8 }}>
                                     مكتملة
