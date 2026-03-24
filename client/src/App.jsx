@@ -9,7 +9,8 @@ import Layout from "./components/Layout";
 
 import Login from "./pages/Login";
 import Today from "./pages/Today";
-import Calendar from "./pages/Calendar"; // <-- 1. تم إضافة استيراد صفحة التقويم هنا
+import Calendar from "./pages/Calendar"; // <-- استيراد صفحة التقويم
+import DayDetails from "./pages/DayDetails"; // <-- استيراد صفحة تفاصيل اليوم
 import Courses from "./pages/Courses";
 import CourseDetails from "./pages/CourseDetails";
 import RunDetails from "./pages/RunDetails";
@@ -77,8 +78,9 @@ export default function App() {
             <Route element={<Layout session={session} />}>
               <Route index element={<Today />} />
 
-              {/* <-- 2. تم إضافة مسار التقويم هنا --> */}
+              {/* مسارات التقويم وتفاصيل اليوم */}
               <Route path="calendar" element={<Calendar />} />
+              <Route path="calendar/:date" element={<DayDetails />} />
 
               <Route path="courses" element={<Courses />} />
               <Route path="courses/:courseId" element={<CourseDetails />} />
