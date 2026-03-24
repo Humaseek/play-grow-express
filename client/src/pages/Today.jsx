@@ -1318,6 +1318,7 @@ export default function Dashboard() {
   });
   const [countries, setCountries] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [openDebtorsModal, setOpenDebtorsModal] = useState(false);
 
   // تحديث الساعة الحية
   useEffect(() => {
@@ -1368,8 +1369,7 @@ export default function Dashboard() {
         .select("child_name, child_id, balance")
         .eq("enrollment_status", "active")
         .gt("balance", 0)
-        .order("balance", { ascending: false })
-        .limit(5);
+        .order("balance", { ascending: false });
       const qRecentPays = supabase
         .from("payments_details_view")
         .select("id, amount, child_name, method, created_at")
@@ -2363,7 +2363,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="list-widget">
-                    {dashData.debtors.map((d, i) => (
+                    {dashData.debtors.slice(0, 5).map((d, i) => (
                       <Link
                         to={`/children/${d.child_id}`}
                         key={i}
@@ -2386,6 +2386,31 @@ export default function Dashboard() {
                         </div>
                       </Link>
                     ))}
+                    {dashData.debtors.length > 5 && (
+                      <button
+                        onClick={() => setOpenDebtorsModal(true)}
+                        style={{
+                          width: "100%",
+                          padding: "12px",
+                          marginTop: "8px",
+                          background: "#fff5f5",
+                          color: "#ef4444",
+                          border: "1px dashed #fca5a5",
+                          borderRadius: "14px",
+                          fontWeight: 800,
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                        }}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.background = "#fee2e2")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.background = "#fff5f5")
+                        }
+                      >
+                        عرض القائمة الكاملة ({dashData.debtors.length} طلاب)
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -3205,6 +3230,71 @@ export default function Dashboard() {
                 {savingChild ? "جاري الحفظ..." : "حفظ البيانات"}
               </button>
             </div>
+          </div>
+        </Modal>
+
+        {/* ============================================================================ */}
+        {/* نافذة القائمة الكاملة لرادار الديون */}
+        {/* ============================================================================ */}
+        <Modal
+          open={openDebtorsModal}
+          title={`الطلاب المتأخرين بالدفع (${dashData.debtors.length})`}
+          onClose={() => setOpenDebtorsModal(false)}
+        >
+          <div
+            className="list-widget"
+            style={{
+              maxHeight: "60vh",
+              overflowY: "auto",
+              paddingRight: "4px",
+              paddingBottom: "10px",
+            }}
+          >
+            {dashData.debtors.map((d, i) => (
+              <Link
+                to={`/children/${d.child_id}`}
+                key={i}
+                className="list-item"
+                style={{ background: "#f8fafc" }}
+                onClick={() => setOpenDebtorsModal(false)}
+              >
+                <div className="li-info">
+                  <div
+                    className="li-avatar"
+                    style={{ background: "#fee2e2", color: "#ef4444" }}
+                  >
+                    <AlertOctagon size={20} />
+                  </div>
+                  <div>
+                    <div className="li-title">{d.child_name}</div>
+                    <div className="li-sub">رقم المعرف: {d.child_id}</div>
+                  </div>
+                </div>
+                <div className="li-value danger">{fmtMoney(d.balance)} ₪</div>
+              </Link>
+            ))}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              marginTop: 16,
+            }}
+          >
+            <button
+              style={{
+                padding: "10px 24px",
+                borderRadius: "12px",
+                border: "1px solid #e2e8f0",
+                background: "white",
+                cursor: "pointer",
+                fontWeight: 800,
+                color: "#0f172a",
+              }}
+              onClick={() => setOpenDebtorsModal(false)}
+            >
+              إغلاق
+            </button>
           </div>
         </Modal>
 
