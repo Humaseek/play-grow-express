@@ -51,11 +51,10 @@ function fmtDT(dt) {
 }
 
 function fmtDate(dt) {
-  if (!d) return "—";
-  const dt = new Date(d);
+  if (!dt) return "-";
+  const d = new Date(dt);
   const pad = (n) => String(n).padStart(2, "0");
-  // الترتيب الجديد: يوم / شهر / سنة
-  return `${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}/${dt.getFullYear()}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 function fmtTimeHM(dt) {
