@@ -2932,7 +2932,7 @@ export default function Dashboard() {
         </Modal>
 
         {/* ============================================================================ */}
-        {/* نافذة إضافة طالب (النسخة الأصلية المطابقة 100% لملف الأطفال) */}
+        {/* نافذة إضافة طالب (النسخة الأصلية من ملف الأطفال) */}
         {/* ============================================================================ */}
         <Modal
           open={openChildAdd}
@@ -2985,7 +2985,6 @@ export default function Dashboard() {
                   { value: "male", label: "ذكر" },
                   { value: "female", label: "أنثى" },
                 ]}
-                menuWidth="trigger"
               />
             </div>
 
@@ -3045,7 +3044,7 @@ export default function Dashboard() {
                 className="input"
                 value={childData.father_phone}
                 onChange={(e) =>
-                  setChildData({ ...childData, father_phone: e.target.value })
+                  setChildData({ ...childData, father_name: e.target.value })
                 }
                 placeholder="رقم التواصل"
                 dir="ltr"
