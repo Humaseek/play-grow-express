@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 // إضافة الاستيراد الخاص بـ useNavigate للانتقال بين الصفحات
 import { useNavigate } from "react-router-dom";
+// السلاح السري لحل مشكلة الزر العائم
+import { createPortal } from "react-dom";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -365,10 +367,10 @@ const CHILDREN_STYLES = `
   gap: 12px;
 }
 
-/* الزر العائم في الموبايل - الآن هو خارج صفحة الأنيميشن لذلك سيثبت تماماً */
+/* الزر العائم في الموبايل - Portal */
 .fab-button {
   position: fixed !important;
-  bottom: 95px !important; /* مسافة كافية ليكون فوق الشريط السفلي (الذي ارتفاعه 75px) */
+  bottom: 95px !important;
   right: 20px !important;
   width: 60px;
   height: 60px;
@@ -381,7 +383,7 @@ const CHILDREN_STYLES = `
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 99999 !important; /* لضمان ظهوره فوق جميع العناصر */
+  z-index: 999999 !important; /* أعلى اشي بالصفحة */
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
@@ -403,7 +405,7 @@ const CHILDREN_STYLES = `
     padding: 16px; 
   }
   .page--children { 
-    padding-bottom: 120px; /* لتوفير مساحة للزر العائم والشريط السفلي */
+    padding-bottom: 120px; /* مساحة للزر */
   }
 }
 
@@ -814,15 +816,16 @@ export default function Children() {
         </div>
       </div>
 
-      {/* ======== الحل السحري ========
-        الزر العائم الخاص بالموبايل (FAB) تم نقله هنا
-        خارج حاوية <div className="page"> 
-        ليتجنب تأثير الـ CSS Transform 
-        ويصبح ثابتاً على الشاشة!
+      {/* ======== السلاح النووي ========
+        استخدام createPortal لرمي الزر مباشرة داخل الـ body 
+        هيك بيتحرر من أي CSS مأثر عليه ويثبت عالشاشة
       */}
-      <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
-        <Plus size={30} strokeWidth={2.5} />
-      </button>
+      {createPortal(
+        <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
+          <Plus size={30} strokeWidth={2.5} />
+        </button>,
+        document.body,
+      )}
 
       {/* نموذج الإضافة والتعديل */}
       <Modal
