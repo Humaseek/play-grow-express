@@ -1729,7 +1729,7 @@ export default function Dashboard() {
   // ============================================================================
   async function loadChildPicklists() {
     const [cRes, clRes] = await Promise.all([
-      supabase.from("countries").select("name").order("name"),
+      supabase.from("countries").select("id, name").order("name"), // <--- ضفنا الـ id هون
       supabase.from("child_classes").select("name").order("name"),
     ]);
     if (!cRes.error) setCountries(cRes.data || []);
@@ -1762,24 +1762,39 @@ export default function Dashboard() {
 
     setSavingChild(true);
     try {
-      if (formData.country_name?.trim()) {
-        await safeInsertPicklist("countries", formData.country_name);
+      // معالجة المدينة: البحث عن المعرف (id) أو إنشاء مدينة جديدة
+      let countryId = null;
+      const typedCountry = formData.country_name?.trim();
+      if (typedCountry) {
+        const existingC = countries.find((c) => c.name === typedCountry);
+        if (existingC) {
+          countryId = existingC.id;
+        } else {
+          const created = await supabase
+            .from("countries")
+            .insert([{ name: typedCountry }])
+            .select("id")
+            .single();
+          if (created.data) countryId = created.data.id;
+        }
       }
+
+      // معالجة الصف
       if (formData.class?.trim()) {
         await safeInsertPicklist("child_classes", formData.class);
       }
 
+      // تحضير البيانات بنفس الأعمدة المطلوبة في قاعدة البيانات
       const payload = {
         name: formData.name.trim(),
-        id_number: formData.id_number?.trim() || null,
-        age: formData.age ? parseInt(formData.age) : null, // <--- إرسال العمر كـ رقم
-        gender: formData.gender,
+        age: formData.age ? parseInt(formData.age) : null,
         class: formData.class?.trim() || null,
+        gender: formData.gender,
+        country_id: countryId, // <--- هاد اللي كان يعمل المشكلة!
         mother_name: formData.mother_name?.trim() || null,
         mother_phone: formData.mother_phone?.trim() || null,
         father_name: formData.father_name?.trim() || null,
         father_phone: formData.father_phone?.trim() || null,
-        country: formData.country_name?.trim() || null,
         notes: formData.notes?.trim() || null,
       };
 
