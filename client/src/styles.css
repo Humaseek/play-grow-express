@@ -2479,3 +2479,132 @@ textarea {
   color: #0f172a !important;
   font-weight: 900 !important;
 }
+
+/* ==========================================================================
+   MOBILE APP THEME (Appended for Mobile Responsiveness)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .main {
+    padding-bottom: 80px !important; /* مساحة للبار السفلي */
+  }
+
+  .page {
+    padding: 16px !important;
+  }
+
+  /* 1. Sidebar to Bottom Navigation */
+  .sidebar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 75px;
+    flex-direction: row;
+    justify-content: space-around;
+    padding: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    z-index: 9999;
+    background: var(--surface);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .sidebar .brand,
+  .sidebar .sep,
+  .sidebar .logout-btn,
+  .sidebar .logout-text {
+    display: none !important;
+  }
+
+  .sidebar .nav {
+    flex-direction: row;
+    width: 100%;
+    justify-content: space-around;
+    align-items: center;
+    gap: 0;
+  }
+
+  .sidebar .nav a {
+    flex-direction: column;
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 11px;
+    gap: 4px;
+    flex: 1;
+    border-radius: 0;
+  }
+
+  .sidebar .nav a.active {
+    background: transparent !important;
+    color: var(--accent) !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .sidebar .nav a.active svg {
+    transform: scale(1.1);
+  }
+
+  /* 2. Stack Grid Elements */
+  .grid,
+  .kpiGrid,
+  .cardsGrid,
+  .dd-grid {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  [class*="col-"],
+  [class*="span-"] {
+    width: 100% !important;
+  }
+
+  /* 3. Tables Scrollable */
+  .tableWrap,
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 4. Modals to Bottom Sheets */
+  .modalOverlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .modalCard {
+    border-radius: 24px 24px 0 0 !important;
+    max-height: 85vh !important;
+    width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* 5. Touch Friendly Sizes */
+  .btn,
+  .input,
+  select,
+  textarea,
+  .modernSelect,
+  .control {
+    min-height: 48px !important;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pageHeader__actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .pageHeader__actions .btn {
+    flex: 1;
+  }
+}
