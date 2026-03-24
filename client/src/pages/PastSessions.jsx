@@ -4,6 +4,7 @@ import { supabase } from "../supabaseClient";
 import PageHeader from "../components/PageHeader";
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
+import Modal from "../components/Modal"; // تم إضافة استيراد المودال
 import {
   Clock,
   History,
@@ -20,7 +21,6 @@ function fmtDate(dt) {
   if (!dt) return "-";
   const d = new Date(dt);
   const pad = (n) => String(n).padStart(2, "0");
-  // التنسيق الجديد: يوم/شهر/سنة
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
@@ -36,6 +36,18 @@ function fmtWeekday(dt) {
   return new Intl.DateTimeFormat("ar", { weekday: "long" }).format(
     new Date(dt),
   );
+}
+
+// دالة مساعدة لتحويل التاريخ لصيغة تناسب حقل الإدخال datetime-local
+function toInputDatetimeLocal(dt) {
+  const d = dt ? new Date(dt) : new Date();
+  const pad = (x) => String(x).padStart(2, "0");
+  const y = d.getFullYear();
+  const mo = pad(d.getMonth() + 1);
+  const da = pad(d.getDate());
+  const h = pad(d.getHours());
+  const mi = pad(d.getMinutes());
+  return `${y}-${mo}-${da}T${h}:${mi}`;
 }
 // ---------------------------------
 
@@ -104,6 +116,16 @@ export default function PastSessions() {
   const [summary, setSummary] = useState(null);
   const [pastSessions, setPastSessions] = useState([]);
 
+  // حالات نافذة التعديل
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSessionId, setEditingSessionId] = useState(null);
+  const [savingSession, setSavingSession] = useState(false);
+  const [sessionForm, setSessionForm] = useState({
+    start_at: "",
+    end_at: "",
+    status: "scheduled",
+  });
+
   const [confirm, setConfirm] = useState({
     open: false,
     type: null,
@@ -153,6 +175,49 @@ export default function PastSessions() {
       setPastSessions((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
       console.error(err);
+    }
+  }
+
+  // دوال فتح وحفظ التعديل
+  function openEditModal(session) {
+    setEditingSessionId(session.id);
+    setSessionForm({
+      start_at: toInputDatetimeLocal(session.start_at),
+      end_at: toInputDatetimeLocal(session.end_at),
+      status: session.status || "scheduled",
+    });
+    setIsEditModalOpen(true);
+  }
+
+  async function handleSaveSession() {
+    setSavingSession(true);
+    try {
+      const updatedData = {
+        start_at: new Date(sessionForm.start_at).toISOString(),
+        end_at: new Date(sessionForm.end_at).toISOString(),
+        status: sessionForm.status,
+      };
+
+      const { error } = await supabase
+        .from("course_sessions")
+        .update(updatedData)
+        .eq("id", editingSessionId);
+
+      if (error) throw error;
+
+      // تحديث الجلسات محلياً في الواجهة
+      setPastSessions((prev) =>
+        prev.map((s) =>
+          s.id === editingSessionId ? { ...s, ...updatedData } : s,
+        ),
+      );
+
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("حدث خطأ أثناء حفظ التعديلات");
+    } finally {
+      setSavingSession(false);
     }
   }
 
@@ -300,7 +365,7 @@ export default function PastSessions() {
                       <button
                         className="btn iconOnly"
                         title="تعديل الجلسة"
-                        onClick={() => navigate(`/runs/${runId}`)}
+                        onClick={() => openEditModal(s)} // التعديل الجديد لفتح المودال بدلاً من الانتقال
                       >
                         <Pencil size={16} />
                       </button>
@@ -326,6 +391,151 @@ export default function PastSessions() {
             </div>
           )}
         </div>
+
+        {/* ============================================================================ */}
+        {/* نافذة تعديل الجلسة */}
+        {/* ============================================================================ */}
+        <Modal
+          open={isEditModalOpen}
+          title="تعديل الجلسة"
+          onClose={() => !savingSession && setIsEditModalOpen(false)}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              padding: "10px 0",
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  marginBottom: 6,
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#64748b",
+                }}
+              >
+                وقت البداية
+              </div>
+              <input
+                type="datetime-local"
+                value={sessionForm.start_at}
+                onChange={(e) =>
+                  setSessionForm({ ...sessionForm, start_at: e.target.value })
+                }
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  outline: "none",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+            <div>
+              <div
+                style={{
+                  marginBottom: 6,
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#64748b",
+                }}
+              >
+                وقت النهاية
+              </div>
+              <input
+                type="datetime-local"
+                value={sessionForm.end_at}
+                onChange={(e) =>
+                  setSessionForm({ ...sessionForm, end_at: e.target.value })
+                }
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  outline: "none",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+            <div>
+              <div
+                style={{
+                  marginBottom: 6,
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "#64748b",
+                }}
+              >
+                الحالة
+              </div>
+              <select
+                value={sessionForm.status}
+                onChange={(e) =>
+                  setSessionForm({ ...sessionForm, status: e.target.value })
+                }
+                style={{
+                  width: "100%",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  outline: "none",
+                  fontFamily: "inherit",
+                  background: "#fff",
+                }}
+              >
+                <option value="scheduled">مجدولة</option>
+                <option value="done">مكتملة</option>
+                <option value="canceled">ملغاة</option>
+              </select>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                marginTop: 10,
+              }}
+            >
+              <button
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  background: "white",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  color: "#0f172a",
+                }}
+                onClick={() => setIsEditModalOpen(false)}
+                disabled={savingSession}
+              >
+                إلغاء
+              </button>
+              <button
+                style={{
+                  background: "#00ac47",
+                  color: "white",
+                  padding: "10px 24px",
+                  borderRadius: "12px",
+                  border: "none",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 12px rgba(0, 172, 71, 0.25)",
+                }}
+                onClick={handleSaveSession}
+                disabled={savingSession}
+              >
+                {savingSession ? "جاري الحفظ..." : "حفظ التعديلات"}
+              </button>
+            </div>
+          </div>
+        </Modal>
 
         <ConfirmDialog
           open={confirm.open}
