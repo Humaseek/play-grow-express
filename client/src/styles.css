@@ -2483,17 +2483,13 @@ textarea {
 /* ==========================================================================
    MOBILE APP THEME (Appended for Mobile Responsiveness)
    ========================================================================== */
-/* ==========================================================================
-   MOBILE APP THEME (Appended for Mobile Responsiveness)
-   ========================================================================== */
 @media (max-width: 980px) {
-  /* <--- غيرنا الرقم هنا فقط */
   .layout {
-    flex-direction: column;
+    flex-direction: column !important;
   }
 
   .main {
-    padding-bottom: 80px !important; /* مساحة للبار السفلي */
+    padding-bottom: 85px !important; /* مساحة للبار السفلي */
   }
 
   .page {
@@ -2502,20 +2498,23 @@ textarea {
 
   /* 1. Sidebar to Bottom Navigation */
   .sidebar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    height: 75px;
-    flex-direction: row;
-    justify-content: space-around;
-    padding: 0;
-    border-left: none;
-    border-top: 1px solid var(--border);
-    z-index: 9999;
-    background: var(--surface);
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+    position: fixed !important; /* إجبار التثبيت */
+    top: auto !important; /* إجبار إلغاء التثبيت من الأعلى */
+    bottom: 0 !important; /* إجبار التثبيت في الأسفل */
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 75px !important;
+    flex-direction: row !important;
+    justify-content: space-around !important;
+    padding: 0 8px !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    border-left: none !important;
+    border-inline-end: none !important;
+    border-top: 1px solid var(--border) !important;
+    z-index: 9999 !important;
+    background: var(--surface) !important;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05) !important;
   }
 
   .sidebar .brand,
@@ -2526,21 +2525,22 @@ textarea {
   }
 
   .sidebar .nav {
-    flex-direction: row;
-    width: 100%;
-    justify-content: space-around;
-    align-items: center;
-    gap: 0;
+    flex-direction: row !important;
+    width: 100% !important;
+    justify-content: space-around !important;
+    align-items: center !important;
+    gap: 0 !important;
   }
 
   .sidebar .nav a {
-    flex-direction: column;
-    justify-content: center;
-    padding: 8px 4px;
-    font-size: 11px;
-    gap: 4px;
-    flex: 1;
-    border-radius: 0;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 8px 4px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+    flex: 1 !important;
+    border-radius: 0 !important;
+    border: none !important;
   }
 
   .sidebar .nav a.active {
@@ -2551,7 +2551,7 @@ textarea {
   }
 
   .sidebar .nav a.active svg {
-    transform: scale(1.1);
+    transform: scale(1.15) !important;
   }
 
   /* 2. Stack Grid Elements */
@@ -2571,8 +2571,8 @@ textarea {
   /* 3. Tables Scrollable */
   .tableWrap,
   .table-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   /* 4. Modals to Bottom Sheets */
@@ -2599,16 +2599,16 @@ textarea {
   }
 
   .pageHeader {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: column !important;
+    align-items: flex-start !important;
   }
 
   .pageHeader__actions {
-    width: 100%;
-    flex-wrap: wrap;
+    width: 100% !important;
+    flex-wrap: wrap !important;
   }
 
   .pageHeader__actions .btn {
-    flex: 1;
+    flex: 1 !important;
   }
 }
