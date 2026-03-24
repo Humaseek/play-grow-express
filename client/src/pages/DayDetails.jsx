@@ -349,13 +349,22 @@ export default function DayDetails() {
     if (date) loadDayDetails();
   }, [date]);
 
-  // تنسيق التاريخ للعرض
-  const dateFormatted = new Intl.DateTimeFormat("ar-EG", {
+  // ============================================================================
+  // تنسيق التاريخ المُحسن (يوم بالعربي، وتاريخ بالإنجليزي)
+  // ============================================================================
+  const targetDateObj = new Date(date);
+
+  // استخراج اليوم بالعربي (مثل: الثلاثاء)
+  const arabicDay = new Intl.DateTimeFormat("ar-EG", {
     weekday: "long",
-    year: "numeric",
-    month: "long",
+  }).format(targetDateObj);
+
+  // استخراج التاريخ بالإنجليزي (مثل: 24 March 2026)
+  const englishDate = new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
-  }).format(new Date(date));
+    month: "long",
+    year: "numeric",
+  }).format(targetDateObj);
 
   if (loading) {
     return (
@@ -376,7 +385,33 @@ export default function DayDetails() {
       <div className="container" style={{ maxWidth: 1240 }}>
         {/* Header */}
         <PageHeader
-          title={`يوم ${dateFormatted}`}
+          title={
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "10px",
+                flexWrap: "wrap",
+              }}
+            >
+              يوم {arabicDay}
+              <span
+                style={{ color: "#cbd5e1", fontWeight: 300, fontSize: "24px" }}
+              >
+                |
+              </span>
+              <span
+                dir="ltr"
+                style={{
+                  color: "#3b82f6",
+                  fontFamily: "system-ui",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                {englishDate}
+              </span>
+            </span>
+          }
           subtitle="ملخص كامل وشامل لنشاطات هذا اليوم"
           icon={<CalendarDays size={28} color="#3b82f6" />}
           actions={
