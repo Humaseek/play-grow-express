@@ -2965,7 +2965,7 @@ export default function Dashboard() {
         </Modal>
 
         {/* ============================================================================ */}
-        {/* نافذة إضافة طالب (النسخة المصححة) */}
+        {/* نافذة إضافة طالب (التصميم المطلوب مع حقل العمر والزر البرتقالي) */}
         {/* ============================================================================ */}
         <Modal
           open={openChildAdd}
@@ -2981,7 +2981,7 @@ export default function Dashboard() {
               <div className="grid" style={{ gap: "16px" }}>
                 <div style={{ gridColumn: "span 12" }}>
                   <div className="muted" style={{ marginBottom: 6 }}>
-                    الاسم الرباعي *
+                    * الاسم الرباعي
                   </div>
                   <input
                     className="input"
@@ -2994,15 +2994,18 @@ export default function Dashboard() {
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
                   <div className="muted" style={{ marginBottom: 6 }}>
-                    تاريخ الميلاد
+                    العمر
                   </div>
                   <input
                     className="input"
-                    type="date"
-                    value={formData.birth_date}
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={formData.age || ""}
                     onChange={(e) =>
-                      setFormData({ ...formData, birth_date: e.target.value })
+                      setFormData({ ...formData, age: e.target.value })
                     }
+                    placeholder="بالسنوات"
                   />
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
@@ -3029,7 +3032,7 @@ export default function Dashboard() {
                       value: c.name,
                       label: c.name,
                     }))}
-                    placeholder="اختر أو اكتب صفاً..."
+                    placeholder="...اختر أو اكتب صفاً"
                   />
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
@@ -3045,7 +3048,7 @@ export default function Dashboard() {
                       value: c.name,
                       label: c.name,
                     }))}
-                    placeholder="اختر أو اكتب مدينة..."
+                    placeholder="...اختر أو اكتب مدينة"
                   />
                 </div>
               </div>
@@ -3140,7 +3143,7 @@ export default function Dashboard() {
                 onChange={(e) =>
                   setFormData({ ...formData, notes: e.target.value })
                 }
-                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+                placeholder="...أي تفاصيل طبية أو ملاحظات أخرى"
                 style={{ resize: "vertical" }}
               />
             </div>
@@ -3156,14 +3159,31 @@ export default function Dashboard() {
               }}
             >
               <button
-                className="btn"
+                style={{
+                  padding: "10px 24px",
+                  borderRadius: "12px",
+                  border: "1px solid #e2e8f0",
+                  background: "white",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  color: "#0f172a",
+                }}
                 onClick={() => setOpenChildAdd(false)}
                 disabled={savingChild}
               >
                 إلغاء
               </button>
               <button
-                className="btn btn-add"
+                style={{
+                  background: "#f59e0b",
+                  color: "white",
+                  padding: "10px 24px",
+                  borderRadius: "12px",
+                  border: "none",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                  boxShadow: "0 4px 12px rgba(245, 158, 11, 0.25)",
+                }}
                 onClick={handleSaveChild}
                 disabled={savingChild}
               >
