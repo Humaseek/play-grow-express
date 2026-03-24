@@ -23,7 +23,6 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  // إغلاق القائمة عند النقر خارجها
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -34,7 +33,6 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // تصفية الخيارات بناءً على النص المدخل
   const filtered = options.filter((o) =>
     (o.label || "").toLowerCase().includes((value || "").toLowerCase()),
   );
@@ -96,7 +94,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
                 transition: "background 0.15s ease",
               }}
               onMouseDown={(e) => {
-                e.preventDefault(); // منع فقدان التركيز من حقل الإدخال
+                e.preventDefault();
                 onChange(opt.value);
                 setIsOpen(false);
               }}
@@ -122,6 +120,16 @@ const CHILDREN_STYLES = `
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
   min-height: 100vh;
   padding-bottom: 40px;
+  
+  /* حل المشكلة: إيقاف الـ transform الذي يعطل الـ position fixed من ملف styles.css */
+  transform: none !important;
+  animation: childrenFadeIn 0.2s ease-out both !important;
+}
+
+/* حركة بديلة لا تستخدم transform */
+@keyframes childrenFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .children-header {
@@ -367,11 +375,11 @@ const CHILDREN_STYLES = `
   gap: 12px;
 }
 
-/* الزر العائم في الموبايل - ثابت على الشاشة وعلى اليمين */
+/* الزر العائم في الموبايل - ثابت فوق كل شيء */
 .fab-button {
-  position: fixed;
-  bottom: 24px;
-  right: 24px; /* تم تعديله من left إلى right */
+  position: fixed !important;
+  bottom: 95px !important; /* مسافة كافية ليكون فوق الشريط السفلي (الذي ارتفاعه 75px) */
+  right: 20px !important;
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -383,7 +391,7 @@ const CHILDREN_STYLES = `
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 100;
+  z-index: 99999 !important; /* لضمان ظهوره فوق جميع العناصر */
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
@@ -405,7 +413,7 @@ const CHILDREN_STYLES = `
     padding: 16px; 
   }
   .page--children { 
-    padding-bottom: 100px; /* لتوفير مساحة للزر العائم */
+    padding-bottom: 120px; /* لتوفير مساحة للزر العائم والشريط السفلي */
   }
 }
 
@@ -414,7 +422,7 @@ const CHILDREN_STYLES = `
     display: none; 
   }
   .fab-button { 
-    display: none; 
+    display: none !important; 
   }
 }
 `;
@@ -808,7 +816,7 @@ export default function Children() {
         </div>
       </div>
 
-      {/* زر الإضافة العائم الخاص بالموبايل (FAB) - ثابت على اليمين */}
+      {/* زر الإضافة العائم الخاص بالموبايل (FAB) - ثابت على اليمين وفوق البار السفلي */}
       <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
         <Plus size={30} strokeWidth={2.5} />
       </button>
