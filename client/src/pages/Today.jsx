@@ -2969,10 +2969,11 @@ export default function Dashboard() {
         {/* ============================================================================ */}
         <Modal
           open={openChildAdd}
-          title="إضافة طالب جديد"
+          title="إضافة طفل جديد"
           onClose={() => !savingChild && setOpenChildAdd(false)}
         >
           <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
+            {/* قسم البيانات الأساسية */}
             <div style={{ gridColumn: "span 12" }}>
               <h4 className="form-section-title">
                 <Users size={18} color="#64748b" /> البيانات الأساسية
@@ -2984,37 +2985,27 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={formData.name}
+                    value={childData.name}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setChildData({ ...childData, name: e.target.value })
                     }
                     placeholder="مثال: أحمد محمد علي"
                   />
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
                   <div className="muted" style={{ marginBottom: 6 }}>
-                    رقم الهوية
+                    العمر
                   </div>
                   <input
                     className="input"
-                    value={formData.id_number}
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={childData.age}
                     onChange={(e) =>
-                      setFormData({ ...formData, id_number: e.target.value })
+                      setChildData({ ...childData, age: e.target.value })
                     }
-                    placeholder="اختياري"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    تاريخ الميلاد
-                  </div>
-                  <input
-                    type="date"
-                    className="input"
-                    value={formData.birth_date}
-                    onChange={(e) =>
-                      setFormData({ ...formData, birth_date: e.target.value })
-                    }
+                    placeholder="بالسنوات"
                   />
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
@@ -3022,8 +3013,8 @@ export default function Dashboard() {
                     الجنس
                   </div>
                   <ModernSelect
-                    value={formData.gender}
-                    onChange={(v) => setFormData({ ...formData, gender: v })}
+                    value={childData.gender}
+                    onChange={(v) => setChildData({ ...childData, gender: v })}
                     options={[
                       { value: "male", label: "ذكر" },
                       { value: "female", label: "أنثى" },
@@ -3035,8 +3026,8 @@ export default function Dashboard() {
                     الصف
                   </div>
                   <CustomCombobox
-                    value={formData.class}
-                    onChange={(v) => setFormData({ ...formData, class: v })}
+                    value={childData.class}
+                    onChange={(v) => setChildData({ ...childData, class: v })}
                     options={classes.map((c) => ({
                       value: c.name,
                       label: c.name,
@@ -3049,9 +3040,9 @@ export default function Dashboard() {
                     المدينة / البلد
                   </div>
                   <CustomCombobox
-                    value={formData.country_name}
+                    value={childData.country_name}
                     onChange={(v) =>
-                      setFormData({ ...formData, country_name: v })
+                      setChildData({ ...childData, country_name: v })
                     }
                     options={countries.map((c) => ({
                       value: c.name,
@@ -3063,6 +3054,7 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* قسم معلومات التواصل مع الأهل */}
             <div style={{ gridColumn: "span 12" }}>
               <h4 className="form-section-title">
                 <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
@@ -3074,9 +3066,12 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={formData.mother_phone}
+                    value={childData.mother_phone}
                     onChange={(e) =>
-                      setFormData({ ...formData, mother_phone: e.target.value })
+                      setChildData({
+                        ...childData,
+                        mother_phone: e.target.value,
+                      })
                     }
                     placeholder="رقم الهاتف"
                     dir="ltr"
@@ -3089,9 +3084,12 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={formData.mother_name}
+                    value={childData.mother_name}
                     onChange={(e) =>
-                      setFormData({ ...formData, mother_name: e.target.value })
+                      setChildData({
+                        ...childData,
+                        mother_name: e.target.value,
+                      })
                     }
                     placeholder="اختياري"
                   />
@@ -3102,9 +3100,12 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={formData.father_phone}
+                    value={childData.father_phone}
                     onChange={(e) =>
-                      setFormData({ ...formData, father_phone: e.target.value })
+                      setChildData({
+                        ...childData,
+                        father_phone: e.target.value,
+                      })
                     }
                     placeholder="رقم الهاتف"
                     dir="ltr"
@@ -3117,9 +3118,12 @@ export default function Dashboard() {
                   </div>
                   <input
                     className="input"
-                    value={formData.father_name}
+                    value={childData.father_name}
                     onChange={(e) =>
-                      setFormData({ ...formData, father_name: e.target.value })
+                      setChildData({
+                        ...childData,
+                        father_name: e.target.value,
+                      })
                     }
                     placeholder="اختياري"
                   />
@@ -3127,6 +3131,7 @@ export default function Dashboard() {
               </div>
             </div>
 
+            {/* قسم الملاحظات */}
             <div style={{ gridColumn: "span 12" }}>
               <div className="muted" style={{ marginBottom: 6 }}>
                 ملاحظات إضافية
@@ -3134,15 +3139,16 @@ export default function Dashboard() {
               <textarea
                 className="input"
                 rows={3}
-                value={formData.notes}
+                value={childData.notes}
                 onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
+                  setChildData({ ...childData, notes: e.target.value })
                 }
                 placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
                 style={{ resize: "vertical" }}
               />
             </div>
 
+            {/* أزرار الإجراءات في النموذج */}
             <div
               style={{
                 gridColumn: "span 12",
