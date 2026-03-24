@@ -1252,7 +1252,7 @@ export default function Dashboard() {
     incomeFiltered: 0,
     expenseFiltered: 0,
     netFiltered: 0,
-    activeStudents: 0,
+    totalChildren: 0, // <--- غيرناها لإجمالي الأطفال
     sessionsCountToday: 0,
     incomeTrend: [],
     expenseTrend: [],
@@ -1352,10 +1352,11 @@ export default function Dashboard() {
         customEndDate,
       );
 
-      const qActiveStudents = supabase
-        .from("enrollments")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "active");
+      // --- تعديل: جلب إجمالي الأطفال بدلاً من الطلاب النشطين ---
+      const qTotalChildren = supabase
+        .from("children")
+        .select("id", { count: "exact", head: true });
+
       const qSessionsToday = supabase
         .from("course_sessions")
         .select("*")
@@ -1394,7 +1395,7 @@ export default function Dashboard() {
         .lte("spent_on", toIso.split("T")[0]);
 
       const [
-        { count: activeStudentsCount, error: e1 },
+        { count: totalChildrenCount, error: e1 }, // <--- التعديل هنا
         { data: sessionsToday, error: e2 },
         { data: runsSummary, error: e3 },
         { data: debtorsData, error: e4 },
@@ -1403,7 +1404,7 @@ export default function Dashboard() {
         { data: paymentsData, error: e7 },
         { data: expensesData, error: e8 },
       ] = await Promise.all([
-        qActiveStudents,
+        qTotalChildren, // <--- التعديل هنا
         qSessionsToday,
         qRunsSummary,
         qDebtors,
@@ -1519,7 +1520,7 @@ export default function Dashboard() {
         incomeFiltered: totalIncome,
         expenseFiltered: totalExpense,
         netFiltered: netProfit,
-        activeStudents: activeStudentsCount || 0,
+        totalChildren: totalChildrenCount || 0, // <--- التعديل هنا
         sessionsCountToday: enrichedSessions.length,
         incomeTrend: incTrendArr,
         expenseTrend: expTrendArr,
@@ -2117,7 +2118,7 @@ export default function Dashboard() {
               >
                 <Users size={20} color="#3b82f6" />
               </div>
-              الطلاب النشطين
+              إجمالي الأطفال
             </div>
             {loading ? (
               <div
@@ -2126,7 +2127,7 @@ export default function Dashboard() {
               ></div>
             ) : (
               <div className="kpi-value" style={{ fontSize: 44 }}>
-                {dashData.activeStudents}
+                {dashData.totalChildren}
               </div>
             )}
             <div
@@ -2143,7 +2144,7 @@ export default function Dashboard() {
                   style={{ height: 16, width: "80%" }}
                 ></div>
               ) : (
-                "إجمالي الاشتراكات الفعالة بالمركز"
+                "عدد جميع الأطفال المسجلين في النظام"
               )}
             </div>
           </div>
