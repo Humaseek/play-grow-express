@@ -120,16 +120,6 @@ const CHILDREN_STYLES = `
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
   min-height: 100vh;
   padding-bottom: 40px;
-  
-  /* حل المشكلة: إيقاف الـ transform الذي يعطل الـ position fixed من ملف styles.css */
-  transform: none !important;
-  animation: childrenFadeIn 0.2s ease-out both !important;
-}
-
-/* حركة بديلة لا تستخدم transform */
-@keyframes childrenFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 
 .children-header {
@@ -375,7 +365,7 @@ const CHILDREN_STYLES = `
   gap: 12px;
 }
 
-/* الزر العائم في الموبايل - ثابت فوق كل شيء */
+/* الزر العائم في الموبايل - الآن هو خارج صفحة الأنيميشن لذلك سيثبت تماماً */
 .fab-button {
   position: fixed !important;
   bottom: 95px !important; /* مسافة كافية ليكون فوق الشريط السفلي (الذي ارتفاعه 75px) */
@@ -636,187 +626,200 @@ export default function Children() {
   };
 
   return (
-    <div className="page page--children" dir="rtl" lang="ar">
+    <>
       <style>{CHILDREN_STYLES}</style>
-      <div className="container">
-        {/* رأس الصفحة */}
-        <div className="children-header">
-          <div className="children-title">الأطفال</div>
-          <div className="children-subtitle">
-            <span style={{ color: "#cbd5e1" }}>|</span>
-            <Users size={16} /> إدارة جميع الأطفال
-          </div>
-        </div>
 
-        {error && <ErrorBanner error={error} />}
-
-        <div className="children-card">
-          {/* شريط الأدوات العلوي */}
-          <div className="children-toolbar">
-            <div className="search-wrapper">
-              <Search size={18} className="search-icon" />
-              <input
-                type="text"
-                className="search-input"
-                placeholder="ابحث بالاسم، المعرف أو رقم الهاتف..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+      {/* حاوية الصفحة الأساسية */}
+      <div className="page page--children" dir="rtl" lang="ar">
+        <div className="container">
+          {/* رأس الصفحة */}
+          <div className="children-header">
+            <div className="children-title">الأطفال</div>
+            <div className="children-subtitle">
+              <span style={{ color: "#cbd5e1" }}>|</span>
+              <Users size={16} /> إدارة جميع الأطفال
             </div>
-            {/* زر الإضافة للشاشات الكبيرة فقط */}
-            <button
-              className="btn btn-add btn-add-desktop"
-              onClick={openAddModal}
-            >
-              <Plus size={18} /> إضافة طفل
-            </button>
           </div>
 
-          {loading ? (
-            <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
-              جاري التحميل...
-            </div>
-          ) : filteredChildren.length === 0 ? (
-            <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
-              لا يوجد بيانات متطابقة.
-            </div>
-          ) : (
-            <>
-              {/* عرض الجدول المعتاد للشاشات الكبيرة (Desktop) */}
-              <div
-                className="desktop-table-container"
-                style={{ overflowX: "auto" }}
-              >
-                <table className="modern-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 60, textAlign: "center" }}>معرف</th>
-                      <th>الاسم</th>
-                      <th>العمر</th>
-                      <th>الصف</th>
-                      <th>الجنس</th>
-                      <th>المدينة</th>
-                      <th>هاتف الأم</th>
-                      <th>هاتف الأب</th>
-                      <th style={{ width: 100, textAlign: "center" }}>
-                        إجراءات
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredChildren.map((child) => (
-                      <tr
-                        key={child.id}
-                        className="clickable-row"
-                        onClick={() => navigate(`/children/${child.id}`)}
-                      >
-                        <td
-                          className="child-id"
-                          style={{ textAlign: "center" }}
-                        >
-                          {child.id}
-                        </td>
-                        <td className="child-name">{child.name}</td>
-                        <td>{child.age ?? "-"}</td>
-                        <td className="muted">{child.class || "-"}</td>
-                        <td>{genderLabel(child.gender)}</td>
-                        <td className="muted">{child.country || "-"}</td>
-                        <td>
-                          <span className="phone-number">
-                            {child.mother_phone || "-"}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="phone-number">
-                            {child.father_phone || "-"}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="actions-cell">
-                            <IconButton
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditModal(child);
-                              }}
-                              title="تعديل"
-                            >
-                              <Pencil size={16} />
-                            </IconButton>
-                            <IconButton
-                              danger
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setConfirm({
-                                  open: true,
-                                  id: child.id,
-                                  text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                                });
-                              }}
-                              title="حذف"
-                            >
-                              <Trash2 size={16} />
-                            </IconButton>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {error && <ErrorBanner error={error} />}
+
+          <div className="children-card">
+            {/* شريط الأدوات العلوي */}
+            <div className="children-toolbar">
+              <div className="search-wrapper">
+                <Search size={18} className="search-icon" />
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="ابحث بالاسم، المعرف أو رقم الهاتف..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
+              {/* زر الإضافة للشاشات الكبيرة فقط */}
+              <button
+                className="btn btn-add btn-add-desktop"
+                onClick={openAddModal}
+              >
+                <Plus size={18} /> إضافة طفل
+              </button>
+            </div>
 
-              {/* عرض القائمة كبطاقات للموبايل (Mobile) */}
-              <div className="mobile-list">
-                {filteredChildren.map((child) => (
-                  <div
-                    key={child.id}
-                    className="mobile-card"
-                    onClick={() => navigate(`/children/${child.id}`)}
-                  >
-                    <div className="mc-row">
-                      <span className="mc-name">{child.name}</span>
-                      <span className="mc-category">
-                        {child.class || "غير محدد"}
-                      </span>
-                    </div>
-                    <div className="mc-row mt-2">
-                      <span className="mc-details phone-number">
-                        {child.mother_phone ||
-                          child.father_phone ||
-                          "لا يوجد رقم هاتف"}
-                      </span>
-                      <div className="mc-actions">
-                        <IconButton
-                          danger
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirm({
-                              open: true,
-                              id: child.id,
-                              text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                            });
-                          }}
+            {loading ? (
+              <div
+                style={{ padding: 40, textAlign: "center", color: "#64748b" }}
+              >
+                جاري التحميل...
+              </div>
+            ) : filteredChildren.length === 0 ? (
+              <div
+                style={{ padding: 40, textAlign: "center", color: "#64748b" }}
+              >
+                لا يوجد بيانات متطابقة.
+              </div>
+            ) : (
+              <>
+                {/* عرض الجدول المعتاد للشاشات الكبيرة (Desktop) */}
+                <div
+                  className="desktop-table-container"
+                  style={{ overflowX: "auto" }}
+                >
+                  <table className="modern-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 60, textAlign: "center" }}>معرف</th>
+                        <th>الاسم</th>
+                        <th>العمر</th>
+                        <th>الصف</th>
+                        <th>الجنس</th>
+                        <th>المدينة</th>
+                        <th>هاتف الأم</th>
+                        <th>هاتف الأب</th>
+                        <th style={{ width: 100, textAlign: "center" }}>
+                          إجراءات
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredChildren.map((child) => (
+                        <tr
+                          key={child.id}
+                          className="clickable-row"
+                          onClick={() => navigate(`/children/${child.id}`)}
                         >
-                          <Trash2 size={20} />
-                        </IconButton>
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(child);
-                          }}
-                        >
-                          <Pencil size={20} />
-                        </IconButton>
+                          <td
+                            className="child-id"
+                            style={{ textAlign: "center" }}
+                          >
+                            {child.id}
+                          </td>
+                          <td className="child-name">{child.name}</td>
+                          <td>{child.age ?? "-"}</td>
+                          <td className="muted">{child.class || "-"}</td>
+                          <td>{genderLabel(child.gender)}</td>
+                          <td className="muted">{child.country || "-"}</td>
+                          <td>
+                            <span className="phone-number">
+                              {child.mother_phone || "-"}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="phone-number">
+                              {child.father_phone || "-"}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="actions-cell">
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditModal(child);
+                                }}
+                                title="تعديل"
+                              >
+                                <Pencil size={16} />
+                              </IconButton>
+                              <IconButton
+                                danger
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirm({
+                                    open: true,
+                                    id: child.id,
+                                    text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                                  });
+                                }}
+                                title="حذف"
+                              >
+                                <Trash2 size={16} />
+                              </IconButton>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* عرض القائمة كبطاقات للموبايل (Mobile) */}
+                <div className="mobile-list">
+                  {filteredChildren.map((child) => (
+                    <div
+                      key={child.id}
+                      className="mobile-card"
+                      onClick={() => navigate(`/children/${child.id}`)}
+                    >
+                      <div className="mc-row">
+                        <span className="mc-name">{child.name}</span>
+                        <span className="mc-category">
+                          {child.class || "غير محدد"}
+                        </span>
+                      </div>
+                      <div className="mc-row mt-2">
+                        <span className="mc-details phone-number">
+                          {child.mother_phone ||
+                            child.father_phone ||
+                            "لا يوجد رقم هاتف"}
+                        </span>
+                        <div className="mc-actions">
+                          <IconButton
+                            danger
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirm({
+                                open: true,
+                                id: child.id,
+                                text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                              });
+                            }}
+                          >
+                            <Trash2 size={20} />
+                          </IconButton>
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(child);
+                            }}
+                          >
+                            <Pencil size={20} />
+                          </IconButton>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* زر الإضافة العائم الخاص بالموبايل (FAB) - ثابت على اليمين وفوق البار السفلي */}
+      {/* ======== الحل السحري ========
+        الزر العائم الخاص بالموبايل (FAB) تم نقله هنا
+        خارج حاوية <div className="page"> 
+        ليتجنب تأثير الـ CSS Transform 
+        ويصبح ثابتاً على الشاشة!
+      */}
       <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
         <Plus size={30} strokeWidth={2.5} />
       </button>
@@ -1033,6 +1036,6 @@ export default function Children() {
           setConfirm({ open: false, id: null, text: "" });
         }}
       />
-    </div>
+    </>
   );
 }
