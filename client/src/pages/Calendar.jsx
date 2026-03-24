@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // <-- تم إضافة الاستيراد هنا
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import {
   ChevronRight,
@@ -127,7 +127,7 @@ const CALENDAR_STYLES = `
   display: flex;
   flex-direction: column;
   transition: all 0.2s;
-  cursor: pointer; /* <-- إضافة مؤشر اليد */
+  cursor: pointer;
 }
 
 .cal-day-cell:hover {
@@ -140,7 +140,7 @@ const CALENDAR_STYLES = `
   background: transparent;
   border: none;
   box-shadow: none;
-  cursor: default; /* إلغاء مؤشر اليد للفراغات */
+  cursor: default;
 }
 
 .cal-day-cell.is-today {
@@ -195,7 +195,7 @@ const CALENDAR_STYLES = `
 // Component المكون الرئيسي
 // ============================================================================
 export default function CalendarPage() {
-  const navigate = useNavigate(); // <-- إضافة دالة التنقل
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarData, setCalendarData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -390,7 +390,7 @@ export default function CalendarPage() {
         <div
           key={dateStr}
           className={`cal-day-cell ${isToday ? "is-today" : ""}`}
-          onClick={() => navigate(`/calendar/${dateStr}`)} // <-- إضافة الانتقال لصفحة اليوم
+          onClick={() => navigate(`/calendar/${dateStr}`)}
         >
           <span className="cal-day-number">{day}</span>
 
@@ -455,7 +455,10 @@ export default function CalendarPage() {
     return cells;
   };
 
-  const monthLabel = new Intl.DateTimeFormat("ar-EG", {
+  // ============================================================================
+  // التعديل هنا: تحويل الشهر والسنة للإنجليزية مع الحفاظ على الأيام بالعربي
+  // ============================================================================
+  const monthLabel = new Intl.DateTimeFormat("en-GB", {
     month: "long",
     year: "numeric",
   }).format(currentDate);
@@ -485,7 +488,18 @@ export default function CalendarPage() {
             <button className="cal-btn" onClick={handleNextMonth}>
               <ChevronRight size={20} />
             </button>
-            <div className="cal-month-label">{monthLabel}</div>
+            {/* التعديل هنا: إضافة dir="ltr" عشان تظهر الكلمة الإنجليزية بشكل صحيح */}
+            <div
+              className="cal-month-label"
+              dir="ltr"
+              style={{
+                fontFamily: "system-ui",
+                letterSpacing: "0.5px",
+                color: "#3b82f6",
+              }}
+            >
+              {monthLabel}
+            </div>
             <button className="cal-btn" onClick={handlePrevMonth}>
               <ChevronLeft size={20} />
             </button>
