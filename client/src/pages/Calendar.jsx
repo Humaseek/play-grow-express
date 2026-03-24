@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // <-- تم إضافة الاستيراد هنا
 import { supabase } from "../supabaseClient";
 import {
   ChevronRight,
@@ -126,6 +127,7 @@ const CALENDAR_STYLES = `
   display: flex;
   flex-direction: column;
   transition: all 0.2s;
+  cursor: pointer; /* <-- إضافة مؤشر اليد */
 }
 
 .cal-day-cell:hover {
@@ -138,6 +140,7 @@ const CALENDAR_STYLES = `
   background: transparent;
   border: none;
   box-shadow: none;
+  cursor: default; /* إلغاء مؤشر اليد للفراغات */
 }
 
 .cal-day-cell.is-today {
@@ -192,6 +195,7 @@ const CALENDAR_STYLES = `
 // Component المكون الرئيسي
 // ============================================================================
 export default function CalendarPage() {
+  const navigate = useNavigate(); // <-- إضافة دالة التنقل
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarData, setCalendarData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -212,10 +216,8 @@ export default function CalendarPage() {
     "السبت",
   ];
 
-  // دالة لتنسيق الأرقام كعملة
   const fmtMoney = (n) => Number(n || 0).toLocaleString("en-US");
 
-  // دالة للحصول على التاريخ بصيغة YYYY-MM-DD محلياً
   const getLocalYMD = (dateObj) => {
     if (!dateObj) return null;
     const d = new Date(dateObj);
@@ -231,7 +233,6 @@ export default function CalendarPage() {
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth();
 
-      // حساب بداية ونهاية الشهر الحالي
       const startOfMonth = new Date(year, month, 1);
       const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
       const daysInMonth = endOfMonth.getDate();
@@ -241,7 +242,6 @@ export default function CalendarPage() {
       const startYMD = getLocalYMD(startOfMonth);
       const endYMD = getLocalYMD(endOfMonth);
 
-      // بناء هيكل البيانات المبدئي لكل يوم في الشهر
       const dayMap = {};
       for (let i = 1; i <= daysInMonth; i++) {
         const dStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
@@ -250,28 +250,24 @@ export default function CalendarPage() {
         dayMap[dStr] = { income: 0, expense: 0, sessions: 0, attendance: 0 };
       }
 
-      // جلب الدفعات (الإيرادات)
       const { data: pays } = await supabase
         .from("payments")
         .select("amount, paid_at")
         .gte("paid_at", startIso)
         .lte("paid_at", endIso);
 
-      // جلب المصاريف
       const { data: exps } = await supabase
         .from("expenses")
         .select("amount, spent_on")
         .gte("spent_on", startYMD)
         .lte("spent_on", endYMD);
 
-      // جلب الجلسات
       const { data: sess } = await supabase
         .from("course_sessions")
         .select("id, start_at")
         .gte("start_at", startIso)
         .lte("start_at", endIso);
 
-      // جلب الحضور (فقط للجلسات الموجودة في هذا الشهر)
       let att = [];
       if (sess && sess.length > 0) {
         const sessIds = sess.map((s) => s.id);
@@ -283,9 +279,6 @@ export default function CalendarPage() {
         att = attData || [];
       }
 
-      // -------------------------------------------------------------
-      // تجميع البيانات وتوزيعها على الأيام
-      // -------------------------------------------------------------
       let mIncome = 0,
         mExpense = 0,
         mSessions = 0,
@@ -300,7 +293,7 @@ export default function CalendarPage() {
       });
 
       exps?.forEach((e) => {
-        const d = e.spent_on; // صيغتها YYYY-MM-DD
+        const d = e.spent_on;
         if (dayMap[d]) {
           dayMap[d].expense += Number(e.amount || 0);
           mExpense += Number(e.amount || 0);
@@ -341,10 +334,8 @@ export default function CalendarPage() {
 
   useEffect(() => {
     fetchMonthData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentDate]);
 
-  // دوال التنقل بين الأشهر
   const handlePrevMonth = () => {
     setCurrentDate(
       new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
@@ -361,25 +352,22 @@ export default function CalendarPage() {
     setCurrentDate(new Date());
   };
 
-  // توليد شبكة التقويم
   const renderCalendarGrid = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = الأحد
+    const firstDayIndex = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     const todayYMD = getLocalYMD(new Date());
 
     let cells = [];
 
-    // تعبئة الفراغات قبل بداية الشهر
     for (let i = 0; i < firstDayIndex; i++) {
       cells.push(
         <div key={`empty-${i}`} className="cal-day-cell is-empty"></div>,
       );
     }
 
-    // تعبئة أيام الشهر
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
         day,
@@ -402,6 +390,7 @@ export default function CalendarPage() {
         <div
           key={dateStr}
           className={`cal-day-cell ${isToday ? "is-today" : ""}`}
+          onClick={() => navigate(`/calendar/${dateStr}`)} // <-- إضافة الانتقال لصفحة اليوم
         >
           <span className="cal-day-number">{day}</span>
 
