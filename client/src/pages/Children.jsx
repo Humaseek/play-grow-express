@@ -120,7 +120,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   );
 }
 
-// --- تنسيقات CSS مدمجة مع تعديلات احترافية جداً للموبايل وتعديلات جديدة ---
+// --- تنسيقات CSS مدمجة مع تعديلات احترافية جداً وحازمة للموبايل ---
 const CHILDREN_STYLES = `
 .page--children {
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
@@ -303,7 +303,7 @@ const CHILDREN_STYLES = `
 }
 
 /* ==========================================================================
-   MOBILE APP VIBE (MAGIC STYLES FOR MOBILE)
+   MOBILE RESPONSIVE TWEAKS (HACKING THE VIBE)
    ========================================================================== */
 .mobile-only { display: none; }
 .desktop-only { display: block; }
@@ -313,15 +313,16 @@ const CHILDREN_STYLES = `
   .desktop-only { display: none !important; }
   .mobile-only { display: flex !important; }
   
-  /* تقليل الفراغ العلوي فوق الكروت - تعديل جديد */
+  /* تقليل الفراغ العلوي فوق الكروت - تعديل جديد وحازم */
   .page--children {
-    padding: 0 12px 100px 12px !important; /* تقليل الحشوة العلوية */
+    padding: 0 12px 100px 12px !important; /* حشوة علوية صفر */
     background: #f8fafc;
   }
 
   .children-header {
     margin-bottom: 16px;
-    padding-top: 14px; /* إضافة مسافة بسيطة */
+    padding-top: 0 !important; /* إزالة المسافة تماماً */
+    margin-top: 0 !important;
   }
 
   .children-title {
@@ -370,25 +371,24 @@ const CHILDREN_STYLES = `
     display: none !important;
   }
 
-  /* كبسة الإضافة العائمة context FAB - تعديل جديد */
+  /* كبسة الإضافة العائمة context FAB - تعديل جديد للتثبيت والظهور الدائم */
   .mc-fab.mobile-only {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: 52px; // حجم FAB قياسي
+    height: 52px; // حجم FAB قياسي
     border-radius: 999px;
-    background: rgb(2, 54, 80); // Accen color for Children page theme
-    border: 1px solid rgba(2, 54, 80, 0.2); // Accen color weak
+    background: rgb(2, 54, 80); // لون الخلفية الأزرق
     color: #fff;
     cursor: pointer;
-    position: fixed; // A modern FAB is often fixed or header context
-    top: 14px; // Correct placement for iOS context bar
-    inset-inline-end: 14px; // Correct placement for iOS context bar
+    position: fixed !important; // تثبيت الزر فوق المحتوى
+    bottom: 90px !important; // وضعه في الأسفل فوق البار السفلي بمسافة آمنة
+    inset-inline-end: 16px !important; // على اليسار في RTL
+    top: auto !important; // إلغاء الإعداد القديم
     z-index: 1000;
     box-shadow: 0 8px 22px rgba(2, 54, 80, 0.25);
     border: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
   /* قائمة الكروت - روح التطبيق الحقيقية */
@@ -772,13 +772,13 @@ export default function Children() {
             <span style={{ color: "#cbd5e1" }}>|</span>
             <Users size={16} /> إدارة جميع الأطفال
           </div>
-          {/* كبسة الإضافة العائمة context FAB - تعديل جديد */}
+          {/* كبسة الإضافة العائمة context FAB - تعديل جديد للتثبيت والظهور الدائم */}
           <button
             className="mc-fab mobile-only" // New FAB, mobile only
             onClick={openAddModal}
             aria-label="Add Child"
           >
-            <Plus size={18} />
+            <Plus size={20} />
           </button>
         </div>
 
@@ -798,11 +798,8 @@ export default function Children() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            {/* إخفاء زر الإضافة العريض على الموبايل - تعديل جديد */}
-            <button
-              className="btn btn-add mobile-add desktop-only"
-              onClick={openAddModal}
-            >
+            {/* إخفاء زر الإضافة العريض على الموبايل */}
+            <button className="btn btn-add desktop-only" onClick={openAddModal}>
               <Plus size={18} /> إضافة طفل
             </button>
           </div>
