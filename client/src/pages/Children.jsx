@@ -367,11 +367,11 @@ const CHILDREN_STYLES = `
   gap: 12px;
 }
 
-/* الزر العائم في الموبايل */
+/* الزر العائم في الموبايل - ثابت على الشاشة وعلى اليمين */
 .fab-button {
   position: fixed;
   bottom: 24px;
-  left: 24px; /* ليكون مناسباً لاتجاه RTL */
+  right: 24px; /* تم تعديله من left إلى right */
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -808,7 +808,7 @@ export default function Children() {
         </div>
       </div>
 
-      {/* زر الإضافة العائم الخاص بالموبايل (FAB) */}
+      {/* زر الإضافة العائم الخاص بالموبايل (FAB) - ثابت على اليمين */}
       <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
         <Plus size={30} strokeWidth={2.5} />
       </button>
