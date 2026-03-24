@@ -47,14 +47,16 @@ function fmtDT(dt) {
   if (!dt) return "-";
   const d = new Date(dt);
   const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  // التنسيق الجديد: يوم/شهر/سنة ساعة:دقيقة
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function fmtDate(dt) {
   if (!dt) return "-";
   const d = new Date(dt);
   const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  // التنسيق الجديد: يوم/شهر/سنة
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
 function fmtTimeHM(dt) {
