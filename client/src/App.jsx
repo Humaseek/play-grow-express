@@ -9,10 +9,11 @@ import Layout from "./components/Layout";
 
 import Login from "./pages/Login";
 import Today from "./pages/Today";
+import Calendar from "./pages/Calendar"; // <-- 1. تم إضافة استيراد صفحة التقويم هنا
 import Courses from "./pages/Courses";
 import CourseDetails from "./pages/CourseDetails";
 import RunDetails from "./pages/RunDetails";
-import PastSessions from "./pages/PastSessions"; // <-- 1. استيراد الصفحة الجديدة هنا
+import PastSessions from "./pages/PastSessions";
 import Children from "./pages/Children";
 import ChildDetails from "./pages/ChildDetails";
 import Attendance from "./pages/Attendance";
@@ -76,11 +77,13 @@ export default function App() {
             <Route element={<Layout session={session} />}>
               <Route index element={<Today />} />
 
+              {/* <-- 2. تم إضافة مسار التقويم هنا --> */}
+              <Route path="calendar" element={<Calendar />} />
+
               <Route path="courses" element={<Courses />} />
               <Route path="courses/:courseId" element={<CourseDetails />} />
 
               <Route path="runs/:runId" element={<RunDetails />} />
-              {/* <-- 2. إضافة مسار الجلسات السابقة هنا --> */}
               <Route
                 path="runs/:runId/past-sessions"
                 element={<PastSessions />}

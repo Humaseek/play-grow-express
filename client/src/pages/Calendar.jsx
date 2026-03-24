@@ -1,0 +1,599 @@
+import React, { useState, useEffect } from "react";
+import { supabase } from "../supabaseClient";
+import {
+  ChevronRight,
+  ChevronLeft,
+  Calendar as CalendarIcon,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  CheckCircle2,
+} from "lucide-react";
+
+// ============================================================================
+// CSS Styles المخصصة للتقويم
+// ============================================================================
+const CALENDAR_STYLES = `
+.page--calendar {
+  background: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(217,100%,94%,0.7) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(160,100%,94%,0.7) 0px, transparent 50%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  padding-bottom: 60px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  direction: rtl;
+}
+
+.cal-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 0;
+  margin-bottom: 20px;
+}
+
+.cal-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+
+.cal-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 100px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.cal-btn {
+  background: #f1f5f9;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.2s;
+}
+.cal-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  transform: scale(1.05);
+}
+
+.cal-month-label {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
+  min-width: 140px;
+  text-align: center;
+}
+
+.cal-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.cal-summary-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  padding: 16px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+  background: transparent;
+}
+
+.cal-weekday {
+  text-align: center;
+  font-weight: 800;
+  color: #64748b;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.cal-day-cell {
+  background: white;
+  border-radius: 20px;
+  min-height: 140px;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s;
+}
+
+.cal-day-cell:hover {
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+}
+
+.cal-day-cell.is-empty {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.cal-day-cell.is-today {
+  border: 2px solid #3b82f6;
+  background: #eff6ff;
+}
+
+.cal-day-number {
+  font-size: 18px;
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 12px;
+  display: inline-block;
+}
+
+.cal-day-cell.is-today .cal-day-number {
+  background: #3b82f6;
+  color: white;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.cal-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  background: #f8fafc;
+}
+
+.cal-stat-row.income { color: #10b981; background: #f0fdf4; }
+.cal-stat-row.expense { color: #ef4444; background: #fef2f2; }
+.cal-stat-row.sessions { color: #3b82f6; background: #eff6ff; }
+.cal-stat-row.attendance { color: #8b5cf6; background: #faf5ff; }
+
+.cal-stat-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+`;
+
+// ============================================================================
+// Component المكون الرئيسي
+// ============================================================================
+export default function CalendarPage() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [calendarData, setCalendarData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [monthTotals, setMonthTotals] = useState({
+    income: 0,
+    expense: 0,
+    sessions: 0,
+    attendance: 0,
+  });
+
+  const weekDays = [
+    "الأحد",
+    "الإثنين",
+    "الثلاثاء",
+    "الأربعاء",
+    "الخميس",
+    "الجمعة",
+    "السبت",
+  ];
+
+  // دالة لتنسيق الأرقام كعملة
+  const fmtMoney = (n) => Number(n || 0).toLocaleString("en-US");
+
+  // دالة للحصول على التاريخ بصيغة YYYY-MM-DD محلياً
+  const getLocalYMD = (dateObj) => {
+    if (!dateObj) return null;
+    const d = new Date(dateObj);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const fetchMonthData = async () => {
+    setLoading(true);
+    try {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      // حساب بداية ونهاية الشهر الحالي
+      const startOfMonth = new Date(year, month, 1);
+      const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+      const daysInMonth = endOfMonth.getDate();
+
+      const startIso = startOfMonth.toISOString();
+      const endIso = endOfMonth.toISOString();
+      const startYMD = getLocalYMD(startOfMonth);
+      const endYMD = getLocalYMD(endOfMonth);
+
+      // بناء هيكل البيانات المبدئي لكل يوم في الشهر
+      const dayMap = {};
+      for (let i = 1; i <= daysInMonth; i++) {
+        const dStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+          i,
+        ).padStart(2, "0")}`;
+        dayMap[dStr] = { income: 0, expense: 0, sessions: 0, attendance: 0 };
+      }
+
+      // جلب الدفعات (الإيرادات)
+      const { data: pays } = await supabase
+        .from("payments")
+        .select("amount, paid_at")
+        .gte("paid_at", startIso)
+        .lte("paid_at", endIso);
+
+      // جلب المصاريف
+      const { data: exps } = await supabase
+        .from("expenses")
+        .select("amount, spent_on")
+        .gte("spent_on", startYMD)
+        .lte("spent_on", endYMD);
+
+      // جلب الجلسات
+      const { data: sess } = await supabase
+        .from("course_sessions")
+        .select("id, start_at")
+        .gte("start_at", startIso)
+        .lte("start_at", endIso);
+
+      // جلب الحضور (فقط للجلسات الموجودة في هذا الشهر)
+      let att = [];
+      if (sess && sess.length > 0) {
+        const sessIds = sess.map((s) => s.id);
+        const { data: attData } = await supabase
+          .from("attendance")
+          .select("session_id, status")
+          .in("session_id", sessIds)
+          .eq("status", "present");
+        att = attData || [];
+      }
+
+      // -------------------------------------------------------------
+      // تجميع البيانات وتوزيعها على الأيام
+      // -------------------------------------------------------------
+      let mIncome = 0,
+        mExpense = 0,
+        mSessions = 0,
+        mAttendance = 0;
+
+      pays?.forEach((p) => {
+        const d = getLocalYMD(p.paid_at);
+        if (dayMap[d]) {
+          dayMap[d].income += Number(p.amount || 0);
+          mIncome += Number(p.amount || 0);
+        }
+      });
+
+      exps?.forEach((e) => {
+        const d = e.spent_on; // صيغتها YYYY-MM-DD
+        if (dayMap[d]) {
+          dayMap[d].expense += Number(e.amount || 0);
+          mExpense += Number(e.amount || 0);
+        }
+      });
+
+      const sessionDateMap = {};
+      sess?.forEach((s) => {
+        const d = getLocalYMD(s.start_at);
+        if (dayMap[d]) {
+          dayMap[d].sessions += 1;
+          mSessions += 1;
+        }
+        sessionDateMap[s.id] = d;
+      });
+
+      att?.forEach((a) => {
+        const d = sessionDateMap[a.session_id];
+        if (d && dayMap[d]) {
+          dayMap[d].attendance += 1;
+          mAttendance += 1;
+        }
+      });
+
+      setCalendarData(dayMap);
+      setMonthTotals({
+        income: mIncome,
+        expense: mExpense,
+        sessions: mSessions,
+        attendance: mAttendance,
+      });
+    } catch (err) {
+      console.error("Error fetching calendar data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMonthData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentDate]);
+
+  // دوال التنقل بين الأشهر
+  const handlePrevMonth = () => {
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1),
+    );
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate(
+      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1),
+    );
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  // توليد شبكة التقويم
+  const renderCalendarGrid = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = الأحد
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const todayYMD = getLocalYMD(new Date());
+
+    let cells = [];
+
+    // تعبئة الفراغات قبل بداية الشهر
+    for (let i = 0; i < firstDayIndex; i++) {
+      cells.push(
+        <div key={`empty-${i}`} className="cal-day-cell is-empty"></div>,
+      );
+    }
+
+    // تعبئة أيام الشهر
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(
+        day,
+      ).padStart(2, "0")}`;
+      const isToday = dateStr === todayYMD;
+      const data = calendarData[dateStr] || {
+        income: 0,
+        expense: 0,
+        sessions: 0,
+        attendance: 0,
+      };
+
+      const hasActivity =
+        data.income > 0 ||
+        data.expense > 0 ||
+        data.sessions > 0 ||
+        data.attendance > 0;
+
+      cells.push(
+        <div
+          key={dateStr}
+          className={`cal-day-cell ${isToday ? "is-today" : ""}`}
+        >
+          <span className="cal-day-number">{day}</span>
+
+          {loading ? (
+            <div style={{ opacity: 0.3, fontSize: 12 }}>جاري التحميل...</div>
+          ) : hasActivity ? (
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "2px" }}
+            >
+              {data.income > 0 && (
+                <div className="cal-stat-row income">
+                  <span className="cal-stat-icon">
+                    <TrendingUp size={14} /> إيراد
+                  </span>
+                  <span>{fmtMoney(data.income)} ₪</span>
+                </div>
+              )}
+              {data.expense > 0 && (
+                <div className="cal-stat-row expense">
+                  <span className="cal-stat-icon">
+                    <TrendingDown size={14} /> مصروف
+                  </span>
+                  <span>{fmtMoney(data.expense)} ₪</span>
+                </div>
+              )}
+              {data.sessions > 0 && (
+                <div className="cal-stat-row sessions">
+                  <span className="cal-stat-icon">
+                    <CheckCircle2 size={14} /> جلسات
+                  </span>
+                  <span>{data.sessions}</span>
+                </div>
+              )}
+              {data.attendance > 0 && (
+                <div className="cal-stat-row attendance">
+                  <span className="cal-stat-icon">
+                    <Users size={14} /> حضور
+                  </span>
+                  <span>{data.attendance} طالب</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#cbd5e1",
+                fontSize: "12px",
+                fontWeight: 600,
+              }}
+            >
+              لا يوجد نشاط
+            </div>
+          )}
+        </div>,
+      );
+    }
+
+    return cells;
+  };
+
+  const monthLabel = new Intl.DateTimeFormat("ar-EG", {
+    month: "long",
+    year: "numeric",
+  }).format(currentDate);
+
+  return (
+    <div className="page page--calendar" dir="rtl" lang="ar">
+      <style>{CALENDAR_STYLES}</style>
+      <div className="container" style={{ maxWidth: 1440 }}>
+        {/* Header */}
+        <div className="cal-header-container">
+          <h1 className="cal-title">
+            <div
+              style={{
+                background: "white",
+                padding: "10px",
+                borderRadius: "16px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
+                display: "flex",
+              }}
+            >
+              <CalendarIcon size={28} color="#8b5cf6" />
+            </div>
+            التقويم والنشاط اليومي
+          </h1>
+
+          <div className="cal-controls">
+            <button className="cal-btn" onClick={handleNextMonth}>
+              <ChevronRight size={20} />
+            </button>
+            <div className="cal-month-label">{monthLabel}</div>
+            <button className="cal-btn" onClick={handlePrevMonth}>
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={handleToday}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "#3b82f6",
+                fontWeight: 800,
+                cursor: "pointer",
+                padding: "0 10px",
+                borderRight: "1px solid #e2e8f0",
+              }}
+            >
+              العودة لليوم
+            </button>
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="cal-summary-cards">
+          <div className="cal-summary-card">
+            <div
+              style={{ background: "#f0fdf4", padding: 12, borderRadius: 14 }}
+            >
+              <TrendingUp size={24} color="#10b981" />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+                إجمالي إيرادات الشهر
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
+                {loading ? "..." : fmtMoney(monthTotals.income)} ₪
+              </div>
+            </div>
+          </div>
+
+          <div className="cal-summary-card">
+            <div
+              style={{ background: "#fef2f2", padding: 12, borderRadius: 14 }}
+            >
+              <TrendingDown size={24} color="#ef4444" />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+                إجمالي مصاريف الشهر
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
+                {loading ? "..." : fmtMoney(monthTotals.expense)} ₪
+              </div>
+            </div>
+          </div>
+
+          <div className="cal-summary-card">
+            <div
+              style={{ background: "#eff6ff", padding: 12, borderRadius: 14 }}
+            >
+              <CheckCircle2 size={24} color="#3b82f6" />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+                إجمالي الجلسات
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
+                {loading ? "..." : monthTotals.sessions} جلسة
+              </div>
+            </div>
+          </div>
+
+          <div className="cal-summary-card">
+            <div
+              style={{ background: "#faf5ff", padding: 12, borderRadius: 14 }}
+            >
+              <Users size={24} color="#8b5cf6" />
+            </div>
+            <div>
+              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+                إجمالي حضور الطلاب
+              </div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
+                {loading ? "..." : monthTotals.attendance} طالب
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="cal-grid">
+          {weekDays.map((d) => (
+            <div key={d} className="cal-weekday">
+              {d}
+            </div>
+          ))}
+          {renderCalendarGrid()}
+        </div>
+      </div>
+    </div>
+  );
+}
