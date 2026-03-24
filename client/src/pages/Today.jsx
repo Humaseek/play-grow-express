@@ -1869,7 +1869,7 @@ export default function Dashboard() {
         <div className="dash-header">
           <div>
             {/* التعديل 1: تغيير الاسم لـ كاترين */}
-            <h1 className="dash-greeting">{getGreeting()}، نبال زقدح</h1>
+            <h1 className="dash-greeting">{getGreeting()}، كاترين</h1>
             <div className="dash-meta-pills">
               <div className="dash-pill">
                 <CalendarDays size={16} color="#3b82f6" />
