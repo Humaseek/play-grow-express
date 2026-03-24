@@ -56,7 +56,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
         placeholder={placeholder}
         disabled={disabled}
         autoComplete="off"
-        style={{ width: "100%", paddingLeft: 36 }}
+        style={{ width: "100%" }}
       />
       <ChevronDown
         size={16}
@@ -120,7 +120,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   );
 }
 
-// --- تنسيقات CSS مدمجة مع إضافات الموبايل ---
+// --- تنسيقات CSS مدمجة مع تعديلات جذرية للموبايل ---
 const CHILDREN_STYLES = `
 .page--children {
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
@@ -577,7 +577,7 @@ export default function Children() {
   }
 
   // عرض شارة الجنس بتنسيق مخصص
-  const genderLabel = (g) => {
+  const genderBadge = (g) => {
     if (g === "male") return <Badge variant="info">ذكر</Badge>;
     if (g === "female") return <Badge variant="warn">أنثى</Badge>;
     return "-";
@@ -662,7 +662,7 @@ export default function Children() {
                         <td className="child-name">{child.name}</td>
                         <td>{child.age ?? "-"}</td>
                         <td className="muted">{child.class || "-"}</td>
-                        <td>{genderLabel(child.gender)}</td>
+                        <td>{genderBadge(child.gender)}</td>
                         <td className="muted">{child.country || "-"}</td>
                         <td>
                           <span className="phone-number">
@@ -707,7 +707,7 @@ export default function Children() {
                 </table>
               </div>
 
-              {/* ==================== عرض الموبايل (كروت List Items) ==================== */}
+              {/* ==================== عرض الموبايل (كروت List Items - Glassmorphism Light) ==================== */}
               <div className="mobile-only mobile-child-list">
                 {filteredChildren.map((child) => (
                   <div
@@ -716,41 +716,89 @@ export default function Children() {
                     onClick={() => navigate(`/children/${child.id}`)}
                     style={{
                       border: "1px solid rgba(15, 23, 42, 0.08)",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.02)",
+                      padding: "16px",
+                      gap: "12px",
                     }}
                   >
-                    <div className="listItem__main">
+                    <div className="listItem__main" style={{ flex: 1 }}>
                       <div
                         className="listItem__icon"
-                        style={{ background: "#fffbeb", color: "#f59e0b" }}
+                        style={{
+                          background: "#fffbeb",
+                          color: "#f59e0b",
+                          width: 44,
+                          height: 44,
+                          borderRadius: 12,
+                        }}
                       >
-                        <UserRound size={20} />
+                        <UserRound size={22} />
                       </div>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <div
                           className="listItem__title"
-                          style={{ fontSize: 16 }}
+                          style={{ fontSize: 17, marginBottom: 4 }}
                         >
                           {child.name}
                         </div>
-                        <div className="listItem__sub">
-                          {child.class || "بدون صف"} •{" "}
-                          {child.age ? `${child.age} سنوات` : "العمر غير محدد"}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "6px",
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                            marginBottom: 6,
+                          }}
+                        >
+                          <Badge
+                            variant="neutral"
+                            style={{ fontSize: 11, padding: "3px 8px" }}
+                          >
+                            <GraduationCap size={11} />{" "}
+                            {child.class || "بدون صف"}
+                          </Badge>
+                          <Badge
+                            variant="info"
+                            style={{
+                              fontSize: 11,
+                              padding: "3px 8px",
+                              background: "#eff6ff",
+                              color: "#3b82f6",
+                              border: "1px solid #bfdbfe",
+                            }}
+                          >
+                            <Cake size={11} />{" "}
+                            {child.age
+                              ? `${child.age} سنوات`
+                              : "العمر غير محدد"}
+                          </Badge>
+                          {child.country && (
+                            <Badge
+                              variant="neutral"
+                              style={{
+                                fontSize: 11,
+                                padding: "3px 8px",
+                                color: "#64748b",
+                              }}
+                            >
+                              <MapPin size={10} /> {child.country}
+                            </Badge>
+                          )}
                         </div>
-                        {/* أرقام الهواتف على الموبايل بخط صغير */}
+                        {/* عرض هواتف الأهل بخط صغير للوصول السريع */}
                         <div
                           style={{
                             display: "flex",
                             gap: "8px",
                             flexWrap: "wrap",
-                            marginTop: "6px",
+                            marginTop: 4,
                           }}
                         >
                           {child.mother_phone && (
                             <span
                               style={{
                                 fontSize: 11,
-                                color: "#64748b",
+                                color: "#475569",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 4,
@@ -766,7 +814,7 @@ export default function Children() {
                             <span
                               style={{
                                 fontSize: 11,
-                                color: "#64748b",
+                                color: "#475569",
                                 display: "flex",
                                 alignItems: "center",
                                 gap: 4,
@@ -781,12 +829,31 @@ export default function Children() {
                         </div>
                       </div>
                     </div>
+                    {/* أزرار الإجراءات داخل الكرت للموبايل */}
                     <div
                       className="listItem__actions"
+                      style={{ flexDirection: "column", gap: 6 }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <IconButton soft onClick={() => openEditModal(child)}>
-                        <Pencil size={16} />
+                      <IconButton
+                        soft
+                        onClick={() => openEditModal(child)}
+                        style={{ width: 36, height: 36, borderRadius: 10 }}
+                      >
+                        <Pencil size={15} />
+                      </IconButton>
+                      <IconButton
+                        danger
+                        onClick={() =>
+                          setConfirm({
+                            open: true,
+                            id: child.id,
+                            text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                          })
+                        }
+                        style={{ width: 36, height: 36, borderRadius: 10 }}
+                      >
+                        <Trash2 size={15} />
                       </IconButton>
                     </div>
                   </div>
@@ -809,9 +876,15 @@ export default function Children() {
             <h4 className="form-section-title">
               <Users size={18} color="#64748b" /> البيانات الأساسية
             </h4>
-            <div className="grid">
-              <div className="col-12">
-                <div className="muted" style={{ marginBottom: 6 }}>
+            <div
+              className="grid"
+              style={{ display: "flex", flexWrap: "wrap", gap: 12 }}
+            >
+              <div className="col-12" style={{ width: "100%" }}>
+                <div
+                  className="muted"
+                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                >
                   الاسم الرباعي *
                 </div>
                 <input
@@ -821,11 +894,18 @@ export default function Children() {
                     setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder="مثال: أحمد محمد علي"
+                  style={{ minHeight: 48 }}
                 />
               </div>
-              <div className="col-6">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  العمر
+              <div
+                className="col-6"
+                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
+              >
+                <div
+                  className="muted"
+                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                >
+                  العمر (سنوات)
                 </div>
                 <input
                   className="input"
@@ -836,11 +916,18 @@ export default function Children() {
                   onChange={(e) =>
                     setFormData({ ...formData, age: e.target.value })
                   }
-                  placeholder="بالسنوات"
+                  placeholder="مثال: 5"
+                  style={{ minHeight: 48 }}
                 />
               </div>
-              <div className="col-6">
-                <div className="muted" style={{ marginBottom: 6 }}>
+              <div
+                className="col-6"
+                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
+              >
+                <div
+                  className="muted"
+                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                >
                   الجنس
                 </div>
                 <ModernSelect
@@ -850,11 +937,18 @@ export default function Children() {
                     { value: "male", label: "ذكر" },
                     { value: "female", label: "أنثى" },
                   ]}
+                  style={{ minHeight: 48 }}
                 />
               </div>
-              <div className="col-6">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  الصف
+              <div
+                className="col-6"
+                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
+              >
+                <div
+                  className="muted"
+                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                >
+                  الصف الدراسي
                 </div>
                 <CustomCombobox
                   value={formData.class}
@@ -863,11 +957,18 @@ export default function Children() {
                     value: c.name,
                     label: c.name,
                   }))}
-                  placeholder="اختر أو اكتب صفاً..."
+                  placeholder="اختر أو اكتب..."
+                  style={{ minHeight: 48 }}
                 />
               </div>
-              <div className="col-6">
-                <div className="muted" style={{ marginBottom: 6 }}>
+              <div
+                className="col-6"
+                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
+              >
+                <div
+                  className="muted"
+                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                >
                   المدينة / البلد
                 </div>
                 <CustomCombobox
@@ -879,20 +980,30 @@ export default function Children() {
                     value: c.name,
                     label: c.name,
                   }))}
-                  placeholder="اختر أو اكتب مدينة..."
+                  placeholder="اختر أو اكتب..."
+                  style={{ minHeight: 48 }}
                 />
               </div>
             </div>
           </div>
 
           {/* قسم معلومات التواصل مع الأهل */}
-          <div className="col-12">
+          <div className="col-12" style={{ marginTop: 12 }}>
             <h4 className="form-section-title">
               <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
             </h4>
-            <div className="grid">
-              <div className="col-6">
-                <div className="muted" style={{ marginBottom: 6 }}>
+            <div
+              className="grid"
+              style={{ display: "flex", flexWrap: "wrap", gap: 12 }}
+            >
+              <div
+                className="col-6"
+                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
+              >
+                <div
+                  className="muted"
+                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                >
                   هاتف الأم
                 </div>
                 <input
@@ -903,11 +1014,17 @@ export default function Children() {
                   }
                   placeholder="رقم الهاتف"
                   dir="ltr"
-                  style={{ textAlign: "right" }}
+                  style={{ textAlign: "right", minHeight: 48 }}
                 />
               </div>
-              <div className="col-6">
-                <div className="muted" style={{ marginBottom: 6 }}>
+              <div
+                className="col-6"
+                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
+              >
+                <div
+                  className="muted"
+                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                >
                   اسم الأم
                 </div>
                 <input
@@ -917,10 +1034,17 @@ export default function Children() {
                     setFormData({ ...formData, mother_name: e.target.value })
                   }
                   placeholder="اختياري"
+                  style={{ minHeight: 48 }}
                 />
               </div>
-              <div className="col-6">
-                <div className="muted" style={{ marginBottom: 6 }}>
+              <div
+                className="col-6"
+                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
+              >
+                <div
+                  className="muted"
+                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                >
                   هاتف الأب
                 </div>
                 <input
@@ -931,11 +1055,17 @@ export default function Children() {
                   }
                   placeholder="رقم الهاتف"
                   dir="ltr"
-                  style={{ textAlign: "right" }}
+                  style={{ textAlign: "right", minHeight: 48 }}
                 />
               </div>
-              <div className="col-6">
-                <div className="muted" style={{ marginBottom: 6 }}>
+              <div
+                className="col-6"
+                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
+              >
+                <div
+                  className="muted"
+                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                >
                   اسم الأب
                 </div>
                 <input
@@ -945,15 +1075,19 @@ export default function Children() {
                     setFormData({ ...formData, father_name: e.target.value })
                   }
                   placeholder="اختياري"
+                  style={{ minHeight: 48 }}
                 />
               </div>
             </div>
           </div>
 
           {/* قسم الملاحظات */}
-          <div className="col-12">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              ملاحظات إضافية
+          <div className="col-12" style={{ marginTop: 12 }}>
+            <div
+              className="muted"
+              style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+            >
+              ملاحظات إضافية (اختياري)
             </div>
             <textarea
               className="input"
@@ -962,8 +1096,12 @@ export default function Children() {
               onChange={(e) =>
                 setFormData({ ...formData, notes: e.target.value })
               }
-              placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
-              style={{ resize: "vertical" }}
+              placeholder="أي تفاصيل طبية، ملاحظات غذائية، إلخ..."
+              style={{
+                resize: "vertical",
+                minHeight: 80,
+                padding: "12px 16px",
+              }}
             />
           </div>
 
@@ -974,13 +1112,14 @@ export default function Children() {
               display: "flex",
               justifyContent: "flex-end",
               gap: 10,
-              marginTop: 10,
+              marginTop: 18,
             }}
           >
             <button
               className="btn"
               onClick={() => setIsModalOpen(false)}
               disabled={saving}
+              style={{ minHeight: 46, padding: "0 24px", borderRadius: 12 }}
             >
               إلغاء
             </button>
@@ -988,6 +1127,7 @@ export default function Children() {
               className="btn btn-add"
               onClick={handleSave}
               disabled={saving}
+              style={{ minHeight: 46, padding: "0 24px", borderRadius: 12 }}
             >
               {saving ? "جاري الحفظ..." : "حفظ البيانات"}
             </button>
