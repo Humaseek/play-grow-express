@@ -40,7 +40,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import Badge from "../components/Badge";
 import Modal from "../components/Modal";
-import ModernSelect from "../components/ModernSelect"; // تأكدنا من استيراده هنا
+import ModernSelect from "../components/ModernSelect";
 
 // ============================================================================
 // 1. الدوال المساعدة الأساسية
@@ -109,7 +109,6 @@ function toInputDatetimeLocal(dt) {
   return `${y}-${mo}-${da}T${h}:${mi}`;
 }
 
-// دالة لمعالجة فترات الفلتر الذكي وتقسيمها للمخطط البياني
 function getRangeAndBins(preset, customStart, customEnd) {
   const now = new Date();
   let start = new Date();
@@ -219,7 +218,7 @@ function getRangeAndBins(preset, customStart, customEnd) {
 }
 
 // ============================================================================
-// مكون القائمة المنسدلة (Combobox) الأصلي
+// مكون القائمة المنسدلة (مطابق تماماً للموجود بملف الأطفال)
 // ============================================================================
 function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -1086,6 +1085,26 @@ const DASHBOARD_STYLES = `
   border-radius: 8px;
 }
 
+/* تنسيقات الأزرار الأصلية المسحوبة من ملف الأطفال للمودال */
+.btn-add {
+  background: #3b82f6 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 10px 20px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25) !important;
+  transition: all 0.2s !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-add:hover {
+  transform: translateY(-2px);
+  background: #2563eb !important;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3) !important;
+}
+
 /* تنسيقات المدخلات للمودال المشتركة */
 .search-wrapper {
   position: relative;
@@ -1236,7 +1255,6 @@ export default function Dashboard() {
 
   const [catOptions, setCatOptions] = useState([]);
   const [partyOptions, setPartyOptions] = useState([]);
-  const [countriesOptions, setCountriesOptions] = useState([]); // خيارات البلدان لنموذج الأطفال
 
   // ==========================================
   // حالات وإعدادات إضافة دفعة (قبض دفعة)
@@ -1270,6 +1288,7 @@ export default function Dashboard() {
     country: "",
     notes: "",
   });
+  const [countriesOptions, setCountriesOptions] = useState([]); // خيارات البلدان لنموذج الأطفال
 
   // تحديث الساعة الحية
   useEffect(() => {
@@ -1686,7 +1705,7 @@ export default function Dashboard() {
   }
 
   // ============================================================================
-  // دوال نافذة إضافة طالب (نفس نسخة الأطفال)
+  // دوال نافذة إضافة طالب (النسخة الأصلية)
   // ============================================================================
   const openChildModal = () => {
     setChildData({
@@ -1702,7 +1721,7 @@ export default function Dashboard() {
       country: "",
       notes: "",
     });
-    loadPicklists(); // للتأكد من جلب البلدان
+    loadPicklists();
     setOpenChildAdd(true);
   };
 
@@ -1717,26 +1736,26 @@ export default function Dashboard() {
         await safeInsertPicklist("countries", childData.country);
       }
 
-      const { error } = await supabase.from("children").insert([
-        {
-          name: childData.name.trim(),
-          id_number: childData.id_number.trim() || null,
-          birth_date: childData.birth_date || null,
-          gender: childData.gender,
-          class: childData.class.trim() || null,
-          mother_name: childData.mother_name.trim() || null,
-          mother_phone: childData.mother_phone.trim() || null,
-          father_name: childData.father_name.trim() || null,
-          father_phone: childData.father_phone.trim() || null,
-          country: childData.country.trim() || null,
-          notes: childData.notes.trim() || null,
-        },
-      ]);
+      const payload = {
+        name: childData.name.trim(),
+        id_number: childData.id_number.trim() || null,
+        birth_date: childData.birth_date || null,
+        gender: childData.gender,
+        class: childData.class.trim() || null,
+        mother_name: childData.mother_name.trim() || null,
+        mother_phone: childData.mother_phone.trim() || null,
+        father_name: childData.father_name.trim() || null,
+        father_phone: childData.father_phone.trim() || null,
+        country: childData.country.trim() || null,
+        notes: childData.notes.trim() || null,
+      };
+
+      const { error } = await supabase.from("children").insert([payload]);
       if (error) throw error;
 
       toast("تمت إضافة الطالب بنجاح.", "ok");
       setOpenChildAdd(false);
-      loadDashboard(); // لتحديث عدد الطلاب فوراً
+      loadDashboard();
     } catch (error) {
       console.error(error);
       toast("حدث خطأ أثناء حفظ بيانات الطالب.", "danger");
@@ -2242,7 +2261,6 @@ export default function Dashboard() {
                     صرف مبلغ
                   </div>
 
-                  {/* التعديل هنا: كبسة إضافة طالب تفتح المودال المطابق 100% */}
                   <div onClick={openChildModal} className="qa-btn primary">
                     <div className="qa-icon-wrap">
                       <UserPlus size={28} />
@@ -2702,7 +2720,6 @@ export default function Dashboard() {
                 />
               </div>
 
-              {/* قائمة الاختيار التفاعلية */}
               <div className="enrollment-picker-list">
                 {pickerFiltered.length === 0 ? (
                   <div
@@ -2742,7 +2759,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* تفعيل باقي الحقول فقط إذا تم اختيار اشتراك */}
             {payEnrId && (
               <div style={{ gridColumn: "span 12" }}>
                 <h4 className="form-section-title">
@@ -2916,7 +2932,7 @@ export default function Dashboard() {
         </Modal>
 
         {/* ============================================================================ */}
-        {/* نافذة إضافة طالب (النسخة الأصلية المطابقة لملف الأطفال) */}
+        {/* نافذة إضافة طالب (النسخة الأصلية المطابقة 100% لملف الأطفال) */}
         {/* ============================================================================ */}
         <Modal
           open={openChildAdd}
