@@ -55,17 +55,17 @@ export default function Sidebar({ onSignOut }) {
         </NavLink>
       </nav>
 
-      <hr className="sep" />
+      {/* تمت إضافة كلاس desktop-only لإخفاء الخط في الموبايل */}
+      <hr className="sep desktop-only" />
 
+      {/* تمت إضافة كلاس logout-btn و logout-text للتحكم بظهورهم في الموبايل */}
       <button
-        className="btn danger"
+        className="btn danger logout-btn"
         onClick={onSignOut}
         style={{ width: "100%" }}
       >
-        <LogOut size={18} /> تسجيل خروج
+        <LogOut size={18} /> <span className="logout-text">خروج</span>
       </button>
-
-      <div style={{ marginTop: 10 }} className="muted"></div>
     </aside>
   );
 }
