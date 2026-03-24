@@ -412,7 +412,6 @@ export default function DayDetails() {
               </span>
             </span>
           }
-          subtitle="ملخص كامل وشامل لنشاطات هذا اليوم"
           icon={<CalendarDays size={28} color="#3b82f6" />}
           actions={
             <button onClick={() => navigate("/calendar")} className="back-btn">
