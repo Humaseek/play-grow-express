@@ -311,63 +311,154 @@ const CHILDREN_STYLES = `
 }
 
 /* =========================================
-   تنسيقات الموبايل (البطاقات والزر العائم) 
+   تصميم كروت الموبايل الجديد والأنيق
 ========================================= */
 
 .mobile-list {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc; /* خلفية ناعمة جداً للقائمة */
 }
 
 .mobile-card {
-  padding: 16px 20px;
-  border-bottom: 1px solid #f1f5f9;
-  background: #fff;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .mobile-card:hover {
-  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
-.mobile-card:last-child {
-  border-bottom: none;
-}
-
-.mc-row {
+.mc-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 900;
+  flex-shrink: 0;
 }
 
-.mc-row.mt-2 {
-  margin-top: 12px;
+/* لون الأفاتار بناءً على الجنس */
+.mc-avatar.male {
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  color: #0284c7;
+}
+
+.mc-avatar.female {
+  background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+  color: #db2777;
+}
+
+.mc-avatar.default {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #d97706;
+}
+
+.mc-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .mc-name {
-  font-weight: 800;
-  color: #0f172a;
   font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
 }
 
-.mc-category {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 600;
+.mc-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.mc-details {
-  font-size: 14px;
+.mc-class-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: #f1f5f9;
   color: #475569;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.mc-phone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  direction: ltr;
 }
 
 .mc-actions {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-/* الزر العائم في الموبايل - Portal */
+.mc-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mc-btn-edit {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.mc-btn-edit:hover {
+  background: #e2e8f0;
+  color: #334155;
+  transform: scale(1.05);
+}
+
+.mc-btn-delete {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.mc-btn-delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  transform: scale(1.05);
+}
+
+/* الزر العائم في الموبايل - Portal (ثابت كما طلبنا) */
 .fab-button {
   position: fixed !important;
   bottom: 95px !important;
@@ -383,7 +474,7 @@ const CHILDREN_STYLES = `
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 999999 !important; /* أعلى اشي بالصفحة */
+  z-index: 999999 !important;
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
@@ -403,9 +494,21 @@ const CHILDREN_STYLES = `
   }
   .children-toolbar { 
     padding: 16px; 
+    border-bottom: none; /* إزالة الخط لتنعيم التصميم مع الكروت */
   }
   .page--children { 
-    padding-bottom: 120px; /* مساحة للزر */
+    padding-bottom: 120px; 
+  }
+  .children-card {
+    background: transparent; /* جعل خلفية الشاشة أهدأ في الموبايل */
+    border: none;
+    box-shadow: none;
+  }
+  .children-toolbar {
+    background: #ffffff;
+    border-radius: 20px;
+    margin: 0 16px; /* مسافة بسيطة من الجوانب */
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
   }
 }
 
@@ -627,6 +730,13 @@ export default function Children() {
     return "-";
   };
 
+  // دالة لتحديد لون الأفاتار بناء على الجنس
+  const getAvatarClass = (gender) => {
+    if (gender === "male") return "male";
+    if (gender === "female") return "female";
+    return "default";
+  };
+
   return (
     <>
       <style>{CHILDREN_STYLES}</style>
@@ -763,7 +873,7 @@ export default function Children() {
                   </table>
                 </div>
 
-                {/* عرض القائمة كبطاقات للموبايل (Mobile) */}
+                {/* تصميم الكروت الجديد للموبايل (Mobile) */}
                 <div className="mobile-list">
                   {filteredChildren.map((child) => (
                     <div
@@ -771,41 +881,57 @@ export default function Children() {
                       className="mobile-card"
                       onClick={() => navigate(`/children/${child.id}`)}
                     >
-                      <div className="mc-row">
-                        <span className="mc-name">{child.name}</span>
-                        <span className="mc-category">
-                          {child.class || "غير محدد"}
-                        </span>
+                      {/* الأفاتار الملون */}
+                      <div
+                        className={`mc-avatar ${getAvatarClass(child.gender)}`}
+                      >
+                        {child.name ? (
+                          child.name.charAt(0)
+                        ) : (
+                          <Users size={24} />
+                        )}
                       </div>
-                      <div className="mc-row mt-2">
-                        <span className="mc-details phone-number">
-                          {child.mother_phone ||
-                            child.father_phone ||
-                            "لا يوجد رقم هاتف"}
-                        </span>
-                        <div className="mc-actions">
-                          <IconButton
-                            danger
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setConfirm({
-                                open: true,
-                                id: child.id,
-                                text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                              });
-                            }}
-                          >
-                            <Trash2 size={20} />
-                          </IconButton>
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(child);
-                            }}
-                          >
-                            <Pencil size={20} />
-                          </IconButton>
+
+                      {/* معلومات الطفل */}
+                      <div className="mc-info">
+                        <h3 className="mc-name">{child.name}</h3>
+                        <div className="mc-meta-row">
+                          <span className="mc-class-badge">
+                            {child.class || "غير محدد"}
+                          </span>
+                          <span className="mc-phone-badge">
+                            <Phone size={12} strokeWidth={2.5} />
+                            {child.mother_phone ||
+                              child.father_phone ||
+                              "لا يوجد رقم"}
+                          </span>
                         </div>
+                      </div>
+
+                      {/* أزرار الإجراءات الجانبية */}
+                      <div className="mc-actions">
+                        <button
+                          className="mc-btn mc-btn-edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(child);
+                          }}
+                        >
+                          <Pencil size={16} strokeWidth={2.5} />
+                        </button>
+                        <button
+                          className="mc-btn mc-btn-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirm({
+                              open: true,
+                              id: child.id,
+                              text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                            });
+                          }}
+                        >
+                          <Trash2 size={16} strokeWidth={2.5} />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -816,10 +942,7 @@ export default function Children() {
         </div>
       </div>
 
-      {/* ======== السلاح النووي ========
-        استخدام createPortal لرمي الزر مباشرة داخل الـ body 
-        هيك بيتحرر من أي CSS مأثر عليه ويثبت عالشاشة
-      */}
+      {/* الزر العائم (FAB) باستخدام createPortal */}
       {createPortal(
         <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
           <Plus size={30} strokeWidth={2.5} />
