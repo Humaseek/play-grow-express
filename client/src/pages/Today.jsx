@@ -1366,7 +1366,7 @@ export default function Dashboard() {
         .select("run_id, title, label");
       const qDebtors = supabase
         .from("run_participants_view")
-        .select("child_name, child_id, balance")
+        .select("child_name, child_id, balance, course_title, run_label") // أضفنا course_title و run_label
         .eq("enrollment_status", "active")
         .gt("balance", 0)
         .order("balance", { ascending: false });
@@ -2378,7 +2378,10 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <div className="li-title">{d.child_name}</div>
-                            <div className="li-sub">تأخر بالدفع</div>
+                            <div className="li-sub">
+                              {d.course_title || "دورة غير محددة"} —{" "}
+                              {d.run_label || "فوج غير محدد"}
+                            </div>
                           </div>
                         </div>
                         <div className="li-value danger">
@@ -3267,7 +3270,11 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <div className="li-title">{d.child_name}</div>
-                    <div className="li-sub">رقم المعرف: {d.child_id}</div>
+                    {/* تم التعديل لعرض الدورة والفوج */}
+                    <div className="li-sub">
+                      {d.course_title || "دورة غير محددة"} —{" "}
+                      {d.run_label || "فوج غير محدد"}
+                    </div>
                   </div>
                 </div>
                 <div className="li-value danger">{fmtMoney(d.balance)} ₪</div>
