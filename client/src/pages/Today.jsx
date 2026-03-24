@@ -33,6 +33,7 @@ import {
   ChevronDown,
   Search,
   UserRound,
+  Phone, // مهمة لأيقونة المودال المنسوخ
 } from "lucide-react";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -218,7 +219,7 @@ function getRangeAndBins(preset, customStart, customEnd) {
 }
 
 // ============================================================================
-// مكون القائمة المنسدلة (مطابق تماماً للموجود بملف الأطفال)
+// مكون القائمة المنسدلة الأصلي
 // ============================================================================
 function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -1194,6 +1195,33 @@ const DASHBOARD_STYLES = `
 .epi-balance.debt {
   color: #dc2626;
 }
+
+/* تنسيقات الفورم المنسوخة من ملف الأطفال */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 14px;
+  transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
+}
+.input:focus {
+  border-color: #3b82f6;
+}
+.muted {
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
+  margin-bottom: 6px;
+}
 `;
 
 export default function Dashboard() {
@@ -1275,7 +1303,7 @@ export default function Dashboard() {
   // ==========================================
   const [openChildAdd, setOpenChildAdd] = useState(false);
   const [savingChild, setSavingChild] = useState(false);
-  const [childData, setChildData] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     id_number: "",
     birth_date: "",
@@ -1285,10 +1313,11 @@ export default function Dashboard() {
     mother_phone: "",
     father_name: "",
     father_phone: "",
-    country: "",
+    country_name: "",
     notes: "",
   });
-  const [countriesOptions, setCountriesOptions] = useState([]); // خيارات البلدان لنموذج الأطفال
+  const [countries, setCountries] = useState([]);
+  const [classes, setClasses] = useState([]);
 
   // تحديث الساعة الحية
   useEffect(() => {
@@ -1514,10 +1543,10 @@ export default function Dashboard() {
   }
 
   // ============================================================================
-  // دوال نافذة المصاريف وقائمة البلدان
+  // دوال نافذة المصاريف
   // ============================================================================
   async function loadPicklists() {
-    const [catsRes, partiesRes, countriesRes] = await Promise.all([
+    const [catsRes, partiesRes] = await Promise.all([
       supabase
         .from("expense_categories")
         .select("name")
@@ -1526,20 +1555,11 @@ export default function Dashboard() {
         .from("expense_parties")
         .select("name")
         .order("name", { ascending: true }),
-      supabase
-        .from("countries")
-        .select("name")
-        .order("name", { ascending: true }),
     ]);
     if (!catsRes.error && !partiesRes.error) {
       setCatOptions((catsRes.data || []).map((x) => x.name).filter(Boolean));
       setPartyOptions(
         (partiesRes.data || []).map((x) => x.name).filter(Boolean),
-      );
-    }
-    if (!countriesRes.error) {
-      setCountriesOptions(
-        (countriesRes.data || []).map((x) => x.name).filter(Boolean),
       );
     }
   }
@@ -1707,8 +1727,17 @@ export default function Dashboard() {
   // ============================================================================
   // دوال نافذة إضافة طالب (النسخة الأصلية)
   // ============================================================================
+  async function loadChildPicklists() {
+    const [cRes, clRes] = await Promise.all([
+      supabase.from("countries").select("name").order("name"),
+      supabase.from("child_classes").select("name").order("name"),
+    ]);
+    if (!cRes.error) setCountries(cRes.data || []);
+    if (!clRes.error) setClasses(clRes.data || []);
+  }
+
   const openChildModal = () => {
-    setChildData({
+    setFormData({
       name: "",
       id_number: "",
       birth_date: "",
@@ -1718,47 +1747,51 @@ export default function Dashboard() {
       mother_phone: "",
       father_name: "",
       father_phone: "",
-      country: "",
+      country_name: "",
       notes: "",
     });
-    loadPicklists();
+    loadChildPicklists();
     setOpenChildAdd(true);
   };
 
   async function handleSaveChild() {
-    if (!childData.name.trim()) {
-      toast("الرجاء إدخال اسم الطالب.", "warn");
+    if (!formData.name.trim()) {
+      toast("يرجى إدخال اسم الطالب.", "warn");
       return;
     }
+
     setSavingChild(true);
     try {
-      if (childData.country?.trim()) {
-        await safeInsertPicklist("countries", childData.country);
+      if (formData.country_name?.trim()) {
+        await safeInsertPicklist("countries", formData.country_name);
+      }
+      if (formData.class?.trim()) {
+        await safeInsertPicklist("child_classes", formData.class);
       }
 
       const payload = {
-        name: childData.name.trim(),
-        id_number: childData.id_number.trim() || null,
-        birth_date: childData.birth_date || null,
-        gender: childData.gender,
-        class: childData.class.trim() || null,
-        mother_name: childData.mother_name.trim() || null,
-        mother_phone: childData.mother_phone.trim() || null,
-        father_name: childData.father_name.trim() || null,
-        father_phone: childData.father_phone.trim() || null,
-        country: childData.country.trim() || null,
-        notes: childData.notes.trim() || null,
+        name: formData.name.trim(),
+        id_number: formData.id_number.trim() || null,
+        birth_date: formData.birth_date || null,
+        gender: formData.gender,
+        class: formData.class.trim() || null,
+        mother_name: formData.mother_name.trim() || null,
+        mother_phone: formData.mother_phone.trim() || null,
+        father_name: formData.father_name.trim() || null,
+        father_phone: formData.father_phone.trim() || null,
+        country: formData.country_name.trim() || null,
+        notes: formData.notes.trim() || null,
       };
 
       const { error } = await supabase.from("children").insert([payload]);
-      if (error) throw error;
 
-      toast("تمت إضافة الطالب بنجاح.", "ok");
+      if (error) throw error;
+      toast("تم إضافة الطالب بنجاح.", "ok");
       setOpenChildAdd(false);
       loadDashboard();
-    } catch (error) {
-      console.error(error);
-      toast("حدث خطأ أثناء حفظ بيانات الطالب.", "danger");
+    } catch (e) {
+      toast("فشل حفظ البيانات.", "danger");
+      console.error(e);
     } finally {
       setSavingChild(false);
     }
@@ -2939,137 +2972,171 @@ export default function Dashboard() {
           title="إضافة طالب جديد"
           onClose={() => !savingChild && setOpenChildAdd(false)}
         >
-          <div className="grid">
+          <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">اسم الطالب *</div>
-              <input
-                className="input"
-                value={childData.name}
-                onChange={(e) =>
-                  setChildData({ ...childData, name: e.target.value })
-                }
-                placeholder="الاسم الرباعي"
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">رقم الهوية</div>
-              <input
-                className="input"
-                value={childData.id_number}
-                onChange={(e) =>
-                  setChildData({ ...childData, id_number: e.target.value })
-                }
-                placeholder="اختياري"
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">تاريخ الميلاد</div>
-              <input
-                type="date"
-                className="input"
-                value={childData.birth_date}
-                onChange={(e) =>
-                  setChildData({ ...childData, birth_date: e.target.value })
-                }
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">الجنس</div>
-              <ModernSelect
-                value={childData.gender}
-                onChange={(val) => setChildData({ ...childData, gender: val })}
-                options={[
-                  { value: "male", label: "ذكر" },
-                  { value: "female", label: "أنثى" },
-                ]}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">الصف الدراسي</div>
-              <input
-                className="input"
-                value={childData.class}
-                onChange={(e) =>
-                  setChildData({ ...childData, class: e.target.value })
-                }
-                placeholder="مثال: الأول، الثاني..."
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">اسم الأم</div>
-              <input
-                className="input"
-                value={childData.mother_name}
-                onChange={(e) =>
-                  setChildData({ ...childData, mother_name: e.target.value })
-                }
-                placeholder="اسم الأم"
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">رقم هاتف الأم</div>
-              <input
-                className="input"
-                value={childData.mother_phone}
-                onChange={(e) =>
-                  setChildData({ ...childData, mother_phone: e.target.value })
-                }
-                placeholder="رقم التواصل"
-                dir="ltr"
-                style={{ textAlign: "right" }}
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">اسم الأب</div>
-              <input
-                className="input"
-                value={childData.father_name}
-                onChange={(e) =>
-                  setChildData({ ...childData, father_name: e.target.value })
-                }
-                placeholder="اسم الأب"
-              />
-            </div>
-
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">رقم هاتف الأب</div>
-              <input
-                className="input"
-                value={childData.father_phone}
-                onChange={(e) =>
-                  setChildData({ ...childData, father_name: e.target.value })
-                }
-                placeholder="رقم التواصل"
-                dir="ltr"
-                style={{ textAlign: "right" }}
-              />
+              <h4 className="form-section-title">
+                <Users size={18} color="#64748b" /> البيانات الأساسية
+              </h4>
+              <div className="grid" style={{ gap: "16px" }}>
+                <div style={{ gridColumn: "span 12" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الاسم الرباعي *
+                  </div>
+                  <input
+                    className="input"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="مثال: أحمد محمد علي"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    رقم الهوية
+                  </div>
+                  <input
+                    className="input"
+                    value={formData.id_number}
+                    onChange={(e) =>
+                      setFormData({ ...formData, id_number: e.target.value })
+                    }
+                    placeholder="اختياري"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    تاريخ الميلاد
+                  </div>
+                  <input
+                    type="date"
+                    className="input"
+                    value={formData.birth_date}
+                    onChange={(e) =>
+                      setFormData({ ...formData, birth_date: e.target.value })
+                    }
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الجنس
+                  </div>
+                  <ModernSelect
+                    value={formData.gender}
+                    onChange={(v) => setFormData({ ...formData, gender: v })}
+                    options={[
+                      { value: "male", label: "ذكر" },
+                      { value: "female", label: "أنثى" },
+                    ]}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    الصف
+                  </div>
+                  <CustomCombobox
+                    value={formData.class}
+                    onChange={(v) => setFormData({ ...formData, class: v })}
+                    options={classes.map((c) => ({
+                      value: c.name,
+                      label: c.name,
+                    }))}
+                    placeholder="اختر أو اكتب صفاً..."
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    المدينة / البلد
+                  </div>
+                  <CustomCombobox
+                    value={formData.country_name}
+                    onChange={(v) =>
+                      setFormData({ ...formData, country_name: v })
+                    }
+                    options={countries.map((c) => ({
+                      value: c.name,
+                      label: c.name,
+                    }))}
+                    placeholder="اختر أو اكتب مدينة..."
+                  />
+                </div>
+              </div>
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">البلد / المدينة</div>
-              <CustomCombobox
-                value={childData.country}
-                onChange={(val) => setChildData({ ...childData, country: val })}
-                options={countriesOptions.map((c) => ({ value: c, label: c }))}
-                placeholder="اختر أو اكتب اسم البلد..."
-              />
+              <h4 className="form-section-title">
+                <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
+              </h4>
+              <div className="grid" style={{ gap: "16px" }}>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    هاتف الأم
+                  </div>
+                  <input
+                    className="input"
+                    value={formData.mother_phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, mother_phone: e.target.value })
+                    }
+                    placeholder="رقم الهاتف"
+                    dir="ltr"
+                    style={{ textAlign: "right" }}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    اسم الأم
+                  </div>
+                  <input
+                    className="input"
+                    value={formData.mother_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, mother_name: e.target.value })
+                    }
+                    placeholder="اختياري"
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    هاتف الأب
+                  </div>
+                  <input
+                    className="input"
+                    value={formData.father_phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, father_phone: e.target.value })
+                    }
+                    placeholder="رقم الهاتف"
+                    dir="ltr"
+                    style={{ textAlign: "right" }}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 6" }}>
+                  <div className="muted" style={{ marginBottom: 6 }}>
+                    اسم الأب
+                  </div>
+                  <input
+                    className="input"
+                    value={formData.father_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, father_name: e.target.value })
+                    }
+                    placeholder="اختياري"
+                  />
+                </div>
+              </div>
             </div>
 
             <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">ملاحظات (طبية، حساسية، إلخ)</div>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                ملاحظات إضافية
+              </div>
               <textarea
                 className="input"
-                rows="3"
-                value={childData.notes}
+                rows={3}
+                value={formData.notes}
                 onChange={(e) =>
-                  setChildData({ ...childData, notes: e.target.value })
+                  setFormData({ ...formData, notes: e.target.value })
                 }
                 placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
                 style={{ resize: "vertical" }}
