@@ -1252,7 +1252,7 @@ export default function Dashboard() {
     incomeFiltered: 0,
     expenseFiltered: 0,
     netFiltered: 0,
-    totalChildren: 0, // <--- غيرناها لإجمالي الأطفال
+    totalChildren: 0,
     sessionsCountToday: 0,
     incomeTrend: [],
     expenseTrend: [],
@@ -1352,7 +1352,6 @@ export default function Dashboard() {
         customEndDate,
       );
 
-      // --- تعديل: جلب إجمالي الأطفال بدلاً من الطلاب النشطين ---
       const qTotalChildren = supabase
         .from("children")
         .select("id", { count: "exact", head: true });
@@ -1368,7 +1367,7 @@ export default function Dashboard() {
         .select("run_id, title, label");
       const qDebtors = supabase
         .from("run_participants_view")
-        .select("child_name, child_id, balance, run_id") // جلب run_id بدلاً من الأسماء الوهمية
+        .select("child_name, child_id, balance, run_id")
         .eq("enrollment_status", "active")
         .gt("balance", 0)
         .order("balance", { ascending: false });
@@ -1395,7 +1394,7 @@ export default function Dashboard() {
         .lte("spent_on", toIso.split("T")[0]);
 
       const [
-        { count: totalChildrenCount, error: e1 }, // <--- التعديل هنا
+        { count: totalChildrenCount, error: e1 },
         { data: sessionsToday, error: e2 },
         { data: runsSummary, error: e3 },
         { data: debtorsData, error: e4 },
@@ -1404,7 +1403,7 @@ export default function Dashboard() {
         { data: paymentsData, error: e7 },
         { data: expensesData, error: e8 },
       ] = await Promise.all([
-        qTotalChildren, // <--- التعديل هنا
+        qTotalChildren,
         qSessionsToday,
         qRunsSummary,
         qDebtors,
@@ -1434,7 +1433,6 @@ export default function Dashboard() {
         };
       });
 
-      // --- إضافة دمج بيانات الديون مع اسم الدورة ---
       const enrichedDebtors = (debtorsData || []).map((debtor) => {
         const runInfo = (runsSummary || []).find(
           (r) => r.run_id === debtor.run_id,
@@ -1520,13 +1518,13 @@ export default function Dashboard() {
         incomeFiltered: totalIncome,
         expenseFiltered: totalExpense,
         netFiltered: netProfit,
-        totalChildren: totalChildrenCount || 0, // <--- التعديل هنا
+        totalChildren: totalChildrenCount || 0,
         sessionsCountToday: enrichedSessions.length,
         incomeTrend: incTrendArr,
         expenseTrend: expTrendArr,
         chartLabels: bins.map((b) => b.label),
         todaySessions: enrichedSessions,
-        debtors: enrichedDebtors, // <--- استخدمنا البيانات المدمجة هنا
+        debtors: enrichedDebtors,
         recentTransactions: combinedTx,
         expenseCategories: expCategories,
       });
@@ -1743,7 +1741,7 @@ export default function Dashboard() {
   // ============================================================================
   async function loadChildPicklists() {
     const [cRes, clRes] = await Promise.all([
-      supabase.from("countries").select("id, name").order("name"), // <--- ضفنا الـ id هون
+      supabase.from("countries").select("id, name").order("name"),
       supabase.from("child_classes").select("name").order("name"),
     ]);
     if (!cRes.error) setCountries(cRes.data || []);
@@ -1754,7 +1752,7 @@ export default function Dashboard() {
     setFormData({
       name: "",
       id_number: "",
-      age: "", // <--- عدلناها لعمر
+      age: "",
       gender: "male",
       class: "",
       mother_name: "",
@@ -1776,7 +1774,6 @@ export default function Dashboard() {
 
     setSavingChild(true);
     try {
-      // معالجة المدينة: البحث عن المعرف (id) أو إنشاء مدينة جديدة
       let countryId = null;
       const typedCountry = formData.country_name?.trim();
       if (typedCountry) {
@@ -1793,18 +1790,16 @@ export default function Dashboard() {
         }
       }
 
-      // معالجة الصف
       if (formData.class?.trim()) {
         await safeInsertPicklist("child_classes", formData.class);
       }
 
-      // تحضير البيانات بنفس الأعمدة المطلوبة في قاعدة البيانات
       const payload = {
         name: formData.name.trim(),
         age: formData.age ? parseInt(formData.age) : null,
         class: formData.class?.trim() || null,
         gender: formData.gender,
-        country_id: countryId, // <--- هاد اللي كان يعمل المشكلة!
+        country_id: countryId,
         mother_name: formData.mother_name?.trim() || null,
         mother_phone: formData.mother_phone?.trim() || null,
         father_name: formData.father_name?.trim() || null,
@@ -1828,18 +1823,30 @@ export default function Dashboard() {
 
   const todayFormatted = useMemo(() => {
     const d = new Date();
-    return new Intl.DateTimeFormat("ar-EG", {
+    const arabicDay = new Intl.DateTimeFormat("ar-EG", {
       weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
     }).format(d);
+    const englishDate = new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(d);
+
+    return (
+      <>
+        {arabicDay} <span style={{ opacity: 0.5, margin: "0 4px" }}>|</span>{" "}
+        <span dir="ltr" style={{ fontFamily: "system-ui" }}>
+          {englishDate}
+        </span>
+      </>
+    );
   }, []);
 
-  const currentTimeStr = new Intl.DateTimeFormat("ar-EG", {
+  const currentTimeStr = new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
+    hour12: false,
   }).format(time);
 
   const rangeLabels = {
@@ -1859,7 +1866,7 @@ export default function Dashboard() {
         {/* ==================== Header Section ==================== */}
         <div className="dash-header">
           <div>
-            <h1 className="dash-greeting">{getGreeting()}، جيمي</h1>
+            <h1 className="dash-greeting">{getGreeting()}، كاترين</h1>
             <div className="dash-meta-pills">
               <div className="dash-pill">
                 <CalendarDays size={16} color="#3b82f6" />
