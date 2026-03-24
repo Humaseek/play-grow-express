@@ -1306,7 +1306,7 @@ export default function Dashboard() {
   const [formData, setFormData] = useState({
     name: "",
     id_number: "",
-    birth_date: "",
+    age: "", // <--- عدلناها لعمر
     gender: "male",
     class: "",
     mother_name: "",
@@ -1740,7 +1740,7 @@ export default function Dashboard() {
     setFormData({
       name: "",
       id_number: "",
-      birth_date: "",
+      age: "", // <--- عدلناها لعمر
       gender: "male",
       class: "",
       mother_name: "",
@@ -1771,16 +1771,16 @@ export default function Dashboard() {
 
       const payload = {
         name: formData.name.trim(),
-        id_number: formData.id_number.trim() || null,
-        birth_date: formData.birth_date || null,
+        id_number: formData.id_number?.trim() || null,
+        age: formData.age ? parseInt(formData.age) : null, // <--- إرسال العمر كـ رقم
         gender: formData.gender,
-        class: formData.class.trim() || null,
-        mother_name: formData.mother_name.trim() || null,
-        mother_phone: formData.mother_phone.trim() || null,
-        father_name: formData.father_name.trim() || null,
-        father_phone: formData.father_phone.trim() || null,
-        country: formData.country_name.trim() || null,
-        notes: formData.notes.trim() || null,
+        class: formData.class?.trim() || null,
+        mother_name: formData.mother_name?.trim() || null,
+        mother_phone: formData.mother_phone?.trim() || null,
+        father_name: formData.father_name?.trim() || null,
+        father_phone: formData.father_phone?.trim() || null,
+        country: formData.country_name?.trim() || null,
+        notes: formData.notes?.trim() || null,
       };
 
       const { error } = await supabase.from("children").insert([payload]);
