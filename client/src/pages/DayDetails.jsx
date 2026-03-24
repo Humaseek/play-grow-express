@@ -17,11 +17,16 @@ import Badge from "../components/Badge";
 import EmptyState from "../components/EmptyState";
 
 // ============================================================================
-// CSS Styles
+// CSS Styles - نسخة محسنة ومطورة
 // ============================================================================
 const DAY_DETAILS_STYLES = `
 .page--day-details {
   background: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(217,100%,94%,0.6) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(160,100%,94%,0.5) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(280,100%,94%,0.4) 0px, transparent 50%);
+  background-attachment: fixed;
   min-height: 100vh;
   padding-bottom: 60px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -32,15 +37,18 @@ const DAY_DETAILS_STYLES = `
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 24px;
+  margin-top: 24px;
 }
 
 .dd-card {
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-  padding: 24px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 28px;
+  box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.03);
+  padding: 28px;
   grid-column: span 12;
+  transition: all 0.3s ease;
 }
 
 @media (min-width: 1024px) {
@@ -49,108 +57,172 @@ const DAY_DETAILS_STYLES = `
 }
 
 .dd-section-title {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 900;
   color: #0f172a;
   display: flex;
   align-items: center;
   gap: 10px;
   margin-top: 0;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 1px dashed #e2e8f0;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed rgba(226, 232, 240, 0.8);
 }
 
-/* Timeline */
+.dd-section-icon-wrapper {
+  padding: 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Timeline Enhancements */
 .tl-row {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 .tl-indicator {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 20px;
+  width: 24px;
   flex-shrink: 0;
 }
 .tl-dot {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: #fff;
   border: 4px solid #cbd5e1;
   margin-top: 6px;
+  box-shadow: 0 0 0 4px rgba(255,255,255,0.8);
+  transition: all 0.3s ease;
 }
 .tl-line {
   flex: 1;
-  width: 2px;
+  width: 3px;
   background: #e2e8f0;
-  margin-top: 4px;
-  margin-bottom: -6px;
+  margin-top: 8px;
+  margin-bottom: -8px;
+  border-radius: 3px;
 }
 .tl-row:last-child .tl-line { display: none; }
+
+/* Status Colors for Timeline */
 .status-done .tl-dot { border-color: #10b981; }
 .status-scheduled .tl-dot { border-color: #3b82f6; }
 .status-canceled .tl-dot { border-color: #ef4444; }
 
 .tl-card {
   flex: 1;
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
-  border-radius: 16px;
-  padding: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  border-radius: 20px;
+  padding: 20px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+  position: relative;
+  overflow: hidden;
 }
+.tl-card::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #cbd5e1;
+  transition: all 0.3s ease;
+}
+.status-done .tl-card::before { background: #10b981; }
+.status-scheduled .tl-card::before { background: #3b82f6; }
+.status-canceled .tl-card::before { background: #ef4444; }
+
 .tl-card:hover {
-  background: #fff;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-  border-color: #e2e8f0;
+  box-shadow: 0 12px 25px -5px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
 }
 
-/* Lists */
+/* Lists Enhancements */
 .dd-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 .dd-list-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #f8fafc;
-  border-radius: 16px;
-  border: 1px solid #f1f5f9;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.01);
 }
-.dd-li-info { display: flex; align-items: center; gap: 12px; }
+.dd-list-item:hover {
+  transform: translateX(-6px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+}
+.dd-li-info { display: flex; align-items: center; gap: 14px; }
 .dd-li-avatar {
-  width: 42px; height: 42px;
-  border-radius: 12px;
+  width: 46px; height: 46px;
+  border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
-  font-weight: 800;
+  font-weight: 900;
+  font-size: 16px;
 }
-.dd-li-title { font-weight: 800; color: #0f172a; font-size: 15px; margin-bottom: 4px; }
-.dd-li-sub { font-size: 13px; color: #64748b; font-weight: 600; }
-.dd-li-val { font-weight: 900; font-size: 16px; direction: ltr; }
+.dd-li-title { font-weight: 900; color: #0f172a; font-size: 15px; margin-bottom: 4px; }
+.dd-li-sub { font-size: 13px; color: #64748b; font-weight: 700; }
+.dd-li-val { font-weight: 900; font-size: 17px; direction: ltr; }
 
-/* Summary Widgets */
+/* Summary Widgets Enhancements */
 .dd-summary-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-top: 10px;
 }
 .dd-sum-card {
-  background: white;
-  border: 1px solid rgba(15,23,42,0.06);
-  border-radius: 20px;
-  padding: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 1);
+  border-radius: 24px;
+  padding: 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  gap: 18px;
+  box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.04);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+.dd-sum-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px -4px rgba(15, 23, 42, 0.08);
+}
+
+/* Button Hover */
+.back-btn {
+  background: white;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-weight: 800;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+}
+.back-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  transform: translateX(-4px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.05);
 }
 `;
 
@@ -289,9 +361,11 @@ export default function DayDetails() {
     return (
       <div
         className="page page--day-details"
-        style={{ padding: 40, textAlign: "center" }}
+        style={{ display: "grid", placeItems: "center" }}
       >
-        جاري تحميل تفاصيل اليوم...
+        <div style={{ color: "#64748b", fontWeight: 800 }}>
+          جاري تحميل تفاصيل اليوم...
+        </div>
       </div>
     );
   }
@@ -299,28 +373,15 @@ export default function DayDetails() {
   return (
     <div className="page page--day-details" dir="rtl" lang="ar">
       <style>{DAY_DETAILS_STYLES}</style>
-      <div className="container" style={{ maxWidth: 1200 }}>
+      <div className="container" style={{ maxWidth: 1240 }}>
         {/* Header */}
         <PageHeader
-          title={`تفاصيل يوم: ${dateFormatted}`}
-          subtitle="ملخص النشاطات المالية والإدارية لهذا اليوم"
+          title={`يوم ${dateFormatted}`}
+          subtitle="ملخص كامل وشامل لنشاطات هذا اليوم"
           icon={<CalendarDays size={28} color="#3b82f6" />}
           actions={
-            <button
-              onClick={() => navigate("/calendar")}
-              style={{
-                background: "white",
-                border: "1px solid #e2e8f0",
-                padding: "8px 16px",
-                borderRadius: "999px",
-                fontWeight: "bold",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                cursor: "pointer",
-              }}
-            >
-              العودة للتقويم <ArrowRight size={16} />
+            <button onClick={() => navigate("/calendar")} className="back-btn">
+              العودة للتقويم <ArrowRight size={18} />
             </button>
           }
         />
@@ -329,60 +390,108 @@ export default function DayDetails() {
         <div className="dd-summary-cards">
           <div className="dd-sum-card">
             <div
-              style={{ background: "#f0fdf4", padding: 12, borderRadius: 14 }}
+              style={{
+                background: "linear-gradient(135deg, #f0fdf4, #dcfce7)",
+                padding: 14,
+                borderRadius: 16,
+                boxShadow: "0 4px 10px rgba(22, 163, 74, 0.15)",
+              }}
             >
-              <TrendingUp size={24} color="#10b981" />
+              <TrendingUp size={28} color="#16a34a" />
             </div>
             <div>
-              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+              <div style={{ fontSize: 14, color: "#64748b", fontWeight: 800 }}>
                 إيرادات اليوم
               </div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
+              <div
+                style={{
+                  fontSize: 26,
+                  fontWeight: 900,
+                  color: "#0f172a",
+                  letterSpacing: "-0.02em",
+                }}
+              >
                 {fmtMoney(data.totals.income)} ₪
               </div>
             </div>
           </div>
           <div className="dd-sum-card">
             <div
-              style={{ background: "#fef2f2", padding: 12, borderRadius: 14 }}
+              style={{
+                background: "linear-gradient(135deg, #fef2f2, #fee2e2)",
+                padding: 14,
+                borderRadius: 16,
+                boxShadow: "0 4px 10px rgba(220, 38, 38, 0.15)",
+              }}
             >
-              <TrendingDown size={24} color="#ef4444" />
+              <TrendingDown size={28} color="#dc2626" />
             </div>
             <div>
-              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+              <div style={{ fontSize: 14, color: "#64748b", fontWeight: 800 }}>
                 مصاريف اليوم
               </div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
+              <div
+                style={{
+                  fontSize: 26,
+                  fontWeight: 900,
+                  color: "#0f172a",
+                  letterSpacing: "-0.02em",
+                }}
+              >
                 {fmtMoney(data.totals.expense)} ₪
               </div>
             </div>
           </div>
           <div className="dd-sum-card">
             <div
-              style={{ background: "#eff6ff", padding: 12, borderRadius: 14 }}
+              style={{
+                background: "linear-gradient(135deg, #eff6ff, #dbeafe)",
+                padding: 14,
+                borderRadius: 16,
+                boxShadow: "0 4px 10px rgba(37, 99, 235, 0.15)",
+              }}
             >
-              <Clock size={24} color="#3b82f6" />
+              <Clock size={28} color="#2563eb" />
             </div>
             <div>
-              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+              <div style={{ fontSize: 14, color: "#64748b", fontWeight: 800 }}>
                 الجلسات
               </div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
+              <div
+                style={{
+                  fontSize: 26,
+                  fontWeight: 900,
+                  color: "#0f172a",
+                  letterSpacing: "-0.02em",
+                }}
+              >
                 {data.sessions.length} جلسة
               </div>
             </div>
           </div>
           <div className="dd-sum-card">
             <div
-              style={{ background: "#faf5ff", padding: 12, borderRadius: 14 }}
+              style={{
+                background: "linear-gradient(135deg, #faf5ff, #f3e8ff)",
+                padding: 14,
+                borderRadius: 16,
+                boxShadow: "0 4px 10px rgba(139, 92, 246, 0.15)",
+              }}
             >
-              <Users size={24} color="#8b5cf6" />
+              <Users size={28} color="#7c3aed" />
             </div>
             <div>
-              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
+              <div style={{ fontSize: 14, color: "#64748b", fontWeight: 800 }}>
                 الحضور الفعلي
               </div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
+              <div
+                style={{
+                  fontSize: 26,
+                  fontWeight: 900,
+                  color: "#0f172a",
+                  letterSpacing: "-0.02em",
+                }}
+              >
                 {data.attendanceCount} طالب
               </div>
             </div>
@@ -394,7 +503,13 @@ export default function DayDetails() {
           {/* العمود الأيمن (الجلسات) */}
           <div className="dd-card dd-col-main">
             <h2 className="dd-section-title">
-              <Clock size={20} color="#3b82f6" /> جلسات هذا اليوم
+              <div
+                className="dd-section-icon-wrapper"
+                style={{ background: "#eff6ff" }}
+              >
+                <Clock size={22} color="#3b82f6" />
+              </div>
+              جلسات هذا اليوم
             </h2>
             {data.sessions.length === 0 ? (
               <EmptyState
@@ -426,53 +541,72 @@ export default function DayDetails() {
                             display: "flex",
                             justifyContent: "space-between",
                             alignItems: "center",
+                            flexWrap: "wrap",
+                            gap: 10,
                           }}
                         >
                           <div>
                             <div
                               style={{
-                                fontSize: 15,
+                                fontSize: 16,
                                 fontWeight: 900,
                                 color: "#0f172a",
                                 marginBottom: 6,
                               }}
                             >
-                              <span dir="ltr">
+                              <span dir="ltr" style={{ color: "#475569" }}>
                                 {formatTime(s.start_at)} -{" "}
                                 {formatTime(s.end_at)}
                               </span>
                             </div>
-                            <div style={{ fontSize: 16, fontWeight: 900 }}>
+                            <div
+                              style={{
+                                fontSize: 18,
+                                fontWeight: 900,
+                                color: "#1e293b",
+                              }}
+                            >
                               {s.course_title}
                             </div>
                             <div
                               style={{
-                                fontSize: 13,
+                                fontSize: 14,
                                 color: "#64748b",
-                                fontWeight: 700,
-                                marginTop: 4,
+                                fontWeight: 800,
+                                marginTop: 6,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
                               }}
                             >
-                              <Layers
-                                size={14}
-                                style={{
-                                  display: "inline",
-                                  marginRight: 4,
-                                  verticalAlign: "middle",
-                                }}
-                              />
+                              <Layers size={16} />
                               الفوج: {s.run_label}
                             </div>
                           </div>
                           <div>
                             {s.status === "done" && (
-                              <Badge variant="ok">مكتملة</Badge>
+                              <Badge
+                                variant="ok"
+                                style={{ fontSize: 13, padding: "6px 12px" }}
+                              >
+                                مكتملة
+                              </Badge>
                             )}
                             {s.status === "canceled" && (
-                              <Badge variant="danger">ملغاة</Badge>
+                              <Badge
+                                variant="danger"
+                                style={{ fontSize: 13, padding: "6px 12px" }}
+                              >
+                                ملغاة
+                              </Badge>
                             )}
                             {s.status === "scheduled" && (
-                              <Badge variant="info">مجدولة</Badge>
+                              <Badge
+                                variant="info"
+                                style={{ fontSize: 13, padding: "6px 12px" }}
+                              >
+                                مجدولة
+                              </Badge>
                             )}
                           </div>
                         </div>
@@ -498,23 +632,32 @@ export default function DayDetails() {
             }}
           >
             {/* بطاقة الإيرادات */}
-            <div className="dd-card" style={{ padding: "20px" }}>
+            <div className="dd-card" style={{ padding: "28px" }}>
               <h2
                 className="dd-section-title"
-                style={{ color: "#10b981", borderColor: "#bbf7d0" }}
+                style={{ borderColor: "rgba(16, 185, 129, 0.2)" }}
               >
-                <CreditCard size={20} color="#10b981" /> الإيرادات (الدفعات)
+                <div
+                  className="dd-section-icon-wrapper"
+                  style={{ background: "#f0fdf4" }}
+                >
+                  <CreditCard size={22} color="#10b981" />
+                </div>
+                الإيرادات (الدفعات)
               </h2>
               {data.payments.length === 0 ? (
                 <div
                   style={{
                     textAlign: "center",
                     color: "#94a3b8",
-                    padding: "20px 0",
+                    padding: "30px 0",
                     fontSize: 14,
+                    fontWeight: 700,
+                    background: "#f8fafc",
+                    borderRadius: 16,
                   }}
                 >
-                  لا توجد إيرادات
+                  لا توجد إيرادات مسجلة
                 </div>
               ) : (
                 <div className="dd-list">
@@ -522,12 +665,12 @@ export default function DayDetails() {
                     <div
                       key={p.id}
                       className="dd-list-item"
-                      style={{ background: "#f0fdf4", borderColor: "#dcfce7" }}
+                      style={{ borderLeft: "4px solid #10b981" }}
                     >
                       <div className="dd-li-info">
                         <div
                           className="dd-li-avatar"
-                          style={{ background: "#dcfce7", color: "#16a34a" }}
+                          style={{ background: "#f0fdf4", color: "#16a34a" }}
                         >
                           ₪
                         </div>
@@ -552,23 +695,32 @@ export default function DayDetails() {
             </div>
 
             {/* بطاقة المصاريف */}
-            <div className="dd-card" style={{ padding: "20px" }}>
+            <div className="dd-card" style={{ padding: "28px" }}>
               <h2
                 className="dd-section-title"
-                style={{ color: "#ef4444", borderColor: "#fecaca" }}
+                style={{ borderColor: "rgba(239, 68, 68, 0.2)" }}
               >
-                <Receipt size={20} color="#ef4444" /> المصاريف
+                <div
+                  className="dd-section-icon-wrapper"
+                  style={{ background: "#fef2f2" }}
+                >
+                  <Receipt size={22} color="#ef4444" />
+                </div>
+                المصاريف
               </h2>
               {data.expenses.length === 0 ? (
                 <div
                   style={{
                     textAlign: "center",
                     color: "#94a3b8",
-                    padding: "20px 0",
+                    padding: "30px 0",
                     fontSize: 14,
+                    fontWeight: 700,
+                    background: "#f8fafc",
+                    borderRadius: 16,
                   }}
                 >
-                  لا توجد مصاريف
+                  لا توجد مصاريف مسجلة
                 </div>
               ) : (
                 <div className="dd-list">
@@ -576,12 +728,12 @@ export default function DayDetails() {
                     <div
                       key={e.id}
                       className="dd-list-item"
-                      style={{ background: "#fef2f2", borderColor: "#fee2e2" }}
+                      style={{ borderLeft: "4px solid #ef4444" }}
                     >
                       <div className="dd-li-info">
                         <div
                           className="dd-li-avatar"
-                          style={{ background: "#fee2e2", color: "#dc2626" }}
+                          style={{ background: "#fef2f2", color: "#dc2626" }}
                         >
                           ₪
                         </div>
