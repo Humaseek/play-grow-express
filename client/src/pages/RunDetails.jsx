@@ -3175,7 +3175,7 @@ export default function RunDetails() {
                           <tr key={r.id}>
                             <td className="muted">
                               <span className="ltrIso">
-                                {r.spent_on || "-"}
+                                {fmtDate(r.spent_on)}
                               </span>
                             </td>
                             <td style={{ fontWeight: 800 }}>
