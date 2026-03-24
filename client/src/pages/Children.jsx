@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-// إضافة الاستيراد الخاص بـ useNavigate للانتقال بين الصفحات
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
@@ -20,7 +19,8 @@ import {
   GraduationCap,
   ChevronDown,
   UserRound,
-  Copy, // Add Copy for the image's layout
+  Copy,
+  MoreVertical,
 } from "lucide-react";
 
 // --- مُركّب مخصص للجمع بين الكتابة والقائمة المنسدلة (Combobox) ---
@@ -28,7 +28,6 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  // إغلاق القائمة عند النقر خارجها
   useEffect(() => {
     function handleClickOutside(event) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -39,7 +38,6 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // تصفية الخيارات بناءً على النص المدخل
   const filtered = options.filter((o) =>
     (o.label || "").toLowerCase().includes((value || "").toLowerCase()),
   );
@@ -101,7 +99,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
                 transition: "background 0.15s ease",
               }}
               onMouseDown={(e) => {
-                e.preventDefault(); // منع فقدان التركيز من حقل الإدخال
+                e.preventDefault();
                 onChange(opt.value);
                 setIsOpen(false);
               }}
@@ -121,10 +119,13 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   );
 }
 
-// --- تنسيقات CSS مدمجة مع تعديلات احترافية جداً وحازمة للموبايل ---
+// --- تنسيقات CSS احترافية ومطلقة الدقة (Desktop + Ultra Mobile) ---
 const CHILDREN_STYLES = `
+/* ==========================================================================
+   DESKTOP & GLOBAL STYLES
+   ========================================================================== */
 .page--children {
-  background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
   padding-bottom: 40px;
 }
@@ -193,14 +194,15 @@ const CHILDREN_STYLES = `
   border: 1px solid #e2e8f0;
   background: #fff;
   font-size: 14px;
+  font-weight: 600;
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
 .search-input:focus {
   outline: none;
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .search-icon {
@@ -244,269 +246,298 @@ const CHILDREN_STYLES = `
   background: #f8fafc;
 }
 
-.modern-table tr:last-child td {
-  border-bottom: none;
-}
-
-.child-id {
-  font-weight: 800;
-  color: #94a3b8;
-}
-
-.child-name {
-  font-weight: 900;
-  color: #0f172a;
-}
-
-.phone-number {
-  direction: ltr;
-  unicode-bidi: embed;
-  display: inline-block;
-  font-weight: 600;
-  color: #475569;
-}
+.child-id { font-weight: 800; color: #94a3b8; }
+.child-name { font-weight: 900; color: #0f172a; }
+.phone-number { direction: ltr; unicode-bidi: embed; display: inline-block; font-weight: 600; color: #475569; }
 
 .btn-add {
-  background: #f59e0b !important;
+  background: #0ea5e9 !important; /* لون أزرق فخم */
   color: #fff !important;
   border: none !important;
   border-radius: 14px !important;
   padding: 10px 20px !important;
   font-weight: 800 !important;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2) !important;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.25) !important;
   transition: all 0.2s !important;
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
+.btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(14, 165, 233, 0.35) !important; background: #0284c7 !important; }
 
-.btn-add:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3) !important;
-  background: #d97706 !important;
-}
-
-.actions-cell {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.form-section-title {
-  margin: 0 0 16px 0;
-  color: #0f172a;
-  font-size: 16px;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.actions-cell { display: flex; gap: 8px; align-items: center; }
+.form-section-title { margin: 0 0 16px 0; color: #0f172a; font-size: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; display: flex; align-items: center; gap: 8px; font-weight: 800; }
 
 /* ==========================================================================
-   MOBILE RESPONSIVE TWEAKS (HACKING THE VIBE)
+   NATIVE MOBILE APP VIBE (ABSOLUTE PERFECTION)
    ========================================================================== */
 .mobile-only { display: none; }
 .desktop-only { display: block; }
-.mc-fab { display: none; } /* مخفي على الديسكتوب */
+.mc-fab { display: none; }
 
 @media (max-width: 768px) {
   .desktop-only { display: none !important; }
   .mobile-only { display: flex !important; }
   
-  /* تقليل الفراغ العلوي فوق الكروت - تعديل جديد وحازم */
+  /* 1. إزالة الفراغ العلوي وتجهيز المساحة بالكامل */
+  html, body {
+    background: #f4f6f9 !important;
+  }
+  
   .page--children {
-    padding: 0 12px 100px 12px !important; /* حشوة علوية صفر */
-    background: #f8fafc;
-  }
-
-  .children-header {
-    margin-bottom: 16px;
-    padding-top: 0 !important; /* إزالة المسافة تماماً */
-    margin-top: 0 !important;
-  }
-
-  .children-title {
-    font-size: 20px;
-    min-height: 44px;
-    padding: 8px 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-    border: none;
+    padding: 0 0 100px 0 !important; /* 0 من فوق، 100 من تحت عشان البار السفلي */
+    background: #f4f6f9 !important;
   }
   
-  .children-subtitle {
-    font-size: 13px;
+  .container {
+    padding: 0 !important; /* إلغاء حشوة الكونتينر */
+    max-width: 100% !important;
   }
 
-  .children-card {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  }
-  
-  /* شريط البحث المدمج - تعديل جديد */
-  .children-toolbar {
+  /* 2. ترويسة التطبيق العلوية (App Header) */
+  .mobile-app-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(244, 246, 249, 0.95);
+    backdrop-filter: blur(16px);
+    padding: env(safe-area-inset-top, 16px) 16px 12px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    display: flex;
     flex-direction: column;
-    align-items: stretch;
-    padding: 0 0 16px 0;
-    background: transparent;
-    border: none;
     gap: 12px;
   }
-  
-  .search-wrapper {
-    max-width: 100%;
+
+  .mobile-app-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
   }
 
-  .search-input {
-    border-radius: 16px;
-    min-height: 52px;
-    border: none;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-    padding-right: 48px;
+  .mobile-app-title {
+    font-size: 20px;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.3px;
   }
-  .search-icon { left: 16px; }
+
+  /* 3. شريط البحث المدمج للموبايل */
+  .mobile-search-bar {
+    position: relative;
+    width: 100%;
+  }
   
-  /* إخفاء زر الإضافة العريض على الموبايل - تعديل جديد */
-  .btn-add.mobile-add {
+  .mobile-search-bar input {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    padding: 12px 16px 12px 44px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  
+  .mobile-search-bar input:focus {
+    border-color: #3b82f6;
+  }
+
+  .mobile-search-bar .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+  }
+
+  /* 4. إخفاء العناصر القديمة التي تم استبدالها */
+  .children-header, .children-toolbar, .children-card {
     display: none !important;
   }
 
-  /* كبسة الإضافة العائمة context FAB - تعديل جديد للتثبيت والظهور الدائم */
+  /* 5. الزر العائم (FAB) - ثابت، أزرق، وفخم */
   .mc-fab.mobile-only {
-    display: inline-flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    border-radius: 999px;
-    background: rgb(2, 54, 80); // Accen color for Children page theme
-    border: 1px solid rgba(2, 54, 80, 0.2); // Accen color weak
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7); /* أزرق جذاب */
     color: #fff;
-    cursor: pointer;
-    position: fixed; // A modern FAB is often fixed or header context
-    top: 14px; // Correct placement for iOS context bar
-    inset-inline-end: 14px; // Correct placement for iOS context bar
-    z-index: 1000;
-    box-shadow: 0 8px 22px rgba(2, 54, 80, 0.25);
+    position: fixed !important;
+    bottom: 96px !important; /* فوق شريط التنقل السفلي */
+    left: 20px !important; /* على اليسار في الواجهة العربية */
+    right: auto !important;
+    z-index: 9000;
+    box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
     border: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .mc-fab.mobile-only:active {
+    transform: scale(0.92);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
   }
 
-  /* قائمة الكروت - روح التطبيق الحقيقية */
+  /* 6. قائمة الكروت المتطابقة تماماً مع الصورة المطلوبة */
   .mobile-child-list {
     display: flex;
     flex-direction: column;
-    gap: 16px; /* مسافة ممتازة بين الكروت */
+    gap: 16px;
+    padding: 16px;
   }
 
-  /* تصميم الكرت الفخم الجديد بناءً على صورة العميل للتطابق */
-  .target-mc-card {
+  .premium-mc-card {
     background: #ffffff;
     border-radius: 20px;
-    padding: 16px;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+    padding: 18px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
-    gap: 14px;
     position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(226, 232, 240, 0.6);
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.1s ease;
   }
+  .premium-mc-card:active { transform: scale(0.98); background: #fdfdfd; }
 
-  .target-mc-card:active {
-    transform: scale(0.98);
-  }
-
-  /* أزرار العمليات فوق في الكرت - تعديل جديد للتطابق */
-  .target-mc-top-actions {
+  /* الصف الأول: الاسم على اليمين والأزرار على اليسار */
+  .pmc-top-row {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-bottom: 8px;
-  }
-  
-  .target-mc-child-info {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  
-  .target-mc-child-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  
-  .target-mc-child-main {
-    display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
   }
-  
-  .target-mc-name {
-    font-size: 18px;
+
+  .pmc-name {
+    font-size: 17px;
     font-weight: 900;
     color: #0f172a;
     line-height: 1.3;
+    text-align: right;
   }
-  
-  .target-mc-city {
-    font-size: 12px;
+
+  .pmc-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .pmc-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #64748b;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .pmc-icon-btn:active { background: #f1f5f9; }
+  .pmc-icon-btn.edit:active { color: #16a34a; background: #f0fdf4; }
+  .pmc-icon-btn.delete:active { color: #dc2626; background: #fef2f2; }
+
+  /* الصف الثاني: الشارات (Badges) */
+  .pmc-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .pmc-badge {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 800;
     display: flex;
     align-items: center;
     gap: 4px;
   }
-  
-  .target-mc-id {
-    font-size: 11px;
-    font-weight: 800;
+  .pmc-badge.green { background: #f0fdf4; color: #16a34a; } /* للمحاكاة */
+  .pmc-badge.gray { background: #f1f5f9; color: #475569; }
+
+  /* الصف الثالث: الموقع والـ ID */
+  .pmc-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+  .pmc-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+  }
+  .pmc-id {
+    font-size: 12px;
     color: #94a3b8;
+    font-weight: 700;
   }
 
-  /* تنسيق بيانات التواصل المكررة كما في صورة العميل للتطابق */
-  .target-mc-contact-grid {
+  /* خط فاصل أنيق */
+  .pmc-divider {
+    height: 1px;
+    background: rgba(0, 0, 0, 0.04);
+    margin: 0 -18px 16px -18px; /* يمتد لطرف الكرت */
+  }
+
+  /* الصف الرابع: شبكة الهواتف (Contact Grid) */
+  .pmc-contacts-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    direction: ltr; /* لضبط الأرقام والنصوص الإنجليزية إذا لزم كما بالصورة */
+    text-align: left;
   }
 
-  .target-mc-contact-col {
+  .pmc-contact-col {
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
 
-  .target-mc-contact-item {
+  .pmc-contact-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
+    gap: 6px;
+    font-size: 12px;
     color: #475569;
-    font-weight: 700;
+    font-weight: 600;
   }
-
+  .pmc-contact-item svg {
+    color: #94a3b8;
+    flex-shrink: 0;
+  }
+  .pmc-contact-number {
+    font-weight: 800;
+    color: #0f172a;
+  }
 }
 `;
 
 export default function Children() {
-  // تعريف دالة التنقل
   const navigate = useNavigate();
 
-  // حالة البيانات الأساسية
   const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // قوائم الاختيار (Picklists)
   const [countries, setCountries] = useState([]);
   const [classes, setClasses] = useState([]);
 
-  // حالة النموذج (Modal State)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -515,7 +546,7 @@ export default function Children() {
     age: "",
     class: "",
     gender: "male",
-    country_name: "", // اسم المدينة المدخل نصياً
+    country_name: "",
     mother_name: "",
     mother_phone: "",
     father_name: "",
@@ -523,25 +554,22 @@ export default function Children() {
     notes: "",
   });
 
-  // حالة حوار التأكيد (Confirm Delete State)
   const [confirm, setConfirm] = useState({
     open: false,
     id: null,
     text: "",
   });
 
-  // تحميل البيانات الأولية وقوائم الاختيار عند التحميل
   useEffect(() => {
     loadData();
     loadPicklists();
   }, []);
 
-  // دالة جلب بيانات الأطفال
   async function loadData() {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from("children_view") // جلب من الـ View لعرض اسم المدينة
+        .from("children_view")
         .select("*")
         .order("id", { ascending: false });
 
@@ -554,7 +582,6 @@ export default function Children() {
     }
   }
 
-  // دالة جلب قوائم الاختيار للمدن والصفوف
   async function loadPicklists() {
     try {
       const [cRes, clRes] = await Promise.all([
@@ -568,20 +595,18 @@ export default function Children() {
     }
   }
 
-  // تصفية الأطفال بناءً على نص البحث (باستخدام useMemo للأداء)
   const filteredChildren = useMemo(() => {
     if (!searchQuery.trim()) return children;
     const q = searchQuery.toLowerCase();
     return children.filter(
       (c) =>
-        (c.id && String(c.id).includes(q)) || // البحث بالمعرف
-        (c.name || "").toLowerCase().includes(q) || // البحث بالاسم
-        (c.mother_phone || "").includes(q) || // البحث بهاتف الأم
-        (c.father_phone || "").includes(q), // البحث بهاتف الأب
+        (c.id && String(c.id).includes(q)) ||
+        (c.name || "").toLowerCase().includes(q) ||
+        (c.mother_phone || "").includes(q) ||
+        (c.father_phone || "").includes(q),
     );
   }, [children, searchQuery]);
 
-  // فتح نموذج إضافة طفل جديد
   function openAddModal() {
     setEditingId(null);
     setFormData({
@@ -599,7 +624,6 @@ export default function Children() {
     setIsModalOpen(true);
   }
 
-  // فتح نموذج تعديل بيانات طفل موجود
   function openEditModal(child) {
     setEditingId(child.id);
     setFormData({
@@ -607,7 +631,7 @@ export default function Children() {
       age: child.age ?? "",
       class: child.class || "",
       gender: child.gender || "male",
-      country_name: child.country || "", // من الـ View بنجيب الاسم
+      country_name: child.country || "",
       mother_name: child.mother_name || "",
       mother_phone: child.mother_phone || "",
       father_name: child.father_name || "",
@@ -617,7 +641,6 @@ export default function Children() {
     setIsModalOpen(true);
   }
 
-  // دالة حفظ البيانات (إضافة أو تعديل)
   async function handleSave() {
     const name = formData.name.trim();
     const ageNum = Number(formData.age);
@@ -629,7 +652,6 @@ export default function Children() {
 
     setSaving(true);
     try {
-      // 1. إدارة قائمة المدن: الحصول على المعرف أو إنشاء مدينة جديدة
       let countryId = null;
       const typedCountry = formData.country_name.trim();
       if (typedCountry) {
@@ -646,23 +668,20 @@ export default function Children() {
         }
       }
 
-      // 2. إدارة قائمة الصفوف: إضافة الصف للقائمة إن لم يكن موجوداً
       const typedClass = formData.class.trim();
       if (typedClass) {
         const existingCl = classes.find((c) => c.name === typedClass);
         if (!existingCl) {
           await supabase.from("child_classes").insert([{ name: typedClass }]);
-          // لا نحتاج لمعرف الصف هنا لأن جدول children يحفظ اسم الصف كقيمة نصية
         }
       }
 
-      // 3. تحضير بيانات الطفل للحفظ
       const payload = {
         name,
         age: isNaN(ageNum) ? null : ageNum,
-        class: typedClass || null, // اسم الصف كقيمة نصية
+        class: typedClass || null,
         gender: formData.gender,
-        country_id: countryId, // معرف المدينة
+        country_id: countryId,
         mother_name: formData.mother_name.trim() || null,
         mother_phone: formData.mother_phone.trim() || null,
         father_name: formData.father_name.trim() || null,
@@ -670,7 +689,6 @@ export default function Children() {
         notes: formData.notes.trim() || null,
       };
 
-      // 4. تنفيذ عملية الحفظ (تعديل أو إضافة)
       if (editingId) {
         const { error } = await supabase
           .from("children")
@@ -682,10 +700,9 @@ export default function Children() {
         if (error) throw error;
       }
 
-      // 5. إغلاق النموذج وتحديث البيانات وقوائم الاختيار
       setIsModalOpen(false);
       loadData();
-      loadPicklists(); // لتحديث القوائم بالمدن أو الصفوف الجديدة
+      loadPicklists();
     } catch (e) {
       console.error(e);
       alert("حدث خطأ أثناء حفظ البيانات.");
@@ -694,19 +711,17 @@ export default function Children() {
     }
   }
 
-  // دالة حذف الطفل
   async function handleDelete(id) {
     try {
       const { error } = await supabase.from("children").delete().eq("id", id);
       if (error) {
-        // التحقق من خطأ "Constraint" لوجود ارتباطات
         if (error.message.includes("foreign key constraint")) {
           alert("لا يمكن حذف الطفل لارتباطه بدفعات أو دورات مسجلة.");
         } else {
           throw error;
         }
       } else {
-        loadData(); // تحديث البيانات بعد الحذف بنجاح
+        loadData();
       }
     } catch (e) {
       console.error(e);
@@ -714,7 +729,6 @@ export default function Children() {
     }
   }
 
-  // عرض شارة الجنس بتنسيق مخصص للديسكتوب
   const genderBadge = (g) => {
     if (g === "male") return <Badge variant="info">ذكر</Badge>;
     if (g === "female") return <Badge variant="warn">أنثى</Badge>;
@@ -724,29 +738,47 @@ export default function Children() {
   return (
     <div className="page page--children" dir="rtl" lang="ar">
       <style>{CHILDREN_STYLES}</style>
+
+      {/* ==================== Tamer's Absolute Mobile Header (Replaces old spacing) ==================== */}
+      <div className="mobile-app-header mobile-only">
+        <div className="mobile-app-header-top">
+          <div className="mobile-app-title">الأطفال</div>
+        </div>
+        <div className="mobile-search-bar">
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            placeholder="ابحث بالاسم أو رقم الهاتف..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </div>
+      {/* ============================================================================================== */}
+
       <div className="container">
-        {/* رأس الصفحة */}
-        <div className="children-header">
+        {/* رأس الصفحة للديسكتوب فقط */}
+        <div className="children-header desktop-only">
           <div className="children-title">الأطفال</div>
-          <div className="children-subtitle desktop-only">
+          <div className="children-subtitle">
             <span style={{ color: "#cbd5e1" }}>|</span>
             <Users size={16} /> إدارة جميع الأطفال
           </div>
-          {/* كبسة الإضافة العائمة context FAB - تعديل جديد للتثبيت والظهور الدائم */}
-          <button
-            className="mc-fab mobile-only" // New FAB, mobile only
-            onClick={openAddModal}
-            aria-label="Add Child"
-          >
-            <Plus size={20} />
-          </button>
         </div>
+
+        {/* كبسة الإضافة العائمة (FAB) الثابتة بقوة للموبايل */}
+        <button
+          className="mc-fab mobile-only"
+          onClick={openAddModal}
+          aria-label="إضافة طفل"
+        >
+          <Plus size={24} />
+        </button>
 
         {error && <ErrorBanner error={error} />}
 
-        {/* الكرت الرئيسي للجدول والبحث */}
-        <div className="children-card">
-          {/* شريط الأدوات العلوي (البحث والإضافة) */}
+        {/* الكرت الرئيسي للجدول والبحث (يظهر فقط عالديسكتوب، عالموبايل مخفي من CSS) */}
+        <div className="children-card desktop-only">
           <div className="children-toolbar">
             <div className="search-wrapper">
               <Search size={18} className="search-icon" />
@@ -758,13 +790,11 @@ export default function Children() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            {/* إخفاء زر الإضافة العريض على الموبايل */}
-            <button className="btn btn-add desktop-only" onClick={openAddModal}>
+            <button className="btn btn-add" onClick={openAddModal}>
               <Plus size={18} /> إضافة طفل
             </button>
           </div>
 
-          {/* المحتوى */}
           {loading ? (
             <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
               جاري التحميل...
@@ -774,197 +804,208 @@ export default function Children() {
               لا يوجد بيانات متطابقة.
             </div>
           ) : (
-            <>
-              {/* ==================== عرض الديسكتوب (الجدول) ==================== */}
-              <div className="desktop-only" style={{ overflowX: "auto" }}>
-                <table className="modern-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 60, textAlign: "center" }}>معرف</th>
-                      <th>الاسم</th>
-                      <th>العمر</th>
-                      <th>الصف</th>
-                      <th>الجنس</th>
-                      <th>المدينة</th>
-                      <th>هاتف الأم</th>
-                      <th>هاتف الأب</th>
-                      <th style={{ width: 100, textAlign: "center" }}>
-                        إجراءات
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredChildren.map((child) => (
-                      <tr
-                        key={child.id}
-                        className="clickable-row"
-                        onClick={() => navigate(`/children/${child.id}`)}
-                      >
-                        <td
-                          className="child-id"
-                          style={{ textAlign: "center" }}
-                        >
-                          {child.id}
-                        </td>
-                        <td className="child-name">{child.name}</td>
-                        <td>{child.age ?? "-"}</td>
-                        <td className="muted">{child.class || "-"}</td>
-                        <td>{genderBadge(child.gender)}</td>
-                        <td className="muted">{child.country || "-"}</td>
-                        <td>
-                          <span className="phone-number">
-                            {child.mother_phone || "-"}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="phone-number">
-                            {child.father_phone || "-"}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="actions-cell">
-                            <IconButton
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditModal(child);
-                              }}
-                              title="تعديل"
-                            >
-                              <Pencil size={16} />
-                            </IconButton>
-                            <IconButton
-                              danger
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setConfirm({
-                                  open: true,
-                                  id: child.id,
-                                  text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                                });
-                              }}
-                              title="حذف"
-                            >
-                              <Trash2 size={16} />
-                            </IconButton>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* ==================== عرض الموبايل (الكروت بناءً على صورة العميل للتطابق) ==================== */}
-              <div className="mobile-only mobile-child-list">
-                {filteredChildren.map((child) => (
-                  <div
-                    key={child.id}
-                    className="target-mc-card"
-                    onClick={() => navigate(`/children/${child.id}`)}
-                  >
-                    {/* أزرار الإجراءات فوق في الكرت - تعديل جديد للتطابق */}
-                    <div
-                      className="target-mc-top-actions"
-                      onClick={(e) => e.stopPropagation()}
+            <div style={{ overflowX: "auto" }}>
+              <table className="modern-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 60, textAlign: "center" }}>معرف</th>
+                    <th>الاسم</th>
+                    <th>العمر</th>
+                    <th>الصف</th>
+                    <th>الجنس</th>
+                    <th>المدينة</th>
+                    <th>هاتف الأم</th>
+                    <th>هاتف الأب</th>
+                    <th style={{ width: 100, textAlign: "center" }}>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredChildren.map((child) => (
+                    <tr
+                      key={child.id}
+                      className="clickable-row"
+                      onClick={() => navigate(`/children/${child.id}`)}
                     >
-                      <IconButton
-                        soft
-                        size="sm"
-                        onClick={() => openEditModal(child)}
-                        title="تعديل"
-                      >
-                        <Pencil size={15} />
-                      </IconButton>
-                      <IconButton
-                        danger
-                        soft
-                        size="sm"
-                        onClick={() =>
-                          setConfirm({
-                            open: true,
-                            id: child.id,
-                            text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                          })
-                        }
-                        title="حذف"
-                      >
-                        <Trash2 size={15} />
-                      </IconButton>
-                      <IconButton soft size="sm" title="نسخ">
-                        {" "}
-                        {/* Icon presence, no copy logic applied yet */}
-                        <Copy size={15} />
-                      </IconButton>
-                    </div>
+                      <td className="child-id" style={{ textAlign: "center" }}>
+                        {child.id}
+                      </td>
+                      <td className="child-name">{child.name}</td>
+                      <td>{child.age ?? "-"}</td>
+                      <td className="muted">{child.class || "-"}</td>
+                      <td>{genderBadge(child.gender)}</td>
+                      <td className="muted">{child.country || "-"}</td>
+                      <td>
+                        <span className="phone-number">
+                          {child.mother_phone || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="phone-number">
+                          {child.father_phone || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="actions-cell">
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(child);
+                            }}
+                            title="تعديل"
+                          >
+                            <Pencil size={16} />
+                          </IconButton>
+                          <IconButton
+                            danger
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirm({
+                                open: true,
+                                id: child.id,
+                                text: `حذف (${child.name})؟`,
+                              });
+                            }}
+                            title="حذف"
+                          >
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
 
-                    {/* معلومات الطفل الأساسية وشارات الحالة */}
-                    <div className="target-mc-child-info">
-                      <div className="target-mc-child-badges">
-                        <Badge variant="ok">Male ok</Badge>{" "}
-                        {/* Hardcoded as in image, status ok/weak ok */}
-                        <Badge variant="neutral">
-                          Age {child.age || "???"} / Class
-                        </Badge>{" "}
-                        {/* Hardcoded "Class" */}
-                      </div>
-                      <div className="target-mc-child-main">
-                        <div className="target-mc-name">{child.name}</div>
-                        <div className="target-mc-city">
-                          <MapPin size={12} /> {child.country || "Jerusalem"}{" "}
-                          {/* Default to Jerusalem as in image if none */}
-                        </div>
-                        <div className="target-mc-id">ID {child.id}</div>
-                      </div>
-                    </div>
-
-                    {/* بيانات التواصل المكررة كما في صورة العميل للتطابق */}
-                    {(child.mother_phone || child.father_phone) && (
-                      <div className="target-mc-contact-grid">
-                        {/* عمود بيانات التواصل 1 (على اليمين في صورة العميل) */}
-                        <div className="target-mc-contact-col">
-                          {child.mother_phone && (
-                            <div className="target-mc-contact-item">
-                              <Phone size={14} /> mother's {child.mother_phone}
-                            </div>
-                          )}
-                          {child.father_phone && (
-                            <div className="target-mc-contact-item">
-                              <Phone size={14} /> father's {child.father_phone}
-                            </div>
-                          )}
-                        </div>
-                        {/* عمود بيانات التواصل 2 (على اليسار في صورة العميل) */}
-                        <div className="target-mc-contact-col">
-                          {child.mother_phone && (
-                            <div className="target-mc-contact-item">
-                              <Phone size={14} /> mother: {child.mother_phone}
-                            </div>
-                          )}
-                          {child.father_phone && (
-                            <div className="target-mc-contact-item">
-                              <Phone size={14} /> father: {child.father_phone}{" "}
-                              and an ID
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+        {/* ==================== عرض الموبايل (الكروت الاحترافية المطابقة للصورة) ==================== */}
+        <div className="mobile-only mobile-child-list">
+          {loading ? (
+            <div
+              style={{
+                padding: 40,
+                textAlign: "center",
+                color: "#64748b",
+                fontWeight: 800,
+              }}
+            >
+              جاري التحميل...
+            </div>
+          ) : filteredChildren.length === 0 ? (
+            <div
+              style={{
+                padding: 40,
+                textAlign: "center",
+                color: "#64748b",
+                fontWeight: 800,
+              }}
+            >
+              لا يوجد بيانات متطابقة.
+            </div>
+          ) : (
+            filteredChildren.map((child) => (
+              <div
+                key={child.id}
+                className="premium-mc-card"
+                onClick={() => navigate(`/children/${child.id}`)}
+              >
+                {/* الصف الأول: الاسم والأزرار (عكس الديسكتوب لمطابقة الصورة) */}
+                <div className="pmc-top-row">
+                  <div className="pmc-name">{child.name}</div>
+                  <div
+                    className="pmc-actions"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      className="pmc-icon-btn edit"
+                      onClick={() => openEditModal(child)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      className="pmc-icon-btn delete"
+                      onClick={() =>
+                        setConfirm({
+                          open: true,
+                          id: child.id,
+                          text: `هل أنت متأكد من حذف ${child.name}؟`,
+                        })
+                      }
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <button className="pmc-icon-btn" onClick={() => {}}>
+                      <Copy size={16} />
+                    </button>
                   </div>
-                ))}
+                </div>
+
+                {/* الصف الثاني: الشارات (كما في الصورة) */}
+                <div className="pmc-badges">
+                  <span className="pmc-badge green">
+                    {child.gender === "female" ? "أنثى" : "ذكر"}
+                  </span>
+                  <span className="pmc-badge gray">
+                    العمر {child.age || "—"} / {child.class || "بدون صف"}
+                  </span>
+                </div>
+
+                {/* الصف الثالث: الموقع والـ ID */}
+                <div className="pmc-meta">
+                  <div className="pmc-location">
+                    <MapPin size={14} /> {child.country || "المدينة غير مسجلة"}
+                  </div>
+                  <div className="pmc-id">ID {child.id}</div>
+                </div>
+
+                {/* خط فاصل */}
+                {(child.mother_phone || child.father_phone) && (
+                  <div className="pmc-divider"></div>
+                )}
+
+                {/* الصف الرابع: شبكة الهواتف (مطابقة للتوزيع الهندسي) */}
+                {(child.mother_phone || child.father_phone) && (
+                  <div className="pmc-contacts-grid">
+                    <div className="pmc-contact-col">
+                      {child.mother_phone && (
+                        <div className="pmc-contact-item">
+                          <Phone size={14} />{" "}
+                          <span>
+                            أم:{" "}
+                            <span className="pmc-contact-number">
+                              {child.mother_phone}
+                            </span>
+                          </span>
+                        </div>
+                      )}
+                      {child.father_phone && (
+                        <div className="pmc-contact-item">
+                          <Phone size={14} />{" "}
+                          <span>
+                            أب:{" "}
+                            <span className="pmc-contact-number">
+                              {child.father_phone}
+                            </span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            </>
+            ))
           )}
         </div>
       </div>
 
-      {/* نموذج الإضافة والتعديل */}
+      {/* نموذج الإضافة والتعديل (محسن للموبايل والديسكتوب) */}
       <Modal
         open={isModalOpen}
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
-        onClose={() => !saving && setIsModalOpen(false)} // منع الإغلاق أثناء الحفظ
+        onClose={() => !saving && setIsModalOpen(false)}
       >
         <div className="grid" style={{ padding: "10px 0" }}>
-          {/* قسم البيانات الأساسية */}
           <div className="col-12">
             <h4 className="form-section-title">
               <Users size={18} color="#64748b" /> البيانات الأساسية
@@ -976,7 +1017,7 @@ export default function Children() {
               <div className="col-12" style={{ width: "100%" }}>
                 <div
                   className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                  style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
                 >
                   الاسم الرباعي *
                 </div>
@@ -996,7 +1037,7 @@ export default function Children() {
               >
                 <div
                   className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                  style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
                 >
                   العمر (سنوات)
                 </div>
@@ -1019,7 +1060,7 @@ export default function Children() {
               >
                 <div
                   className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                  style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
                 >
                   الجنس
                 </div>
@@ -1039,7 +1080,7 @@ export default function Children() {
               >
                 <div
                   className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                  style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
                 >
                   الصف الدراسي
                 </div>
@@ -1060,7 +1101,7 @@ export default function Children() {
               >
                 <div
                   className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                  style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
                 >
                   المدينة / البلد
                 </div>
@@ -1080,10 +1121,9 @@ export default function Children() {
             </div>
           </div>
 
-          {/* قسم معلومات التواصل مع الأهل */}
           <div className="col-12" style={{ marginTop: 12 }}>
             <h4 className="form-section-title">
-              <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
+              <Phone size={18} color="#64748b" /> معلومات التواصل
             </h4>
             <div
               className="grid"
@@ -1095,7 +1135,7 @@ export default function Children() {
               >
                 <div
                   className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                  style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
                 >
                   هاتف الأم
                 </div>
@@ -1116,7 +1156,7 @@ export default function Children() {
               >
                 <div
                   className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                  style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
                 >
                   اسم الأم
                 </div>
@@ -1136,7 +1176,7 @@ export default function Children() {
               >
                 <div
                   className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                  style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
                 >
                   هاتف الأب
                 </div>
@@ -1157,7 +1197,7 @@ export default function Children() {
               >
                 <div
                   className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+                  style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
                 >
                   اسم الأب
                 </div>
@@ -1174,13 +1214,12 @@ export default function Children() {
             </div>
           </div>
 
-          {/* قسم الملاحظات */}
           <div className="col-12" style={{ marginTop: 12 }}>
             <div
               className="muted"
-              style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
+              style={{ marginBottom: 6, fontWeight: 800, fontSize: 13 }}
             >
-              ملاحظات إضافية (اختياري)
+              ملاحظات إضافية
             </div>
             <textarea
               className="input"
@@ -1198,7 +1237,6 @@ export default function Children() {
             />
           </div>
 
-          {/* أزرار الإجراءات في النموذج */}
           <div
             className="col-12"
             style={{
@@ -1228,14 +1266,13 @@ export default function Children() {
         </div>
       </Modal>
 
-      {/* حوار تأكيد الحذف */}
       <ConfirmDialog
         open={confirm.open}
         title="تأكيد الحذف"
         message={confirm.text}
         confirmText="نعم، احذف"
         cancelText="إلغاء"
-        danger // تلوين الزر باللون الأحمر
+        danger
         onCancel={() => setConfirm({ open: false, id: null, text: "" })}
         onConfirm={async () => {
           await handleDelete(confirm.id);
