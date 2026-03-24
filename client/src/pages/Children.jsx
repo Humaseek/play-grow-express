@@ -19,7 +19,6 @@ import {
   Cake,
   GraduationCap,
   ChevronDown,
-  UserRound,
 } from "lucide-react";
 
 // --- مُركّب مخصص للجمع بين الكتابة والقائمة المنسدلة (Combobox) ---
@@ -56,7 +55,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
         placeholder={placeholder}
         disabled={disabled}
         autoComplete="off"
-        style={{ width: "100%" }}
+        style={{ width: "100%", paddingLeft: 36 }}
       />
       <ChevronDown
         size={16}
@@ -120,7 +119,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   );
 }
 
-// --- تنسيقات CSS مدمجة مع تعديلات جذرية للموبايل ---
+// --- تنسيقات CSS مدمجة ---
 const CHILDREN_STYLES = `
 .page--children {
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
@@ -236,6 +235,7 @@ const CHILDREN_STYLES = `
   transition: background 0.15s ease;
 }
 
+/* إضافة تأثير مريح عند التحويم على الصف */
 .modern-table tr.clickable-row {
   cursor: pointer;
 }
@@ -291,6 +291,7 @@ const CHILDREN_STYLES = `
   align-items: center;
 }
 
+/* تنسيق شارات الجنس لتكون أوضح */
 .ModernBadge.ModernBadge-info {
   border-color: #bbf7d0 !important;
   background: #f0fdf4 !important;
@@ -303,6 +304,7 @@ const CHILDREN_STYLES = `
   color: #d97706 !important;
 }
 
+/* Modal Form Overrides */
 .form-section-title {
   margin: 0 0 16px 0;
   color: #0f172a;
@@ -312,45 +314,6 @@ const CHILDREN_STYLES = `
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-/* ==========================================================================
-   MOBILE RESPONSIVE TWEAKS FOR THIS PAGE
-   ========================================================================== */
-.mobile-only { display: none; }
-.desktop-only { display: block; }
-
-@media (max-width: 768px) {
-  .desktop-only { display: none !important; }
-  .mobile-only { display: flex !important; }
-  
-  .children-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 16px;
-  }
-  
-  .search-wrapper {
-    max-width: 100%;
-  }
-  
-  .btn-add {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .children-card {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-  }
-  
-  .mobile-child-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 0 4px;
-  }
 }
 `;
 
@@ -577,9 +540,9 @@ export default function Children() {
   }
 
   // عرض شارة الجنس بتنسيق مخصص
-  const genderBadge = (g) => {
+  const genderLabel = (g) => {
     if (g === "male") return <Badge variant="info">ذكر</Badge>;
-    if (g === "female") return <Badge variant="warn">أنثى</Badge>;
+    if (g === "female") return <Badge variant="warning">أنثى</Badge>;
     return "-";
   };
 
@@ -617,7 +580,7 @@ export default function Children() {
             </button>
           </div>
 
-          {/* المحتوى (جدول للديسكتوب / كروت للموبايل) */}
+          {/* الجدول */}
           {loading ? (
             <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
               جاري التحميل...
@@ -627,239 +590,79 @@ export default function Children() {
               لا يوجد بيانات متطابقة.
             </div>
           ) : (
-            <>
-              {/* ==================== عرض الديسكتوب (الجدول) ==================== */}
-              <div className="desktop-only" style={{ overflowX: "auto" }}>
-                <table className="modern-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 60, textAlign: "center" }}>معرف</th>
-                      <th>الاسم</th>
-                      <th>العمر</th>
-                      <th>الصف</th>
-                      <th>الجنس</th>
-                      <th>المدينة</th>
-                      <th>هاتف الأم</th>
-                      <th>هاتف الأب</th>
-                      <th style={{ width: 100, textAlign: "center" }}>
-                        إجراءات
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredChildren.map((child) => (
-                      <tr
-                        key={child.id}
-                        className="clickable-row"
-                        onClick={() => navigate(`/children/${child.id}`)}
-                      >
-                        <td
-                          className="child-id"
-                          style={{ textAlign: "center" }}
-                        >
-                          {child.id}
-                        </td>
-                        <td className="child-name">{child.name}</td>
-                        <td>{child.age ?? "-"}</td>
-                        <td className="muted">{child.class || "-"}</td>
-                        <td>{genderBadge(child.gender)}</td>
-                        <td className="muted">{child.country || "-"}</td>
-                        <td>
-                          <span className="phone-number">
-                            {child.mother_phone || "-"}
-                          </span>
-                        </td>
-                        <td>
-                          <span className="phone-number">
-                            {child.father_phone || "-"}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="actions-cell">
-                            <IconButton
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditModal(child);
-                              }}
-                              title="تعديل"
-                            >
-                              <Pencil size={16} />
-                            </IconButton>
-                            <IconButton
-                              danger
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setConfirm({
-                                  open: true,
-                                  id: child.id,
-                                  text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                                });
-                              }}
-                              title="حذف"
-                            >
-                              <Trash2 size={16} />
-                            </IconButton>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* ==================== عرض الموبايل (كروت List Items - Glassmorphism Light) ==================== */}
-              <div className="mobile-only mobile-child-list">
-                {filteredChildren.map((child) => (
-                  <div
-                    key={child.id}
-                    className="listItem clickCard hoverLift"
-                    onClick={() => navigate(`/children/${child.id}`)}
-                    style={{
-                      border: "1px solid rgba(15, 23, 42, 0.08)",
-                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.02)",
-                      padding: "16px",
-                      gap: "12px",
-                    }}
-                  >
-                    <div className="listItem__main" style={{ flex: 1 }}>
-                      <div
-                        className="listItem__icon"
-                        style={{
-                          background: "#fffbeb",
-                          color: "#f59e0b",
-                          width: 44,
-                          height: 44,
-                          borderRadius: 12,
-                        }}
-                      >
-                        <UserRound size={22} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div
-                          className="listItem__title"
-                          style={{ fontSize: 17, marginBottom: 4 }}
-                        >
-                          {child.name}
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "6px",
-                            flexWrap: "wrap",
-                            alignItems: "center",
-                            marginBottom: 6,
-                          }}
-                        >
-                          <Badge
-                            variant="neutral"
-                            style={{ fontSize: 11, padding: "3px 8px" }}
-                          >
-                            <GraduationCap size={11} />{" "}
-                            {child.class || "بدون صف"}
-                          </Badge>
-                          <Badge
-                            variant="info"
-                            style={{
-                              fontSize: 11,
-                              padding: "3px 8px",
-                              background: "#eff6ff",
-                              color: "#3b82f6",
-                              border: "1px solid #bfdbfe",
-                            }}
-                          >
-                            <Cake size={11} />{" "}
-                            {child.age
-                              ? `${child.age} سنوات`
-                              : "العمر غير محدد"}
-                          </Badge>
-                          {child.country && (
-                            <Badge
-                              variant="neutral"
-                              style={{
-                                fontSize: 11,
-                                padding: "3px 8px",
-                                color: "#64748b",
-                              }}
-                            >
-                              <MapPin size={10} /> {child.country}
-                            </Badge>
-                          )}
-                        </div>
-                        {/* عرض هواتف الأهل بخط صغير للوصول السريع */}
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                            flexWrap: "wrap",
-                            marginTop: 4,
-                          }}
-                        >
-                          {child.mother_phone && (
-                            <span
-                              style={{
-                                fontSize: 11,
-                                color: "#475569",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
-                            >
-                              <Phone size={10} /> أم:{" "}
-                              <span dir="ltr" style={{ fontWeight: "bold" }}>
-                                {child.mother_phone}
-                              </span>
-                            </span>
-                          )}
-                          {child.father_phone && (
-                            <span
-                              style={{
-                                fontSize: 11,
-                                color: "#475569",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                              }}
-                            >
-                              <Phone size={10} /> أب:{" "}
-                              <span dir="ltr" style={{ fontWeight: "bold" }}>
-                                {child.father_phone}
-                              </span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {/* أزرار الإجراءات داخل الكرت للموبايل */}
-                    <div
-                      className="listItem__actions"
-                      style={{ flexDirection: "column", gap: 6 }}
-                      onClick={(e) => e.stopPropagation()}
+            <div style={{ overflowX: "auto" }}>
+              <table className="modern-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: 60, textAlign: "center" }}>معرف</th>
+                    <th>الاسم</th>
+                    <th>العمر</th>
+                    <th>الصف</th>
+                    <th>الجنس</th>
+                    <th>المدينة</th>
+                    <th>هاتف الأم</th>
+                    <th>هاتف الأب</th>
+                    <th style={{ width: 100, textAlign: "center" }}>إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredChildren.map((child) => (
+                    <tr
+                      key={child.id}
+                      className="clickable-row"
+                      onClick={() => navigate(`/children/${child.id}`)}
                     >
-                      <IconButton
-                        soft
-                        onClick={() => openEditModal(child)}
-                        style={{ width: 36, height: 36, borderRadius: 10 }}
-                      >
-                        <Pencil size={15} />
-                      </IconButton>
-                      <IconButton
-                        danger
-                        onClick={() =>
-                          setConfirm({
-                            open: true,
-                            id: child.id,
-                            text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                          })
-                        }
-                        style={{ width: 36, height: 36, borderRadius: 10 }}
-                      >
-                        <Trash2 size={15} />
-                      </IconButton>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
+                      <td className="child-id" style={{ textAlign: "center" }}>
+                        {child.id}
+                      </td>
+                      <td className="child-name">{child.name}</td>
+                      <td>{child.age ?? "-"}</td>
+                      <td className="muted">{child.class || "-"}</td>
+                      <td>{genderLabel(child.gender)}</td>
+                      <td className="muted">{child.country || "-"}</td>
+                      <td>
+                        <span className="phone-number">
+                          {child.mother_phone || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="phone-number">
+                          {child.father_phone || "-"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="actions-cell">
+                          {/* استخدام e.stopPropagation لمنع الدخول لصفحة الطفل عند الضغط على تعديل أو حذف */}
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(child);
+                            }}
+                            title="تعديل"
+                          >
+                            <Pencil size={16} />
+                          </IconButton>
+                          <IconButton
+                            danger
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirm({
+                                open: true,
+                                id: child.id,
+                                text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                              });
+                            }}
+                            title="حذف"
+                          >
+                            <Trash2 size={16} />
+                          </IconButton>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
@@ -870,21 +673,15 @@ export default function Children() {
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
         onClose={() => !saving && setIsModalOpen(false)} // منع الإغلاق أثناء الحفظ
       >
-        <div className="grid" style={{ padding: "10px 0" }}>
+        <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
           {/* قسم البيانات الأساسية */}
-          <div className="col-12">
+          <div style={{ gridColumn: "span 12" }}>
             <h4 className="form-section-title">
               <Users size={18} color="#64748b" /> البيانات الأساسية
             </h4>
-            <div
-              className="grid"
-              style={{ display: "flex", flexWrap: "wrap", gap: 12 }}
-            >
-              <div className="col-12" style={{ width: "100%" }}>
-                <div
-                  className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-                >
+            <div className="grid" style={{ gap: "16px" }}>
+              <div style={{ gridColumn: "span 12" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
                   الاسم الرباعي *
                 </div>
                 <input
@@ -894,18 +691,11 @@ export default function Children() {
                     setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder="مثال: أحمد محمد علي"
-                  style={{ minHeight: 48 }}
                 />
               </div>
-              <div
-                className="col-6"
-                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
-              >
-                <div
-                  className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-                >
-                  العمر (سنوات)
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  العمر
                 </div>
                 <input
                   className="input"
@@ -916,18 +706,11 @@ export default function Children() {
                   onChange={(e) =>
                     setFormData({ ...formData, age: e.target.value })
                   }
-                  placeholder="مثال: 5"
-                  style={{ minHeight: 48 }}
+                  placeholder="بالسنوات"
                 />
               </div>
-              <div
-                className="col-6"
-                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
-              >
-                <div
-                  className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-                >
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
                   الجنس
                 </div>
                 <ModernSelect
@@ -937,18 +720,11 @@ export default function Children() {
                     { value: "male", label: "ذكر" },
                     { value: "female", label: "أنثى" },
                   ]}
-                  style={{ minHeight: 48 }}
                 />
               </div>
-              <div
-                className="col-6"
-                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
-              >
-                <div
-                  className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-                >
-                  الصف الدراسي
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  الصف
                 </div>
                 <CustomCombobox
                   value={formData.class}
@@ -957,18 +733,11 @@ export default function Children() {
                     value: c.name,
                     label: c.name,
                   }))}
-                  placeholder="اختر أو اكتب..."
-                  style={{ minHeight: 48 }}
+                  placeholder="اختر أو اكتب صفاً..."
                 />
               </div>
-              <div
-                className="col-6"
-                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
-              >
-                <div
-                  className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-                >
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
                   المدينة / البلد
                 </div>
                 <CustomCombobox
@@ -980,30 +749,20 @@ export default function Children() {
                     value: c.name,
                     label: c.name,
                   }))}
-                  placeholder="اختر أو اكتب..."
-                  style={{ minHeight: 48 }}
+                  placeholder="اختر أو اكتب مدينة..."
                 />
               </div>
             </div>
           </div>
 
           {/* قسم معلومات التواصل مع الأهل */}
-          <div className="col-12" style={{ marginTop: 12 }}>
+          <div style={{ gridColumn: "span 12" }}>
             <h4 className="form-section-title">
               <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
             </h4>
-            <div
-              className="grid"
-              style={{ display: "flex", flexWrap: "wrap", gap: 12 }}
-            >
-              <div
-                className="col-6"
-                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
-              >
-                <div
-                  className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-                >
+            <div className="grid" style={{ gap: "16px" }}>
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
                   هاتف الأم
                 </div>
                 <input
@@ -1014,17 +773,11 @@ export default function Children() {
                   }
                   placeholder="رقم الهاتف"
                   dir="ltr"
-                  style={{ textAlign: "right", minHeight: 48 }}
+                  style={{ textAlign: "right" }}
                 />
               </div>
-              <div
-                className="col-6"
-                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
-              >
-                <div
-                  className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-                >
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
                   اسم الأم
                 </div>
                 <input
@@ -1034,17 +787,10 @@ export default function Children() {
                     setFormData({ ...formData, mother_name: e.target.value })
                   }
                   placeholder="اختياري"
-                  style={{ minHeight: 48 }}
                 />
               </div>
-              <div
-                className="col-6"
-                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
-              >
-                <div
-                  className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-                >
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
                   هاتف الأب
                 </div>
                 <input
@@ -1055,17 +801,11 @@ export default function Children() {
                   }
                   placeholder="رقم الهاتف"
                   dir="ltr"
-                  style={{ textAlign: "right", minHeight: 48 }}
+                  style={{ textAlign: "right" }}
                 />
               </div>
-              <div
-                className="col-6"
-                style={{ flex: "1 1 calc(50% - 6px)", minWidth: 140 }}
-              >
-                <div
-                  className="muted"
-                  style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-                >
+              <div style={{ gridColumn: "span 6" }}>
+                <div className="muted" style={{ marginBottom: 6 }}>
                   اسم الأب
                 </div>
                 <input
@@ -1075,19 +815,15 @@ export default function Children() {
                     setFormData({ ...formData, father_name: e.target.value })
                   }
                   placeholder="اختياري"
-                  style={{ minHeight: 48 }}
                 />
               </div>
             </div>
           </div>
 
           {/* قسم الملاحظات */}
-          <div className="col-12" style={{ marginTop: 12 }}>
-            <div
-              className="muted"
-              style={{ marginBottom: 6, fontWeight: 700, fontSize: 13 }}
-            >
-              ملاحظات إضافية (اختياري)
+          <div style={{ gridColumn: "span 12" }}>
+            <div className="muted" style={{ marginBottom: 6 }}>
+              ملاحظات إضافية
             </div>
             <textarea
               className="input"
@@ -1096,30 +832,25 @@ export default function Children() {
               onChange={(e) =>
                 setFormData({ ...formData, notes: e.target.value })
               }
-              placeholder="أي تفاصيل طبية، ملاحظات غذائية، إلخ..."
-              style={{
-                resize: "vertical",
-                minHeight: 80,
-                padding: "12px 16px",
-              }}
+              placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+              style={{ resize: "vertical" }}
             />
           </div>
 
           {/* أزرار الإجراءات في النموذج */}
           <div
-            className="col-12"
             style={{
+              gridColumn: "span 12",
               display: "flex",
               justifyContent: "flex-end",
               gap: 10,
-              marginTop: 18,
+              marginTop: 10,
             }}
           >
             <button
               className="btn"
               onClick={() => setIsModalOpen(false)}
               disabled={saving}
-              style={{ minHeight: 46, padding: "0 24px", borderRadius: 12 }}
             >
               إلغاء
             </button>
@@ -1127,7 +858,6 @@ export default function Children() {
               className="btn btn-add"
               onClick={handleSave}
               disabled={saving}
-              style={{ minHeight: 46, padding: "0 24px", borderRadius: 12 }}
             >
               {saving ? "جاري الحفظ..." : "حفظ البيانات"}
             </button>
