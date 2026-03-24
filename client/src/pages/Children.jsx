@@ -19,6 +19,7 @@ import {
   Cake,
   GraduationCap,
   ChevronDown,
+  UserRound,
 } from "lucide-react";
 
 // --- مُركّب مخصص للجمع بين الكتابة والقائمة المنسدلة (Combobox) ---
@@ -119,7 +120,7 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   );
 }
 
-// --- تنسيقات CSS مدمجة ---
+// --- تنسيقات CSS مدمجة مع إضافات الموبايل ---
 const CHILDREN_STYLES = `
 .page--children {
   background: linear-gradient(180deg, rgba(245, 158, 11, 0.05) 0%, #f4f6f8 300px);
@@ -235,7 +236,6 @@ const CHILDREN_STYLES = `
   transition: background 0.15s ease;
 }
 
-/* إضافة تأثير مريح عند التحويم على الصف */
 .modern-table tr.clickable-row {
   cursor: pointer;
 }
@@ -291,7 +291,6 @@ const CHILDREN_STYLES = `
   align-items: center;
 }
 
-/* تنسيق شارات الجنس لتكون أوضح */
 .ModernBadge.ModernBadge-info {
   border-color: #bbf7d0 !important;
   background: #f0fdf4 !important;
@@ -304,7 +303,6 @@ const CHILDREN_STYLES = `
   color: #d97706 !important;
 }
 
-/* Modal Form Overrides */
 .form-section-title {
   margin: 0 0 16px 0;
   color: #0f172a;
@@ -314,6 +312,45 @@ const CHILDREN_STYLES = `
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE TWEAKS FOR THIS PAGE
+   ========================================================================== */
+.mobile-only { display: none; }
+.desktop-only { display: block; }
+
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .mobile-only { display: flex !important; }
+  
+  .children-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+  
+  .search-wrapper {
+    max-width: 100%;
+  }
+  
+  .btn-add {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .children-card {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
+  
+  .mobile-child-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 4px;
+  }
 }
 `;
 
@@ -542,7 +579,7 @@ export default function Children() {
   // عرض شارة الجنس بتنسيق مخصص
   const genderLabel = (g) => {
     if (g === "male") return <Badge variant="info">ذكر</Badge>;
-    if (g === "female") return <Badge variant="warning">أنثى</Badge>;
+    if (g === "female") return <Badge variant="warn">أنثى</Badge>;
     return "-";
   };
 
@@ -580,7 +617,7 @@ export default function Children() {
             </button>
           </div>
 
-          {/* الجدول */}
+          {/* المحتوى (جدول للديسكتوب / كروت للموبايل) */}
           {loading ? (
             <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
               جاري التحميل...
@@ -590,79 +627,172 @@ export default function Children() {
               لا يوجد بيانات متطابقة.
             </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table className="modern-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 60, textAlign: "center" }}>معرف</th>
-                    <th>الاسم</th>
-                    <th>العمر</th>
-                    <th>الصف</th>
-                    <th>الجنس</th>
-                    <th>المدينة</th>
-                    <th>هاتف الأم</th>
-                    <th>هاتف الأب</th>
-                    <th style={{ width: 100, textAlign: "center" }}>إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredChildren.map((child) => (
-                    <tr
-                      key={child.id}
-                      className="clickable-row"
-                      onClick={() => navigate(`/children/${child.id}`)}
-                    >
-                      <td className="child-id" style={{ textAlign: "center" }}>
-                        {child.id}
-                      </td>
-                      <td className="child-name">{child.name}</td>
-                      <td>{child.age ?? "-"}</td>
-                      <td className="muted">{child.class || "-"}</td>
-                      <td>{genderLabel(child.gender)}</td>
-                      <td className="muted">{child.country || "-"}</td>
-                      <td>
-                        <span className="phone-number">
-                          {child.mother_phone || "-"}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="phone-number">
-                          {child.father_phone || "-"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="actions-cell">
-                          {/* استخدام e.stopPropagation لمنع الدخول لصفحة الطفل عند الضغط على تعديل أو حذف */}
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openEditModal(child);
-                            }}
-                            title="تعديل"
-                          >
-                            <Pencil size={16} />
-                          </IconButton>
-                          <IconButton
-                            danger
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setConfirm({
-                                open: true,
-                                id: child.id,
-                                text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                              });
-                            }}
-                            title="حذف"
-                          >
-                            <Trash2 size={16} />
-                          </IconButton>
-                        </div>
-                      </td>
+            <>
+              {/* ==================== عرض الديسكتوب (الجدول) ==================== */}
+              <div className="desktop-only" style={{ overflowX: "auto" }}>
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 60, textAlign: "center" }}>معرف</th>
+                      <th>الاسم</th>
+                      <th>العمر</th>
+                      <th>الصف</th>
+                      <th>الجنس</th>
+                      <th>المدينة</th>
+                      <th>هاتف الأم</th>
+                      <th>هاتف الأب</th>
+                      <th style={{ width: 100, textAlign: "center" }}>
+                        إجراءات
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredChildren.map((child) => (
+                      <tr
+                        key={child.id}
+                        className="clickable-row"
+                        onClick={() => navigate(`/children/${child.id}`)}
+                      >
+                        <td
+                          className="child-id"
+                          style={{ textAlign: "center" }}
+                        >
+                          {child.id}
+                        </td>
+                        <td className="child-name">{child.name}</td>
+                        <td>{child.age ?? "-"}</td>
+                        <td className="muted">{child.class || "-"}</td>
+                        <td>{genderLabel(child.gender)}</td>
+                        <td className="muted">{child.country || "-"}</td>
+                        <td>
+                          <span className="phone-number">
+                            {child.mother_phone || "-"}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="phone-number">
+                            {child.father_phone || "-"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="actions-cell">
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(child);
+                              }}
+                              title="تعديل"
+                            >
+                              <Pencil size={16} />
+                            </IconButton>
+                            <IconButton
+                              danger
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirm({
+                                  open: true,
+                                  id: child.id,
+                                  text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                                });
+                              }}
+                              title="حذف"
+                            >
+                              <Trash2 size={16} />
+                            </IconButton>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ==================== عرض الموبايل (كروت List Items) ==================== */}
+              <div className="mobile-only mobile-child-list">
+                {filteredChildren.map((child) => (
+                  <div
+                    key={child.id}
+                    className="listItem clickCard hoverLift"
+                    onClick={() => navigate(`/children/${child.id}`)}
+                    style={{
+                      border: "1px solid rgba(15, 23, 42, 0.08)",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+                    }}
+                  >
+                    <div className="listItem__main">
+                      <div
+                        className="listItem__icon"
+                        style={{ background: "#fffbeb", color: "#f59e0b" }}
+                      >
+                        <UserRound size={20} />
+                      </div>
+                      <div>
+                        <div
+                          className="listItem__title"
+                          style={{ fontSize: 16 }}
+                        >
+                          {child.name}
+                        </div>
+                        <div className="listItem__sub">
+                          {child.class || "بدون صف"} •{" "}
+                          {child.age ? `${child.age} سنوات` : "العمر غير محدد"}
+                        </div>
+                        {/* أرقام الهواتف على الموبايل بخط صغير */}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            flexWrap: "wrap",
+                            marginTop: "6px",
+                          }}
+                        >
+                          {child.mother_phone && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "#64748b",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
+                              <Phone size={10} /> أم:{" "}
+                              <span dir="ltr" style={{ fontWeight: "bold" }}>
+                                {child.mother_phone}
+                              </span>
+                            </span>
+                          )}
+                          {child.father_phone && (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "#64748b",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                            >
+                              <Phone size={10} /> أب:{" "}
+                              <span dir="ltr" style={{ fontWeight: "bold" }}>
+                                {child.father_phone}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="listItem__actions"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconButton soft onClick={() => openEditModal(child)}>
+                        <Pencil size={16} />
+                      </IconButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -673,14 +803,14 @@ export default function Children() {
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
         onClose={() => !saving && setIsModalOpen(false)} // منع الإغلاق أثناء الحفظ
       >
-        <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
+        <div className="grid" style={{ padding: "10px 0" }}>
           {/* قسم البيانات الأساسية */}
-          <div style={{ gridColumn: "span 12" }}>
+          <div className="col-12">
             <h4 className="form-section-title">
               <Users size={18} color="#64748b" /> البيانات الأساسية
             </h4>
-            <div className="grid" style={{ gap: "16px" }}>
-              <div style={{ gridColumn: "span 12" }}>
+            <div className="grid">
+              <div className="col-12">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   الاسم الرباعي *
                 </div>
@@ -693,7 +823,7 @@ export default function Children() {
                   placeholder="مثال: أحمد محمد علي"
                 />
               </div>
-              <div style={{ gridColumn: "span 6" }}>
+              <div className="col-6">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   العمر
                 </div>
@@ -709,7 +839,7 @@ export default function Children() {
                   placeholder="بالسنوات"
                 />
               </div>
-              <div style={{ gridColumn: "span 6" }}>
+              <div className="col-6">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   الجنس
                 </div>
@@ -722,7 +852,7 @@ export default function Children() {
                   ]}
                 />
               </div>
-              <div style={{ gridColumn: "span 6" }}>
+              <div className="col-6">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   الصف
                 </div>
@@ -736,7 +866,7 @@ export default function Children() {
                   placeholder="اختر أو اكتب صفاً..."
                 />
               </div>
-              <div style={{ gridColumn: "span 6" }}>
+              <div className="col-6">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   المدينة / البلد
                 </div>
@@ -756,12 +886,12 @@ export default function Children() {
           </div>
 
           {/* قسم معلومات التواصل مع الأهل */}
-          <div style={{ gridColumn: "span 12" }}>
+          <div className="col-12">
             <h4 className="form-section-title">
               <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
             </h4>
-            <div className="grid" style={{ gap: "16px" }}>
-              <div style={{ gridColumn: "span 6" }}>
+            <div className="grid">
+              <div className="col-6">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   هاتف الأم
                 </div>
@@ -776,7 +906,7 @@ export default function Children() {
                   style={{ textAlign: "right" }}
                 />
               </div>
-              <div style={{ gridColumn: "span 6" }}>
+              <div className="col-6">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   اسم الأم
                 </div>
@@ -789,7 +919,7 @@ export default function Children() {
                   placeholder="اختياري"
                 />
               </div>
-              <div style={{ gridColumn: "span 6" }}>
+              <div className="col-6">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   هاتف الأب
                 </div>
@@ -804,7 +934,7 @@ export default function Children() {
                   style={{ textAlign: "right" }}
                 />
               </div>
-              <div style={{ gridColumn: "span 6" }}>
+              <div className="col-6">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   اسم الأب
                 </div>
@@ -821,7 +951,7 @@ export default function Children() {
           </div>
 
           {/* قسم الملاحظات */}
-          <div style={{ gridColumn: "span 12" }}>
+          <div className="col-12">
             <div className="muted" style={{ marginBottom: 6 }}>
               ملاحظات إضافية
             </div>
@@ -839,8 +969,8 @@ export default function Children() {
 
           {/* أزرار الإجراءات في النموذج */}
           <div
+            className="col-12"
             style={{
-              gridColumn: "span 12",
               display: "flex",
               justifyContent: "flex-end",
               gap: 10,
