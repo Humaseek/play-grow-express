@@ -492,11 +492,14 @@ const CHILDREN_STYLES = `
   }
   
   div.modalOverlay > div.modalCard {
-    border-radius: 24px !important; /* استرجاع الحواف الدائرية كاملة */
-    margin: auto !important; /* توسيط الفورم بالنص */
-    width: 92% !important; /* عرض مناسب */
-    max-height: 85vh !important; /* تحديد أقصى ارتفاع */
-    margin-bottom: auto !important; /* إبطال الانجذاب للأسفل */
+    border-radius: 24px !important; 
+    margin: auto !important; 
+    width: 92% !important; 
+    max-height: 85vh !important; 
+    margin-bottom: auto !important;
+    
+    /* 👇 السطر الجديد للتحكم بالرفع 👇 */
+    transform: translateY(-20vh) !important; 
   }
 
   .modal-form-scroll-container {
