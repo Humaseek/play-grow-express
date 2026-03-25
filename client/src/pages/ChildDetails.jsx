@@ -189,7 +189,7 @@ const PROFILE_STYLES = `
       margin: auto !important; 
       width: 92% !important;        /* 👈 هان عرض الموبايل فقط صار صح */
       max-height: 80vh !important;  
-      transform: translateY(-2vh) !important; 
+      transform: translateY(-5vh) !important; 
   }
 
   .modal-form-scroll-container {
