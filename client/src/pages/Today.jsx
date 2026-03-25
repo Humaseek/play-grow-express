@@ -1211,8 +1211,8 @@ const DASHBOARD_STYLES = `
   .hide-on-mobile { display: none !important; }
 
   /* تعديلات الداشبورد العامة */
-  .dash-header { padding-top: 10px; margin-bottom: 16px; }
-  .dash-greeting { font-size: 24px; }
+  .dash-header { padding-top: 10px; margin-bottom: 16px; gap: 12px; }
+  .dash-greeting { font-size: 24px; margin-bottom: 0; }
   .dash-controls { width: 100%; justify-content: space-between; }
   .smart-filter-wrapper { width: 100%; justify-content: space-between; }
   
@@ -1888,7 +1888,7 @@ export default function Dashboard() {
         <div className="dash-header">
           <div>
             <h1 className="dash-greeting">{getGreeting()}، كاترين</h1>
-            <div className="dash-meta-pills">
+            <div className="dash-meta-pills hide-on-mobile">
               <div className="dash-pill">
                 <CalendarDays size={16} color="#3b82f6" />
                 {todayFormatted}
