@@ -594,7 +594,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
     margin-bottom: auto !important; 
   }
   .modal-form-scroll-container {
-    max-height: calc(88vh - 130px) !important; 
+    max-height: calc(60vh - 80px) !important; 
     padding: 0 5px;
   }
 
