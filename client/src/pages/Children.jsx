@@ -362,7 +362,7 @@ const CHILDREN_STYLES = `
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 16px;
+  padding: 16px 4px !important;
   background: transparent;
 }
 
@@ -509,7 +509,7 @@ const CHILDREN_STYLES = `
   .children-toolbar { padding: 16px; border-bottom: none; }
   .page--children { padding-bottom: 120px; }
   .children-card { background: transparent; border: none; box-shadow: none; }
-  .children-toolbar { background: #ffffff; border-radius: 20px; margin: 0 16px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); }
+  .children-toolbar { background: #ffffff; border-radius: 20px; margin: 0 4px !important; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); }
   
   /* 👇 الترتيب الثابت (عمودين) على الموبايل كمان 👇 */
   .responsive-form-grid {
