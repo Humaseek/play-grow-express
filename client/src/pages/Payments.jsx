@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext, Link } from "react-router-dom";
+import { createPortal } from "react-dom"; // السلاح السري للزر العائم
 import { supabase } from "../supabaseClient";
 
 import PageHeader from "../components/PageHeader";
@@ -22,7 +23,7 @@ import {
   Search,
   Filter,
   AlertTriangle,
-  Pencil, // <-- تم استدعاء أيقونة التعديل هنا
+  Pencil,
 } from "lucide-react";
 
 // --- دوال مساعدة ---
@@ -244,17 +245,6 @@ const PAYMENTS_STYLES = `
   justify-content: flex-end;
 }
 
-.form-section-title {
-  margin: 0 0 16px 0;
-  color: #0f172a;
-  font-size: 16px;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .modern-table a {
   text-decoration: none;
   transition: color 0.15s ease;
@@ -264,7 +254,7 @@ const PAYMENTS_STYLES = `
 }
 
 .enrollment-picker-list {
-  max-height: 220px;
+  max-height: 180px;
   overflow-y: auto;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
@@ -324,6 +314,268 @@ const PAYMENTS_STYLES = `
 .epi-balance.debt {
   color: #dc2626;
 }
+
+/* =========================================
+   تنسيقات النموذج (المودال) - ثابتة لجميع الشاشات
+========================================= */
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 800;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.modal-form-scroll-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  max-height: 65vh;
+}
+
+.modal-form-scroll-container::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.responsive-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding-bottom: 16px;
+}
+
+.form-col-full { grid-column: span 2; }
+.form-col { grid-column: span 1; }
+
+.modal-fixed-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* =========================================
+   تصميم كروت الموبايل الخاصة بالمدفوعات
+========================================= */
+.mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: transparent;
+}
+
+.art-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.art-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.art-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 5px;
+  background: #16a34a; /* لون أخضر للمدفوعات */
+  border-radius: 0 16px 16px 0;
+}
+
+.ac-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-right: 8px;
+}
+
+.ac-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  color: #0f172a;
+  max-width: 70%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ac-class-badge {
+  background: #f8fafc;
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid #e2e8f0;
+}
+
+.ac-amount {
+  font-weight: 900;
+  font-size: 16px;
+  color: #16a34a; /* لون أخضر للمبلغ */
+}
+
+.ac-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-right: 8px;
+}
+
+.ac-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ac-date-icon {
+  color: #16a34a;
+  background: #f0fdf4;
+  padding: 4px;
+  border-radius: 50%;
+}
+
+.ac-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ac-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+.ac-btn-edit { background: #f1f5f9; color: #3b82f6; }
+.ac-btn-delete { background: #fef2f2; color: #ef4444; }
+
+/* الزر العائم للموبايل */
+.fab-button {
+  position: fixed !important;
+  bottom: 95px !important;
+  right: 20px !important;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #16a34a; /* لون أخضر */
+  color: white;
+  border: none;
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.3);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 999999 !important;
+}
+
+/* =========================================
+   التجاوب الخاص بالموبايل
+========================================= */
+@media (max-width: 980px) {
+  
+  div.modalOverlay {
+    align-items: center !important; 
+    padding: 16px !important;
+  }
+  
+  div.modalOverlay > div.modalCard {
+    border-radius: 24px !important; 
+    margin: auto !important; 
+    width: 92% !important; 
+    max-height: 85vh !important; 
+    margin-bottom: auto !important; 
+    transform: translateY(-5vh) !important;
+  }
+
+  .modal-form-scroll-container {
+    max-height: calc(85vh - 140px) !important; 
+    padding: 0 5px;
+  }
+
+  /* إخفاء زر الإضافة العادي والجدول على الموبايل */
+  .desktop-table-container { display: none; }
+  .btn-add-desktop { display: none !important; }
+  
+  /* زيادة عرض الفورم والكروت على الموبايل */
+  .payments-toolbar { 
+    padding: 16px; 
+    border-bottom: none; 
+    margin: 0 4px !important;
+  }
+  .payments-card { 
+    background: transparent; 
+    border: none; 
+    box-shadow: none; 
+  }
+  .filters-group {
+    background: #ffffff; 
+    border-radius: 20px; 
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+    padding: 10px;
+  }
+  .page--payments { padding-bottom: 120px; }
+  .mobile-list {
+    padding: 16px 4px !important;
+  }
+  
+  /* الإبقاء على ترتيب الفورم (عمودين) */
+  .responsive-form-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+  
+  .form-col-full { grid-column: span 2 !important; }
+  .form-col { grid-column: span 1 !important; }
+
+  .form-section-title { margin: 10px 0 10px 0; font-size: 14px; }
+  .input { padding: 10px 14px; font-size: 13px; }
+  .modal-fixed-footer { padding-bottom: 10px; margin-top: 5px; }
+
+  .kpiGrid4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr; 
+    gap: 10px;
+  }
+}
+
+@media (min-width: 981px) {
+  .mobile-list { display: none; }
+  .fab-button { display: none !important; }
+}
 `;
 
 export default function Payments() {
@@ -341,10 +593,8 @@ export default function Payments() {
 
   const [openAdd, setOpenAdd] = useState(false);
 
-  // حالة جديدة لتمييز وضع التعديل (تحمل ID الدفعة المراد تعديلها)
   const [editPayId, setEditPayId] = useState(null);
 
-  // لحالة الإضافة/التعديل
   const [pickerRows, setPickerRows] = useState([]);
   const [pickerQ, setPickerQ] = useState("");
   const [payEnrId, setPayEnrId] = useState("");
@@ -449,7 +699,6 @@ export default function Payments() {
     return { total, count, avg, max };
   }, [filtered]);
 
-  // دالة مشتركة لجلب بيانات قائمة الاختيار (Picker)
   async function loadPickerData() {
     const [pRes, cRes] = await Promise.all([
       supabase
@@ -472,7 +721,6 @@ export default function Payments() {
         balance: Number(p.balance || 0),
       }));
 
-      // ترتيب أبجدي
       merged.sort((a, b) => a.child_name.localeCompare(b.child_name, "ar"));
       setPickerRows(merged);
     }
@@ -490,7 +738,6 @@ export default function Payments() {
     await loadPickerData();
   }
 
-  // دالة جديدة لفتح نافذة التعديل
   async function openEdit(payment) {
     setEditPayId(payment.id);
     setOpenAdd(true);
@@ -544,7 +791,6 @@ export default function Payments() {
         created_at: new Date(payAt).toISOString(),
       };
 
-      // التحقق مما إذا كنا في وضع الإضافة أم التعديل
       if (editPayId) {
         const { error: updErr } = await supabase
           .from("payments")
@@ -637,7 +883,7 @@ export default function Payments() {
           />
         </div>
 
-        {/* Toolbar & Table */}
+        {/* Toolbar & Table/Cards */}
         <div className="payments-card">
           <div className="payments-toolbar">
             <div className="filters-group">
@@ -688,7 +934,10 @@ export default function Payments() {
               )}
             </div>
 
-            <button className="btn btn-add" onClick={openCreate}>
+            <button
+              className="btn btn-add btn-add-desktop"
+              onClick={openCreate}
+            >
               <Plus size={18} /> إضافة دفعة
             </button>
           </div>
@@ -712,111 +961,185 @@ export default function Payments() {
               onAction={openCreate}
             />
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table className="modern-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: 140 }}>تاريخ ووقت</th>
-                    <th>الطفل</th>
-                    <th>الدورة / الفوج</th>
-                    <th>طريقة الدفع</th>
-                    <th>ملاحظة</th>
-                    <th style={{ width: 120 }}>المبلغ</th>
-                    <th style={{ width: 100, textAlign: "center" }}>إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((r) => (
-                    <tr key={r.id}>
-                      <td style={{ color: "#64748b", fontWeight: 600 }}>
-                        <span dir="ltr">{fmtDT(r.created_at)}</span>
-                      </td>
-
-                      <td style={{ fontWeight: 900 }}>
-                        <Link
-                          to={`/children/${r.child_id}`}
-                          style={{ color: "#0f172a" }}
-                          title="ملف الطفل"
-                        >
-                          {r.child_name || "—"}
-                        </Link>
-                      </td>
-
-                      <td style={{ minWidth: 180 }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: "2px",
-                          }}
-                        >
-                          <Link
-                            to={`/courses/${r.course_id}`}
-                            style={{ color: "#16a34a", fontWeight: 800 }}
-                            title="تفاصيل الدورة"
-                          >
-                            {r.course_title || "—"}
-                          </Link>
-                          <Link
-                            to={`/runs/${r.run_id}`}
-                            style={{
-                              color: "#64748b",
-                              fontSize: "13px",
-                              fontWeight: 600,
-                            }}
-                            title="تفاصيل الفوج"
-                          >
-                            {r.run_label || "—"}
-                          </Link>
-                        </div>
-                      </td>
-
-                      <td className="muted">
-                        <span
-                          style={{
-                            background: "#f1f5f9",
-                            padding: "4px 10px",
-                            borderRadius: "6px",
-                            fontSize: "13px",
-                            fontWeight: 700,
-                          }}
-                        >
-                          {methodLabel(r.method)}
-                        </span>
-                      </td>
-
-                      <td style={{ color: "#64748b", minWidth: 150 }}>
-                        {r.note || "—"}
-                      </td>
-
-                      <td style={{ fontWeight: 900, color: "#16a34a" }}>
-                        <span dir="ltr">{fmtMoney(r.amount)} ₪</span>
-                      </td>
-
-                      <td>
-                        <div className="actions-cell">
-                          {/* زر التعديل تمت إضافته هنا */}
-                          <IconButton
-                            title="تعديل"
-                            onClick={() => openEdit(r)}
-                            icon={Pencil}
-                          />
-                          <IconButton
-                            title="حذف"
-                            onClick={() => setConfirm({ open: true, id: r.id })}
-                            icon={Trash2}
-                            danger
-                          />
-                        </div>
-                      </td>
+            <>
+              {/* عرض الجدول للكمبيوتر */}
+              <div
+                className="desktop-table-container"
+                style={{ overflowX: "auto" }}
+              >
+                <table className="modern-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 140 }}>تاريخ ووقت</th>
+                      <th>الطفل</th>
+                      <th>الدورة / الفوج</th>
+                      <th>طريقة الدفع</th>
+                      <th>ملاحظة</th>
+                      <th style={{ width: 120 }}>المبلغ</th>
+                      <th style={{ width: 100, textAlign: "center" }}>
+                        إجراءات
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filtered.map((r) => (
+                      <tr key={r.id}>
+                        <td style={{ color: "#64748b", fontWeight: 600 }}>
+                          <span dir="ltr">{fmtDT(r.created_at)}</span>
+                        </td>
+
+                        <td style={{ fontWeight: 900 }}>
+                          <Link
+                            to={`/children/${r.child_id}`}
+                            style={{ color: "#0f172a" }}
+                            title="ملف الطفل"
+                          >
+                            {r.child_name || "—"}
+                          </Link>
+                        </td>
+
+                        <td style={{ minWidth: 180 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "2px",
+                            }}
+                          >
+                            <Link
+                              to={`/courses/${r.course_id}`}
+                              style={{ color: "#16a34a", fontWeight: 800 }}
+                              title="تفاصيل الدورة"
+                            >
+                              {r.course_title || "—"}
+                            </Link>
+                            <Link
+                              to={`/runs/${r.run_id}`}
+                              style={{
+                                color: "#64748b",
+                                fontSize: "13px",
+                                fontWeight: 600,
+                              }}
+                              title="تفاصيل الفوج"
+                            >
+                              {r.run_label || "—"}
+                            </Link>
+                          </div>
+                        </td>
+
+                        <td className="muted">
+                          <span
+                            style={{
+                              background: "#f1f5f9",
+                              padding: "4px 10px",
+                              borderRadius: "6px",
+                              fontSize: "13px",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {methodLabel(r.method)}
+                          </span>
+                        </td>
+
+                        <td style={{ color: "#64748b", minWidth: 150 }}>
+                          {r.note || "—"}
+                        </td>
+
+                        <td style={{ fontWeight: 900, color: "#16a34a" }}>
+                          <span dir="ltr">{fmtMoney(r.amount)} ₪</span>
+                        </td>
+
+                        <td>
+                          <div className="actions-cell">
+                            <IconButton
+                              title="تعديل"
+                              onClick={() => openEdit(r)}
+                              icon={Pencil}
+                            />
+                            <IconButton
+                              title="حذف"
+                              onClick={() =>
+                                setConfirm({ open: true, id: r.id })
+                              }
+                              icon={Trash2}
+                              danger
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* تصميم الكروت للموبايل */}
+              <div className="mobile-list">
+                {filtered.map((r) => (
+                  <div
+                    key={r.id}
+                    className="art-card"
+                    onClick={() => openEdit(r)}
+                  >
+                    <div className="ac-header">
+                      <h3 className="ac-name">{r.child_name || "—"}</h3>
+                      <span className="ac-amount">{fmtMoney(r.amount)} ₪</span>
+                    </div>
+                    <div className="ac-footer" style={{ marginTop: 4 }}>
+                      <span className="ac-class-badge">
+                        {r.course_title || "—"} - {r.run_label || "—"}
+                      </span>
+                      <span className="ac-class-badge">
+                        {methodLabel(r.method)}
+                      </span>
+                    </div>
+                    <div className="ac-footer" style={{ marginTop: 12 }}>
+                      <div className="ac-date">
+                        <span className="ac-date-icon">
+                          <CalendarDays size={14} strokeWidth={2.5} />
+                        </span>
+                        <span dir="ltr">{fmtDT(r.created_at)}</span>
+                      </div>
+                      <div className="ac-actions">
+                        <button
+                          className="ac-btn ac-btn-edit"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEdit(r);
+                          }}
+                        >
+                          <Pencil size={16} strokeWidth={2.5} />
+                        </button>
+                        <button
+                          className="ac-btn ac-btn-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirm({ open: true, id: r.id });
+                          }}
+                        >
+                          <Trash2 size={16} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
+
+      {/* الزر العائم للموبايل - يختفي عند فتح المودال */}
+      {!openAdd &&
+        createPortal(
+          <button
+            className="fab-button"
+            onClick={openCreate}
+            title="إضافة دفعة"
+          >
+            <Plus size={30} strokeWidth={2.5} />
+          </button>,
+          document.body,
+        )}
 
       {/* نافذة الإضافة/التعديل */}
       <Modal
@@ -829,68 +1152,63 @@ export default function Payments() {
           }
         }}
       >
-        <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
-          <div style={{ gridColumn: "span 12" }}>
-            <h4 className="form-section-title">
-              <UserRound size={18} color="#64748b" /> اختيار الاشتراك
-            </h4>
-            <div
-              className="search-wrapper"
-              style={{ maxWidth: "100%", marginBottom: 12 }}
-            >
-              <Search size={18} className="search-icon" />
-              <input
-                className="search-input"
-                value={pickerQ}
-                onChange={(e) => setPickerQ(e.target.value)}
-                placeholder="ابحث باسم الطفل أو الدورة..."
-              />
-            </div>
+        <div className="modal-form-scroll-container">
+          <h4 className="form-section-title">
+            <UserRound size={18} color="#64748b" /> اختيار الاشتراك
+          </h4>
+          <div
+            className="search-wrapper"
+            style={{ maxWidth: "100%", marginBottom: 12 }}
+          >
+            <Search size={18} className="search-icon" />
+            <input
+              className="search-input"
+              value={pickerQ}
+              onChange={(e) => setPickerQ(e.target.value)}
+              placeholder="ابحث باسم الطفل أو الدورة..."
+            />
+          </div>
 
-            {/* قائمة الاختيار التفاعلية */}
-            <div className="enrollment-picker-list">
-              {pickerFiltered.length === 0 ? (
-                <div
-                  style={{ padding: 20, textAlign: "center", color: "#94a3b8" }}
-                >
-                  لا توجد اشتراكات متطابقة
-                </div>
-              ) : (
-                pickerFiltered.map((r) => {
-                  const isSelected = payEnrId === r.enrollment_id;
-                  const isDebt = Number(r.balance) > 0;
-                  return (
-                    <div
-                      key={r.enrollment_id}
-                      className={`enrollment-picker-item ${isSelected ? "selected" : ""}`}
-                      onClick={() => setPayEnrId(r.enrollment_id)}
-                    >
-                      <div className="epi-main">
-                        <div className="epi-name">{r.child_name}</div>
-                        <div className="epi-meta">
-                          {r.course_title} — {r.run_label}
-                        </div>
-                      </div>
-                      <div className={`epi-balance ${isDebt ? "debt" : ""}`}>
-                        {isDebt
-                          ? `متبقي عليه: ${r.balance} ₪`
-                          : "مدفوع بالكامل"}
+          <div className="enrollment-picker-list">
+            {pickerFiltered.length === 0 ? (
+              <div
+                style={{ padding: 20, textAlign: "center", color: "#94a3b8" }}
+              >
+                لا توجد اشتراكات متطابقة
+              </div>
+            ) : (
+              pickerFiltered.map((r) => {
+                const isSelected = payEnrId === r.enrollment_id;
+                const isDebt = Number(r.balance) > 0;
+                return (
+                  <div
+                    key={r.enrollment_id}
+                    className={`enrollment-picker-item ${isSelected ? "selected" : ""}`}
+                    onClick={() => setPayEnrId(r.enrollment_id)}
+                  >
+                    <div className="epi-main">
+                      <div className="epi-name">{r.child_name}</div>
+                      <div className="epi-meta">
+                        {r.course_title} — {r.run_label}
                       </div>
                     </div>
-                  );
-                })
-              )}
-            </div>
+                    <div className={`epi-balance ${isDebt ? "debt" : ""}`}>
+                      {isDebt ? `متبقي عليه: ${r.balance} ₪` : "مدفوع بالكامل"}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           {/* تفعيل باقي الحقول فقط إذا تم اختيار اشتراك */}
           {payEnrId && (
-            <div style={{ gridColumn: "span 12" }}>
+            <div style={{ marginTop: 24 }}>
               <h4 className="form-section-title">
                 <CreditCard size={18} color="#64748b" /> تفاصيل الدفعة
               </h4>
-              <div className="grid" style={{ gap: "16px" }}>
-                <div style={{ gridColumn: "span 6" }}>
+              <div className="responsive-form-grid">
+                <div className="form-col">
                   <div className="muted" style={{ marginBottom: 6 }}>
                     المبلغ (₪) *
                   </div>
@@ -905,7 +1223,7 @@ export default function Payments() {
                   />
                 </div>
 
-                <div style={{ gridColumn: "span 6" }}>
+                <div className="form-col">
                   <div className="muted" style={{ marginBottom: 6 }}>
                     طريقة الدفع
                   </div>
@@ -921,7 +1239,7 @@ export default function Payments() {
                   />
                 </div>
 
-                <div style={{ gridColumn: "span 6" }}>
+                <div className="form-col-full">
                   <div className="muted" style={{ marginBottom: 6 }}>
                     التاريخ والوقت *
                   </div>
@@ -933,7 +1251,7 @@ export default function Payments() {
                   />
                 </div>
 
-                <div style={{ gridColumn: "span 12" }}>
+                <div className="form-col-full">
                   <div className="muted" style={{ marginBottom: 6 }}>
                     ملاحظة (اختياري)
                   </div>
@@ -947,38 +1265,30 @@ export default function Payments() {
               </div>
             </div>
           )}
+        </div>
 
-          <div
-            style={{
-              gridColumn: "span 12",
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 10,
-              marginTop: 10,
+        <div className="modal-fixed-footer">
+          <button
+            className="btn"
+            onClick={() => {
+              setOpenAdd(false);
+              setEditPayId(null);
             }}
+            disabled={saving}
           >
-            <button
-              className="btn"
-              onClick={() => {
-                setOpenAdd(false);
-                setEditPayId(null);
-              }}
-              disabled={saving}
-            >
-              إلغاء
-            </button>
-            <button
-              className="btn btn-add"
-              onClick={createPayment}
-              disabled={saving || !payEnrId}
-            >
-              {saving
-                ? "جاري الحفظ..."
-                : editPayId
-                  ? "تحديث الدفعة"
-                  : "حفظ الدفعة"}
-            </button>
-          </div>
+            إلغاء
+          </button>
+          <button
+            className="btn btn-add"
+            onClick={createPayment}
+            disabled={saving || !payEnrId}
+          >
+            {saving
+              ? "جاري الحفظ..."
+              : editPayId
+                ? "تحديث الدفعة"
+                : "حفظ الدفعة"}
+          </button>
         </div>
       </Modal>
 
