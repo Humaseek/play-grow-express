@@ -188,7 +188,7 @@ const PROFILE_STYLES = `
   div.modalOverlay > div.modalCard {
     border-radius: 24px !important; 
     margin: auto !important; 
-    width: 40% !important; 
+    width: 92% !important; 
     max-height: 85vh !important; 
     margin-bottom: auto !important; 
     transform: translateY(-5vh) !important;
