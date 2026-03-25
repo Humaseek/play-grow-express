@@ -194,7 +194,7 @@ const PROFILE_STYLES = `
   }
 
   .modal-form-scroll-container {
-    max-height: calc(85vh - 250px) !important; 
+    max-height: calc(85vh - 500px) !important; 
     padding: 0 5px;
   }
 
