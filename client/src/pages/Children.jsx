@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
+// إضافة الاستيراد الخاص بـ useNavigate للانتقال بين الصفحات
 import { useNavigate } from "react-router-dom";
+// السلاح السري لحل مشكلة الزر العائم
 import { createPortal } from "react-dom";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
@@ -300,27 +302,11 @@ const CHILDREN_STYLES = `
 /* =========================================
    تنسيقات النموذج (المودال) - شكل اللابتوب המدمج
 ========================================= */
-.modal-scroll-container {
-  max-height: 80vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-left: 8px;
-  padding-bottom: 10px;
+.form-col-full {
+  grid-column: span 12;
 }
-
-/* تصميم السكرول بار */
-.modal-scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-.modal-scroll-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-.modal-scroll-container::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 10px;
-}
-.modal-scroll-container::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8;
+.form-col {
+  grid-column: span 6;
 }
 
 .form-section-title {
@@ -334,13 +320,35 @@ const CHILDREN_STYLES = `
   gap: 8px;
 }
 
-/* شبكة الحقول الثابتة (عمودين) */
-.custom-form-grid {
+/* حاوية السكرول الداخلية للفورم (للموبايل والكمبيوتر) */
+.modal-form-scroll-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px; /* مسافة بسيطة للسكرولبار */
+}
+
+/* تجميل شكل السكرولبار (الشريط الجانبي) */
+.modal-form-scroll-container::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* شبكة الحقول الثابتة (عمودين) - ستفعل على الكمبيوتر بشكل افتراضي */
+.desktop-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
-.custom-form-col-full {
+.desktop-form-col-full {
   grid-column: span 2;
 }
 
@@ -484,10 +492,43 @@ const CHILDREN_STYLES = `
   .children-card { background: transparent; border: none; box-shadow: none; }
   .children-toolbar { background: #ffffff; border-radius: 20px; margin: 0 16px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); }
   
-  /* في الشاشات الصغيرة جداً نرجعها عمود واحد لتجنب التزاحم */
-  .custom-form-grid { grid-template-columns: 1fr; }
-  .custom-form-col-full { grid-column: span 1; }
-  .modal-scroll-container { max-height: calc(100vh - 180px); }
+  /* =========================================
+     التعديل الجوهري للفورم على الموبايل
+  ========================================= */
+  .modal-form-scroll-container {
+    max-height: calc(100vh - 200px); /* نحدد أقصى ارتفاع عشان يشتغل السكرول من الداخل */
+  }
+
+  /* نستخدم شبكة مخصصة للموبايل لتقسيم الحقول لعمودين (شكل اللابتوب المدمج) */
+  .mobile-condensed-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  /* تجاوز التنسيقات القديمة للحقول داخل هذه الشبكة */
+  .mobile-condensed-grid .form-col {
+    grid-column: span 1 !important; /* العمر، الجنس، الصف، المدينة تأخذ عمود واحد */
+  }
+  .mobile-condensed-grid .form-col-full {
+    grid-column: span 2 !important; /* الاسم الرباعي والملاحظات تأخذ العرض كامل */
+  }
+
+  /* تضييق المسافات بين الحقول والعناوين في الموبايل */
+  .form-section-title {
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  
+  /* أزرار الإجراءات في أسفل الفورم */
+  .modal-condensed-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 10px;
+    border-top: 1px solid #f1f5f9;
+  }
 }
 
 @media (min-width: 769px) {
@@ -899,19 +940,25 @@ export default function Children() {
         document.body,
       )}
 
-      {/* نموذج الإضافة والتعديل - بتصميم اللابتوب المرتب */}
+      {/* نموذج الإضافة والتعديل بتصميم اللابتوب المرتب (عمودين للحقول) */}
       <Modal
         open={isModalOpen}
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
         onClose={() => !saving && setIsModalOpen(false)}
       >
-        <div className="modal-scroll-container">
+        {/* NEW: حاوية السكرول الداخلية للفورم (للموبايل والكمبيوتر) */}
+        <div className="modal-form-scroll-container">
           {/* قسم البيانات الأساسية */}
           <h4 className="form-section-title">
             <Users size={18} color="#64748b" /> البيانات الأساسية
           </h4>
-          <div className="custom-form-grid">
-            <div className="custom-form-col-full">
+          {/* نستخدم شبكة مخصصة (عمودين) ستفعل على الكمبيوتر بشكل افتراضي */}
+          {/* وعلى الموبايل سيتم تجاوز تنسيقاتها القديمة للتقسيم لعمودين مدمجين */}
+          <div
+            className="desktop-form-grid mobile-condensed-grid"
+            style={{ gap: "20px", padding: "10px 0" }}
+          >
+            <div className="desktop-form-col-full form-col-full">
               <div className="muted" style={{ marginBottom: 6 }}>
                 الاسم الرباعي *
               </div>
@@ -924,7 +971,9 @@ export default function Children() {
                 placeholder="مثال: أحمد محمد علي"
               />
             </div>
-            <div>
+            <div className="form-col">
+              {" "}
+              {/* العمر والجنس، الصف والمدينة تأخذ عمود واحد على الكمبيوتر والموبايل المدمج */}
               <div className="muted" style={{ marginBottom: 6 }}>
                 العمر
               </div>
@@ -940,7 +989,7 @@ export default function Children() {
                 placeholder="بالسنوات"
               />
             </div>
-            <div>
+            <div className="form-col">
               <div className="muted" style={{ marginBottom: 6 }}>
                 الجنس
               </div>
@@ -953,18 +1002,21 @@ export default function Children() {
                 ]}
               />
             </div>
-            <div>
+            <div className="form-col">
               <div className="muted" style={{ marginBottom: 6 }}>
                 الصف
               </div>
               <CustomCombobox
                 value={formData.class}
                 onChange={(v) => setFormData({ ...formData, class: v })}
-                options={classes.map((c) => ({ value: c.name, label: c.name }))}
+                options={classes.map((c) => ({
+                  value: c.name,
+                  label: c.name,
+                }))}
                 placeholder="اختر أو اكتب صفاً..."
               />
             </div>
-            <div>
+            <div className="form-col">
               <div className="muted" style={{ marginBottom: 6 }}>
                 المدينة / البلد
               </div>
@@ -984,8 +1036,11 @@ export default function Children() {
           <h4 className="form-section-title" style={{ marginTop: 24 }}>
             <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
           </h4>
-          <div className="custom-form-grid">
-            <div>
+          <div
+            className="desktop-form-grid mobile-condensed-grid"
+            style={{ gap: "20px", padding: "10px 0" }}
+          >
+            <div className="form-col">
               <div className="muted" style={{ marginBottom: 6 }}>
                 هاتف الأم
               </div>
@@ -1000,7 +1055,7 @@ export default function Children() {
                 style={{ textAlign: "right" }}
               />
             </div>
-            <div>
+            <div className="form-col">
               <div className="muted" style={{ marginBottom: 6 }}>
                 اسم الأم
               </div>
@@ -1013,7 +1068,7 @@ export default function Children() {
                 placeholder="اختياري"
               />
             </div>
-            <div>
+            <div className="form-col">
               <div className="muted" style={{ marginBottom: 6 }}>
                 هاتف الأب
               </div>
@@ -1028,7 +1083,7 @@ export default function Children() {
                 style={{ textAlign: "right" }}
               />
             </div>
-            <div>
+            <div className="form-col">
               <div className="muted" style={{ marginBottom: 6 }}>
                 اسم الأب
               </div>
@@ -1044,14 +1099,17 @@ export default function Children() {
           </div>
 
           {/* قسم الملاحظات */}
-          <div className="custom-form-grid" style={{ marginTop: 16 }}>
-            <div className="custom-form-col-full">
+          <div
+            className="desktop-form-grid mobile-condensed-grid"
+            style={{ gap: "20px", padding: "10px 0" }}
+          >
+            <div className="desktop-form-col-full form-col-full">
               <div className="muted" style={{ marginBottom: 6 }}>
                 ملاحظات إضافية
               </div>
               <textarea
                 className="input"
-                rows={2}
+                rows={3}
                 value={formData.notes}
                 onChange={(e) =>
                   setFormData({ ...formData, notes: e.target.value })
@@ -1062,13 +1120,16 @@ export default function Children() {
             </div>
           </div>
 
-          {/* أزرار الإجراءات */}
+          {/* أزرار الإجراءات في أسفل الفورم - سيتم تنسيقها للموبايل المدمج */}
           <div
+            className="modal-condensed-footer"
             style={{
               display: "flex",
               justifyContent: "flex-end",
               gap: 10,
-              marginTop: 24,
+              marginTop: 20,
+              paddingTop: 10,
+              borderTop: "1px solid #f1f5f9",
             }}
           >
             <button
