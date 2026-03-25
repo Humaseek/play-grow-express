@@ -298,7 +298,7 @@ const CHILDREN_STYLES = `
 }
 
 /* =========================================
-   تنسيقات النموذج (المودال) - الأساسية للكمبيوتر
+   تنسيقات النموذج (المودال) - ثابتة لجميع الشاشات
 ========================================= */
 .form-section-title {
   margin: 0 0 16px 0;
@@ -313,7 +313,7 @@ const CHILDREN_STYLES = `
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 8px;
-  max-height: 65vh; /* ارتفاع للكمبيوتر */
+  max-height: 65vh;
 }
 
 .modal-form-scroll-container::-webkit-scrollbar {
@@ -330,22 +330,20 @@ const CHILDREN_STYLES = `
   background-color: #94a3b8;
 }
 
-/* 👇 شبكة الكمبيوتر الأساسية: عمودين 👇 */
+/* 👇 شبكة ثابتة: عمودين دائماً 👇 */
 .responsive-form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* عمودين للكمبيوتر */
+  grid-template-columns: 1fr 1fr; /* عمودين بشكل أساسي */
   gap: 20px;
   padding-bottom: 16px;
 }
 
-/* الخانات اللي بتاخذ سطر كامل على الكمبيوتر */
 .form-col-full {
-  grid-column: span 2; 
+  grid-column: span 2; /* تأخذ العرض كامل */
 }
 
-/* الخانات اللي بتاخذ نصف سطر (عمود واحد) على الكمبيوتر */
 .form-col {
-  grid-column: span 1; 
+  grid-column: span 1; /* تأخذ نصف العرض */
 }
 
 .modal-fixed-footer {
@@ -483,11 +481,10 @@ const CHILDREN_STYLES = `
 }
 
 /* =========================================
-   التجاوب الخاص بالموبايل (هنا نقلب الآية للموبايل)
+   التجاوب الخاص بالموبايل
 ========================================= */
 @media (max-width: 980px) {
   
-  /* تجاوز تأثير Bottom Sheet وتوسيط الفورم في الموبايل */
   div.modalOverlay {
     align-items: center !important; 
     padding: 16px !important;
@@ -499,7 +496,7 @@ const CHILDREN_STYLES = `
     width: 92% !important; 
     max-height: 85vh !important; 
     margin-bottom: auto !important; 
-    transform: translateY(-5vh) !important; /* رفعة بسيطة */
+    transform: translateY(-5vh) !important;
   }
 
   .modal-form-scroll-container {
@@ -514,26 +511,24 @@ const CHILDREN_STYLES = `
   .children-card { background: transparent; border: none; box-shadow: none; }
   .children-toolbar { background: #ffffff; border-radius: 20px; margin: 0 16px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); }
   
-  /* 👇 التعديل الأهم للموبايل: عمود واحد فقط (كل خانة فوق أختها) 👇 */
+  /* 👇 الترتيب الثابت (عمودين) على الموبايل كمان 👇 */
   .responsive-form-grid {
-    grid-template-columns: 1fr !important; /* عمود واحد فقط */
-    gap: 14px;
+    grid-template-columns: 1fr 1fr !important; /* إبقاء الترتيب عمودين */
+    gap: 12px; /* تصغير المسافات شوي عشان يوسع عالموبايل */
     padding-bottom: 12px;
   }
   
-  /* جميع الخانات في الموبايل تأخذ العرض بالكامل لتنزل تحت بعضها */
-  .form-col-full, 
-  .form-col {
-    grid-column: span 1 !important; 
-  }
+  /* المحافظة على التقسيم */
+  .form-col-full { grid-column: span 2 !important; }
+  .form-col { grid-column: span 1 !important; }
 
   .form-section-title {
     margin: 10px 0 10px 0;
-    font-size: 15px;
+    font-size: 14px;
   }
   .input {
-    padding: 12px 14px;
-    font-size: 14px;
+    padding: 10px 14px;
+    font-size: 13px;
   }
   
   .modal-fixed-footer {
@@ -943,7 +938,7 @@ export default function Children() {
         </div>
       </div>
 
-      {/* الزر العائم يختفي بمجرد فتح الفورم */}
+      {/* الزر العائم */}
       {createPortal(
         <button
           className="fab-button"
@@ -963,7 +958,6 @@ export default function Children() {
       >
         <div className="modal-form-scroll-container">
           <h4 className="form-section-title">البيانات الأساسية</h4>
-          {/* استخدام كلاس الخريطة المستجيبة (responsive-form-grid) */}
           <div className="responsive-form-grid">
             <div className="form-col-full">
               <div className="muted" style={{ marginBottom: 6 }}>
