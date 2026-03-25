@@ -189,13 +189,13 @@ const PROFILE_STYLES = `
     border-radius: 24px !important; 
     margin: auto !important; 
     width: 92% !important; 
-    max-height: 75vh !important; 
+    max-height: 85vh !important; 
     margin-bottom: auto !important; 
     transform: translateY(-5vh) !important;
   }
 
   .modal-form-scroll-container {
-    max-height: calc(85vh - 20px) !important; 
+    max-height: calc(85vh - 250px) !important; 
     padding: 0 5px;
   }
 
