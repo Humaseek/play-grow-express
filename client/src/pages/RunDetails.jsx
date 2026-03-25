@@ -39,6 +39,7 @@ import {
   CalendarCheck,
   Phone,
   ChevronDown,
+  MoreVertical, // <-- تمت الإضافة للموبايل
 } from "lucide-react";
 
 const LOCALE_LATN = "en-IL";
@@ -47,7 +48,6 @@ function fmtDT(dt) {
   if (!dt) return "-";
   const d = new Date(dt);
   const pad = (n) => String(n).padStart(2, "0");
-  // التنسيق الجديد: يوم/شهر/سنة ساعة:دقيقة
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
@@ -55,7 +55,6 @@ function fmtDate(dt) {
   if (!dt) return "-";
   const d = new Date(dt);
   const pad = (n) => String(n).padStart(2, "0");
-  // التنسيق الجديد: يوم/شهر/سنة
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
@@ -227,6 +226,120 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
   );
 }
 
+// ============================================================================
+// 👇 مكونات القائمة المنسدلة للموبايل (Action Menu) 👇
+// ============================================================================
+function ActionMenu({ children }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div
+      ref={menuRef}
+      style={{
+        position: "absolute",
+        top: "12px",
+        left: "12px",
+        display: "inline-block",
+        zIndex: 10,
+      }}
+    >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        style={{
+          background: "rgba(0,0,0,0.05)",
+          border: "none",
+          padding: "6px",
+          borderRadius: "50%",
+          cursor: "pointer",
+          color: "#64748b",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <MoreVertical size={20} />
+      </button>
+
+      {isOpen && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            zIndex: 1000,
+            background: "#fff",
+            border: "1px solid rgba(0,0,0,0.08)",
+            borderRadius: "16px",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+            padding: "8px",
+            minWidth: "180px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(false);
+          }}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ActionMenuItem({ icon: Icon, label, onClick, danger }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick(e);
+      }}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        width: "100%",
+        padding: "10px 14px",
+        background: "none",
+        border: "none",
+        borderRadius: "10px",
+        cursor: "pointer",
+        textAlign: "right",
+        fontSize: "14px",
+        fontWeight: 700,
+        color: danger ? "#ef4444" : "#1e293b",
+        transition: "background 0.2s",
+      }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.background = danger ? "#fef2f2" : "#f1f5f9")
+      }
+      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+    >
+      {Icon && <Icon size={18} color={danger ? "#ef4444" : "#64748b"} />}
+      {label}
+    </button>
+  );
+}
+
+// ============================================================================
+// 👇 تنسيقات CSS مع إضافات الموبايل الخرافية 👇
+// ============================================================================
 const RUN_DETAILS_SOFT_UI_STYLES = `
 .page.page--runs {
   background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
@@ -261,7 +374,6 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   table-layout: auto !important; 
 }
 
-/* المحاذاة الإجبارية للمنتصف بخط مستقيم */
 .modal-compact-table th,
 .modal-compact-table td {
   text-align: center !important;
@@ -388,263 +500,129 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   color: rgb(24, 24, 24);
 }
 
-.summaryCardSoft.is-agreed .summaryIcon {
-  background: rgba(122, 92, 255, 0.10);
-  color: rgb(122, 92, 255);
-}
+.summaryCardSoft.is-agreed .summaryIcon { background: rgba(122, 92, 255, 0.10); color: rgb(122, 92, 255); }
+.summaryCardSoft.is-paid .summaryIcon { background: rgba(0, 172, 71, 0.10); color: rgb(0, 172, 71); }
+.summaryCardSoft.is-expenses .summaryIcon { background: rgba(255, 153, 0, 0.12); color: rgb(255, 153, 0); }
+.summaryCardSoft.is-balance .summaryIcon { background: rgba(239, 68, 68, 0.10); color: rgb(239, 68, 68); }
+.summaryCardSoft.is-balance.is-good .summaryIcon { background: rgba(0, 172, 71, 0.10); color: rgb(0, 172, 71); }
 
-.summaryCardSoft.is-paid .summaryIcon {
-  background: rgba(0, 172, 71, 0.10);
-  color: rgb(0, 172, 71);
-}
-
-.summaryCardSoft.is-expenses .summaryIcon {
-  background: rgba(255, 153, 0, 0.12);
-  color: rgb(255, 153, 0);
-}
-
-.summaryCardSoft.is-balance .summaryIcon {
-  background: rgba(239, 68, 68, 0.10);
-  color: rgb(239, 68, 68);
-}
-
-.summaryCardSoft.is-balance.is-good .summaryIcon {
-  background: rgba(0, 172, 71, 0.10);
-  color: rgb(0, 172, 71);
-}
-
-.summaryValue {
-  font-size: clamp(28px, 2vw, 34px);
-  font-weight: 900;
-  line-height: 1.1;
-  margin-bottom: 8px;
-}
-
-.summaryNote {
-  color: rgb(82, 82, 82);
-  font-size: 12px;
-  line-height: 1.5;
-}
+.summaryValue { font-size: clamp(28px, 2vw, 34px); font-weight: 900; line-height: 1.1; margin-bottom: 8px; }
+.summaryNote { color: rgb(82, 82, 82); font-size: 12px; line-height: 1.5; }
 
 .runDetails .tabs {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 6px;
-  border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(255, 255, 255, 0.8);
-  margin-bottom: 12px !important;
+  display: inline-flex; flex-wrap: wrap; gap: 8px; padding: 6px; border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.08); background: rgba(255, 255, 255, 0.8); margin-bottom: 12px !important;
 }
 
 .runDetails .tab {
-  border-radius: 999px !important;
-  min-height: 40px;
-  padding-inline: 16px !important;
-  font-weight: 800;
-  color: rgb(82, 82, 82);
+  border-radius: 999px !important; min-height: 40px; padding-inline: 16px !important;
+  font-weight: 800; color: rgb(82, 82, 82);
 }
 
 .runDetails .tab.active {
-  background: rgba(0, 172, 71, 0.12) !important;
-  border-color: rgba(0, 172, 71, 0.18) !important;
+  background: rgba(0, 172, 71, 0.12) !important; border-color: rgba(0, 172, 71, 0.18) !important;
   color: rgb(0, 172, 71) !important;
 }
 
-.runDetails .pToolbar {
-  gap: 20px !important;
-}
+.runDetails .pToolbar { gap: 20px !important; }
+.runDetails .pTitle h2, .runDetails .h1 { font-size: 28px; line-height: 1.2; }
 
-.runDetails .pTitle h2,
-.runDetails .h1 {
-  font-size: 28px;
-  line-height: 1.2;
-}
-
-.runDetails .input,
-.runDetails select.input {
-  min-height: 46px;
-  border-radius: 14px !important;
-  border: 1px solid rgba(15, 23, 42, 0.10) !important;
-  background: #fff !important;
+.runDetails .input, .runDetails select.input {
+  min-height: 46px; border-radius: 14px !important;
+  border: 1px solid rgba(15, 23, 42, 0.10) !important; background: #fff !important;
 }
 
 .runDetails .pGrid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 16px !important;
-  align-items: stretch !important;
+  display: grid !important; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px !important; align-items: stretch !important;
 }
 
 .runDetails .pCard {
-  width: 100% !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
-  border-radius: 22px !important;
-  padding: 18px !important;
-  background: #fff !important;
+  width: 100% !important; border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border-radius: 22px !important; padding: 18px !important; background: #fff !important;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .runDetails .pCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
-  border-color: rgba(0, 172, 71, 0.18) !important;
+  transform: translateY(-2px); box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08); border-color: rgba(0, 172, 71, 0.18) !important;
 }
 
-.runDetails .pHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.runDetails .pName {
-  font-size: 21px;
-  font-weight: 900;
-  line-height: 1.2;
-  margin-bottom: 6px;
-}
-
-.runDetails .pMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
+.runDetails .pHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.runDetails .pName { font-size: 21px; font-weight: 900; line-height: 1.2; margin-bottom: 6px; }
+.runDetails .pMeta { display: flex; flex-wrap: wrap; gap: 8px; }
 .runDetails .metaItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 30px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(248, 250, 252, 1);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  color: rgb(82, 82, 82);
-  font-size: 12px;
-  font-weight: 700;
+  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 6px 10px;
+  border-radius: 999px; background: rgba(248, 250, 252, 1); border: 1px solid rgba(15, 23, 42, 0.06);
+  color: rgb(82, 82, 82); font-size: 12px; font-weight: 700;
 }
 
-.runDetails .pQuickStats {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
+.runDetails .pQuickStats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
 .runDetails .pStatBlock {
-  padding: 14px 10px;
-  border-radius: 16px;
-  background: rgba(248, 250, 252, 0.8);
-  border: 1px solid rgba(15, 23, 42, 0.04);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 8px; 
-  transition: all 0.2s ease;
+  padding: 14px 10px; border-radius: 16px; background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(15, 23, 42, 0.04); display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; gap: 8px; transition: all 0.2s ease;
 }
-
-.runDetails .pStatBlock.stat-green {
-  background: rgba(0, 172, 71, 0.08);
-  border-color: rgba(0, 172, 71, 0.15);
-}
+.runDetails .pStatBlock.stat-green { background: rgba(0, 172, 71, 0.08); border-color: rgba(0, 172, 71, 0.15); }
 .runDetails .pStatBlock.stat-green .pStatValue { color: rgb(0, 172, 71); }
 .runDetails .pStatBlock.stat-yellow { background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.15); }
 .runDetails .pStatBlock.stat-yellow .pStatValue { color: rgb(217, 119, 6); }
 .runDetails .pStatBlock.stat-red { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.15); }
 .runDetails .pStatBlock.stat-red .pStatValue { color: rgb(220, 38, 38) !important; }
 
-.runDetails .pStatLabel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  color: rgb(100, 116, 139);
-  font-size: 13px;
-  font-weight: 700;
-  margin: 0;
-  white-space: nowrap; 
-}
+.runDetails .pStatLabel { display: flex; align-items: center; justify-content: center; gap: 6px; color: rgb(100, 116, 139); font-size: 13px; font-weight: 700; margin: 0; white-space: nowrap; }
+.runDetails .pStatValue { font-size: 18px; font-weight: 900; line-height: 1; color: rgb(15, 23, 42); }
 
-.runDetails .pStatValue {
-  font-size: 18px;
-  font-weight: 900;
-  line-height: 1;
-  color: rgb(15, 23, 42);
-}
-
-.runDetails .pProgressWrap {
-  padding: 12px 0 0;
-  margin-top: 2px;
-}
-
-.runDetails .pProgressHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 12px;
-  color: rgb(82, 82, 82);
-  margin-bottom: 8px;
-}
-
-.runDetails .pBar {
-  height: 8px !important;
-  border-radius: 999px !important;
-  background: rgba(15, 23, 42, 0.08) !important;
-  overflow: hidden;
-}
+.runDetails .pProgressWrap { padding: 12px 0 0; margin-top: 2px; }
+.runDetails .pProgressHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: rgb(82, 82, 82); margin-bottom: 8px; }
+.runDetails .pBar { height: 8px !important; border-radius: 999px !important; background: rgba(15, 23, 42, 0.08) !important; overflow: hidden; }
 .runDetails .pBar span { display: block; height: 100%; border-radius: inherit; background: rgb(0, 172, 71); }
 .runDetails .pBarPartial span { background: rgb(245, 158, 11); }
 .runDetails .pBarUnpaid span { background: rgb(239, 68, 68); }
 .runDetails .pBarFree span { background: rgb(148, 163, 184); }
 
 .runDetails .sessionRow {
-  border-radius: 18px !important;
-  background: rgba(255, 255, 255, 0.94);
-  transition: all 0.2s ease;
-  border-left: 1px solid transparent;
-  border-top: 1px solid transparent;
-  border-bottom: 1px solid transparent;
+  border-radius: 18px !important; background: rgba(255, 255, 255, 0.94); transition: all 0.2s ease;
+  border-left: 1px solid transparent; border-top: 1px solid transparent; border-bottom: 1px solid transparent;
 }
-.runDetails .sessionRow:hover {
-  background: #fff !important;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.04);
-}
+.runDetails .sessionRow:hover { background: #fff !important; box-shadow: 0 6px 16px rgba(0,0,0,0.04); }
+.runDetails .sectionHeader { font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 10px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
 
-.runDetails .sectionHeader {
-  font-size: 18px;
-  font-weight: 900;
-  color: #0f172a;
-  margin-top: 10px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-@media (max-width: 1100px) {
-  .runInfoGrid, .summaryGridSoft { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
+/* =========================================
+   تنسيقات التجاوب الخاصة للموبايل (Mobile Fixes)
+========================================= */
+.desktop-only { display: block; }
+.mobile-only { display: none; }
+.session-actions-desktop { display: flex; gap: 8px; justify-content: flex-end; }
 
 @media (max-width: 980px) {
-  .runDetails .pQuickStats { grid-template-columns: 1fr; }
-}
+  .desktop-only { display: none !important; }
+  .mobile-only { display: flex !important; flex-direction: column; gap: 12px; }
+  .session-actions-desktop { display: none !important; }
 
-/* Modal Form Overrides */
-.form-section-title {
-  margin: 0 0 16px 0;
-  color: #0f172a;
-  font-size: 16px;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  /* تابات قابلة للسحب أفقياً لتجنب الانضغاط */
+  .runDetails .tabs { width: 100%; overflow-x: auto; white-space: nowrap; flex-wrap: nowrap; justify-content: flex-start; }
+  .runDetails .tabs::-webkit-scrollbar { display: none; }
+
+  /* الموبايل يكون عمود واحد في الجريد */
+  .runDetails .pGrid { grid-template-columns: 1fr !important; }
+  .runDetails .summaryGridSoft { grid-template-columns: 1fr 1fr !important; }
+  .runHeroTitle { font-size: 20px !important; white-space: normal !important; text-align: center; }
+
+  /* تعديل الجلسات لتكون ملمومة وكروت بالموبايل */
+  .sessionRow { grid-template-columns: 1fr !important; position: relative; padding: 16px !important; align-items: flex-start !important; }
+  
+  /* كروت المدفوعات والمصاريف بالموبايل */
+  .mobile-card { background: #fff; border-radius: 16px; padding: 16px; border: 1px solid rgba(15,23,42,0.06); box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 12px; position: relative; }
+  
+  /* ترتيب الفلاتر وأزرار الإضافة بالموبايل */
+  .pControls { min-width: 100% !important; }
+  .pControls > div:first-child { flex-direction: column; align-items: stretch; }
+  .pControls select.input { width: 100% !important; flex: none !important; }
+  .pControls .btn { width: 100%; justify-content: center; }
+  
+  .actionSquare { min-height: 70px; }
+  .tab-add-btn { width: 100%; justify-content: center; margin-top: 10px; }
 }
 `;
 
@@ -1295,6 +1273,14 @@ export default function RunDetails() {
     setPayDate(isoDate(r.created_at));
     setPayNote(r.note || "");
     setOpenPay(true);
+  }
+
+  function paymentMethodLabel(v) {
+    if (v === "cash") return "نقداً";
+    if (v === "card") return "بطاقة ائتمان";
+    if (v === "transfer") return "حوالة بنكية";
+    if (v === "other") return "أخرى";
+    return v || "-";
   }
 
   function initEnrollBuyNew({
@@ -1965,14 +1951,6 @@ export default function RunDetails() {
     await loadFixed();
   }
 
-  function paymentMethodLabel(v) {
-    if (v === "cash") return "نقداً";
-    if (v === "card") return "بطاقة ائتمان";
-    if (v === "transfer") return "حوالة بنكية";
-    if (v === "other") return "أخرى";
-    return v || "-";
-  }
-
   async function addPayment() {
     if (!payEnrollmentId || !payAmount) return;
     setPaySaving(true);
@@ -2237,7 +2215,7 @@ export default function RunDetails() {
   // --- MAIN RETURN ---
   return (
     <div
-      className="page page--runs"
+      className="page page--runs page--run-details"
       dir="rtl"
       lang="ar"
       style={{
@@ -2246,6 +2224,7 @@ export default function RunDetails() {
       }}
     >
       <style>{RUN_DETAILS_SOFT_UI_STYLES}</style>
+      <style>{MOBILE_STYLES}</style>
       <div className="container runDetails">
         <div
           style={{
@@ -2339,7 +2318,7 @@ export default function RunDetails() {
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="run-header-actions">
             <button
               type="button"
               className="btn"
@@ -2473,7 +2452,7 @@ export default function RunDetails() {
         </div>
 
         {tab === "participants" && (
-          <div className="card">
+          <div className="card pCard-wrapper">
             <div
               className="pToolbar"
               style={{
@@ -2571,12 +2550,16 @@ export default function RunDetails() {
                     justifyContent: "flex-end",
                   }}
                 >
-                  <button type="button" className="btn" onClick={openBulkModal}>
+                  <button
+                    type="button"
+                    className="btn tab-add-btn"
+                    onClick={openBulkModal}
+                  >
                     + إضافة طفل للدورة
                   </button>
                   <button
                     type="button"
-                    className="btn primary"
+                    className="btn primary tab-add-btn"
                     onClick={openCreateEnroll}
                   >
                     <Plus size={16} /> إضافة وتسجيل
@@ -2625,7 +2608,7 @@ export default function RunDetails() {
                   return (
                     <div
                       key={p.enrollment_id}
-                      className="pCard"
+                      className="pCard participantList__item"
                       style={{
                         width: 380,
                         maxWidth: "100%",
@@ -2635,7 +2618,9 @@ export default function RunDetails() {
                     >
                       <div className="pHead" style={{ marginBottom: "20px" }}>
                         <div style={{ minWidth: 0 }}>
-                          <div className="pName">{p.child_name}</div>
+                          <div className="pName participantList__name">
+                            {p.child_name}
+                          </div>
                           <div className="pMeta">
                             <span className="metaItem" title="الصف">
                               <GraduationCap size={14} className="ico" />
@@ -2652,12 +2637,19 @@ export default function RunDetails() {
                       </div>
 
                       <div className="pQuickStats">
-                        <div className={`pStatBlock ${balClass}`}>
+                        <div
+                          className={`pStatBlock ${balClass} participantList__balance`}
+                        >
                           <div className="pStatLabel">
                             <Hourglass size={14} />
-                            <span>المتبقي</span>
+                            <span className="participantList__balance-label">
+                              المتبقي
+                            </span>
                           </div>
-                          <div className="pStatValue ltrIso" dir="ltr">
+                          <div
+                            className="pStatValue ltrIso participantList__balance-value"
+                            dir="ltr"
+                          >
                             {fmtILS(balance)}
                           </div>
                         </div>
@@ -2794,7 +2786,7 @@ export default function RunDetails() {
                 </div>
                 <button
                   type="button"
-                  className="btn primary"
+                  className="btn primary tab-add-btn"
                   disabled={genLoading || !firstStart}
                   onClick={generateSessions}
                 >
@@ -2803,7 +2795,7 @@ export default function RunDetails() {
                 <hr className="sep" />
                 <button
                   type="button"
-                  className="btn"
+                  className="btn tab-add-btn"
                   onClick={openCreateSession}
                 >
                   <Plus size={16} /> إضافة جلسة واحدة
@@ -2826,7 +2818,7 @@ export default function RunDetails() {
                   {pastSessions.length > 0 && (
                     <div>
                       <button
-                        className="btn"
+                        className="btn tab-add-btn"
                         style={{
                           width: "100%",
                           minHeight: 54,
@@ -2882,7 +2874,7 @@ export default function RunDetails() {
                           return (
                             <div
                               key={s.id}
-                              className="sessionRow"
+                              className="sessionRow sessionList__item"
                               style={{
                                 display: "grid",
                                 gridTemplateColumns:
@@ -2900,7 +2892,7 @@ export default function RunDetails() {
                                       : "4px solid #0ea5e9",
                               }}
                             >
-                              <div>
+                              <div className="sessionList__time">
                                 <div style={{ fontWeight: 700 }}>
                                   {fmtDate(s.start_at)}
                                 </div>
@@ -2908,7 +2900,7 @@ export default function RunDetails() {
                                   {fmtWeekday(s.start_at)}
                                 </div>
                               </div>
-                              <div>
+                              <div className="sessionList__main">
                                 <div style={{ fontWeight: 600 }}>
                                   <span dir="ltr">
                                     {fmtTimeHM(s.start_at)} →{" "}
@@ -2916,13 +2908,9 @@ export default function RunDetails() {
                                   </span>
                                 </div>
                               </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  gap: 8,
-                                  justifyContent: "flex-end",
-                                }}
-                              >
+
+                              {/* أزرار الإجراءات - نسخة الكمبيوتر */}
+                              <div className="session-actions-desktop">
                                 <button
                                   className="btn primary iconOnly"
                                   title="تسجيل الحضور"
@@ -2954,6 +2942,56 @@ export default function RunDetails() {
                                   <Trash2 size={16} />
                                 </button>
                               </div>
+
+                              {/* قائمة الإجراءات - نسخة الموبايل */}
+                              <div className="session-actions-mobile">
+                                <ActionMenu>
+                                  <ActionMenuItem
+                                    icon={Settings2}
+                                    label="تسجيل الحضور"
+                                    onClick={() =>
+                                      navigate(`/sessions/${s.id}/attendance`)
+                                    }
+                                  />
+                                  {s.status === "scheduled" && (
+                                    <>
+                                      <ActionMenuItem
+                                        icon={CheckCircle2}
+                                        label="إنهاء الجلسة"
+                                        onClick={() =>
+                                          setSessionStatus(s.id, "done")
+                                        }
+                                      />
+                                      <ActionMenuItem
+                                        icon={XCircle}
+                                        label="إلغاء الجلسة"
+                                        danger
+                                        onClick={() =>
+                                          setSessionStatus(s.id, "canceled")
+                                        }
+                                      />
+                                    </>
+                                  )}
+                                  <ActionMenuItem
+                                    icon={Pencil}
+                                    label="تعديل الموعد"
+                                    onClick={() => openEditSession(s)}
+                                  />
+                                  <ActionMenuItem
+                                    icon={Trash2}
+                                    label="حذف الجلسة"
+                                    danger
+                                    onClick={() =>
+                                      setConfirm({
+                                        open: true,
+                                        type: "deleteSession",
+                                        id: s.id,
+                                        text: "هل تريد حذف هذه الجلسة نهائياً؟",
+                                      })
+                                    }
+                                  />
+                                </ActionMenu>
+                              </div>
                             </div>
                           );
                         })}
@@ -2975,7 +3013,7 @@ export default function RunDetails() {
                 </div>
                 <button
                   type="button"
-                  className="btn primary"
+                  className="btn primary tab-add-btn"
                   onClick={openNewPaymentModal}
                 >
                   + إضافة دفعة
@@ -2985,67 +3023,155 @@ export default function RunDetails() {
               {payments.length === 0 ? (
                 <div className="muted">لا يوجد عناصر.</div>
               ) : (
-                <div className="tableWrap inCard">
-                  <table className="table modal-compact-table">
-                    <thead>
-                      <tr>
-                        <th>الطفل</th>
-                        <th>المبلغ (₪)</th>
-                        <th>الطريقة</th>
-                        <th>التاريخ</th>
-                        <th>ملاحظة</th>
-                        <th style={{ textAlign: "center" }}>الإجراءات</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {payments.map((p) => (
-                        <tr key={p.id}>
-                          <td style={{ fontWeight: 800 }}>{p.child_name}</td>
-                          <td style={{ fontWeight: 900, color: "#0f172a" }}>
-                            <span dir="ltr">{Number(p.amount).toFixed(2)}</span>
-                          </td>
-                          <td className="muted">
-                            <Badge variant="default">
+                <>
+                  <div className="tableWrap inCard desktop-only">
+                    <table className="table modal-compact-table">
+                      <thead>
+                        <tr>
+                          <th>الطفل</th>
+                          <th>المبلغ (₪)</th>
+                          <th>الطريقة</th>
+                          <th>التاريخ</th>
+                          <th>ملاحظة</th>
+                          <th style={{ textAlign: "center" }}>الإجراءات</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((p) => (
+                          <tr key={p.id}>
+                            <td style={{ fontWeight: 800 }}>{p.child_name}</td>
+                            <td style={{ fontWeight: 900, color: "#0f172a" }}>
+                              <span dir="ltr">
+                                {Number(p.amount).toFixed(2)}
+                              </span>
+                            </td>
+                            <td className="muted">
+                              <Badge variant="default">
+                                {paymentMethodLabel(p.method)}
+                              </Badge>
+                            </td>
+                            <td className="muted">{fmtDate(p.created_at)}</td>
+                            <td className="muted">{p.note ?? "-"}</td>
+                            <td style={{ textAlign: "center" }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: "8px",
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <button
+                                  className="btn iconOnly"
+                                  onClick={() => openEditPayment(p)}
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                                <button
+                                  className="btn danger iconOnly"
+                                  onClick={() =>
+                                    setConfirm({
+                                      open: true,
+                                      type: "deletePayment",
+                                      id: p.id,
+                                      text: "حذف دفعة",
+                                    })
+                                  }
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile view for Payments */}
+                  <div className="mobile-only">
+                    {payments.map((p) => (
+                      <div
+                        key={p.id}
+                        className="mobile-card"
+                        style={{ borderRight: "4px solid #16a34a" }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <strong style={{ fontSize: 16 }}>
+                            {p.child_name}
+                          </strong>
+                          <span
+                            style={{
+                              fontWeight: 900,
+                              color: "#16a34a",
+                              fontSize: 16,
+                            }}
+                            dir="ltr"
+                          >
+                            {Number(p.amount).toFixed(2)} ₪
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            fontSize: 13,
+                            color: "#64748b",
+                          }}
+                        >
+                          <span>
+                            <Badge variant="neutral">
                               {paymentMethodLabel(p.method)}
                             </Badge>
-                          </td>
-                          <td className="muted">{fmtDate(p.created_at)}</td>
-                          <td className="muted">{p.note ?? "-"}</td>
-                          <td style={{ textAlign: "center" }}>
-                            <div
-                              style={{
-                                display: "flex",
-                                gap: "8px",
-                                justifyContent: "center",
-                                alignItems: "center",
-                              }}
-                            >
-                              <button
-                                className="btn iconOnly"
-                                onClick={() => openEditPayment(p)}
-                              >
-                                <Pencil size={16} />
-                              </button>
-                              <button
-                                className="btn danger iconOnly"
-                                onClick={() =>
-                                  setConfirm({
-                                    open: true,
-                                    type: "deletePayment",
-                                    id: p.id,
-                                    text: "حذف دفعة",
-                                  })
-                                }
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          </span>
+                          <span>{fmtDate(p.created_at)}</span>
+                        </div>
+                        {p.note && (
+                          <div style={{ fontSize: 13, color: "#64748b" }}>
+                            {p.note}
+                          </div>
+                        )}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            justifyContent: "flex-end",
+                            marginTop: 8,
+                            borderTop: "1px solid #f1f5f9",
+                            paddingTop: 8,
+                          }}
+                        >
+                          <button
+                            className="btn iconOnly"
+                            onClick={() => openEditPayment(p)}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
+                            className="btn danger iconOnly"
+                            onClick={() =>
+                              setConfirm({
+                                open: true,
+                                type: "deletePayment",
+                                id: p.id,
+                                text: "حذف دفعة",
+                              })
+                            }
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -3057,7 +3183,7 @@ export default function RunDetails() {
               <h2 style={{ marginBottom: 4 }}>المصاريف</h2>
               <button
                 type="button"
-                className="btn primary"
+                className="btn primary tab-add-btn"
                 onClick={openAddExpense}
               >
                 + إضافة مصروف
@@ -3098,6 +3224,7 @@ export default function RunDetails() {
                 </div>
 
                 <div
+                  className="pControls"
                   style={{
                     display: "flex",
                     gap: 10,
@@ -3158,71 +3285,155 @@ export default function RunDetails() {
                 {expensesFiltered.length === 0 ? (
                   <div className="muted">ما في مصاريف.</div>
                 ) : (
-                  <div className="tableWrap inCard">
-                    <table className="table modal-compact-table">
-                      <thead>
-                        <tr>
-                          <th style={{ width: 140 }}>التاريخ</th>
-                          <th>التصنيف</th>
-                          <th style={{ width: 180 }}>الشخص</th>
-                          <th>الوصف</th>
-                          <th style={{ width: 140 }}>المبلغ</th>
-                          <th style={{ textAlign: "center" }}>الإجراءات</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {expensesFiltered.map((r) => (
-                          <tr key={r.id}>
-                            <td className="muted">
-                              <span className="ltrIso">
-                                {fmtDate(r.spent_on)}
-                              </span>
-                            </td>
-                            <td style={{ fontWeight: 800 }}>
-                              {r.category || "—"}
-                            </td>
-                            <td className="muted">{r.party || "—"}</td>
-                            <td className="muted">{r.description || "—"}</td>
-                            <td style={{ fontWeight: 900, color: "#0f172a" }}>
-                              <span dir="ltr">{fmtILS(r.amount, 2)}</span>
-                            </td>
-                            <td style={{ textAlign: "center" }}>
-                              <div
-                                className="tableActions"
-                                style={{
-                                  display: "flex",
-                                  gap: "8px",
-                                  justifyContent: "center",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <IconButton
-                                  title="تعديل"
-                                  onClick={() => openEditExpense(r)}
-                                >
-                                  <Pencil size={16} />
-                                </IconButton>
-                                <IconButton
-                                  title="حذف"
-                                  danger
-                                  onClick={() =>
-                                    setConfirm({
-                                      open: true,
-                                      type: "deleteExpense",
-                                      id: r.id,
-                                      text: "هل تريد حذف هذا المصروف؟",
-                                    })
-                                  }
-                                >
-                                  <Trash2 size={16} />
-                                </IconButton>
-                              </div>
-                            </td>
+                  <>
+                    <div className="tableWrap inCard desktop-only">
+                      <table className="table modal-compact-table">
+                        <thead>
+                          <tr>
+                            <th style={{ width: 140 }}>التاريخ</th>
+                            <th>التصنيف</th>
+                            <th style={{ width: 180 }}>الشخص</th>
+                            <th>الوصف</th>
+                            <th style={{ width: 140 }}>المبلغ</th>
+                            <th style={{ textAlign: "center" }}>الإجراءات</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {expensesFiltered.map((r) => (
+                            <tr key={r.id}>
+                              <td className="muted">
+                                <span className="ltrIso">
+                                  {fmtDate(r.spent_on)}
+                                </span>
+                              </td>
+                              <td style={{ fontWeight: 800 }}>
+                                {r.category || "—"}
+                              </td>
+                              <td className="muted">{r.party || "—"}</td>
+                              <td className="muted">{r.description || "—"}</td>
+                              <td style={{ fontWeight: 900, color: "#0f172a" }}>
+                                <span dir="ltr">{fmtILS(r.amount, 2)}</span>
+                              </td>
+                              <td style={{ textAlign: "center" }}>
+                                <div
+                                  className="tableActions"
+                                  style={{
+                                    display: "flex",
+                                    gap: "8px",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <IconButton
+                                    title="تعديل"
+                                    onClick={() => openEditExpense(r)}
+                                  >
+                                    <Pencil size={16} />
+                                  </IconButton>
+                                  <IconButton
+                                    title="حذف"
+                                    danger
+                                    onClick={() =>
+                                      setConfirm({
+                                        open: true,
+                                        type: "deleteExpense",
+                                        id: r.id,
+                                        text: "هل تريد حذف هذا المصروف؟",
+                                      })
+                                    }
+                                  >
+                                    <Trash2 size={16} />
+                                  </IconButton>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile view for Expenses */}
+                    <div className="mobile-only">
+                      {expensesFiltered.map((r) => (
+                        <div
+                          key={r.id}
+                          className="mobile-card"
+                          style={{ borderRight: "4px solid #ef4444" }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                            }}
+                          >
+                            <strong style={{ fontSize: 16 }}>
+                              {r.category || "—"}
+                            </strong>
+                            <span
+                              style={{
+                                fontWeight: 900,
+                                color: "#0f172a",
+                                fontSize: 16,
+                              }}
+                              dir="ltr"
+                            >
+                              {fmtILS(r.amount, 2)}
+                            </span>
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              fontSize: 13,
+                              color: "#64748b",
+                            }}
+                          >
+                            <span>{r.party || "—"}</span>
+                            <span className="ltrIso">
+                              {fmtDate(r.spent_on)}
+                            </span>
+                          </div>
+                          {r.description && (
+                            <div style={{ fontSize: 13, color: "#64748b" }}>
+                              {r.description}
+                            </div>
+                          )}
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              justifyContent: "flex-end",
+                              marginTop: 8,
+                              borderTop: "1px solid #f1f5f9",
+                              paddingTop: 8,
+                            }}
+                          >
+                            <button
+                              className="btn iconOnly"
+                              onClick={() => openEditExpense(r)}
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              className="btn danger iconOnly"
+                              onClick={() =>
+                                setConfirm({
+                                  open: true,
+                                  type: "deleteExpense",
+                                  id: r.id,
+                                  text: "هل تريد حذف هذا المصروف؟",
+                                })
+                              }
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </>
             )}
@@ -3285,6 +3496,7 @@ export default function RunDetails() {
               </div>
 
               <div
+                className="summaryGridSoft"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
@@ -3442,7 +3654,8 @@ export default function RunDetails() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(90px, 1fr))",
                       gap: 12,
                     }}
                   >
@@ -3521,7 +3734,8 @@ export default function RunDetails() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(90px, 1fr))",
                       gap: 12,
                     }}
                   >
