@@ -298,19 +298,12 @@ const CHILDREN_STYLES = `
 }
 
 /* =========================================
-   تنسيقات النموذج (المودال) 
+   تنسيقات النموذج (المودال) - الأساسية للكمبيوتر
 ========================================= */
-.form-col-full {
-  grid-column: span 12;
-}
-.form-col {
-  grid-column: span 6;
-}
-
 .form-section-title {
   margin: 0 0 16px 0;
   color: #0f172a;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   border-bottom: 1px solid #f1f5f9;
   padding-bottom: 8px;
@@ -320,7 +313,7 @@ const CHILDREN_STYLES = `
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 8px;
-  max-height: 65vh; 
+  max-height: 65vh; /* ارتفاع للكمبيوتر */
 }
 
 .modal-form-scroll-container::-webkit-scrollbar {
@@ -337,14 +330,22 @@ const CHILDREN_STYLES = `
   background-color: #94a3b8;
 }
 
-.desktop-form-grid {
+/* 👇 شبكة الكمبيوتر الأساسية: عمودين 👇 */
+.responsive-form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr; /* عمودين للكمبيوتر */
   gap: 20px;
   padding-bottom: 16px;
 }
-.desktop-form-col-full {
-  grid-column: span 2;
+
+/* الخانات اللي بتاخذ سطر كامل على الكمبيوتر */
+.form-col-full {
+  grid-column: span 2; 
+}
+
+/* الخانات اللي بتاخذ نصف سطر (عمود واحد) على الكمبيوتر */
+.form-col {
+  grid-column: span 1; 
 }
 
 .modal-fixed-footer {
@@ -482,12 +483,13 @@ const CHILDREN_STYLES = `
 }
 
 /* =========================================
-   التجاوب الخاص بالموبايل وإلغاء تأثير Bottom Sheet من styles.css
+   التجاوب الخاص بالموبايل (هنا نقلب الآية للموبايل)
 ========================================= */
 @media (max-width: 980px) {
-  /* 👇 الكود الصارم لإلغاء النزول للأسفل وتوسيط الفورم غصباً عن styles.css 👇 */
+  
+  /* تجاوز تأثير Bottom Sheet وتوسيط الفورم في الموبايل */
   div.modalOverlay {
-    align-items: center !important; /* توسيط عمودي */
+    align-items: center !important; 
     padding: 16px !important;
   }
   
@@ -496,14 +498,12 @@ const CHILDREN_STYLES = `
     margin: auto !important; 
     width: 92% !important; 
     max-height: 85vh !important; 
-    margin-bottom: auto !important;
-    
-    /* 👇 السطر الجديد للتحكم بالرفع 👇 */
-    transform: translateY(-5vh) !important; 
+    margin-bottom: auto !important; 
+    transform: translateY(-5vh) !important; /* رفعة بسيطة */
   }
 
   .modal-form-scroll-container {
-    max-height: calc(85vh - 140px) !important; /* مساحة السكرول المتاحة داخل الفورم الموسط */
+    max-height: calc(85vh - 140px) !important; 
     padding: 0 5px;
   }
 
@@ -514,27 +514,26 @@ const CHILDREN_STYLES = `
   .children-card { background: transparent; border: none; box-shadow: none; }
   .children-toolbar { background: #ffffff; border-radius: 20px; margin: 0 16px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); }
   
-  .mobile-condensed-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+  /* 👇 التعديل الأهم للموبايل: عمود واحد فقط (كل خانة فوق أختها) 👇 */
+  .responsive-form-grid {
+    grid-template-columns: 1fr !important; /* عمود واحد فقط */
+    gap: 14px;
     padding-bottom: 12px;
   }
   
-  .mobile-condensed-grid .form-col {
+  /* جميع الخانات في الموبايل تأخذ العرض بالكامل لتنزل تحت بعضها */
+  .form-col-full, 
+  .form-col {
     grid-column: span 1 !important; 
-  }
-  .mobile-condensed-grid .form-col-full {
-    grid-column: span 2 !important; 
   }
 
   .form-section-title {
     margin: 10px 0 10px 0;
-    font-size: 14px;
+    font-size: 15px;
   }
   .input {
-    padding: 10px 14px;
-    font-size: 13px;
+    padding: 12px 14px;
+    font-size: 14px;
   }
   
   .modal-fixed-footer {
@@ -944,7 +943,7 @@ export default function Children() {
         </div>
       </div>
 
-      {/* الزر العائم - 👇 استخدمنا style لإخفائه بشكل قاطع عند فتح الفورم 👇 */}
+      {/* الزر العائم يختفي بمجرد فتح الفورم */}
       {createPortal(
         <button
           className="fab-button"
@@ -957,7 +956,6 @@ export default function Children() {
         document.body,
       )}
 
-      {/* نموذج الإضافة والتعديل */}
       <Modal
         open={isModalOpen}
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
@@ -965,8 +963,9 @@ export default function Children() {
       >
         <div className="modal-form-scroll-container">
           <h4 className="form-section-title">البيانات الأساسية</h4>
-          <div className="desktop-form-grid mobile-condensed-grid">
-            <div className="desktop-form-col-full form-col-full">
+          {/* استخدام كلاس الخريطة المستجيبة (responsive-form-grid) */}
+          <div className="responsive-form-grid">
+            <div className="form-col-full">
               <div className="muted" style={{ marginBottom: 6 }}>
                 الاسم الرباعي *
               </div>
@@ -1040,7 +1039,7 @@ export default function Children() {
           <h4 className="form-section-title" style={{ marginTop: 10 }}>
             معلومات التواصل
           </h4>
-          <div className="desktop-form-grid mobile-condensed-grid">
+          <div className="responsive-form-grid">
             <div className="form-col">
               <div className="muted" style={{ marginBottom: 6 }}>
                 هاتف الأم
@@ -1099,8 +1098,8 @@ export default function Children() {
             </div>
           </div>
 
-          <div className="desktop-form-grid mobile-condensed-grid">
-            <div className="desktop-form-col-full form-col-full">
+          <div className="responsive-form-grid">
+            <div className="form-col-full">
               <div className="muted" style={{ marginBottom: 6 }}>
                 ملاحظات إضافية
               </div>
