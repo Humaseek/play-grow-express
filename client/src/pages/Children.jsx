@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-// إضافة الاستيراد الخاص بـ useNavigate للانتقال بين الصفحات
 import { useNavigate } from "react-router-dom";
-// السلاح السري لحل مشكلة الزر العائم
 import { createPortal } from "react-dom";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
@@ -300,7 +298,7 @@ const CHILDREN_STYLES = `
 }
 
 /* =========================================
-   تنسيقات النموذج (المودال) لجعله متجاوب
+   تنسيقات النموذج (المودال) 
 ========================================= */
 .form-col-full {
   grid-column: span 12;
@@ -309,15 +307,58 @@ const CHILDREN_STYLES = `
   grid-column: span 6;
 }
 
-.modal-scroll-fix {
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 800;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.modal-form-scroll-container {
   overflow-y: auto;
   overflow-x: hidden;
+  padding-right: 8px;
+  max-height: 65vh; 
+}
+
+.modal-form-scroll-container::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.desktop-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding-bottom: 16px;
+}
+.desktop-form-col-full {
+  grid-column: span 2;
+}
+
+.modal-fixed-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 10px;
+  border-top: 1px solid #f1f5f9;
 }
 
 /* =========================================
    تصميم كروت الموبايل
 ========================================= */
-
 .mobile-list {
   display: flex;
   flex-direction: column;
@@ -338,7 +379,6 @@ const CHILDREN_STYLES = `
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .art-card:hover {
@@ -419,12 +459,9 @@ const CHILDREN_STYLES = `
   justify-content: center;
   border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
 .ac-btn-edit { background: #f1f5f9; color: #3b82f6; }
-.ac-btn-edit:hover { background: #e0f2fe; color: #0284c7; }
 .ac-btn-delete { background: #fef2f2; color: #ef4444; }
-.ac-btn-delete:hover { background: #fee2e2; color: #dc2626; }
 
 /* الزر العائم في الموبايل */
 .fab-button {
@@ -438,35 +475,33 @@ const CHILDREN_STYLES = `
   color: white;
   border: none;
   box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
-  display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 999999 !important;
-  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-/* Tweak to ensure FAB is clickable if visible */
-.fab-button:hover, .fab-button:active {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
-  background: #d97706;
-}
-
-/* التجاوب (Media Queries) */
-@media (max-width: 768px) {
-  /* 👇 تعديل هنا لتوسيط المودال وعدم خفائه 👇 */
-  .modal-scroll-fix {
-    max-height: calc(100vh - 120px) !important; /* تقليل الارتفاع الأقصى ليبقى بالمنتصف */
-    padding-bottom: 20px !important; /* تقليل الـ padding السفلي */
-    overflow-y: auto !important; /* التأكد من تفعيل السكرول */
+/* =========================================
+   التجاوب الخاص بالموبايل وإلغاء تأثير Bottom Sheet من styles.css
+========================================= */
+@media (max-width: 980px) {
+  /* 👇 الكود الصارم لإلغاء النزول للأسفل وتوسيط الفورم غصباً عن styles.css 👇 */
+  div.modalOverlay {
+    align-items: center !important; /* توسيط عمودي */
+    padding: 16px !important;
   }
   
-  /* تجاوز تنسيقات المودال الأساسية الموضعية */
-  .Modal__content {
-     top: 20% !important;
-     transform: translateY(-20%) !important;
-     margin-top: 0 !important;
+  div.modalOverlay > div.modalCard {
+    border-radius: 24px !important; /* استرجاع الحواف الدائرية كاملة */
+    margin: auto !important; /* توسيط الفورم بالنص */
+    width: 92% !important; /* عرض مناسب */
+    max-height: 85vh !important; /* تحديد أقصى ارتفاع */
+    margin-bottom: auto !important; /* إبطال الانجذاب للأسفل */
+  }
+
+  .modal-form-scroll-container {
+    max-height: calc(85vh - 140px) !important; /* مساحة السكرول المتاحة داخل الفورم الموسط */
+    padding: 0 5px;
   }
 
   .desktop-table-container { display: none; }
@@ -475,10 +510,37 @@ const CHILDREN_STYLES = `
   .page--children { padding-bottom: 120px; }
   .children-card { background: transparent; border: none; box-shadow: none; }
   .children-toolbar { background: #ffffff; border-radius: 20px; margin: 0 16px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); }
-  .form-col { grid-column: span 12 !important; }
+  
+  .mobile-condensed-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+  
+  .mobile-condensed-grid .form-col {
+    grid-column: span 1 !important; 
+  }
+  .mobile-condensed-grid .form-col-full {
+    grid-column: span 2 !important; 
+  }
+
+  .form-section-title {
+    margin: 10px 0 10px 0;
+    font-size: 14px;
+  }
+  .input {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .modal-fixed-footer {
+    padding-bottom: 10px;
+    margin-top: 5px;
+  }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 981px) {
   .mobile-list { display: none; }
   .fab-button { display: none !important; }
 }
@@ -696,10 +758,8 @@ export default function Children() {
     <>
       <style>{CHILDREN_STYLES}</style>
 
-      {/* حاوية الصفحة الأساسية */}
       <div className="page page--children" dir="rtl" lang="ar">
         <div className="container">
-          {/* رأس الصفحة */}
           <div className="children-header">
             <div className="children-title">الأطفال</div>
             <div className="children-subtitle">
@@ -711,7 +771,6 @@ export default function Children() {
           {error && <ErrorBanner error={error} />}
 
           <div className="children-card">
-            {/* شريط الأدوات العلوي */}
             <div className="children-toolbar">
               <div className="search-wrapper">
                 <Search size={18} className="search-icon" />
@@ -723,7 +782,6 @@ export default function Children() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              {/* زر الإضافة للشاشات الكبيرة فقط */}
               <button
                 className="btn btn-add btn-add-desktop"
                 onClick={openAddModal}
@@ -746,7 +804,6 @@ export default function Children() {
               </div>
             ) : (
               <>
-                {/* عرض الجدول المعتاد للشاشات الكبيرة (Desktop) */}
                 <div
                   className="desktop-table-container"
                   style={{ overflowX: "auto" }}
@@ -828,7 +885,6 @@ export default function Children() {
                   </table>
                 </div>
 
-                {/* تصميم الكروت للموبايل (Mobile) */}
                 <div className="mobile-list">
                   {filteredChildren.map((child) => (
                     <div
@@ -842,7 +898,6 @@ export default function Children() {
                           {child.class || "غير محدد"}
                         </span>
                       </div>
-
                       <div className="ac-footer">
                         <div className="ac-phone">
                           <span className="ac-phone-icon">
@@ -852,7 +907,6 @@ export default function Children() {
                             child.father_phone ||
                             "لا يوجد رقم"}
                         </div>
-
                         <div className="ac-actions">
                           <button
                             className="ac-btn ac-btn-edit"
@@ -887,19 +941,18 @@ export default function Children() {
         </div>
       </div>
 
-      {/* الزر العائم (FAB) باستخدام createPortal */}
-      {/* 👇 تعديل هنا لإخفاء الزر عند فتح المودال 👇 */}
-      {!isModalOpen &&
-        createPortal(
-          <button
-            className="fab-button"
-            onClick={openAddModal}
-            title="إضافة طفل"
-          >
-            <Plus size={30} strokeWidth={2.5} />
-          </button>,
-          document.body,
-        )}
+      {/* الزر العائم - 👇 استخدمنا style لإخفائه بشكل قاطع عند فتح الفورم 👇 */}
+      {createPortal(
+        <button
+          className="fab-button"
+          onClick={openAddModal}
+          title="إضافة طفل"
+          style={{ display: isModalOpen ? "none" : "flex" }}
+        >
+          <Plus size={30} strokeWidth={2.5} />
+        </button>,
+        document.body,
+      )}
 
       {/* نموذج الإضافة والتعديل */}
       <Modal
@@ -907,189 +960,179 @@ export default function Children() {
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
         onClose={() => !saving && setIsModalOpen(false)}
       >
-        <div
-          className="grid modal-scroll-fix"
-          style={{ gap: "20px", padding: "10px 0" }}
-        >
-          <div className="form-col-full">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              الاسم الرباعي *
+        <div className="modal-form-scroll-container">
+          <h4 className="form-section-title">البيانات الأساسية</h4>
+          <div className="desktop-form-grid mobile-condensed-grid">
+            <div className="desktop-form-col-full form-col-full">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                الاسم الرباعي *
+              </div>
+              <input
+                className="input"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="مثال: أحمد محمد علي"
+              />
             </div>
-            <input
-              className="input"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="مثال: أحمد محمد علي"
-            />
+
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                الجنس
+              </div>
+              <ModernSelect
+                value={formData.gender}
+                onChange={(v) => setFormData({ ...formData, gender: v })}
+                options={[
+                  { value: "male", label: "ذكر" },
+                  { value: "female", label: "أنثى" },
+                ]}
+              />
+            </div>
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                العمر
+              </div>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                max={120}
+                value={formData.age}
+                onChange={(e) =>
+                  setFormData({ ...formData, age: e.target.value })
+                }
+                placeholder="بالسنوات"
+              />
+            </div>
+
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                الصف
+              </div>
+              <CustomCombobox
+                value={formData.class}
+                onChange={(v) => setFormData({ ...formData, class: v })}
+                options={classes.map((c) => ({ value: c.name, label: c.name }))}
+                placeholder="اختر أو اكتب صفاً..."
+              />
+            </div>
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                المدينة / البلد
+              </div>
+              <CustomCombobox
+                value={formData.country_name}
+                onChange={(v) => setFormData({ ...formData, country_name: v })}
+                options={countries.map((c) => ({
+                  value: c.name,
+                  label: c.name,
+                }))}
+                placeholder="اختر أو اكتب مدينة..."
+              />
+            </div>
           </div>
 
-          <div className="form-col">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              العمر
+          <h4 className="form-section-title" style={{ marginTop: 10 }}>
+            معلومات التواصل
+          </h4>
+          <div className="desktop-form-grid mobile-condensed-grid">
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                هاتف الأم
+              </div>
+              <input
+                className="input"
+                value={formData.mother_phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, mother_phone: e.target.value })
+                }
+                placeholder="رقم الهاتف"
+                dir="ltr"
+                style={{ textAlign: "right" }}
+              />
             </div>
-            <input
-              className="input"
-              type="number"
-              min={0}
-              max={120}
-              value={formData.age}
-              onChange={(e) =>
-                setFormData({ ...formData, age: e.target.value })
-              }
-              placeholder="بالسنوات"
-            />
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                اسم الأم
+              </div>
+              <input
+                className="input"
+                value={formData.mother_name}
+                onChange={(e) =>
+                  setFormData({ ...formData, mother_name: e.target.value })
+                }
+                placeholder="اختياري"
+              />
+            </div>
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                هاتف الأب
+              </div>
+              <input
+                className="input"
+                value={formData.father_phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, father_phone: e.target.value })
+                }
+                placeholder="رقم الهاتف"
+                dir="ltr"
+                style={{ textAlign: "right" }}
+              />
+            </div>
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                اسم الأب
+              </div>
+              <input
+                className="input"
+                value={formData.father_name}
+                onChange={(e) =>
+                  setFormData({ ...formData, father_name: e.target.value })
+                }
+                placeholder="اختياري"
+              />
+            </div>
           </div>
 
-          <div className="form-col">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              الجنس
+          <div className="desktop-form-grid mobile-condensed-grid">
+            <div className="desktop-form-col-full form-col-full">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                ملاحظات إضافية
+              </div>
+              <textarea
+                className="input"
+                rows={2}
+                value={formData.notes}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+                style={{ resize: "vertical" }}
+              />
             </div>
-            <ModernSelect
-              value={formData.gender}
-              onChange={(v) => setFormData({ ...formData, gender: v })}
-              options={[
-                { value: "male", label: "ذكر" },
-                { value: "female", label: "أنثى" },
-              ]}
-            />
           </div>
+        </div>
 
-          <div className="form-col">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              الصف
-            </div>
-            <CustomCombobox
-              value={formData.class}
-              onChange={(v) => setFormData({ ...formData, class: v })}
-              options={classes.map((c) => ({
-                value: c.name,
-                label: c.name,
-              }))}
-              placeholder="اختر أو اكتب صفاً..."
-            />
-          </div>
-
-          <div className="form-col">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              المدينة / البلد
-            </div>
-            <CustomCombobox
-              value={formData.country_name}
-              onChange={(v) => setFormData({ ...formData, country_name: v })}
-              options={countries.map((c) => ({
-                value: c.name,
-                label: c.name,
-              }))}
-              placeholder="اختر أو اكتب مدينة..."
-            />
-          </div>
-
-          <div className="form-col">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              اسم الأم
-            </div>
-            <input
-              className="input"
-              value={formData.mother_name}
-              onChange={(e) =>
-                setFormData({ ...formData, mother_name: e.target.value })
-              }
-              placeholder="اختياري"
-            />
-          </div>
-
-          <div className="form-col">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              هاتف الأم
-            </div>
-            <input
-              className="input"
-              value={formData.mother_phone}
-              onChange={(e) =>
-                setFormData({ ...formData, mother_phone: e.target.value })
-              }
-              placeholder="رقم الهاتف"
-              dir="ltr"
-              style={{ textAlign: "right" }}
-            />
-          </div>
-
-          <div className="form-col">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              اسم الأب
-            </div>
-            <input
-              className="input"
-              value={formData.father_name}
-              onChange={(e) =>
-                setFormData({ ...formData, father_name: e.target.value })
-              }
-              placeholder="اختياري"
-            />
-          </div>
-
-          <div className="form-col">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              هاتف الأب
-            </div>
-            <input
-              className="input"
-              value={formData.father_phone}
-              onChange={(e) =>
-                setFormData({ ...formData, father_phone: e.target.value })
-              }
-              placeholder="رقم الهاتف"
-              dir="ltr"
-              style={{ textAlign: "right" }}
-            />
-          </div>
-
-          <div className="form-col-full">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              ملاحظات إضافية
-            </div>
-            <textarea
-              className="input"
-              rows={3}
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-              placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
-              style={{ resize: "vertical" }}
-            />
-          </div>
-
-          <div
-            style={{
-              gridColumn: "span 12",
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 10,
-              marginTop: 10,
-            }}
+        <div className="modal-fixed-footer">
+          <button
+            className="btn"
+            onClick={() => setIsModalOpen(false)}
+            disabled={saving}
           >
-            <button
-              className="btn"
-              onClick={() => setIsModalOpen(false)}
-              disabled={saving}
-            >
-              إلغاء
-            </button>
-            <button
-              className="btn btn-add"
-              onClick={handleSave}
-              disabled={saving}
-            >
-              {saving ? "جاري الحفظ..." : "حفظ البيانات"}
-            </button>
-          </div>
+            إلغاء
+          </button>
+          <button
+            className="btn btn-add"
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? "جاري الحفظ..." : "حفظ البيانات"}
+          </button>
         </div>
       </Modal>
 
-      {/* حوار تأكيد الحذف */}
       <ConfirmDialog
         open={confirm.open}
         title="تأكيد الحذف"
