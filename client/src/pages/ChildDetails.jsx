@@ -193,7 +193,7 @@ const PROFILE_STYLES = `
   }
 
   .modal-form-scroll-container {
-      max-height: calc(70vh - 130px) !important; 
+      max-height: calc(40vh - 130px) !important; 
       padding: 0 5px;
   }
 }
