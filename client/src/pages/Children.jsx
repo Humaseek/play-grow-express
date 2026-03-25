@@ -499,7 +499,7 @@ const CHILDREN_STYLES = `
     margin-bottom: auto !important;
     
     /* 👇 السطر الجديد للتحكم بالرفع 👇 */
-    transform: translateY(-15vh) !important; 
+    transform: translateY(-10vh) !important; 
   }
 
   .modal-form-scroll-container {
