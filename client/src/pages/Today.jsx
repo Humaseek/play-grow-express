@@ -1087,24 +1087,45 @@ const DASHBOARD_STYLES = `
   border-radius: 8px;
 }
 
-/* تنسيقات الأزرار الأصلية المسحوبة من ملف الأطفال للمودال */
-.btn-add {
-  background: #3b82f6 !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 12px !important;
-  padding: 10px 20px !important;
-  font-weight: 800 !important;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25) !important;
-  transition: all 0.2s !important;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+/* =========================================
+   تنسيقات النماذج المشتركة (المودال)
+========================================= */
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 800;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
 }
-.btn-add:hover {
-  transform: translateY(-2px);
-  background: #2563eb !important;
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3) !important;
+
+.modal-form-scroll-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  max-height: 65vh;
+}
+.modal-form-scroll-container::-webkit-scrollbar { width: 5px; }
+.modal-form-scroll-container::-webkit-scrollbar-track { background: transparent; }
+.modal-form-scroll-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+.modal-form-scroll-container::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+
+.responsive-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding-bottom: 16px;
+}
+.form-col-full { grid-column: span 2; }
+.form-col { grid-column: span 1; }
+
+.modal-fixed-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 10px;
+  border-top: 1px solid #f1f5f9;
 }
 
 /* تنسيقات المدخلات للمودال المشتركة */
@@ -1134,16 +1155,7 @@ const DASHBOARD_STYLES = `
   color: #94a3b8;
   pointer-events: none;
 }
-.form-section-title {
-  margin: 0 0 16px 0;
-  color: #0f172a;
-  font-size: 16px;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+
 .enrollment-picker-list {
   max-height: 220px;
   overflow-y: auto;
@@ -1162,47 +1174,16 @@ const DASHBOARD_STYLES = `
   justify-content: space-between;
   align-items: center;
 }
-.enrollment-picker-item:last-child {
-  border-bottom: none;
-}
-.enrollment-picker-item:hover {
-  background: #f8fafc;
-}
-.enrollment-picker-item.selected {
-  background: #f0fdf4;
-  border-right: 4px solid #16a34a;
-}
-.epi-main {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.epi-name {
-  font-weight: 800;
-  color: #0f172a;
-  font-size: 15px;
-}
-.epi-meta {
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 600;
-}
-.epi-balance {
-  font-weight: 900;
-  font-size: 14px;
-  color: #16a34a;
-  direction: rtl;
-}
-.epi-balance.debt {
-  color: #dc2626;
-}
+.enrollment-picker-item:last-child { border-bottom: none; }
+.enrollment-picker-item:hover { background: #f8fafc; }
+.enrollment-picker-item.selected { background: #f0fdf4; border-right: 4px solid #16a34a; }
 
-/* تنسيقات الفورم المنسوخة من ملف الأطفال */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 16px;
-}
+.epi-main { display: flex; flex-direction: column; gap: 4px; }
+.epi-name { font-weight: 800; color: #0f172a; font-size: 15px; }
+.epi-meta { font-size: 12px; color: #64748b; font-weight: 600; }
+.epi-balance { font-weight: 900; font-size: 14px; color: #16a34a; direction: rtl; }
+.epi-balance.debt { color: #dc2626; }
+
 .input {
   width: 100%;
   padding: 12px 16px;
@@ -1214,14 +1195,54 @@ const DASHBOARD_STYLES = `
   outline: none;
   font-family: inherit;
 }
-.input:focus {
-  border-color: #3b82f6;
-}
+.input:focus { border-color: #3b82f6; }
 .muted {
   font-size: 13px;
   font-weight: 800;
   color: #64748b;
   margin-bottom: 6px;
+}
+
+/* =========================================
+   التجاوب الخاص بالموبايل
+========================================= */
+@media (max-width: 980px) {
+  /* كلاس الإخفاء في الموبايل */
+  .hide-on-mobile { display: none !important; }
+
+  /* تعديلات الداشبورد العامة */
+  .dash-header { padding-top: 10px; margin-bottom: 16px; }
+  .dash-greeting { font-size: 24px; }
+  .dash-controls { width: 100%; justify-content: space-between; }
+  .smart-filter-wrapper { width: 100%; justify-content: space-between; }
+  
+  /* التابات قابلة للسحب أفقياً لتجنب الانضغاط */
+  .dash-tabs { 
+    width: 100%; 
+    overflow-x: auto; 
+    white-space: nowrap; 
+    padding-bottom: 4px; 
+    justify-content: flex-start;
+  }
+  .dash-tabs::-webkit-scrollbar { display: none; }
+
+  /* تعديلات المودال المشتركة للموبايل */
+  div.modalOverlay { align-items: center !important; padding: 16px !important; }
+  div.modalOverlay > div.modalCard {
+    border-radius: 24px !important; margin: auto !important; width: 92% !important;
+    max-height: 85vh !important; margin-bottom: auto !important; transform: translateY(-5vh) !important;
+  }
+  .modal-form-scroll-container { max-height: calc(85vh - 140px) !important; padding: 0 5px; }
+  
+  .responsive-form-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+  .form-col-full { grid-column: span 2 !important; }
+  .form-col { grid-column: span 1 !important; }
+  .form-section-title { margin: 10px 0 10px 0; font-size: 14px; }
+  .modal-fixed-footer { padding-bottom: 10px; margin-top: 5px; }
 }
 `;
 
@@ -1300,14 +1321,14 @@ export default function Dashboard() {
   const [pickerQ, setPickerQ] = useState("");
 
   // ==========================================
-  // حالات وإعدادات إضافة طالب جديد (النسخة الأصلية)
+  // حالات وإعدادات إضافة طالب جديد
   // ==========================================
   const [openChildAdd, setOpenChildAdd] = useState(false);
   const [savingChild, setSavingChild] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     id_number: "",
-    age: "", // <--- عدلناها لعمر
+    age: "",
     gender: "male",
     class: "",
     mother_name: "",
@@ -1821,7 +1842,6 @@ export default function Dashboard() {
     }
   }
 
-  // التعديل 2: اليوم بالعربي والتاريخ بالإنجليزي
   const todayFormatted = useMemo(() => {
     const d = new Date();
     const arabicDay = new Intl.DateTimeFormat("ar-EG", {
@@ -1843,7 +1863,6 @@ export default function Dashboard() {
     );
   }, []);
 
-  // التعديل 3: الوقت بنظام 24 ساعة وباللغة الإنجليزية
   const currentTimeStr = new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
@@ -1868,7 +1887,6 @@ export default function Dashboard() {
         {/* ==================== Header Section ==================== */}
         <div className="dash-header">
           <div>
-            {/* التعديل 1: تغيير الاسم لـ كاترين */}
             <h1 className="dash-greeting">{getGreeting()}، كاترين</h1>
             <div className="dash-meta-pills">
               <div className="dash-pill">
@@ -1931,8 +1949,9 @@ export default function Dashboard() {
               )}
             </div>
 
+            {/* 👇 زر تحديث يختفي من الموبايل 👇 */}
             <button
-              className="dash-btn-refresh"
+              className="dash-btn-refresh hide-on-mobile"
               onClick={loadDashboard}
               disabled={loading}
             >
@@ -2680,91 +2699,43 @@ export default function Dashboard() {
         )}
 
         {/* ============================================================================ */}
-        {/* نافذة إضافة مصروف (Quick Add) */}
+        {/* المودالات الموحدة للموبايل والكمبيوتر (ملمومة بنص الشاشة) */}
         {/* ============================================================================ */}
+
+        {/* 1. إضافة مصروف (Quick Add) */}
         <Modal
           open={openExpAdd}
           title="إضافة مصروف جديد"
           onClose={() => !savingExp && setOpenExpAdd(false)}
         >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-              padding: "10px 0",
-            }}
-          >
-            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  التاريخ *
-                </div>
+          <div className="modal-form-scroll-container">
+            <h4 className="form-section-title">
+              <Receipt size={18} color="#64748b" /> تفاصيل المصروف
+            </h4>
+            <div className="responsive-form-grid">
+              <div className="form-col">
+                <div className="muted">التاريخ *</div>
                 <input
+                  className="input"
                   type="date"
                   value={expDate}
                   onChange={(e) => setExpDate(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
                 />
               </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  المبلغ (₪) *
-                </div>
+              <div className="form-col">
+                <div className="muted">المبلغ (₪) *</div>
                 <input
+                  className="input"
                   type="number"
                   min="0"
                   step="0.01"
                   value={expAmount}
                   onChange={(e) => setExpAmount(e.target.value)}
                   placeholder="مثال: 150"
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    borderRadius: "12px",
-                    border: "1px solid #e2e8f0",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    fontSize: "15px",
-                  }}
                 />
               </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  الفئة
-                </div>
+              <div className="form-col">
+                <div className="muted">الفئة</div>
                 <CustomCombobox
                   value={expCategory}
                   onChange={setExpCategory}
@@ -2772,17 +2743,8 @@ export default function Dashboard() {
                   placeholder="اختر أو اكتب فئة..."
                 />
               </div>
-              <div style={{ flex: "1 1 45%" }}>
-                <div
-                  style={{
-                    marginBottom: 6,
-                    fontSize: "14px",
-                    fontWeight: 700,
-                    color: "#64748b",
-                  }}
-                >
-                  شخص / المتجر
-                </div>
+              <div className="form-col">
+                <div className="muted">شخص / المتجر</div>
                 <CustomCombobox
                   value={expParty}
                   onChange={setExpParty}
@@ -2790,619 +2752,363 @@ export default function Dashboard() {
                   placeholder="اختر أو اكتب متجر..."
                 />
               </div>
-            </div>
-
-            <div>
-              <div
-                style={{
-                  marginBottom: 6,
-                  fontSize: "14px",
-                  fontWeight: 700,
-                  color: "#64748b",
-                }}
-              >
-                الوصف (اختياري)
+              <div className="form-col-full">
+                <div className="muted">الوصف (اختياري)</div>
+                <input
+                  className="input"
+                  value={expDesc}
+                  onChange={(e) => setExpDesc(e.target.value)}
+                  placeholder="مثال: ضيافة للطلاب، قرطاسية..."
+                />
               </div>
-              <input
-                value={expDesc}
-                onChange={(e) => setExpDesc(e.target.value)}
-                placeholder="مثال: ضيافة للطلاب، قرطاسية..."
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  borderRadius: "12px",
-                  border: "1px solid #e2e8f0",
-                  outline: "none",
-                  fontFamily: "inherit",
-                  fontSize: "15px",
-                }}
-              />
             </div>
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-                marginTop: 10,
-              }}
+          </div>
+          <div className="modal-fixed-footer">
+            <button
+              className="btn"
+              onClick={() => setOpenExpAdd(false)}
+              disabled={savingExp}
             >
-              <button
-                style={{
-                  padding: "12px 24px",
-                  borderRadius: "14px",
-                  border: "1px solid #e2e8f0",
-                  background: "white",
-                  cursor: "pointer",
-                  fontWeight: 800,
-                  color: "#64748b",
-                }}
-                onClick={() => setOpenExpAdd(false)}
-                disabled={savingExp}
-              >
-                إلغاء
-              </button>
-              <button
-                style={{
-                  background: "#ef4444",
-                  color: "white",
-                  padding: "12px 24px",
-                  borderRadius: "14px",
-                  border: "none",
-                  fontWeight: "800",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-                onClick={handleSaveExpense}
-                disabled={savingExp}
-              >
-                <Receipt size={18} />
-                {savingExp ? "جاري الحفظ..." : "حفظ المصروف"}
-              </button>
-            </div>
+              إلغاء
+            </button>
+            <button
+              className="btn btn-add"
+              style={{ background: "#ef4444" }}
+              onClick={handleSaveExpense}
+              disabled={savingExp}
+            >
+              {savingExp ? "جاري الحفظ..." : "حفظ المصروف"}
+            </button>
           </div>
         </Modal>
 
-        {/* ============================================================================ */}
-        {/* نافذة قبض دفعة (Quick Add) */}
-        {/* ============================================================================ */}
+        {/* 2. قبض دفعة (Quick Add) */}
         <Modal
           open={openPayAdd}
           title="تسجيل دفعة واردة"
           onClose={() => !savingPay && setOpenPayAdd(false)}
         >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-              padding: "10px 0",
-            }}
-          >
-            <div style={{ gridColumn: "span 12" }}>
-              <h4 className="form-section-title">
-                <UserRound size={18} color="#64748b" /> اختيار الاشتراك
-              </h4>
-              <div
-                className="search-wrapper"
-                style={{ maxWidth: "100%", marginBottom: 12 }}
-              >
-                <Search size={18} className="search-icon" />
-                <input
-                  className="search-input"
-                  value={pickerQ}
-                  onChange={(e) => setPickerQ(e.target.value)}
-                  placeholder="ابحث باسم الطالب أو الدورة..."
-                />
-              </div>
-
-              <div className="enrollment-picker-list">
-                {pickerFiltered.length === 0 ? (
-                  <div
-                    style={{
-                      padding: 20,
-                      textAlign: "center",
-                      color: "#94a3b8",
-                    }}
-                  >
-                    لا توجد اشتراكات متطابقة
-                  </div>
-                ) : (
-                  pickerFiltered.map((r) => {
-                    const isSelected = payEnrId === r.enrollment_id;
-                    const isDebt = Number(r.balance) > 0;
-                    return (
-                      <div
-                        key={r.enrollment_id}
-                        className={`enrollment-picker-item ${isSelected ? "selected" : ""}`}
-                        onClick={() => setPayEnrId(r.enrollment_id)}
-                      >
-                        <div className="epi-main">
-                          <div className="epi-name">{r.child_name}</div>
-                          <div className="epi-meta">
-                            {r.course_title} — {r.run_label}
-                          </div>
-                        </div>
-                        <div className={`epi-balance ${isDebt ? "debt" : ""}`}>
-                          {isDebt
-                            ? `متبقي عليه: ${r.balance} ₪`
-                            : "مدفوع بالكامل"}
+          <div className="modal-form-scroll-container">
+            <h4 className="form-section-title">
+              <UserRound size={18} color="#64748b" /> اختيار الاشتراك
+            </h4>
+            <div className="search-wrapper" style={{ marginBottom: 12 }}>
+              <Search size={18} className="search-icon" />
+              <input
+                className="search-input"
+                value={pickerQ}
+                onChange={(e) => setPickerQ(e.target.value)}
+                placeholder="ابحث باسم الطالب أو الدورة..."
+              />
+            </div>
+            <div className="enrollment-picker-list">
+              {pickerFiltered.length === 0 ? (
+                <div
+                  style={{ padding: 20, textAlign: "center", color: "#94a3b8" }}
+                >
+                  لا توجد اشتراكات متطابقة
+                </div>
+              ) : (
+                pickerFiltered.map((r) => {
+                  const isSelected = payEnrId === r.enrollment_id;
+                  const isDebt = Number(r.balance) > 0;
+                  return (
+                    <div
+                      key={r.enrollment_id}
+                      className={`enrollment-picker-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => setPayEnrId(r.enrollment_id)}
+                    >
+                      <div className="epi-main">
+                        <div className="epi-name">{r.child_name}</div>
+                        <div className="epi-meta">
+                          {r.course_title} — {r.run_label}
                         </div>
                       </div>
-                    );
-                  })
-                )}
-              </div>
+                      <div className={`epi-balance ${isDebt ? "debt" : ""}`}>
+                        {isDebt
+                          ? `متبقي عليه: ${r.balance} ₪`
+                          : "مدفوع بالكامل"}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             {payEnrId && (
-              <div style={{ gridColumn: "span 12" }}>
+              <div style={{ marginTop: 24 }}>
                 <h4 className="form-section-title">
                   <CreditCard size={18} color="#64748b" /> تفاصيل الدفعة
                 </h4>
-                <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-                  <div style={{ flex: "1 1 45%" }}>
-                    <div
-                      style={{
-                        marginBottom: 6,
-                        fontSize: "14px",
-                        fontWeight: 700,
-                        color: "#64748b",
-                      }}
-                    >
-                      المبلغ (₪) *
-                    </div>
+                <div className="responsive-form-grid">
+                  <div className="form-col">
+                    <div className="muted">المبلغ (₪) *</div>
                     <input
+                      className="input"
                       type="number"
                       min="0"
                       step="0.01"
                       value={payAmt}
                       onChange={(e) => setPayAmt(e.target.value)}
                       placeholder="أدخل المبلغ..."
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        outline: "none",
-                        fontFamily: "inherit",
-                        fontSize: "15px",
-                      }}
                     />
                   </div>
-
-                  <div style={{ flex: "1 1 45%" }}>
-                    <div
-                      style={{
-                        marginBottom: 6,
-                        fontSize: "14px",
-                        fontWeight: 700,
-                        color: "#64748b",
-                      }}
-                    >
-                      طريقة الدفع
-                    </div>
-                    <select
+                  <div className="form-col">
+                    <div className="muted">طريقة الدفع</div>
+                    <ModernSelect
                       value={payMethod}
-                      onChange={(e) => setPayMethod(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        outline: "none",
-                        fontFamily: "inherit",
-                        fontSize: "15px",
-                        background: "#fff",
-                      }}
-                    >
-                      <option value="cash">كاش</option>
-                      <option value="card">بطاقة</option>
-                      <option value="transfer">تحويل بنكي</option>
-                      <option value="other">أخرى</option>
-                    </select>
+                      onChange={setPayMethod}
+                      options={[
+                        { value: "cash", label: "كاش" },
+                        { value: "card", label: "بطاقة" },
+                        { value: "transfer", label: "تحويل بنكي" },
+                        { value: "other", label: "أخرى" },
+                      ]}
+                    />
                   </div>
-
-                  <div style={{ flex: "1 1 45%" }}>
-                    <div
-                      style={{
-                        marginBottom: 6,
-                        fontSize: "14px",
-                        fontWeight: 700,
-                        color: "#64748b",
-                      }}
-                    >
-                      التاريخ والوقت *
-                    </div>
+                  <div className="form-col-full">
+                    <div className="muted">التاريخ والوقت *</div>
                     <input
+                      className="input"
                       type="datetime-local"
                       value={payAt}
                       onChange={(e) => setPayAt(e.target.value)}
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        outline: "none",
-                        fontFamily: "inherit",
-                        fontSize: "15px",
-                      }}
                     />
                   </div>
-
-                  <div style={{ flex: "1 1 100%" }}>
-                    <div
-                      style={{
-                        marginBottom: 6,
-                        fontSize: "14px",
-                        fontWeight: 700,
-                        color: "#64748b",
-                      }}
-                    >
-                      ملاحظة (اختياري)
-                    </div>
+                  <div className="form-col-full">
+                    <div className="muted">ملاحظة (اختياري)</div>
                     <input
+                      className="input"
                       value={payNote}
                       onChange={(e) => setPayNote(e.target.value)}
                       placeholder="أي ملاحظات حول الدفعة..."
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        outline: "none",
-                        fontFamily: "inherit",
-                        fontSize: "15px",
-                      }}
                     />
                   </div>
                 </div>
               </div>
             )}
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-                marginTop: 10,
-              }}
+          </div>
+          <div className="modal-fixed-footer">
+            <button
+              className="btn"
+              onClick={() => setOpenPayAdd(false)}
+              disabled={savingPay}
             >
-              <button
-                style={{
-                  padding: "12px 24px",
-                  borderRadius: "14px",
-                  border: "1px solid #e2e8f0",
-                  background: "white",
-                  cursor: "pointer",
-                  fontWeight: 800,
-                  color: "#64748b",
-                }}
-                onClick={() => setOpenPayAdd(false)}
-                disabled={savingPay}
-              >
-                إلغاء
-              </button>
-              <button
-                style={{
-                  background: "#10b981",
-                  color: "white",
-                  padding: "12px 24px",
-                  borderRadius: "14px",
-                  border: "none",
-                  fontWeight: "800",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(16, 185, 129, 0.25)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-                onClick={handleSavePayment}
-                disabled={savingPay || !payEnrId}
-              >
-                <CreditCard size={18} />
-                {savingPay ? "جاري الحفظ..." : "حفظ الدفعة"}
-              </button>
-            </div>
+              إلغاء
+            </button>
+            <button
+              className="btn btn-add"
+              style={{ background: "#10b981" }}
+              onClick={handleSavePayment}
+              disabled={savingPay || !payEnrId}
+            >
+              {savingPay ? "جاري الحفظ..." : "حفظ الدفعة"}
+            </button>
           </div>
         </Modal>
 
-        {/* ============================================================================ */}
-        {/* نافذة إضافة طالب (التصميم المطلوب مع حقل العمر والزر البرتقالي) */}
-        {/* ============================================================================ */}
+        {/* 3. إضافة طفل */}
         <Modal
           open={openChildAdd}
           title="إضافة طفل جديد"
           onClose={() => !savingChild && setOpenChildAdd(false)}
         >
-          <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
-            {/* قسم البيانات الأساسية */}
-            <div style={{ gridColumn: "span 12" }}>
-              <h4 className="form-section-title">
-                <Users size={18} color="#64748b" /> البيانات الأساسية
-              </h4>
-              <div className="grid" style={{ gap: "16px" }}>
-                <div style={{ gridColumn: "span 12" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    * الاسم الرباعي
-                  </div>
-                  <input
-                    className="input"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="مثال: أحمد محمد علي"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    العمر
-                  </div>
-                  <input
-                    className="input"
-                    type="number"
-                    min={0}
-                    max={120}
-                    value={formData.age || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, age: e.target.value })
-                    }
-                    placeholder="بالسنوات"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الجنس
-                  </div>
-                  <ModernSelect
-                    value={formData.gender}
-                    onChange={(v) => setFormData({ ...formData, gender: v })}
-                    options={[
-                      { value: "male", label: "ذكر" },
-                      { value: "female", label: "أنثى" },
-                    ]}
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الصف
-                  </div>
-                  <CustomCombobox
-                    value={formData.class}
-                    onChange={(v) => setFormData({ ...formData, class: v })}
-                    options={classes.map((c) => ({
-                      value: c.name,
-                      label: c.name,
-                    }))}
-                    placeholder="...اختر أو اكتب صفاً"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    المدينة / البلد
-                  </div>
-                  <CustomCombobox
-                    value={formData.country_name}
-                    onChange={(v) =>
-                      setFormData({ ...formData, country_name: v })
-                    }
-                    options={countries.map((c) => ({
-                      value: c.name,
-                      label: c.name,
-                    }))}
-                    placeholder="...اختر أو اكتب مدينة"
-                  />
-                </div>
+          <div className="modal-form-scroll-container">
+            <h4 className="form-section-title">
+              <Users size={18} color="#64748b" /> البيانات الأساسية
+            </h4>
+            <div className="responsive-form-grid">
+              <div className="form-col-full">
+                <div className="muted">الاسم الرباعي *</div>
+                <input
+                  className="input"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="مثال: أحمد محمد علي"
+                />
+              </div>
+              <div className="form-col">
+                <div className="muted">العمر</div>
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  max={120}
+                  value={formData.age || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, age: e.target.value })
+                  }
+                  placeholder="بالسنوات"
+                />
+              </div>
+              <div className="form-col">
+                <div className="muted">الجنس</div>
+                <ModernSelect
+                  value={formData.gender}
+                  onChange={(v) => setFormData({ ...formData, gender: v })}
+                  options={[
+                    { value: "male", label: "ذكر" },
+                    { value: "female", label: "أنثى" },
+                  ]}
+                />
+              </div>
+              <div className="form-col">
+                <div className="muted">الصف</div>
+                <CustomCombobox
+                  value={formData.class}
+                  onChange={(v) => setFormData({ ...formData, class: v })}
+                  options={classes.map((c) => ({
+                    value: c.name,
+                    label: c.name,
+                  }))}
+                  placeholder="...اختر أو اكتب صفاً"
+                />
+              </div>
+              <div className="form-col">
+                <div className="muted">المدينة / البلد</div>
+                <CustomCombobox
+                  value={formData.country_name}
+                  onChange={(v) =>
+                    setFormData({ ...formData, country_name: v })
+                  }
+                  options={countries.map((c) => ({
+                    value: c.name,
+                    label: c.name,
+                  }))}
+                  placeholder="...اختر أو اكتب مدينة"
+                />
               </div>
             </div>
 
-            {/* قسم معلومات التواصل مع الأهل */}
-            <div style={{ gridColumn: "span 12" }}>
-              <h4 className="form-section-title">
-                <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
-              </h4>
-              <div className="grid" style={{ gap: "16px" }}>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    هاتف الأم
-                  </div>
-                  <input
-                    className="input"
-                    value={formData.mother_phone}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        mother_phone: e.target.value,
-                      })
-                    }
-                    placeholder="رقم الهاتف"
-                    dir="ltr"
-                    style={{ textAlign: "right" }}
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    اسم الأم
-                  </div>
-                  <input
-                    className="input"
-                    value={formData.mother_name}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        mother_name: e.target.value,
-                      })
-                    }
-                    placeholder="اختياري"
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    هاتف الأب
-                  </div>
-                  <input
-                    className="input"
-                    value={formData.father_phone}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        father_phone: e.target.value,
-                      })
-                    }
-                    placeholder="رقم الهاتف"
-                    dir="ltr"
-                    style={{ textAlign: "right" }}
-                  />
-                </div>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    اسم الأب
-                  </div>
-                  <input
-                    className="input"
-                    value={formData.father_name}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        father_name: e.target.value,
-                      })
-                    }
-                    placeholder="اختياري"
-                  />
-                </div>
+            <h4 className="form-section-title" style={{ marginTop: 10 }}>
+              <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
+            </h4>
+            <div className="responsive-form-grid">
+              <div className="form-col">
+                <div className="muted">هاتف الأم</div>
+                <input
+                  className="input"
+                  value={formData.mother_phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, mother_phone: e.target.value })
+                  }
+                  placeholder="رقم الهاتف"
+                  dir="ltr"
+                  style={{ textAlign: "right" }}
+                />
+              </div>
+              <div className="form-col">
+                <div className="muted">اسم الأم</div>
+                <input
+                  className="input"
+                  value={formData.mother_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, mother_name: e.target.value })
+                  }
+                  placeholder="اختياري"
+                />
+              </div>
+              <div className="form-col">
+                <div className="muted">هاتف الأب</div>
+                <input
+                  className="input"
+                  value={formData.father_phone}
+                  onChange={(e) =>
+                    setFormData({ ...formData, father_phone: e.target.value })
+                  }
+                  placeholder="رقم الهاتف"
+                  dir="ltr"
+                  style={{ textAlign: "right" }}
+                />
+              </div>
+              <div className="form-col">
+                <div className="muted">اسم الأب</div>
+                <input
+                  className="input"
+                  value={formData.father_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, father_name: e.target.value })
+                  }
+                  placeholder="اختياري"
+                />
               </div>
             </div>
 
-            {/* قسم الملاحظات */}
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted" style={{ marginBottom: 6 }}>
-                ملاحظات إضافية
+            <div className="responsive-form-grid">
+              <div className="form-col-full">
+                <div className="muted">ملاحظات إضافية</div>
+                <textarea
+                  className="input"
+                  rows={2}
+                  value={formData.notes}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
+                  placeholder="...أي تفاصيل طبية أو ملاحظات أخرى"
+                  style={{ resize: "vertical" }}
+                />
               </div>
-              <textarea
-                className="input"
-                rows={3}
-                value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
-                placeholder="...أي تفاصيل طبية أو ملاحظات أخرى"
-                style={{ resize: "vertical" }}
-              />
             </div>
-
-            {/* أزرار الإجراءات في النموذج */}
-            <div
-              style={{
-                gridColumn: "span 12",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-                marginTop: 10,
-              }}
+          </div>
+          <div className="modal-fixed-footer">
+            <button
+              className="btn"
+              onClick={() => setOpenChildAdd(false)}
+              disabled={savingChild}
             >
-              <button
-                style={{
-                  padding: "10px 24px",
-                  borderRadius: "12px",
-                  border: "1px solid #e2e8f0",
-                  background: "white",
-                  cursor: "pointer",
-                  fontWeight: 800,
-                  color: "#0f172a",
-                }}
-                onClick={() => setOpenChildAdd(false)}
-                disabled={savingChild}
-              >
-                إلغاء
-              </button>
-              <button
-                style={{
-                  background: "#f59e0b",
-                  color: "white",
-                  padding: "10px 24px",
-                  borderRadius: "12px",
-                  border: "none",
-                  fontWeight: "800",
-                  cursor: "pointer",
-                  boxShadow: "0 4px 12px rgba(245, 158, 11, 0.25)",
-                }}
-                onClick={handleSaveChild}
-                disabled={savingChild}
-              >
-                {savingChild ? "جاري الحفظ..." : "حفظ البيانات"}
-              </button>
-            </div>
+              إلغاء
+            </button>
+            <button
+              className="btn btn-add"
+              style={{ background: "#f59e0b" }}
+              onClick={handleSaveChild}
+              disabled={savingChild}
+            >
+              {savingChild ? "جاري الحفظ..." : "حفظ البيانات"}
+            </button>
           </div>
         </Modal>
 
-        {/* ============================================================================ */}
-        {/* نافذة القائمة الكاملة لرادار الديون */}
-        {/* ============================================================================ */}
+        {/* 4. نافذة القائمة الكاملة لرادار الديون */}
         <Modal
           open={openDebtorsModal}
           title={`الطلاب المتأخرين بالدفع (${dashData.debtors.length})`}
           onClose={() => setOpenDebtorsModal(false)}
         >
-          <div
-            className="list-widget"
-            style={{
-              maxHeight: "60vh",
-              overflowY: "auto",
-              paddingRight: "4px",
-              paddingBottom: "10px",
-            }}
-          >
-            {dashData.debtors.map((d, i) => (
-              <Link
-                to={`/children/${d.child_id}`}
-                key={i}
-                className="list-item"
-                style={{ background: "#f8fafc" }}
-                onClick={() => setOpenDebtorsModal(false)}
-              >
-                <div className="li-info">
-                  <div
-                    className="li-avatar"
-                    style={{ background: "#fee2e2", color: "#ef4444" }}
-                  >
-                    <AlertOctagon size={20} />
-                  </div>
-                  <div>
-                    <div className="li-title">{d.child_name}</div>
-                    {/* تم التعديل لعرض الدورة والفوج */}
-                    <div className="li-sub">
-                      {d.course_title || "دورة غير محددة"} —{" "}
-                      {d.run_label || "فوج غير محدد"}
+          <div className="modal-form-scroll-container">
+            <div className="list-widget">
+              {dashData.debtors.map((d, i) => (
+                <Link
+                  to={`/children/${d.child_id}`}
+                  key={i}
+                  className="list-item"
+                  style={{ background: "#f8fafc" }}
+                  onClick={() => setOpenDebtorsModal(false)}
+                >
+                  <div className="li-info">
+                    <div
+                      className="li-avatar"
+                      style={{ background: "#fee2e2", color: "#ef4444" }}
+                    >
+                      <AlertOctagon size={20} />
+                    </div>
+                    <div>
+                      <div className="li-title">{d.child_name}</div>
+                      <div className="li-sub">
+                        {d.course_title || "دورة غير محددة"} —{" "}
+                        {d.run_label || "فوج غير محدد"}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="li-value danger">{fmtMoney(d.balance)} ₪</div>
-              </Link>
-            ))}
+                  <div className="li-value danger">{fmtMoney(d.balance)} ₪</div>
+                </Link>
+              ))}
+            </div>
           </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              marginTop: 16,
-            }}
-          >
-            <button
-              style={{
-                padding: "10px 24px",
-                borderRadius: "12px",
-                border: "1px solid #e2e8f0",
-                background: "white",
-                cursor: "pointer",
-                fontWeight: 800,
-                color: "#0f172a",
-              }}
-              onClick={() => setOpenDebtorsModal(false)}
-            >
+          <div className="modal-fixed-footer">
+            <button className="btn" onClick={() => setOpenDebtorsModal(false)}>
               إغلاق
             </button>
           </div>
