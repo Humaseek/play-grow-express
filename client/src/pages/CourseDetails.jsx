@@ -23,7 +23,7 @@ import {
   Pencil,
   Ban,
   RefreshCw,
-  ArrowRight, // <-- إضافة أيقونة السهم
+  ArrowRight,
 } from "lucide-react";
 
 // --- تنسيقات CSS المدمجة للشاشة والمودالات ---
@@ -158,7 +158,11 @@ const COURSE_DETAILS_STYLES = `
   .input { padding: 10px 14px; font-size: 13px; }
   .modal-fixed-footer { padding-bottom: 10px; margin-top: 5px; }
 
-  .pageHeader__actions { width: 100%; justify-content: space-between; }
+  /* 👇 تعديل الـ justify-content في الموبايل لتقريب الأزرار 👇 */
+  .pageHeader__actions { 
+    width: 100%; 
+    justify-content: flex-end; /* عشن تصف عالشمال في العربي */
+  }
 }
 
 @media (min-width: 981px) {
@@ -643,8 +647,6 @@ export default function CourseDetails() {
             >
               <Plus size={18} /> {runSingular} جديد{isWorkshop ? "ة" : ""}
             </button>
-
-            {/* 👇 زر الرجوع المعدل: سهم مع كلمة رجوع 👇 */}
             <button
               className="btn"
               onClick={() => navigate("/courses")}
@@ -658,7 +660,7 @@ export default function CourseDetails() {
 
       <ErrorBanner error={error} />
 
-      {/* 👇 إضافة كلاس الإخفاء في الموبايل لشبكة الكروت (KPIs) 👇 */}
+      {/* 👇 إضافة كلاس hide-on-mobile لإخفاء شبكة الكروت بالموبايل 👇 */}
       <div className="grid hide-on-mobile" style={{ marginTop: 10 }}>
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
@@ -982,7 +984,7 @@ export default function CourseDetails() {
           </h4>
           <div className="responsive-form-grid">
             <div className="form-col-full">
-              <div className="muted">اسم ال{runSingular}</div>
+              <div className="muted">اسم ال${runSingular}</div>
               <input
                 className="input"
                 value={editLabel}
