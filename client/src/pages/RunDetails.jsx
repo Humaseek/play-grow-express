@@ -2224,7 +2224,6 @@ export default function RunDetails() {
       }}
     >
       <style>{RUN_DETAILS_SOFT_UI_STYLES}</style>
-      <style>{MOBILE_STYLES}</style>
       <div className="container runDetails">
         <div
           style={{
