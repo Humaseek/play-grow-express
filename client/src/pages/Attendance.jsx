@@ -364,7 +364,6 @@ const ATTENDANCE_STYLES = `
   }
 
   /* 2. توزيع الأزرار (4 أزرار) بالتساوي على عرض الكرت */
-  /* 2. توزيع الأزرار (4 أزرار) بالتساوي على عرض الكرت */
   .attendancePage .table td:last-child .row {
     display: flex !important;
     justify-content: center !important; /* توسيط الأزرار */
