@@ -590,7 +590,7 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
     border-radius: 24px !important; 
     margin: auto !important; 
     width: 95% !important; 
-    max-height: 88vh !important; 
+    max-height: 60vh !important; 
     margin-bottom: auto !important; 
   }
   .modal-form-scroll-container {
