@@ -120,12 +120,12 @@ const ATTENDANCE_STYLES = `
   color: #0f172a;
 }
 
-/* --- أزرار الحضور بالجدول --- */
+/* --- أزرار الحضور بالجدول (دائرية دائماً، بدون نص) --- */
 .att-action-btn {
   display: inline-flex; 
   align-items: center; 
   justify-content: center;
-  width: 44px;
+  width: 44px; /* حجم الديسكتوب */
   height: 44px;
   padding: 0; 
   border-radius: 50%; 
@@ -295,7 +295,7 @@ const ATTENDANCE_STYLES = `
     text-align: right !important;
   }
   
-  /* --- التصميم الجديد الواضح جداً للأزرار في الموبايل --- */
+  /* --- التصميم الجديد الواضح جداً للأزرار في الموبايل (دائرية فقط، كبيرة) --- */
   
   /* 1. فاصل تحت اسم الطالب */
   .attendancePage .table td:first-child {
@@ -305,28 +305,25 @@ const ATTENDANCE_STYLES = `
     border-bottom: 1px dashed #e2e8f0 !important; 
   }
   
-  /* 2. تحويل منطقة الأزرار لشبكة 2x2 */
+  /* 2. توزيع الأزرار بالتساوي في سطر واحد */
   .attendancePage .table td:last-child .row {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
+    display: flex !important;
+    justify-content: space-between !important;
     width: 100% !important;
-    gap: 10px !important;
+    gap: 0 !important;
   }
   
-  /* 3. تكبير الأزرار وإظهار النص بجانب الأيقونة */
+  /* 3. تكبير الأزرار لسهولة اللمس (48px)، وجعلها دائرية */
   .att-action-btn {
-    width: 100% !important;
-    height: auto !important;
-    padding: 12px 8px !important;
-    border-radius: 12px !important; /* تحويلها لمستطيل حوافه ناعمة */
-    flex-direction: row !important;
-    gap: 8px !important;
+    width: 48px !important;
+    height: 48px !important;
+    padding: 0 !important;
+    border-radius: 50% !important; /* شكل دائري */
   }
 
+  /* إخفاء النص نهائياً في الموبايل */
   .att-action-btn .btn-label {
-    display: inline-block !important; /* إظهار النص في الموبايل */
-    font-size: 14px !important;
-    font-weight: 800 !important;
+    display: none !important;
   }
 
   /* تنسيق العناوين الفاصلة (الرصيد) */
@@ -561,7 +558,7 @@ export default function Attendance() {
     }
   }
 
-  // دالة مخصصة لعرض سطر الطالب
+  // دالة مخصصة لعرض سطر الطالب (الأيقونات فقط)
   const renderChildRow = (r) => {
     const v = att[r.enrollment_id] ?? "none";
     const remaining = Number(r.package_sessions_remaining || 0);
@@ -882,7 +879,7 @@ export default function Attendance() {
               </div>
             </div>
 
-            {/* --- الجدول النظيف بالأيقونات الدائرية --- */}
+            {/* --- الجدول النظيف بالأيقونات الدائرية (الآن الأيقونات فقط) --- */}
             <div className="tableWrap">
               <table className="table">
                 <thead>
