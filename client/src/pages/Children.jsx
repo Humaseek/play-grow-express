@@ -494,7 +494,7 @@ const CHILDREN_STYLES = `
     border-radius: 24px !important; 
     margin: auto !important; 
     width: 92% !important; 
-    max-height: 80vh !important; 
+    max-height: 75vh !important; 
     margin-bottom: auto !important; 
     transform: translateY(-5vh) !important;
   }
