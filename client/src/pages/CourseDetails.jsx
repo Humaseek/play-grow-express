@@ -23,6 +23,7 @@ import {
   Pencil,
   Ban,
   RefreshCw,
+  ArrowRight, // <-- إضافة أيقونة السهم
 } from "lucide-react";
 
 // --- تنسيقات CSS المدمجة للشاشة والمودالات ---
@@ -635,23 +636,30 @@ export default function CourseDetails() {
           </div>
         }
         actions={
-          <>
-            <button className="btn" onClick={() => navigate("/courses")}>
-              رجوع
-            </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <button
               className="btn btn-add hide-on-mobile"
               onClick={openCreateRunModal}
             >
               <Plus size={18} /> {runSingular} جديد{isWorkshop ? "ة" : ""}
             </button>
-          </>
+
+            {/* 👇 زر الرجوع المعدل: سهم مع كلمة رجوع 👇 */}
+            <button
+              className="btn"
+              onClick={() => navigate("/courses")}
+              style={{ display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              رجوع <ArrowRight size={18} />
+            </button>
+          </div>
         }
       />
 
       <ErrorBanner error={error} />
 
-      <div className="grid" style={{ marginTop: 10 }}>
+      {/* 👇 إضافة كلاس الإخفاء في الموبايل لشبكة الكروت (KPIs) 👇 */}
+      <div className="grid hide-on-mobile" style={{ marginTop: 10 }}>
         <div style={{ gridColumn: "span 3" }}>
           <KpiCard
             variant={stats.activeCount ? "ok" : "neutral"}
