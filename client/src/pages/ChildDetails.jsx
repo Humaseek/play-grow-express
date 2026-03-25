@@ -179,6 +179,25 @@ const PROFILE_STYLES = `
   .col-8, .col-4 { grid-column: span 12; }
 }
 
+/* --- التحكم في المودال (النافذة المنبثقة) للموبايل --- */
+  div.modalOverlay {
+    align-items: center !important; 
+    padding: 16px !important;
+  }
+  
+  div.modalOverlay > div.modalCard {
+    border-radius: 24px !important; 
+    margin: auto !important; 
+    width: 92% !important;        /* 👈 هان بتتحكم بالعرض (مثلا 95% أو 90%) */
+    max-height: 75vh !important;  /* 👈 هان بتتحكم بالطول الأقصى */
+    transform: translateY(-5vh) !important; /* 👈 هان بترفع المودال لفوق أو بتنزله */
+  }
+
+  .modal-form-scroll-container {
+    max-height: calc(85vh - 250px) !important; 
+    padding: 0 5px;
+  }
+
 .section-head {
   display: flex;
   align-items: center;
