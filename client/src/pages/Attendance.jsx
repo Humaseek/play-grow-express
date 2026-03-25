@@ -134,7 +134,7 @@ const ATTENDANCE_STYLES = `
   border: 1px solid transparent;
 }
 
-/* إخفاء النص نهائيا */
+/* إخفاء النص في الكمبيوتر والموبايل */
 .att-action-btn .btn-label {
   display: none !important; 
 }
@@ -232,7 +232,7 @@ const ATTENDANCE_STYLES = `
 }
 
 /* =========================================
-   📱 تجاوب الموبايل الخرافي والمضبوط (Mobile Pro Fixes)
+   📱 تجاوب الموبايل الخرافي والمضبوط 100%
 ========================================= */
 @media (max-width: 980px) {
   .attendancePage .toolbar {
@@ -277,106 +277,108 @@ const ATTENDANCE_STYLES = `
     font-size: 11px !important;
   }
 
-  /* --- الإصلاح الجذري للجدول (Box Sizing & 100% Width) --- */
+  /* 🚨 إبطال تأثير ملف styles.css اللي كان يخرب الجدول 🚨 */
   .attendancePage .tableWrap {
     width: 100% !important;
     overflow: hidden !important;
-    box-sizing: border-box !important;
-    padding: 10px !important; /* مساحة جانبية للكروت */
+    overflow-x: hidden !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 10px 0 !important;
   }
-  
+
   .attendancePage .table {
+    display: flex !important;
+    flex-direction: column !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    table-layout: fixed !important;
+    background: transparent !important;
   }
-  
+
   .attendancePage .table thead {
-    display: none !important; /* إخفاء الترويسة بالموبايل */
+    display: none !important;
   }
-  
+
   .attendancePage .table tbody {
     display: flex !important;
     flex-direction: column !important;
-    gap: 12px !important; /* المسافة بين الكروت */
     width: 100% !important;
   }
-  
-  /* --- كرت الطالب المنفصل --- */
+
+  /* --- الكروت المستقلة (صفوف الطلاب) --- */
   .attendancePage .table tr {
     display: flex !important;
     flex-direction: column !important;
-    width: 100% !important;
+    margin: 0 16px 14px 16px !important; /* هذا اللي ببعدها عن الحواف */
+    width: calc(100% - 32px) !important; /* عرض الشاشة ناقص الحواف */
     box-sizing: border-box !important;
     padding: 16px !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 16px !important;
+    border-radius: 18px !important;
     background: #fff !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
-    margin: 0 !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.04) !important;
   }
-  
+
   /* --- صفوف العناوين الفاصلة (لا تظهر ككروت) --- */
-  .attendancePage .table tr:has(.section-title-td-ok),
-  .attendancePage .table tr:has(.section-title-td-danger) {
+  .attendancePage .table tr.section-title-row {
+    margin: 10px 16px 6px 16px !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
     background: transparent !important;
-    margin-top: 10px !important;
-    margin-bottom: 0 !important;
+    width: calc(100% - 32px) !important;
   }
-  
+
+  /* --- إجبار النص على الالتفاف (عشان ما ينقص) --- */
   .attendancePage .table td {
     display: block !important;
     width: 100% !important;
     box-sizing: border-box !important;
     padding: 0 !important;
     border: none !important;
-    white-space: normal !important; /* السماح بالتفاف النص (مهم جداً للكلمات الطويلة) */
+    white-space: normal !important; /* 🚨 سر حل المشكلة 🚨 */
+    text-align: right !important;
   }
-  
+
+  .section-title-td-ok, 
+  .section-title-td-danger {
+    padding: 12px 16px !important;
+    border-radius: 12px !important;
+    white-space: normal !important; /* 🚨 سر حل المشكلة 🚨 */
+    line-height: 1.5 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .section-title-td-ok span,
+  .section-title-td-danger span {
+    white-space: normal !important; 
+  }
+
   /* 1. فاصل تحت اسم الطالب */
   .attendancePage .table td:first-child {
     margin-bottom: 16px !important;
     padding-bottom: 16px !important;
     border-bottom: 1px dashed #e2e8f0 !important; 
-    text-align: right !important;
-  }
-  
-  /* 2. توزيع الأزرار بالتساوي لمنع القص */
-  .attendancePage .table td:last-child .row {
-    display: flex !important;
-    justify-content: space-evenly !important; /* توزيع الأزرار بشكل متساوي */
-    width: 100% !important;
-    box-sizing: border-box !important;
-    gap: 8px !important;
-  }
-  
-  /* 3. تكبير الأزرار لسهولة اللمس */
-  .att-action-btn {
-    width: 48px !important;
-    height: 48px !important;
-    flex-shrink: 0 !important; /* منع الأزرار من الانضغاط */
   }
 
-  /* --- إصلاح الكلمات المقطوعة في العناوين --- */
-  .section-title-td-ok, 
-  .section-title-td-danger {
-    padding: 12px 16px !important;
-    border-radius: 12px !important;
-    text-align: right !important;
-    white-space: normal !important; /* إجبار النص على النزول لسطر جديد إذا كان طويل */
-    line-height: 1.5 !important;
+  /* 2. توزيع الأزرار (4 أزرار) بالتساوي على عرض الكرت */
+  .attendancePage .table td:last-child .row {
     display: flex !important;
+    justify-content: space-between !important;
     align-items: center !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    gap: 0 !important;
   }
 
-  .section-title-td-ok span,
-  .section-title-td-danger span {
-    white-space: normal !important; /* إجبار النص الداخلي على الالتفاف */
+  /* 3. الأيقونات الدائرية الكبيرة */
+  .att-action-btn {
+    width: 52px !important;
+    height: 52px !important;
+    flex-shrink: 0 !important; /* عشان ما تصغر */
+    border-radius: 50% !important;
   }
   
   .child-name-row {
@@ -660,7 +662,7 @@ export default function Attendance() {
                   }
                   className={`att-action-btn ${meta.className} ${active ? "active" : ""}`}
                 >
-                  <ActiveIcon size={20} strokeWidth={active ? 2.5 : 2} />
+                  <ActiveIcon size={22} strokeWidth={active ? 2.5 : 2} />
                   <span className="btn-label">{meta.label}</span>
                 </button>
               );
@@ -956,20 +958,12 @@ export default function Attendance() {
                   {/* قسم الطلاب اللي معهم رصيد */}
                   {hasBalanceRows.length > 0 && (
                     <>
-                      <tr>
+                      <tr className="section-title-row">
                         <td colSpan="2" className="section-title-td-ok">
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                            }}
-                          >
-                            <CheckCircle2 size={18} />
-                            <span>
-                              طلاب لديهم رصيد جلسات ({hasBalanceRows.length})
-                            </span>
-                          </div>
+                          <CheckCircle2 size={18} />
+                          <span>
+                            طلاب لديهم رصيد جلسات ({hasBalanceRows.length})
+                          </span>
                         </td>
                       </tr>
                       {hasBalanceRows.map(renderChildRow)}
@@ -979,20 +973,12 @@ export default function Attendance() {
                   {/* قسم الطلاب اللي خلص رصيدهم */}
                   {noBalanceRows.length > 0 && (
                     <>
-                      <tr>
+                      <tr className="section-title-row">
                         <td colSpan="2" className="section-title-td-danger">
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                            }}
-                          >
-                            <AlertCircle size={18} />
-                            <span>
-                              طلاب انتهى رصيدهم ({noBalanceRows.length})
-                            </span>
-                          </div>
+                          <AlertCircle size={18} />
+                          <span>
+                            طلاب انتهى رصيدهم ({noBalanceRows.length})
+                          </span>
                         </td>
                       </tr>
                       {noBalanceRows.map(renderChildRow)}
