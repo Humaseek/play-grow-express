@@ -364,20 +364,22 @@ const ATTENDANCE_STYLES = `
   }
 
   /* 2. توزيع الأزرار (4 أزرار) بالتساوي على عرض الكرت */
+  /* 2. توزيع الأزرار (4 أزرار) بالتساوي على عرض الكرت */
   .attendancePage .table td:last-child .row {
     display: flex !important;
-    justify-content: space-between !important;
+    justify-content: center !important; /* توسيط الأزرار */
     align-items: center !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    gap: 0 !important;
+    gap: 12px !important; /* مسافة آمنة بين الأزرار */
+    flex-wrap: wrap !important; /* 🚨 السر هون: إذا الشاشة صغيرة كتير، بينزلوا سطر وما بينقصوا */
   }
 
-  /* 3. الأيقونات الدائرية الكبيرة */
+  /* 3. الأيقونات الدائرية */
   .att-action-btn {
-    width: 52px !important;
-    height: 52px !important;
-    flex-shrink: 0 !important; /* عشان ما تصغر */
+    width: 46px !important; /* صغرنا الحجم شوي ليناسب كل الشاشات */
+    height: 46px !important;
+    flex-shrink: 1 !important; /* 🚨 نسمح للزر يزغر شوي لو الشاشة ضيقة جداً */
     border-radius: 50% !important;
   }
   
