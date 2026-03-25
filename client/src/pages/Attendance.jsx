@@ -376,7 +376,7 @@ const ATTENDANCE_STYLES = `
 
   /* 3. الأيقونات الدائرية */
   .att-action-btn {
-    width: 46px !important; /* صغرنا الحجم شوي ليناسب كل الشاشات */
+    width: 30px !important; /* صغرنا الحجم شوي ليناسب كل الشاشات */
     height: 46px !important;
     flex-shrink: 1 !important; /* 🚨 نسمح للزر يزغر شوي لو الشاشة ضيقة جداً */
     border-radius: 50% !important;
