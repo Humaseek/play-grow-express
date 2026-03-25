@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-// إضافة Link من react-router-dom لإنشاء روابط قابلة للضغط
 import { useNavigate, useOutletContext, Link } from "react-router-dom";
+import { createPortal } from "react-dom"; // السلاح السري للزر العائم
 import { supabase } from "../supabaseClient";
 
 import PageHeader from "../components/PageHeader";
@@ -36,7 +36,6 @@ function fmtDate(d) {
   if (!d) return "—";
   const dt = new Date(d);
   const pad = (n) => String(n).padStart(2, "0");
-  // الترتيب الجديد: يوم / شهر / سنة
   return `${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}/${dt.getFullYear()}`;
 }
 
@@ -169,7 +168,6 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
 // --- CSS Styles ---
 const EXPENSES_STYLES = `
 .page--expenses {
-  /* خلفية بلون أحمر خفيف جداً ينسجم مع طابع المصاريف */
   background: linear-gradient(180deg, rgba(239, 68, 68, 0.05) 0%, #f4f6f8 300px);
   min-height: 100vh;
   padding-bottom: 40px;
@@ -254,7 +252,6 @@ const EXPENSES_STYLES = `
 
 .search-input:focus {
   outline: none;
-  /* إطار أحمر عند التحديد */
   border-color: #ef4444;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
@@ -310,7 +307,6 @@ const EXPENSES_STYLES = `
 }
 
 .btn-add {
-  /* زر رئيسي باللون الأحمر */
   background: #ef4444 !important;
   color: #fff !important;
   border: none !important;
@@ -326,7 +322,6 @@ const EXPENSES_STYLES = `
 
 .btn-add:hover {
   transform: translateY(-2px);
-  /* لون أحمر أغمق عند الوقوف بالماوس */
   background: #dc2626 !important;
   box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3) !important;
 }
@@ -338,21 +333,266 @@ const EXPENSES_STYLES = `
   justify-content: flex-end;
 }
 
+/* =========================================
+   تنسيقات النموذج (المودال) للكمبيوتر
+========================================= */
 .form-section-title {
   margin: 0 0 16px 0;
   color: #0f172a;
   font-size: 16px;
+  font-weight: 800;
   border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
+}
+
+.modal-form-scroll-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  max-height: 65vh;
+}
+
+.modal-form-scroll-container::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.responsive-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding-bottom: 16px;
+}
+
+.form-col-full { grid-column: span 2; }
+.form-col { grid-column: span 1; }
+
+.modal-fixed-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* =========================================
+   تصميم كروت الموبايل الخاصة بالمصروفات
+========================================= */
+.mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: transparent;
+}
+
+.art-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.art-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.art-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 5px;
+  background: #ef4444; /* لون أحمر للمصروفات */
+  border-radius: 0 16px 16px 0;
+}
+
+.ac-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-right: 8px;
+}
+
+.ac-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 900;
+  color: #0f172a;
+  max-width: 70%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ac-class-badge {
+  background: #f8fafc;
+  color: #475569;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid #e2e8f0;
+}
+
+.ac-amount {
+  font-weight: 900;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.ac-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-right: 8px;
+}
+
+.ac-date {
   display: flex;
   align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ac-date-icon {
+  color: #ef4444;
+  background: #fef2f2;
+  padding: 4px;
+  border-radius: 50%;
+}
+
+.ac-actions {
+  display: flex;
   gap: 8px;
 }
 
-/* تنسيق للروابط داخل الجدول لتظهر باللون الأحمر Soft */
-.modern-table a {
-  text-decoration: none;
-  transition: color 0.15s ease;
+.ac-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+.ac-btn-edit { background: #f1f5f9; color: #3b82f6; }
+.ac-btn-delete { background: #fef2f2; color: #ef4444; }
+
+/* الزر العائم للموبايل */
+.fab-button {
+  position: fixed !important;
+  bottom: 95px !important;
+  right: 20px !important;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #ef4444; /* لون أحمر */
+  color: white;
+  border: none;
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 999999 !important;
+}
+
+/* =========================================
+   التجاوب الخاص بالموبايل
+========================================= */
+@media (max-width: 980px) {
+  
+  div.modalOverlay {
+    align-items: center !important; 
+    padding: 16px !important;
+  }
+  
+  div.modalOverlay > div.modalCard {
+    border-radius: 24px !important; 
+    margin: auto !important; 
+    width: 92% !important; 
+    max-height: 85vh !important; 
+    margin-bottom: auto !important; 
+    transform: translateY(-5vh) !important;
+  }
+
+  .modal-form-scroll-container {
+    max-height: calc(85vh - 140px) !important; 
+    padding: 0 5px;
+  }
+
+  /* إخفاء زر الإضافة العادي والجدول على الموبايل */
+  .desktop-table-container { display: none; }
+  .btn-add-desktop { display: none !important; }
+  
+  /* زيادة عرض الفورم والكروت على الموبايل */
+  .expenses-toolbar { 
+    padding: 16px; 
+    border-bottom: none; 
+    margin: 0 4px !important; /* لزيادة عرض البحث */
+  }
+  .expenses-card { 
+    background: transparent; 
+    border: none; 
+    box-shadow: none; 
+  }
+  .filters-group {
+    background: #ffffff; 
+    border-radius: 20px; 
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+    padding: 10px;
+  }
+  .page--expenses { padding-bottom: 120px; }
+  .mobile-list {
+    padding: 16px 4px !important; /* تقليل الفراغ الجانبي لزيادة عرض الكروت */
+  }
+  
+  /* الإبقاء على ترتيب الفورم (عمودين) */
+  .responsive-form-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+  
+  .form-col-full { grid-column: span 2 !important; }
+  .form-col { grid-column: span 1 !important; }
+
+  .form-section-title { margin: 10px 0 10px 0; font-size: 14px; }
+  .input { padding: 10px 14px; font-size: 13px; }
+  .modal-fixed-footer { padding-bottom: 10px; margin-top: 5px; }
+
+  .kpiGrid4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* إحصائيات الموبايل عمودين */
+    gap: 10px;
+  }
+}
+
+@media (min-width: 981px) {
+  .mobile-list { display: none; }
+  .fab-button { display: none !important; }
 }
 `;
 
@@ -455,12 +695,8 @@ export default function Expenses() {
 
     const { from, to } = computeRange();
 
-    // تغيير مصدر البيانات من جدول expenses إلى view expenses_details_view
-    //cite: [Expenses.jsx]
     let query = supabase
       .from("expenses_details_view")
-      // تحديد الأعمدة الإضافية المطلوبة للروابط (course_id, course_title, run_id, run_label)
-      //cite: [20260319155343_remote_schema.sql]
       .select(
         "id,spent_on,amount,category,party,description,created_at,run_id,course_id,course_title,run_label",
       )
@@ -517,7 +753,6 @@ export default function Expenses() {
         const a = String(r.category || "").toLowerCase();
         const b = String(r.party || "").toLowerCase();
         const c = String(r.description || "").toLowerCase();
-        // إضافة اسم الدورة والفوج لنطاق البحث
         const d = String(r.course_title || "").toLowerCase();
         const e = String(r.run_label || "").toLowerCase();
         return (
@@ -608,7 +843,6 @@ export default function Expenses() {
 
     if (ins.error) {
       const msg = String(ins.error.message || "").toLowerCase();
-      // تجاهل خطأ التكرار إذا كان العنصر موجود مسبقاً
       if (ins.error.code === "23505" || msg.includes("duplicate")) {
         return { ok: true };
       }
@@ -630,11 +864,9 @@ export default function Expenses() {
 
     setSaving(true);
     try {
-      // حفظ الفئة الجديدة إذا لم تكن موجودة
       if (expCategory?.trim()) {
         await safeInsertPicklist("expense_categories", expCategory);
       }
-      // حفظ اسم الشخص/المتجر الجديد إذا لم يكن موجود
       if (expParty?.trim()) {
         await safeInsertPicklist("expense_parties", expParty);
       }
@@ -754,7 +986,7 @@ export default function Expenses() {
               />
             </div>
 
-            {/* الجدول والفلاتر */}
+            {/* الجدول والفلاتر والكروت للموبايل */}
             <div className="expenses-card">
               <div className="expenses-toolbar">
                 <div className="filters-group">
@@ -832,7 +1064,10 @@ export default function Expenses() {
                   )}
                 </div>
 
-                <button className="btn btn-add" onClick={openCreate}>
+                <button
+                  className="btn btn-add btn-add-desktop"
+                  onClick={openCreate}
+                >
                   <Plus size={18} /> إضافة مصروف
                 </button>
               </div>
@@ -858,107 +1093,176 @@ export default function Expenses() {
                   onAction={openCreate}
                 />
               ) : (
-                <div style={{ overflowX: "auto" }}>
-                  <table className="modern-table">
-                    <thead>
-                      <tr>
-                        <th style={{ width: 140 }}>التاريخ</th>
-                        <th>الفئة</th>
-                        <th>شخص/المتجر</th>
-                        <th>الوصف</th>
-                        {/* عمود جديد يعرض الدورة والفوج */}
-                        <th>التبعية (الدورة/الفوج)</th>
-                        <th style={{ width: 120 }}>المبلغ</th>
-                        <th style={{ width: 100, textAlign: "center" }}>
-                          إجراءات
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.map((r) => (
-                        <tr key={r.id}>
-                          <td style={{ color: "#64748b", fontWeight: 600 }}>
-                            {fmtDate(r.spent_on)}
-                          </td>
-                          <td style={{ fontWeight: 700 }}>
-                            {r.category || <span className="muted">—</span>}
-                          </td>
-                          <td>{r.party || <span className="muted">—</span>}</td>
-                          <td style={{ color: "#64748b", minWidth: 200 }}>
-                            {r.description || <span className="muted">—</span>}
-                          </td>
-
-                          {/* الخلية الجديدة التي تحتوي على روابط الدورة والفوج */}
-                          <td style={{ minWidth: 200 }}>
-                            {r.run_id ? (
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: "2px",
-                                }}
-                              >
-                                {/* رابط لصفحة تفاصيل الدورة */}
-                                <Link
-                                  to={`/courses/${r.course_id}`}
-                                  style={{
-                                    color: "#ef4444",
-                                    fontWeight: 700,
-                                    textDecoration: "none",
-                                  }}
-                                  title="انتقل لتفاصيل الدورة"
-                                >
-                                  {r.course_title}
-                                </Link>
-                                {/* رابط لصفحة تفاصيل الفوج */}
-                                <Link
-                                  to={`/runs/${r.run_id}`}
-                                  style={{
-                                    color: "#64748b",
-                                    fontSize: "13px",
-                                    fontWeight: 600,
-                                    textDecoration: "none",
-                                  }}
-                                  title="انتقل لتفاصيل الفوج"
-                                >
-                                  الفوج: {r.run_label}
-                                </Link>
-                              </div>
-                            ) : (
-                              // في حال لم يكن المصروف مرتباً بفوج
-                              <span className="muted">مصروف عام</span>
-                            )}
-                          </td>
-
-                          <td style={{ fontWeight: 900, color: "#0f172a" }}>
-                            {fmtMoney(r.amount)} ₪
-                          </td>
-                          <td>
-                            <div className="actions-cell">
-                              <IconButton
-                                title="تعديل"
-                                onClick={() => openEdit(r)}
-                                icon={Pencil}
-                              />
-                              <IconButton
-                                title="حذف"
-                                onClick={() =>
-                                  setConfirm({ open: true, id: r.id })
-                                }
-                                icon={Trash2}
-                                danger
-                              />
-                            </div>
-                          </td>
+                <>
+                  {/* عرض الجدول للكمبيوتر */}
+                  <div
+                    className="desktop-table-container"
+                    style={{ overflowX: "auto" }}
+                  >
+                    <table className="modern-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: 140 }}>التاريخ</th>
+                          <th>الفئة</th>
+                          <th>شخص/المتجر</th>
+                          <th>الوصف</th>
+                          <th>التبعية (الدورة/الفوج)</th>
+                          <th style={{ width: 120 }}>المبلغ</th>
+                          <th style={{ width: 100, textAlign: "center" }}>
+                            إجراءات
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {filtered.map((r) => (
+                          <tr key={r.id}>
+                            <td style={{ color: "#64748b", fontWeight: 600 }}>
+                              {fmtDate(r.spent_on)}
+                            </td>
+                            <td style={{ fontWeight: 700 }}>
+                              {r.category || <span className="muted">—</span>}
+                            </td>
+                            <td>
+                              {r.party || <span className="muted">—</span>}
+                            </td>
+                            <td style={{ color: "#64748b", minWidth: 200 }}>
+                              {r.description || (
+                                <span className="muted">—</span>
+                              )}
+                            </td>
+                            <td style={{ minWidth: 200 }}>
+                              {r.run_id ? (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "2px",
+                                  }}
+                                >
+                                  <Link
+                                    to={`/courses/${r.course_id}`}
+                                    style={{
+                                      color: "#ef4444",
+                                      fontWeight: 700,
+                                      textDecoration: "none",
+                                    }}
+                                    title="انتقل لتفاصيل الدورة"
+                                  >
+                                    {r.course_title}
+                                  </Link>
+                                  <Link
+                                    to={`/runs/${r.run_id}`}
+                                    style={{
+                                      color: "#64748b",
+                                      fontSize: "13px",
+                                      fontWeight: 600,
+                                      textDecoration: "none",
+                                    }}
+                                    title="انتقل لتفاصيل الفوج"
+                                  >
+                                    الفوج: {r.run_label}
+                                  </Link>
+                                </div>
+                              ) : (
+                                <span className="muted">مصروف عام</span>
+                              )}
+                            </td>
+                            <td style={{ fontWeight: 900, color: "#0f172a" }}>
+                              {fmtMoney(r.amount)} ₪
+                            </td>
+                            <td>
+                              <div className="actions-cell">
+                                <IconButton
+                                  title="تعديل"
+                                  onClick={() => openEdit(r)}
+                                  icon={Pencil}
+                                />
+                                <IconButton
+                                  title="حذف"
+                                  onClick={() =>
+                                    setConfirm({ open: true, id: r.id })
+                                  }
+                                  icon={Trash2}
+                                  danger
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* تصميم الكروت للموبايل */}
+                  <div className="mobile-list">
+                    {filtered.map((r) => (
+                      <div
+                        key={r.id}
+                        className="art-card"
+                        onClick={() => openEdit(r)}
+                      >
+                        <div className="ac-header">
+                          <h3 className="ac-name">
+                            {r.description || r.party || "مصروف"}
+                          </h3>
+                          <span className="ac-amount">
+                            {fmtMoney(r.amount)} ₪
+                          </span>
+                        </div>
+                        <div className="ac-footer" style={{ marginTop: 4 }}>
+                          <span className="ac-class-badge">
+                            {r.category || "بدون فئة"}
+                          </span>
+                        </div>
+                        <div className="ac-footer" style={{ marginTop: 12 }}>
+                          <div className="ac-date">
+                            <span className="ac-date-icon">
+                              <CalendarDays size={14} strokeWidth={2.5} />
+                            </span>
+                            {fmtDate(r.spent_on)}
+                          </div>
+                          <div className="ac-actions">
+                            <button
+                              className="ac-btn ac-btn-edit"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEdit(r);
+                              }}
+                            >
+                              <Pencil size={16} strokeWidth={2.5} />
+                            </button>
+                            <button
+                              className="ac-btn ac-btn-delete"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setConfirm({ open: true, id: r.id });
+                              }}
+                            >
+                              <Trash2 size={16} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </>
         )}
+
+        {/* الزر العائم - يختفي عند فتح المودال */}
+        {!openAdd &&
+          createPortal(
+            <button
+              className="fab-button"
+              onClick={openCreate}
+              title="إضافة مصروف"
+            >
+              <Plus size={30} strokeWidth={2.5} />
+            </button>,
+            document.body,
+          )}
 
         {/* Modal الإضافة والتعديل */}
         <Modal
@@ -966,101 +1270,91 @@ export default function Expenses() {
           title={editId ? "تعديل مصروف" : "إضافة مصروف"}
           onClose={() => !saving && setOpenAdd(false)}
         >
-          <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
-            <div style={{ gridColumn: "span 12" }}>
-              <h4 className="form-section-title">
-                <Receipt size={18} color="#64748b" /> تفاصيل المصروف
-              </h4>
-              <div className="grid" style={{ gap: "16px" }}>
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    التاريخ *
-                  </div>
-                  <input
-                    className="input"
-                    type="date"
-                    value={expDate}
-                    onChange={(e) => setExpDate(e.target.value)}
-                  />
+          <div className="modal-form-scroll-container">
+            <h4 className="form-section-title">
+              <Receipt size={18} color="#64748b" /> تفاصيل المصروف
+            </h4>
+            <div className="responsive-form-grid">
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  التاريخ *
                 </div>
+                <input
+                  className="input"
+                  type="date"
+                  value={expDate}
+                  onChange={(e) => setExpDate(e.target.value)}
+                />
+              </div>
 
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    المبلغ (₪) *
-                  </div>
-                  <input
-                    className="input"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={expAmount}
-                    onChange={(e) => setExpAmount(e.target.value)}
-                    placeholder="مثال: 150"
-                  />
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  المبلغ (₪) *
                 </div>
+                <input
+                  className="input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={expAmount}
+                  onChange={(e) => setExpAmount(e.target.value)}
+                  placeholder="مثال: 150"
+                />
+              </div>
 
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الفئة
-                  </div>
-                  <CustomCombobox
-                    value={expCategory}
-                    onChange={setExpCategory}
-                    options={categories.map((c) => ({ value: c, label: c }))}
-                    placeholder="اختر أو اكتب فئة جديدة..."
-                  />
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  الفئة
                 </div>
+                <CustomCombobox
+                  value={expCategory}
+                  onChange={setExpCategory}
+                  options={categories.map((c) => ({ value: c, label: c }))}
+                  placeholder="اختر أو اكتب فئة..."
+                />
+              </div>
 
-                <div style={{ gridColumn: "span 6" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    شخص / المتجر
-                  </div>
-                  <CustomCombobox
-                    value={expParty}
-                    onChange={setExpParty}
-                    options={parties.map((p) => ({ value: p, label: p }))}
-                    placeholder="اختر أو اكتب شخص/متجر..."
-                  />
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  شخص / المتجر
                 </div>
+                <CustomCombobox
+                  value={expParty}
+                  onChange={setExpParty}
+                  options={parties.map((p) => ({ value: p, label: p }))}
+                  placeholder="اختر أو اكتب شخص/متجر..."
+                />
+              </div>
 
-                <div style={{ gridColumn: "span 12" }}>
-                  <div className="muted" style={{ marginBottom: 6 }}>
-                    الوصف (اختياري)
-                  </div>
-                  <input
-                    className="input"
-                    value={expDesc}
-                    onChange={(e) => setExpDesc(e.target.value)}
-                    placeholder="مثال: شراء ضيافة للطلاب..."
-                  />
+              <div className="form-col-full">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  الوصف (اختياري)
                 </div>
+                <input
+                  className="input"
+                  value={expDesc}
+                  onChange={(e) => setExpDesc(e.target.value)}
+                  placeholder="مثال: شراء ضيافة للطلاب..."
+                />
               </div>
             </div>
+          </div>
 
-            <div
-              style={{
-                gridColumn: "span 12",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 10,
-                marginTop: 10,
-              }}
+          <div className="modal-fixed-footer">
+            <button
+              className="btn"
+              onClick={() => setOpenAdd(false)}
+              disabled={saving}
             >
-              <button
-                className="btn"
-                onClick={() => setOpenAdd(false)}
-                disabled={saving}
-              >
-                إلغاء
-              </button>
-              <button
-                className="btn btn-add"
-                onClick={saveExpense}
-                disabled={saving}
-              >
-                {saving ? "جاري الحفظ..." : "حفظ البيانات"}
-              </button>
-            </div>
+              إلغاء
+            </button>
+            <button
+              className="btn btn-add"
+              onClick={saveExpense}
+              disabled={saving}
+            >
+              {saving ? "جاري الحفظ..." : "حفظ البيانات"}
+            </button>
           </div>
         </Modal>
 
@@ -1068,7 +1362,7 @@ export default function Expenses() {
         <ConfirmDialog
           open={confirm.open}
           title="حذف مصروف"
-          message="هل أنت متأكد أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء."
+          message="هل أنت متأكد أنك تريد حذف هذا المصروف؟ لا يمكن التراجع."
           confirmText="حذف"
           cancelText="إلغاء"
           danger
