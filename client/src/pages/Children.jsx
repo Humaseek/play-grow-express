@@ -662,7 +662,7 @@ export default function Children() {
     const ageNum = Number(formData.age);
 
     if (!name) {
-      alert("الرجاء إدخال اسم الطفل الرباعي.");
+      alert("الرجاء إدخال اسم الطفل.");
       return;
     }
 
@@ -961,7 +961,7 @@ export default function Children() {
           <div className="responsive-form-grid">
             <div className="form-col-full">
               <div className="muted" style={{ marginBottom: 6 }}>
-                الاسم الرباعي *
+                الاسم *
               </div>
               <input
                 className="input"
@@ -999,7 +999,7 @@ export default function Children() {
                 onChange={(e) =>
                   setFormData({ ...formData, age: e.target.value })
                 }
-                placeholder="بالسنوات"
+                placeholder=""
               />
             </div>
 
@@ -1059,7 +1059,7 @@ export default function Children() {
                 onChange={(e) =>
                   setFormData({ ...formData, mother_name: e.target.value })
                 }
-                placeholder="اختياري"
+                placeholder=""
               />
             </div>
             <div className="form-col">
@@ -1087,7 +1087,7 @@ export default function Children() {
                 onChange={(e) =>
                   setFormData({ ...formData, father_name: e.target.value })
                 }
-                placeholder="اختياري"
+                placeholder=""
               />
             </div>
           </div>
