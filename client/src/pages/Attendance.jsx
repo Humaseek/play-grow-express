@@ -134,9 +134,9 @@ const ATTENDANCE_STYLES = `
   border: 1px solid transparent;
 }
 
-/* إخفاء النص في الكمبيوتر */
+/* إخفاء النص نهائيا */
 .att-action-btn .btn-label {
-  display: none; 
+  display: none !important; 
 }
 
 /* الوضع غير المفعل (ألوان فاتحة) - Inactive State */
@@ -156,7 +156,7 @@ const ATTENDANCE_STYLES = `
 .att-btn-excused.active { background: #f59e0b; color: #fff; border-color: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25); }
 .att-btn-none.active { background: #64748b; color: #fff; border-color: #64748b; box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2); }
 
-/* --- الجدول --- */
+/* --- الجدول للديسكتوب --- */
 .attendancePage .tableWrap {
   border-radius: 0 0 22px 22px;
   overflow: visible !important; 
@@ -192,7 +192,7 @@ const ATTENDANCE_STYLES = `
   border-bottom: none !important;
 }
 
-/* تنسيق فواصل أقسام الرصيد */
+/* تنسيق فواصل أقسام الرصيد للديسكتوب */
 .section-title-td-ok {
   background: #f0fdf4 !important;
   color: #16a34a !important;
@@ -225,8 +225,14 @@ const ATTENDANCE_STYLES = `
   cursor: not-allowed;
 }
 
+@media (min-width: 981px) {
+  .desktop-padded-td {
+    padding-right: 30px !important;
+  }
+}
+
 /* =========================================
-   📱 تجاوب الموبايل الخرافي (Mobile Pro Fixes)
+   📱 تجاوب الموبايل الخرافي والمضبوط (Mobile Pro Fixes)
 ========================================= */
 @media (max-width: 980px) {
   .attendancePage .toolbar {
@@ -271,69 +277,116 @@ const ATTENDANCE_STYLES = `
     font-size: 11px !important;
   }
 
-  /* --- تحويل الجدول إلى كروت --- */
-  .attendancePage .table,
-  .attendancePage .table tbody,
-  .attendancePage .table tr,
+  /* --- الإصلاح الجذري للجدول (Box Sizing & 100% Width) --- */
+  .attendancePage .tableWrap {
+    width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    padding: 10px !important; /* مساحة جانبية للكروت */
+  }
+  
+  .attendancePage .table {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    table-layout: fixed !important;
+  }
+  
+  .attendancePage .table thead {
+    display: none !important; /* إخفاء الترويسة بالموبايل */
+  }
+  
+  .attendancePage .table tbody {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important; /* المسافة بين الكروت */
+    width: 100% !important;
+  }
+  
+  /* --- كرت الطالب المنفصل --- */
+  .attendancePage .table tr {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 16px !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+    margin: 0 !important;
+  }
+  
+  /* --- صفوف العناوين الفاصلة (لا تظهر ككروت) --- */
+  .attendancePage .table tr:has(.section-title-td-ok),
+  .attendancePage .table tr:has(.section-title-td-danger) {
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    margin-top: 10px !important;
+    margin-bottom: 0 !important;
+  }
+  
   .attendancePage .table td {
     display: block !important;
     width: 100% !important;
-  }
-  .attendancePage .table thead {
-    display: none !important;
-  }
-  
-  .attendancePage .table tr {
-    border-bottom: 4px solid #f1f5f9;
-    padding: 16px !important;
-    position: relative;
-  }
-  
-  .attendancePage .table td {
+    box-sizing: border-box !important;
     padding: 0 !important;
     border: none !important;
-    text-align: right !important;
+    white-space: normal !important; /* السماح بالتفاف النص (مهم جداً للكلمات الطويلة) */
   }
-  
-  /* --- التصميم الجديد الواضح جداً للأزرار في الموبايل (دائرية فقط، كبيرة) --- */
   
   /* 1. فاصل تحت اسم الطالب */
   .attendancePage .table td:first-child {
-    margin-bottom: 12px !important;
-    padding-right: 0 !important;
-    padding-bottom: 12px !important;
+    margin-bottom: 16px !important;
+    padding-bottom: 16px !important;
     border-bottom: 1px dashed #e2e8f0 !important; 
+    text-align: right !important;
   }
   
-  /* 2. توزيع الأزرار بالتساوي في سطر واحد */
+  /* 2. توزيع الأزرار بالتساوي لمنع القص */
   .attendancePage .table td:last-child .row {
     display: flex !important;
-    justify-content: space-between !important;
+    justify-content: space-evenly !important; /* توزيع الأزرار بشكل متساوي */
     width: 100% !important;
-    gap: 0 !important;
+    box-sizing: border-box !important;
+    gap: 8px !important;
   }
   
-  /* 3. تكبير الأزرار لسهولة اللمس (48px)، وجعلها دائرية */
+  /* 3. تكبير الأزرار لسهولة اللمس */
   .att-action-btn {
     width: 48px !important;
     height: 48px !important;
-    padding: 0 !important;
-    border-radius: 50% !important; /* شكل دائري */
+    flex-shrink: 0 !important; /* منع الأزرار من الانضغاط */
   }
 
-  /* إخفاء النص نهائياً في الموبايل */
-  .att-action-btn .btn-label {
-    display: none !important;
-  }
-
-  /* تنسيق العناوين الفاصلة (الرصيد) */
+  /* --- إصلاح الكلمات المقطوعة في العناوين --- */
   .section-title-td-ok, 
   .section-title-td-danger {
     padding: 12px 16px !important;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    margin-top: 8px;
+    border-radius: 12px !important;
     text-align: right !important;
+    white-space: normal !important; /* إجبار النص على النزول لسطر جديد إذا كان طويل */
+    line-height: 1.5 !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .section-title-td-ok span,
+  .section-title-td-danger span {
+    white-space: normal !important; /* إجبار النص الداخلي على الالتفاف */
+  }
+  
+  .child-name-row {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
   }
 }
 `;
@@ -566,20 +619,8 @@ export default function Attendance() {
 
     return (
       <tr key={r.enrollment_id}>
-        <td
-          style={{
-            textAlign: "right",
-            paddingRight: "30px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              justifyContent: "space-between",
-            }}
-          >
+        <td className="desktop-padded-td" style={{ textAlign: "right" }}>
+          <div className="child-name-row">
             <span
               style={{ fontWeight: 900, color: "#0f172a", fontSize: "16px" }}
             >
@@ -598,7 +639,6 @@ export default function Attendance() {
             className="row"
             style={{
               flexWrap: "nowrap",
-              gap: 14,
               justifyContent: "center",
               alignItems: "center",
             }}
@@ -830,7 +870,13 @@ export default function Attendance() {
         ) : (
           <div
             className="card mainCard"
-            style={{ padding: 0, overflow: "hidden" }}
+            style={{
+              padding: 0,
+              overflow: "hidden",
+              background: "transparent",
+              border: "none",
+              boxShadow: "none",
+            }}
           >
             {/* --- قسم التحكم السريع فوق الجدول --- */}
             <div
@@ -843,6 +889,8 @@ export default function Attendance() {
                 flexWrap: "wrap",
                 gap: "12px",
                 background: "#f8fafc",
+                borderRadius: "22px 22px 0 0",
+                border: "1px solid rgba(15, 23, 42, 0.08)",
               }}
             >
               <h3
@@ -879,8 +927,14 @@ export default function Attendance() {
               </div>
             </div>
 
-            {/* --- الجدول النظيف بالأيقونات الدائرية (الآن الأيقونات فقط) --- */}
-            <div className="tableWrap">
+            {/* --- الجدول النظيف بالأيقونات الدائرية --- */}
+            <div
+              className="tableWrap"
+              style={{
+                border: "1px solid rgba(15, 23, 42, 0.08)",
+                borderTop: "none",
+              }}
+            >
               <table className="table">
                 <thead>
                   <tr>
