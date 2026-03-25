@@ -26,7 +26,6 @@ function fmtDate(dt) {
   if (!dt) return "-";
   const d = new Date(dt);
   const pad = (n) => String(n).padStart(2, "0");
-  // التنسيق الجديد: يوم/شهر/سنة
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
 }
 
@@ -121,7 +120,7 @@ const ATTENDANCE_STYLES = `
   color: #0f172a;
 }
 
-/* --- أزرار الحضور بالجدول (أيقونات دائرية ملونة) --- */
+/* --- أزرار الحضور بالجدول --- */
 .att-action-btn {
   display: inline-flex; 
   align-items: center; 
@@ -129,10 +128,15 @@ const ATTENDANCE_STYLES = `
   width: 44px;
   height: 44px;
   padding: 0; 
-  border-radius: 50%; /* شكل دائري */
+  border-radius: 50%; 
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
   border: 1px solid transparent;
+}
+
+/* إخفاء النص في الكمبيوتر */
+.att-action-btn .btn-label {
+  display: none; 
 }
 
 /* الوضع غير المفعل (ألوان فاتحة) - Inactive State */
@@ -141,7 +145,6 @@ const ATTENDANCE_STYLES = `
 .att-btn-excused { background: #fffbeb; color: #d97706; border-color: #fde68a; }
 .att-btn-none { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
 
-/* تأثير المرور فوق الزر غير المفعل */
 .att-btn-present:hover { background: #dcfce7; }
 .att-btn-absent:hover { background: #fee2e2; }
 .att-btn-excused:hover { background: #fef3c7; }
@@ -240,7 +243,6 @@ const ATTENDANCE_STYLES = `
     font-size: 13px !important;
   }
 
-  /* تحويل شبكة الإحصائيات لعمودين */
   .att-summary-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
@@ -252,7 +254,6 @@ const ATTENDANCE_STYLES = `
     font-size: 22px !important;
   }
 
-  /* أزرار التحكم السريع */
   .attendancePage .mainCard > div:first-child {
     flex-direction: column;
     align-items: stretch !important;
@@ -270,7 +271,7 @@ const ATTENDANCE_STYLES = `
     font-size: 11px !important;
   }
 
-  /* تحويل الجدول إلى كروت */
+  /* --- تحويل الجدول إلى كروت --- */
   .attendancePage .table,
   .attendancePage .table tbody,
   .attendancePage .table tr,
@@ -283,7 +284,7 @@ const ATTENDANCE_STYLES = `
   }
   
   .attendancePage .table tr {
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 4px solid #f1f5f9;
     padding: 16px !important;
     position: relative;
   }
@@ -294,23 +295,38 @@ const ATTENDANCE_STYLES = `
     text-align: right !important;
   }
   
-  /* إبعاد أزرار الحضور عن اسم الطالب */
+  /* --- التصميم الجديد الواضح جداً للأزرار في الموبايل --- */
+  
+  /* 1. فاصل تحت اسم الطالب */
   .attendancePage .table td:first-child {
-    margin-bottom: 16px;
+    margin-bottom: 12px !important;
     padding-right: 0 !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px dashed #e2e8f0 !important; 
   }
   
-  /* توزيع أزرار الحضور بالتساوي لتسهيل الضغط */
+  /* 2. تحويل منطقة الأزرار لشبكة 2x2 */
   .attendancePage .table td:last-child .row {
-    justify-content: space-between !important;
-    width: 100%;
-    gap: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+    gap: 10px !important;
   }
   
-  /* تكبير الأزرار قليلاً للّمس */
+  /* 3. تكبير الأزرار وإظهار النص بجانب الأيقونة */
   .att-action-btn {
-    width: 48px !important;
-    height: 48px !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 12px 8px !important;
+    border-radius: 12px !important; /* تحويلها لمستطيل حوافه ناعمة */
+    flex-direction: row !important;
+    gap: 8px !important;
+  }
+
+  .att-action-btn .btn-label {
+    display: inline-block !important; /* إظهار النص في الموبايل */
+    font-size: 14px !important;
+    font-weight: 800 !important;
   }
 
   /* تنسيق العناوين الفاصلة (الرصيد) */
@@ -545,7 +561,7 @@ export default function Attendance() {
     }
   }
 
-  // دالة مخصصة لعرض سطر الطالب بشكل نظيف عشان ما نكرر الكود
+  // دالة مخصصة لعرض سطر الطالب
   const renderChildRow = (r) => {
     const v = att[r.enrollment_id] ?? "none";
     const remaining = Number(r.package_sessions_remaining || 0);
@@ -559,14 +575,24 @@ export default function Attendance() {
             paddingRight: "30px",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              justifyContent: "space-between",
+            }}
+          >
             <span
-              style={{ fontWeight: 800, color: "#0f172a", fontSize: "16px" }}
+              style={{ fontWeight: 900, color: "#0f172a", fontSize: "16px" }}
             >
               {r.child_name}
             </span>
-            <Badge variant={hasBalance ? "ok" : "danger"}>
-              {hasBalance ? `متبقي: ${remaining}` : "الرصيد منتهي"}
+            <Badge
+              variant={hasBalance ? "ok" : "danger"}
+              style={{ whiteSpace: "nowrap" }}
+            >
+              {hasBalance ? `متبقي: ${remaining}` : "منتهي"}
             </Badge>
           </div>
         </td>
@@ -598,6 +624,7 @@ export default function Attendance() {
                   className={`att-action-btn ${meta.className} ${active ? "active" : ""}`}
                 >
                   <ActiveIcon size={20} strokeWidth={active ? 2.5 : 2} />
+                  <span className="btn-label">{meta.label}</span>
                 </button>
               );
             })}
