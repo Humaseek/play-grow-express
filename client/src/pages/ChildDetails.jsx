@@ -187,8 +187,8 @@ const PROFILE_STYLES = `
   div.modalOverlay > div.modalCard {
       border-radius: 24px !important; 
       margin: auto !important; 
-      width: 95% !important;        /* 👈 هان عرض الموبايل فقط صار صح */
-      max-height: 85vh !important;  
+      width: 92% !important;        /* 👈 هان عرض الموبايل فقط صار صح */
+      max-height: 75vh !important;  
       transform: translateY(-2vh) !important; 
   }
 
