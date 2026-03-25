@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useOutletContext, useParams } from "react-router";
+import { createPortal } from "react-dom"; // السلاح السري للزر العائم
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
 import Modal from "../components/Modal";
@@ -23,6 +24,146 @@ import {
   Ban,
   RefreshCw,
 } from "lucide-react";
+
+// --- تنسيقات CSS المدمجة للشاشة والمودالات ---
+const COURSE_DETAILS_STYLES = `
+.btn-add {
+  background: #7c3aed !important; /* اللون البنفسجي للدورات */
+  color: #fff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 10px 20px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.2) !important;
+  transition: all 0.2s !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-add:hover {
+  transform: translateY(-2px);
+  background: #6d28d9 !important;
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3) !important;
+}
+
+/* =========================================
+   تنسيقات النموذج (المودال) - ثابتة لجميع الشاشات
+========================================= */
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 800;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.modal-form-scroll-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  max-height: 65vh;
+}
+
+.modal-form-scroll-container::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.responsive-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding-bottom: 16px;
+}
+
+.form-col-full { grid-column: span 2; }
+.form-col { grid-column: span 1; }
+
+.modal-fixed-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* الزر العائم في الموبايل */
+.fab-button {
+  position: fixed !important;
+  bottom: 95px !important;
+  right: 20px !important;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #7c3aed; 
+  color: white;
+  border: none;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 999999 !important;
+}
+
+/* =========================================
+   التجاوب الخاص بالموبايل وإلغاء Bottom Sheet
+========================================= */
+@media (max-width: 980px) {
+  .hide-on-mobile { display: none !important; }
+
+  div.modalOverlay {
+    align-items: center !important; 
+    padding: 16px !important;
+  }
+  
+  div.modalOverlay > div.modalCard {
+    border-radius: 24px !important; 
+    margin: auto !important; 
+    width: 92% !important; 
+    max-height: 85vh !important; 
+    margin-bottom: auto !important; 
+    transform: translateY(-5vh) !important;
+  }
+
+  .modal-form-scroll-container {
+    max-height: calc(85vh - 140px) !important; 
+    padding: 0 5px;
+  }
+  
+  /* ترتيب الفورم (عمودين) على الموبايل */
+  .responsive-form-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+  
+  .form-col-full { grid-column: span 2 !important; }
+  .form-col { grid-column: span 1 !important; }
+
+  .form-section-title { margin: 10px 0 10px 0; font-size: 14px; }
+  .input { padding: 10px 14px; font-size: 13px; }
+  .modal-fixed-footer { padding-bottom: 10px; margin-top: 5px; }
+
+  .pageHeader__actions { width: 100%; justify-content: space-between; }
+}
+
+@media (min-width: 981px) {
+  .fab-button { display: none !important; }
+}
+`;
 
 function fmtDT(dt) {
   if (!dt) return "-";
@@ -432,6 +573,8 @@ export default function CourseDetails() {
 
   return (
     <div className="container page page--courses" dir="rtl" lang="ar">
+      <style>{COURSE_DETAILS_STYLES}</style>
+
       <PageHeader
         title={
           <div
@@ -496,7 +639,10 @@ export default function CourseDetails() {
             <button className="btn" onClick={() => navigate("/courses")}>
               رجوع
             </button>
-            <button className="btn primary" onClick={openCreateRunModal}>
+            <button
+              className="btn btn-add hide-on-mobile"
+              onClick={openCreateRunModal}
+            >
               <Plus size={18} /> {runSingular} جديد{isWorkshop ? "ة" : ""}
             </button>
           </>
@@ -554,7 +700,7 @@ export default function CourseDetails() {
             description={`أنشئ أول ${runSingular} للدورة.`}
             icon={Layers}
             actions={
-              <button className="btn primary" onClick={openCreateRunModal}>
+              <button className="btn btn-add" onClick={openCreateRunModal}>
                 <Plus size={18} /> {runSingular} جديد{isWorkshop ? "ة" : ""}
               </button>
             }
@@ -690,215 +836,224 @@ export default function CourseDetails() {
         </div>
       )}
 
+      {/* الزر العائم للموبايل - يختفي عند فتح المودال */}
+      {!open &&
+        !editOpen &&
+        createPortal(
+          <button
+            className="fab-button"
+            onClick={openCreateRunModal}
+            title={`إضافة ${runSingular}`}
+          >
+            <Plus size={30} strokeWidth={2.5} />
+          </button>,
+          document.body,
+        )}
+
+      {/* نافذة الإنشاء */}
       <Modal
         open={open}
         title={`إنشاء ${runSingular}`}
         onClose={() => setOpen(false)}
       >
-        <div className="muted">
-          {runSingular} جديد{isWorkshop ? "ة" : ""} للدورة.
-        </div>
-
-        <hr className="sep" />
-
-        <div className="grid">
-          <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">اسم ال{runSingular} (اختياري)</div>
-            <input
-              className="input"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder={`مثال: ${runSingular} الأحد - شباط 2026`}
-            />
-          </div>
-
-          <div style={{ gridColumn: isWorkshop ? "span 12" : "span 6" }}>
-            <div className="muted">
-              {isWorkshop
-                ? "موعد الجلسة (تاريخ/وقت)"
-                : "بداية أول جلسة (تاريخ/وقت)"}
-            </div>
-            <input
-              className="input"
-              type="datetime-local"
-              value={firstStart}
-              onChange={(e) => setFirstStart(e.target.value)}
-            />
-          </div>
-
-          {!isWorkshop ? (
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted">إنشاء الجلسات تلقائيًا؟</div>
-              <ModernSelect
-                value={createSessions ? "1" : "0"}
-                onChange={(v) => setCreateSessions(v === "1")}
-                menuWidth="trigger"
-                options={[
-                  { value: "1", label: "نعم" },
-                  { value: "0", label: "لا" },
-                ]}
+        <div className="modal-form-scroll-container">
+          <h4 className="form-section-title">
+            <Layers size={18} color="#64748b" /> إعدادات ال{runSingular}
+          </h4>
+          <div className="responsive-form-grid">
+            <div className="form-col-full">
+              <div className="muted">اسم ال{runSingular} (اختياري)</div>
+              <input
+                className="input"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder={`مثال: ${runSingular} الأحد - شباط 2026`}
               />
             </div>
-          ) : null}
 
-          {((!isWorkshop && createSessions) || isWorkshop) && (
-            <>
-              <div style={{ gridColumn: "span 4" }}>
-                <div className="muted">مدة الجلسة (دقائق)</div>
-                <input
-                  className="input"
-                  type="number"
-                  min="15"
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(e.target.value)}
+            <div className={isWorkshop ? "form-col-full" : "form-col"}>
+              <div className="muted">
+                {isWorkshop
+                  ? "موعد الجلسة (تاريخ/وقت)"
+                  : "بداية أول جلسة (تاريخ/وقت)"}
+              </div>
+              <input
+                className="input"
+                type="datetime-local"
+                value={firstStart}
+                onChange={(e) => setFirstStart(e.target.value)}
+              />
+            </div>
+
+            {!isWorkshop && (
+              <div className="form-col">
+                <div className="muted">إنشاء الجلسات تلقائيًا؟</div>
+                <ModernSelect
+                  value={createSessions ? "1" : "0"}
+                  onChange={(v) => setCreateSessions(v === "1")}
+                  options={[
+                    { value: "1", label: "نعم" },
+                    { value: "0", label: "لا" },
+                  ]}
                 />
               </div>
+            )}
 
-              {!isWorkshop ? (
-                <>
-                  <div style={{ gridColumn: "span 4" }}>
-                    <div className="muted">عدد الجلسات</div>
-                    <input
-                      className="input"
-                      type="number"
-                      min="1"
-                      value={count}
-                      onChange={(e) => setCount(e.target.value)}
-                    />
-                  </div>
+            {((!isWorkshop && createSessions) || isWorkshop) && (
+              <>
+                <div className="form-col">
+                  <div className="muted">مدة الجلسة (دقائق)</div>
+                  <input
+                    className="input"
+                    type="number"
+                    min="15"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                  />
+                </div>
 
-                  <div style={{ gridColumn: "span 4" }}>
-                    <div className="muted">التكرار كل (أيام)</div>
-                    <input
-                      className="input"
-                      type="number"
-                      min="1"
-                      value={intervalDays}
-                      onChange={(e) => setIntervalDays(e.target.value)}
-                    />
-                  </div>
-                </>
-              ) : null}
-            </>
-          )}
+                {!isWorkshop && (
+                  <>
+                    <div className="form-col">
+                      <div className="muted">عدد الجلسات</div>
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        value={count}
+                        onChange={(e) => setCount(e.target.value)}
+                      />
+                    </div>
 
-          <div className="row" style={{ gridColumn: "span 12", marginTop: 6 }}>
-            <button
-              className="btn primary"
-              disabled={saving}
-              type="button"
-              onClick={createRun}
-            >
-              {saving ? "جارٍ الإنشاء..." : `إنشاء ${runSingular}`}
-            </button>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => setOpen(false)}
-            >
-              إلغاء
-            </button>
+                    <div className="form-col">
+                      <div className="muted">التكرار كل (أيام)</div>
+                      <input
+                        className="input"
+                        type="number"
+                        min="1"
+                        value={intervalDays}
+                        onChange={(e) => setIntervalDays(e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
+        </div>
+
+        <div className="modal-fixed-footer">
+          <button
+            className="btn"
+            type="button"
+            onClick={() => setOpen(false)}
+            disabled={saving}
+          >
+            إلغاء
+          </button>
+          <button
+            className="btn btn-add"
+            disabled={saving}
+            type="button"
+            onClick={createRun}
+          >
+            {saving ? "جارٍ الإنشاء..." : `إنشاء ${runSingular}`}
+          </button>
         </div>
       </Modal>
 
+      {/* نافذة التعديل */}
       <Modal
         open={editOpen}
         title={`تعديل ال${runSingular}`}
         onClose={() => setEditOpen(false)}
       >
-        <div className="muted">
-          تعديل بيانات ال{runSingular} وإجراءاته{isWorkshop ? "ا" : ""}{" "}
-          الأساسية.
-        </div>
+        <div className="modal-form-scroll-container">
+          <h4 className="form-section-title">
+            <Pencil size={18} color="#64748b" /> بيانات ال{runSingular}
+          </h4>
+          <div className="responsive-form-grid">
+            <div className="form-col-full">
+              <div className="muted">اسم ال{runSingular}</div>
+              <input
+                className="input"
+                value={editLabel}
+                onChange={(e) => setEditLabel(e.target.value)}
+                placeholder={`مثال: ${runSingular} الأحد - شباط 2026`}
+              />
+            </div>
 
-        <hr className="sep" />
+            <div className="form-col">
+              <div className="muted">جلسات افتراضية للإضافة</div>
+              <input
+                className="input"
+                type="number"
+                min="0"
+                step="1"
+                value={editDefaultSessionsTotal}
+                onChange={(e) => setEditDefaultSessionsTotal(e.target.value)}
+              />
+            </div>
 
-        <div className="grid">
-          <div style={{ gridColumn: "span 12" }}>
-            <div className="muted">اسم ال{runSingular}</div>
-            <input
-              className="input"
-              value={editLabel}
-              onChange={(e) => setEditLabel(e.target.value)}
-              placeholder={`مثال: ${runSingular} الأحد - شباط 2026`}
-            />
-          </div>
+            <div className="form-col">
+              <div className="muted">الحالة</div>
+              <ModernSelect
+                value={editStatus}
+                onChange={setEditStatus}
+                options={[
+                  { value: "active", label: "فعّال" },
+                  { value: "done", label: "مكتمل" },
+                  { value: "canceled", label: "ملغى" },
+                ]}
+              />
+            </div>
 
-          <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">جلسات افتراضية للإضافة</div>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              step="1"
-              value={editDefaultSessionsTotal}
-              onChange={(e) => setEditDefaultSessionsTotal(e.target.value)}
-            />
-          </div>
+            <div className="form-col-full">
+              <div
+                style={{
+                  border: "1px solid rgba(0,0,0,.08)",
+                  borderRadius: 16,
+                  padding: 12,
+                  background: "rgba(0,0,0,.02)",
+                }}
+              >
+                <div className="muted" style={{ marginBottom: 10 }}>
+                  إجراءات إضافية
+                </div>
 
-          <div style={{ gridColumn: "span 6" }}>
-            <div className="muted">الحالة</div>
-            <ModernSelect
-              value={editStatus}
-              onChange={setEditStatus}
-              menuWidth="trigger"
-              options={[
-                { value: "active", label: "فعّال" },
-                { value: "done", label: "مكتمل" },
-                { value: "canceled", label: "ملغى" },
-              ]}
-            />
-          </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    className="btn"
+                    type="button"
+                    disabled={!editRunId || editStatus !== "active"}
+                    onClick={() => autoEnrollPackages(editRunId)}
+                  >
+                    <RefreshCw size={16} /> مزامنة المشتركين
+                  </button>
 
-          <div style={{ gridColumn: "span 12" }}>
-            <div
-              style={{
-                border: "1px solid rgba(0,0,0,.08)",
-                borderRadius: 16,
-                padding: 12,
-                background: "rgba(0,0,0,.02)",
-              }}
-            >
-              <div className="muted" style={{ marginBottom: 10 }}>
-                إجراءات إضافية
-              </div>
-
-              <div className="row" style={{ flexWrap: "wrap" }}>
-                <button
-                  className="btn"
-                  type="button"
-                  disabled={!editRunId || editStatus !== "active"}
-                  onClick={() => autoEnrollPackages(editRunId)}
-                >
-                  <RefreshCw size={16} /> مزامنة المشتركين
-                </button>
-
-                <button
-                  className="btn danger"
-                  type="button"
-                  disabled={!editRunId || editStatus !== "active"}
-                  onClick={() => {
-                    setEditOpen(false);
-                    setConfirm({
-                      open: true,
-                      type: "canceled",
-                      runId: editRunId,
-                      text: `إلغاء ال${runSingular}: ${editLabel || `هذ${isWorkshop ? "ه" : "ا"} ال${runSingular}`}`,
-                    });
-                  }}
-                >
-                  <Ban size={16} /> إلغاء ال{runSingular}
-                </button>
+                  <button
+                    className="btn danger"
+                    type="button"
+                    disabled={!editRunId || editStatus !== "active"}
+                    onClick={() => {
+                      setEditOpen(false);
+                      setConfirm({
+                        open: true,
+                        type: "canceled",
+                        runId: editRunId,
+                        text: `إلغاء ال${runSingular}: ${editLabel || `هذ${isWorkshop ? "ه" : "ا"} ال${runSingular}`}`,
+                      });
+                    }}
+                  >
+                    <Ban size={16} /> إلغاء ال{runSingular}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div
-          className="row"
-          style={{ justifyContent: "flex-end", gap: 10, marginTop: 14 }}
-        >
+        <div className="modal-fixed-footer">
           <button
             className="btn"
             type="button"
@@ -908,12 +1063,12 @@ export default function CourseDetails() {
             إلغاء
           </button>
           <button
-            className="btn primary"
+            className="btn btn-add"
             type="button"
             onClick={updateRun}
             disabled={saving || !editRunId}
           >
-            حفظ
+            حفظ البيانات
           </button>
         </div>
       </Modal>
