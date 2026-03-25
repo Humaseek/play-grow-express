@@ -368,7 +368,7 @@ const ATTENDANCE_STYLES = `
     display: flex !important;
     justify-content: center !important; /* توسيط الأزرار */
     align-items: center !important;
-    width: 100% !important;
+    width: 50% !important;
     box-sizing: border-box !important;
     gap: 12px !important; /* مسافة آمنة بين الأزرار */
     flex-wrap: wrap !important; /* 🚨 السر هون: إذا الشاشة صغيرة كتير، بينزلوا سطر وما بينقصوا */
