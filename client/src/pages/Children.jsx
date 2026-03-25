@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-// إضافة الاستيراد الخاص بـ useNavigate للانتقال بين الصفحات
 import { useNavigate } from "react-router-dom";
-// السلاح السري لحل مشكلة الزر العائم
 import { createPortal } from "react-dom";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
@@ -299,6 +297,16 @@ const CHILDREN_STYLES = `
   color: #d97706 !important;
 }
 
+/* =========================================
+   تنسيقات النموذج (المودال) لجعله متجاوب وأنيق
+========================================= */
+.form-col-full {
+  grid-column: span 12;
+}
+.form-col {
+  grid-column: span 6;
+}
+
 .form-section-title {
   margin: 0 0 16px 0;
   color: #0f172a;
@@ -310,25 +318,41 @@ const CHILDREN_STYLES = `
   gap: 8px;
 }
 
-/* =========================================
-   تنسيقات النموذج (المودال) لجعله متجاوب
-========================================= */
-.form-col-full {
-  grid-column: span 12;
+.modal-form-grid {
+  display: grid;
+  gap: 20px;
+  padding: 10px 4px;
 }
-.form-col {
-  grid-column: span 6;
+
+.modal-inner-grid {
+  display: grid;
+  gap: 16px;
 }
 
 .modal-scroll-fix {
   overflow-y: auto;
   overflow-x: hidden;
+  padding-left: 8px; /* مسافة بسيطة للسكرولبار */
+}
+
+/* تجميل شكل السكرولبار (الشريط الجانبي) */
+.modal-scroll-fix::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-scroll-fix::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-scroll-fix::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.modal-scroll-fix::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
 }
 
 /* =========================================
-   تصميم كروت الموبايل الفني والجديد كلياً
+   تصميم كروت الموبايل
 ========================================= */
-
 .mobile-list {
   display: flex;
   flex-direction: column;
@@ -357,7 +381,6 @@ const CHILDREN_STYLES = `
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-/* الخط الجانبي الأنيق */
 .art-card::before {
   content: "";
   position: absolute;
@@ -365,7 +388,7 @@ const CHILDREN_STYLES = `
   right: 0;
   bottom: 0;
   width: 5px;
-  background: #f59e0b; /* لون برتقالي فخم */
+  background: #f59e0b;
   border-radius: 0 16px 16px 0;
 }
 
@@ -373,7 +396,7 @@ const CHILDREN_STYLES = `
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding-right: 8px; /* إبعاد النص عن الخط الجانبي */
+  padding-right: 8px;
 }
 
 .ac-name {
@@ -437,7 +460,7 @@ const CHILDREN_STYLES = `
 
 .ac-btn-edit {
   background: #f1f5f9;
-  color: #3b82f6; /* أزرق هادي للتعديل */
+  color: #3b82f6;
 }
 
 .ac-btn-edit:hover {
@@ -447,7 +470,7 @@ const CHILDREN_STYLES = `
 
 .ac-btn-delete {
   background: #fef2f2;
-  color: #ef4444; /* أحمر ناعم للحذف */
+  color: #ef4444;
 }
 
 .ac-btn-delete:hover {
@@ -455,7 +478,7 @@ const CHILDREN_STYLES = `
   color: #dc2626;
 }
 
-/* الزر العائم في الموبايل - Portal (ثابت كما طلبنا) */
+/* الزر العائم في الموبايل */
 .fab-button {
   position: fixed !important;
   bottom: 95px !important;
@@ -483,10 +506,30 @@ const CHILDREN_STYLES = `
 
 /* التجاوب (Media Queries) */
 @media (max-width: 768px) {
+  /* التعديل الجوهري للمودال عشان يكون ملموم وصغير */
   .modal-scroll-fix {
-    max-height: calc(100vh - 180px);
-    padding-bottom: 100px !important;
+    max-height: 65vh !important; /* أقصى ارتفاع 65% من الشاشة بس */
   }
+  
+  .modal-form-grid {
+    gap: 12px; /* تصغير المسافات بين الأقسام الرئيسية */
+  }
+  
+  .modal-inner-grid {
+    gap: 10px; /* تصغير المسافات بين الحقول في الموبايل */
+  }
+
+  .form-section-title {
+    margin: 0 0 10px 0;
+    padding-bottom: 8px;
+    font-size: 15px;
+  }
+  
+  /* جعل جميع الحقول تأخذ العرض كامل في الموبايل */
+  .form-col {
+    grid-column: span 12 !important;
+  }
+
   .desktop-table-container { 
     display: none; 
   }
@@ -510,10 +553,6 @@ const CHILDREN_STYLES = `
     border-radius: 20px;
     margin: 0 16px; 
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
-  }
-  /* حل مشكلة المودال على الشاشات الصغيرة لتكون حقول الإدخال بعرض كامل */
-  .form-col {
-    grid-column: span 12 !important;
   }
 }
 
@@ -871,7 +910,7 @@ export default function Children() {
                   </table>
                 </div>
 
-                {/* تصميم الكروت الفني والأنيق بدون أفاتار للموبايل (Mobile) */}
+                {/* تصميم الكروت للموبايل (Mobile) */}
                 <div className="mobile-list">
                   {filteredChildren.map((child) => (
                     <div
@@ -930,7 +969,7 @@ export default function Children() {
         </div>
       </div>
 
-      {/* الزر العائم (FAB) باستخدام createPortal */}
+      {/* الزر العائم (FAB) */}
       {createPortal(
         <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
           <Plus size={30} strokeWidth={2.5} />
@@ -944,16 +983,13 @@ export default function Children() {
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
         onClose={() => !saving && setIsModalOpen(false)}
       >
-        <div
-          className="grid modal-scroll-fix"
-          style={{ gap: "20px", padding: "10px 0" }}
-        >
+        <div className="modal-form-grid modal-scroll-fix">
           {/* قسم البيانات الأساسية */}
           <div className="form-col-full">
             <h4 className="form-section-title">
               <Users size={18} color="#64748b" /> البيانات الأساسية
             </h4>
-            <div className="grid" style={{ gap: "16px" }}>
+            <div className="modal-inner-grid">
               <div className="form-col-full">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   الاسم الرباعي *
@@ -1034,7 +1070,7 @@ export default function Children() {
             <h4 className="form-section-title">
               <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
             </h4>
-            <div className="grid" style={{ gap: "16px" }}>
+            <div className="modal-inner-grid">
               <div className="form-col">
                 <div className="muted" style={{ marginBottom: 6 }}>
                   هاتف الأم
