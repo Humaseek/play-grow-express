@@ -188,13 +188,14 @@ const PROFILE_STYLES = `
   div.modalOverlay > div.modalCard {
     border-radius: 24px !important; 
     margin: auto !important; 
-    width: 92% !important;        /* 👈 هان بتتحكم بالعرض (مثلا 95% أو 90%) */
-    max-height: 75vh !important;  /* 👈 هان بتتحكم بالطول الأقصى */
-    transform: translateY(-5vh) !important; /* 👈 هان بترفع المودال لفوق أو بتنزله */
+    width: 92% !important; 
+    max-height: 75vh !important; 
+    margin-bottom: auto !important; 
+    transform: translateY(-5vh) !important;
   }
 
   .modal-form-scroll-container {
-    max-height: calc(85vh - 500px) !important; 
+    max-height: calc(85vh - 250px) !important; 
     padding: 0 5px;
   }
 
