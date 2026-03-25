@@ -188,7 +188,7 @@ const PROFILE_STYLES = `
       border-radius: 24px !important; 
       margin: auto !important; 
       width: 92% !important;        /* 👈 هان عرض الموبايل فقط صار صح */
-      max-height: 85vh !important;  
+      max-height: 70vh !important;  
       transform: translateY(-5vh) !important; 
   }
 
