@@ -311,176 +311,117 @@ const CHILDREN_STYLES = `
 }
 
 /* =========================================
-   تنسيقات النموذج (المودال) المتجاوبة والاحترافية
+   تنسيقات النموذج (المودال) لجعله متجاوب
+========================================= */
+.form-col-full {
+  grid-column: span 12;
+}
+.form-col {
+  grid-column: span 6;
+}
+
+/* =========================================
+   تصميم كروت الموبايل الفني والجديد كلياً
 ========================================= */
 
-.form-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 10px 0;
-}
-
-.form-fields-group {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* أهم تنسيق: ترتيب عمودي للحقول على الموبايل */
-.form-fields-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* تنسيق مجموعة الحقل (الاسم + صندوق الإدخال) */
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-
-/* وضع اسم الحقل فوق صندوق الإدخال */
-.form-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #64748b;
-  margin-bottom: 2px;
-}
-
-/* لضمان أن صناديق الإدخال تملأ المساحة */
-.form-container .input,
-.form-container textarea {
-  width: 100% !important;
-  box-sizing: border-box;
-}
-
-/* شريط الأزرار في أسفل النموذج */
-.form-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #f1f5f9;
-}
-
-/* تنسيقات كروت الموبايل (كما هي) */
 .mobile-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 12px 16px;
-  background: #f8fafc;
+  gap: 14px;
+  padding: 16px;
+  background: transparent;
 }
 
-.mobile-card {
+.art-card {
   background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.04);
-  border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  border-radius: 16px;
   padding: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 14px;
+  position: relative;
+  overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.mobile-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+.art-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
-.mc-avatar {
-  width: 50px;
-  height: 50px;
-  border-radius: 16px;
+/* الخط الجانبي الأنيق */
+.art-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 5px;
+  background: #f59e0b; /* لون برتقالي فخم */
+  border-radius: 0 16px 16px 0;
+}
+
+.ac-header {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 900;
-  flex-shrink: 0;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-right: 8px; /* إبعاد النص عن الخط الجانبي */
 }
 
-.mc-avatar.male {
-  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-  color: #0284c7;
-}
-
-.mc-avatar.female {
-  background: linear-gradient(135deg, #fce7f3, #fbcfe8);
-  color: #db2777;
-}
-
-.mc-avatar.default {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #d97706;
-}
-
-.mc-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.mc-name {
-  font-size: 16px;
+.ac-name {
+  margin: 0;
+  font-size: 17px;
   font-weight: 900;
   color: #0f172a;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0;
+  line-height: 1.3;
 }
 
-.mc-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.mc-class-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 8px;
-  background: #f1f5f9;
+.ac-class-badge {
+  background: #f8fafc;
   color: #475569;
-  border-radius: 8px;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.mc-phone-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: rgba(245, 158, 11, 0.1);
-  color: #d97706;
-  border-radius: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 800;
+  border: 1px solid #e2e8f0;
+}
+
+.ac-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-right: 8px;
+}
+
+.ac-phone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 700;
   direction: ltr;
 }
 
-.mc-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
+.ac-phone-icon {
+  color: #f59e0b;
+  background: #fffbeb;
+  padding: 4px;
+  border-radius: 50%;
 }
 
-.mc-btn {
+.ac-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ac-btn {
   width: 36px;
   height: 36px;
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -489,28 +430,27 @@ const CHILDREN_STYLES = `
   transition: all 0.2s ease;
 }
 
-.mc-btn-edit {
+.ac-btn-edit {
   background: #f1f5f9;
-  color: #64748b;
+  color: #3b82f6; /* أزرق هادي للتعديل */
 }
 
-.mc-btn-edit:hover {
-  background: #e2e8f0;
-  color: #334155;
-  transform: scale(1.05);
+.ac-btn-edit:hover {
+  background: #e0f2fe;
+  color: #0284c7;
 }
 
-.mc-btn-delete {
+.ac-btn-delete {
   background: #fef2f2;
-  color: #ef4444;
+  color: #ef4444; /* أحمر ناعم للحذف */
 }
 
-.mc-btn-delete:hover {
+.ac-btn-delete:hover {
   background: #fee2e2;
   color: #dc2626;
-  transform: scale(1.05);
 }
 
+/* الزر العائم في الموبايل - Portal (ثابت كما طلبنا) */
 .fab-button {
   position: fixed !important;
   bottom: 95px !important;
@@ -561,6 +501,10 @@ const CHILDREN_STYLES = `
     border-radius: 20px;
     margin: 0 16px; 
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  }
+  /* حل مشكلة المودال على الشاشات الصغيرة لتكون حقول الإدخال بعرض كامل */
+  .form-col {
+    grid-column: span 12 !important;
   }
 }
 
@@ -782,12 +726,6 @@ export default function Children() {
     return "-";
   };
 
-  const getAvatarClass = (gender) => {
-    if (gender === "male") return "male";
-    if (gender === "female") return "female";
-    return "default";
-  };
-
   return (
     <>
       <style>{CHILDREN_STYLES}</style>
@@ -924,65 +862,55 @@ export default function Children() {
                   </table>
                 </div>
 
-                {/* تصميم الكروت للموبايل (Mobile) كما هي */}
+                {/* تصميم الكروت الفني والأنيق بدون أفاتار للموبايل (Mobile) */}
                 <div className="mobile-list">
                   {filteredChildren.map((child) => (
                     <div
                       key={child.id}
-                      className="mobile-card"
+                      className="art-card"
                       onClick={() => navigate(`/children/${child.id}`)}
                     >
-                      {/* الأفاتار الملون */}
-                      <div
-                        className={`mc-avatar ${getAvatarClass(child.gender)}`}
-                      >
-                        {child.name ? (
-                          child.name.charAt(0)
-                        ) : (
-                          <Users size={24} />
-                        )}
+                      <div className="ac-header">
+                        <h3 className="ac-name">{child.name}</h3>
+                        <span className="ac-class-badge">
+                          {child.class || "غير محدد"}
+                        </span>
                       </div>
 
-                      {/* معلومات الطفل */}
-                      <div className="mc-info">
-                        <h3 className="mc-name">{child.name}</h3>
-                        <div className="mc-meta-row">
-                          <span className="mc-class-badge">
-                            {child.class || "غير محدد"}
+                      <div className="ac-footer">
+                        <div className="ac-phone">
+                          <span className="ac-phone-icon">
+                            <Phone size={14} strokeWidth={2.5} />
                           </span>
-                          <span className="mc-phone-badge">
-                            <Phone size={12} strokeWidth={2.5} />
-                            {child.mother_phone ||
-                              child.father_phone ||
-                              "لا يوجد رقم"}
-                          </span>
+                          {child.mother_phone ||
+                            child.father_phone ||
+                            "لا يوجد رقم"}
                         </div>
-                      </div>
 
-                      {/* أزرار الإجراءات الجانبية */}
-                      <div className="mc-actions">
-                        <button
-                          className="mc-btn mc-btn-edit"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(child);
-                          }}
-                        >
-                          <Pencil size={16} strokeWidth={2.5} />
-                        </button>
-                        <button
-                          className="mc-btn mc-btn-delete"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirm({
-                              open: true,
-                              id: child.id,
-                              text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
-                            });
-                          }}
-                        >
-                          <Trash2 size={16} strokeWidth={2.5} />
-                        </button>
+                        <div className="ac-actions">
+                          <button
+                            className="ac-btn ac-btn-edit"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(child);
+                            }}
+                          >
+                            <Pencil size={16} strokeWidth={2.5} />
+                          </button>
+                          <button
+                            className="ac-btn ac-btn-delete"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirm({
+                                open: true,
+                                id: child.id,
+                                text: `هل أنت متأكد من حذف بيانات الطفل (${child.name})؟`,
+                              });
+                            }}
+                          >
+                            <Trash2 size={16} strokeWidth={2.5} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -993,7 +921,7 @@ export default function Children() {
         </div>
       </div>
 
-      {/* الزر العائم (FAB) باستخدام createPortal لضمان ثباته */}
+      {/* الزر العائم (FAB) باستخدام createPortal */}
       {createPortal(
         <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
           <Plus size={30} strokeWidth={2.5} />
@@ -1001,25 +929,23 @@ export default function Children() {
         document.body,
       )}
 
-      {/* نموذج الإضافة والتعديل المحدث ليكون متجاوباً */}
+      {/* نموذج الإضافة والتعديل */}
       <Modal
         open={isModalOpen}
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
         onClose={() => !saving && setIsModalOpen(false)}
       >
-        {/* حاوية النموذج الجديدة */}
-        <div className="form-container">
+        <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
           {/* قسم البيانات الأساسية */}
-          <div className="form-fields-group">
+          <div className="form-col-full">
             <h4 className="form-section-title">
               <Users size={18} color="#64748b" /> البيانات الأساسية
             </h4>
-
-            {/* أهم شيء: ترتيب عمودي للحقول على الموبايل */}
-            <div className="form-fields-stack">
-              {/* مجموعة الحقل: الاسم */}
-              <div className="form-group">
-                <label className="form-label">الاسم الرباعي *</label>
+            <div className="grid" style={{ gap: "16px" }}>
+              <div className="form-col-full">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  الاسم الرباعي *
+                </div>
                 <input
                   className="input"
                   value={formData.name}
@@ -1029,10 +955,10 @@ export default function Children() {
                   placeholder="مثال: أحمد محمد علي"
                 />
               </div>
-
-              {/* مجموعة الحقل: العمر */}
-              <div className="form-group">
-                <label className="form-label">العمر</label>
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  العمر
+                </div>
                 <input
                   className="input"
                   type="number"
@@ -1045,10 +971,10 @@ export default function Children() {
                   placeholder="بالسنوات"
                 />
               </div>
-
-              {/* مجموعة الحقل: الجنس */}
-              <div className="form-group">
-                <label className="form-label">الجنس</label>
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  الجنس
+                </div>
                 <ModernSelect
                   value={formData.gender}
                   onChange={(v) => setFormData({ ...formData, gender: v })}
@@ -1058,10 +984,10 @@ export default function Children() {
                   ]}
                 />
               </div>
-
-              {/* مجموعة الحقل: الصف */}
-              <div className="form-group">
-                <label className="form-label">الصف</label>
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  الصف
+                </div>
                 <CustomCombobox
                   value={formData.class}
                   onChange={(v) => setFormData({ ...formData, class: v })}
@@ -1072,10 +998,10 @@ export default function Children() {
                   placeholder="اختر أو اكتب صفاً..."
                 />
               </div>
-
-              {/* مجموعة الحقل: المدينة */}
-              <div className="form-group">
-                <label className="form-label">المدينة / البلد</label>
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  المدينة / البلد
+                </div>
                 <CustomCombobox
                   value={formData.country_name}
                   onChange={(v) =>
@@ -1092,14 +1018,15 @@ export default function Children() {
           </div>
 
           {/* قسم معلومات التواصل مع الأهل */}
-          <div className="form-fields-group">
+          <div className="form-col-full">
             <h4 className="form-section-title">
               <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
             </h4>
-
-            <div className="form-fields-stack">
-              <div className="form-group">
-                <label className="form-label">هاتف الأم</label>
+            <div className="grid" style={{ gap: "16px" }}>
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  هاتف الأم
+                </div>
                 <input
                   className="input"
                   value={formData.mother_phone}
@@ -1111,9 +1038,10 @@ export default function Children() {
                   style={{ textAlign: "right" }}
                 />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">اسم الأم</label>
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  اسم الأم
+                </div>
                 <input
                   className="input"
                   value={formData.mother_name}
@@ -1123,9 +1051,10 @@ export default function Children() {
                   placeholder="اختياري"
                 />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">هاتف الأب</label>
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  هاتف الأب
+                </div>
                 <input
                   className="input"
                   value={formData.father_phone}
@@ -1137,9 +1066,10 @@ export default function Children() {
                   style={{ textAlign: "right" }}
                 />
               </div>
-
-              <div className="form-group">
-                <label className="form-label">اسم الأب</label>
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  اسم الأب
+                </div>
                 <input
                   className="input"
                   value={formData.father_name}
@@ -1153,24 +1083,32 @@ export default function Children() {
           </div>
 
           {/* قسم الملاحظات */}
-          <div className="form-fields-group">
-            <div className="form-group">
-              <label className="form-label">ملاحظات إضافية</label>
-              <textarea
-                className="input"
-                rows={3}
-                value={formData.notes}
-                onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
-                }
-                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
-                style={{ resize: "vertical" }}
-              />
+          <div className="form-col-full">
+            <div className="muted" style={{ marginBottom: 6 }}>
+              ملاحظات إضافية
             </div>
+            <textarea
+              className="input"
+              rows={3}
+              value={formData.notes}
+              onChange={(e) =>
+                setFormData({ ...formData, notes: e.target.value })
+              }
+              placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+              style={{ resize: "vertical" }}
+            />
           </div>
 
-          {/* أزرار الإجراءات المحدثة */}
-          <div className="form-footer">
+          {/* أزرار الإجراءات في النموذج */}
+          <div
+            style={{
+              gridColumn: "span 12",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 10,
+              marginTop: 10,
+            }}
+          >
             <button
               className="btn"
               onClick={() => setIsModalOpen(false)}
