@@ -188,12 +188,12 @@ const PROFILE_STYLES = `
       border-radius: 24px !important; 
       margin: auto !important; 
       width: 92% !important;        /* 👈 هان عرض الموبايل فقط صار صح */
-      max-height: 75vh !important;  
+      max-height: 85vh !important;  
       transform: translateY(-2vh) !important; 
   }
 
   .modal-form-scroll-container {
-      max-height: calc(85vh - 130px) !important; 
+      max-height: calc(85vh - 250px) !important; 
       padding: 0 5px;
   }
 }
