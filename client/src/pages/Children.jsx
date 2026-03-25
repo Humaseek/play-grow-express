@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
+// إضافة الاستيراد الخاص بـ useNavigate للانتقال بين الصفحات
 import { useNavigate } from "react-router-dom";
+// السلاح السري لحل مشكلة الزر العائم
 import { createPortal } from "react-dom";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
@@ -500,7 +502,7 @@ const CHILDREN_STYLES = `
   
   /* تقصير ارتفاع السكرول لضمان ظهور الأزرار دائماً في الموبايل */
   .modal-form-scroll-container {
-    max-height: 55vh; 
+    max-height: 50vh; /* تصغير المسافة المتاحة للتمرير لضمان ظهور الشريط السفلي */
   }
 
   /* الشبكة المدمجة للموبايل (عمودين) */
@@ -528,6 +530,12 @@ const CHILDREN_STYLES = `
   .input {
     padding: 10px 14px;
     font-size: 13px;
+  }
+  
+  /* ضمان ظهور الشريط الثابت بالأسفل بوضوح */
+  .modal-fixed-footer {
+    padding-bottom: 10px; /* مسافة بسيطة من الأسفل */
+    margin-top: 5px;
   }
 }
 
