@@ -298,13 +298,29 @@ const CHILDREN_STYLES = `
 }
 
 /* =========================================
-   تنسيقات النموذج (المودال) لجعله متجاوب وأنيق
+   تنسيقات النموذج (المودال) - شكل اللابتوب המدمج
 ========================================= */
-.form-col-full {
-  grid-column: span 12;
+.modal-scroll-container {
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-left: 8px;
+  padding-bottom: 10px;
 }
-.form-col {
-  grid-column: span 6;
+
+/* تصميم السكرول بار */
+.modal-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.modal-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
 }
 
 .form-section-title {
@@ -318,36 +334,14 @@ const CHILDREN_STYLES = `
   gap: 8px;
 }
 
-.modal-form-grid {
+/* شبكة الحقول الثابتة (عمودين) */
+.custom-form-grid {
   display: grid;
-  gap: 20px;
-  padding: 10px 4px;
-}
-
-.modal-inner-grid {
-  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
-
-.modal-scroll-fix {
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-left: 8px; /* مسافة بسيطة للسكرولبار */
-}
-
-/* تجميل شكل السكرولبار (الشريط الجانبي) */
-.modal-scroll-fix::-webkit-scrollbar {
-  width: 5px;
-}
-.modal-scroll-fix::-webkit-scrollbar-track {
-  background: transparent;
-}
-.modal-scroll-fix::-webkit-scrollbar-thumb {
-  background-color: #cbd5e1;
-  border-radius: 10px;
-}
-.modal-scroll-fix::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8;
+.custom-form-col-full {
+  grid-column: span 2;
 }
 
 /* =========================================
@@ -404,7 +398,6 @@ const CHILDREN_STYLES = `
   font-size: 17px;
   font-weight: 900;
   color: #0f172a;
-  line-height: 1.3;
 }
 
 .ac-class-badge {
@@ -457,26 +450,10 @@ const CHILDREN_STYLES = `
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
-.ac-btn-edit {
-  background: #f1f5f9;
-  color: #3b82f6;
-}
-
-.ac-btn-edit:hover {
-  background: #e0f2fe;
-  color: #0284c7;
-}
-
-.ac-btn-delete {
-  background: #fef2f2;
-  color: #ef4444;
-}
-
-.ac-btn-delete:hover {
-  background: #fee2e2;
-  color: #dc2626;
-}
+.ac-btn-edit { background: #f1f5f9; color: #3b82f6; }
+.ac-btn-edit:hover { background: #e0f2fe; color: #0284c7; }
+.ac-btn-delete { background: #fef2f2; color: #ef4444; }
+.ac-btn-delete:hover { background: #fee2e2; color: #dc2626; }
 
 /* الزر العائم في الموبايل */
 .fab-button {
@@ -498,71 +475,24 @@ const CHILDREN_STYLES = `
   transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.fab-button:hover, .fab-button:active {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
-  background: #d97706;
-}
-
 /* التجاوب (Media Queries) */
 @media (max-width: 768px) {
-  /* التعديل الجوهري للمودال عشان يكون ملموم وصغير */
-  .modal-scroll-fix {
-    max-height: 65vh !important; /* أقصى ارتفاع 65% من الشاشة بس */
-  }
+  .desktop-table-container { display: none; }
+  .btn-add-desktop { display: none !important; }
+  .children-toolbar { padding: 16px; border-bottom: none; }
+  .page--children { padding-bottom: 120px; }
+  .children-card { background: transparent; border: none; box-shadow: none; }
+  .children-toolbar { background: #ffffff; border-radius: 20px; margin: 0 16px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03); }
   
-  .modal-form-grid {
-    gap: 12px; /* تصغير المسافات بين الأقسام الرئيسية */
-  }
-  
-  .modal-inner-grid {
-    gap: 10px; /* تصغير المسافات بين الحقول في الموبايل */
-  }
-
-  .form-section-title {
-    margin: 0 0 10px 0;
-    padding-bottom: 8px;
-    font-size: 15px;
-  }
-  
-  /* جعل جميع الحقول تأخذ العرض كامل في الموبايل */
-  .form-col {
-    grid-column: span 12 !important;
-  }
-
-  .desktop-table-container { 
-    display: none; 
-  }
-  .btn-add-desktop { 
-    display: none !important; 
-  }
-  .children-toolbar { 
-    padding: 16px; 
-    border-bottom: none; 
-  }
-  .page--children { 
-    padding-bottom: 120px; 
-  }
-  .children-card {
-    background: transparent; 
-    border: none;
-    box-shadow: none;
-  }
-  .children-toolbar {
-    background: #ffffff;
-    border-radius: 20px;
-    margin: 0 16px; 
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
-  }
+  /* في الشاشات الصغيرة جداً نرجعها عمود واحد لتجنب التزاحم */
+  .custom-form-grid { grid-template-columns: 1fr; }
+  .custom-form-col-full { grid-column: span 1; }
+  .modal-scroll-container { max-height: calc(100vh - 180px); }
 }
 
 @media (min-width: 769px) {
-  .mobile-list { 
-    display: none; 
-  }
-  .fab-button { 
-    display: none !important; 
-  }
+  .mobile-list { display: none; }
+  .fab-button { display: none !important; }
 }
 `;
 
@@ -781,7 +711,6 @@ export default function Children() {
       {/* حاوية الصفحة الأساسية */}
       <div className="page page--children" dir="rtl" lang="ar">
         <div className="container">
-          {/* رأس الصفحة */}
           <div className="children-header">
             <div className="children-title">الأطفال</div>
             <div className="children-subtitle">
@@ -793,7 +722,6 @@ export default function Children() {
           {error && <ErrorBanner error={error} />}
 
           <div className="children-card">
-            {/* شريط الأدوات العلوي */}
             <div className="children-toolbar">
               <div className="search-wrapper">
                 <Search size={18} className="search-icon" />
@@ -805,7 +733,6 @@ export default function Children() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              {/* زر الإضافة للشاشات الكبيرة فقط */}
               <button
                 className="btn btn-add btn-add-desktop"
                 onClick={openAddModal}
@@ -828,7 +755,6 @@ export default function Children() {
               </div>
             ) : (
               <>
-                {/* عرض الجدول المعتاد للشاشات الكبيرة (Desktop) */}
                 <div
                   className="desktop-table-container"
                   style={{ overflowX: "auto" }}
@@ -910,7 +836,6 @@ export default function Children() {
                   </table>
                 </div>
 
-                {/* تصميم الكروت للموبايل (Mobile) */}
                 <div className="mobile-list">
                   {filteredChildren.map((child) => (
                     <div
@@ -924,7 +849,6 @@ export default function Children() {
                           {child.class || "غير محدد"}
                         </span>
                       </div>
-
                       <div className="ac-footer">
                         <div className="ac-phone">
                           <span className="ac-phone-icon">
@@ -934,7 +858,6 @@ export default function Children() {
                             child.father_phone ||
                             "لا يوجد رقم"}
                         </div>
-
                         <div className="ac-actions">
                           <button
                             className="ac-btn ac-btn-edit"
@@ -969,7 +892,6 @@ export default function Children() {
         </div>
       </div>
 
-      {/* الزر العائم (FAB) */}
       {createPortal(
         <button className="fab-button" onClick={openAddModal} title="إضافة طفل">
           <Plus size={30} strokeWidth={2.5} />
@@ -977,184 +899,176 @@ export default function Children() {
         document.body,
       )}
 
-      {/* نموذج الإضافة والتعديل */}
+      {/* نموذج الإضافة والتعديل - بتصميم اللابتوب المرتب */}
       <Modal
         open={isModalOpen}
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
         onClose={() => !saving && setIsModalOpen(false)}
       >
-        <div className="modal-form-grid modal-scroll-fix">
+        <div className="modal-scroll-container">
           {/* قسم البيانات الأساسية */}
-          <div className="form-col-full">
-            <h4 className="form-section-title">
-              <Users size={18} color="#64748b" /> البيانات الأساسية
-            </h4>
-            <div className="modal-inner-grid">
-              <div className="form-col-full">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  الاسم الرباعي *
-                </div>
-                <input
-                  className="input"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="مثال: أحمد محمد علي"
-                />
+          <h4 className="form-section-title">
+            <Users size={18} color="#64748b" /> البيانات الأساسية
+          </h4>
+          <div className="custom-form-grid">
+            <div className="custom-form-col-full">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                الاسم الرباعي *
               </div>
-              <div className="form-col">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  العمر
-                </div>
-                <input
-                  className="input"
-                  type="number"
-                  min={0}
-                  max={120}
-                  value={formData.age}
-                  onChange={(e) =>
-                    setFormData({ ...formData, age: e.target.value })
-                  }
-                  placeholder="بالسنوات"
-                />
+              <input
+                className="input"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="مثال: أحمد محمد علي"
+              />
+            </div>
+            <div>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                العمر
               </div>
-              <div className="form-col">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  الجنس
-                </div>
-                <ModernSelect
-                  value={formData.gender}
-                  onChange={(v) => setFormData({ ...formData, gender: v })}
-                  options={[
-                    { value: "male", label: "ذكر" },
-                    { value: "female", label: "أنثى" },
-                  ]}
-                />
+              <input
+                className="input"
+                type="number"
+                min={0}
+                max={120}
+                value={formData.age}
+                onChange={(e) =>
+                  setFormData({ ...formData, age: e.target.value })
+                }
+                placeholder="بالسنوات"
+              />
+            </div>
+            <div>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                الجنس
               </div>
-              <div className="form-col">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  الصف
-                </div>
-                <CustomCombobox
-                  value={formData.class}
-                  onChange={(v) => setFormData({ ...formData, class: v })}
-                  options={classes.map((c) => ({
-                    value: c.name,
-                    label: c.name,
-                  }))}
-                  placeholder="اختر أو اكتب صفاً..."
-                />
+              <ModernSelect
+                value={formData.gender}
+                onChange={(v) => setFormData({ ...formData, gender: v })}
+                options={[
+                  { value: "male", label: "ذكر" },
+                  { value: "female", label: "أنثى" },
+                ]}
+              />
+            </div>
+            <div>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                الصف
               </div>
-              <div className="form-col">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  المدينة / البلد
-                </div>
-                <CustomCombobox
-                  value={formData.country_name}
-                  onChange={(v) =>
-                    setFormData({ ...formData, country_name: v })
-                  }
-                  options={countries.map((c) => ({
-                    value: c.name,
-                    label: c.name,
-                  }))}
-                  placeholder="اختر أو اكتب مدينة..."
-                />
+              <CustomCombobox
+                value={formData.class}
+                onChange={(v) => setFormData({ ...formData, class: v })}
+                options={classes.map((c) => ({ value: c.name, label: c.name }))}
+                placeholder="اختر أو اكتب صفاً..."
+              />
+            </div>
+            <div>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                المدينة / البلد
               </div>
+              <CustomCombobox
+                value={formData.country_name}
+                onChange={(v) => setFormData({ ...formData, country_name: v })}
+                options={countries.map((c) => ({
+                  value: c.name,
+                  label: c.name,
+                }))}
+                placeholder="اختر أو اكتب مدينة..."
+              />
             </div>
           </div>
 
           {/* قسم معلومات التواصل مع الأهل */}
-          <div className="form-col-full">
-            <h4 className="form-section-title">
-              <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
-            </h4>
-            <div className="modal-inner-grid">
-              <div className="form-col">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  هاتف الأم
-                </div>
-                <input
-                  className="input"
-                  value={formData.mother_phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, mother_phone: e.target.value })
-                  }
-                  placeholder="رقم الهاتف"
-                  dir="ltr"
-                  style={{ textAlign: "right" }}
-                />
+          <h4 className="form-section-title" style={{ marginTop: 24 }}>
+            <Phone size={18} color="#64748b" /> معلومات التواصل (الأهل)
+          </h4>
+          <div className="custom-form-grid">
+            <div>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                هاتف الأم
               </div>
-              <div className="form-col">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  اسم الأم
-                </div>
-                <input
-                  className="input"
-                  value={formData.mother_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, mother_name: e.target.value })
-                  }
-                  placeholder="اختياري"
-                />
+              <input
+                className="input"
+                value={formData.mother_phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, mother_phone: e.target.value })
+                }
+                placeholder="رقم الهاتف"
+                dir="ltr"
+                style={{ textAlign: "right" }}
+              />
+            </div>
+            <div>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                اسم الأم
               </div>
-              <div className="form-col">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  هاتف الأب
-                </div>
-                <input
-                  className="input"
-                  value={formData.father_phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, father_phone: e.target.value })
-                  }
-                  placeholder="رقم الهاتف"
-                  dir="ltr"
-                  style={{ textAlign: "right" }}
-                />
+              <input
+                className="input"
+                value={formData.mother_name}
+                onChange={(e) =>
+                  setFormData({ ...formData, mother_name: e.target.value })
+                }
+                placeholder="اختياري"
+              />
+            </div>
+            <div>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                هاتف الأب
               </div>
-              <div className="form-col">
-                <div className="muted" style={{ marginBottom: 6 }}>
-                  اسم الأب
-                </div>
-                <input
-                  className="input"
-                  value={formData.father_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, father_name: e.target.value })
-                  }
-                  placeholder="اختياري"
-                />
+              <input
+                className="input"
+                value={formData.father_phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, father_phone: e.target.value })
+                }
+                placeholder="رقم الهاتف"
+                dir="ltr"
+                style={{ textAlign: "right" }}
+              />
+            </div>
+            <div>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                اسم الأب
               </div>
+              <input
+                className="input"
+                value={formData.father_name}
+                onChange={(e) =>
+                  setFormData({ ...formData, father_name: e.target.value })
+                }
+                placeholder="اختياري"
+              />
             </div>
           </div>
 
           {/* قسم الملاحظات */}
-          <div className="form-col-full">
-            <div className="muted" style={{ marginBottom: 6 }}>
-              ملاحظات إضافية
+          <div className="custom-form-grid" style={{ marginTop: 16 }}>
+            <div className="custom-form-col-full">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                ملاحظات إضافية
+              </div>
+              <textarea
+                className="input"
+                rows={2}
+                value={formData.notes}
+                onChange={(e) =>
+                  setFormData({ ...formData, notes: e.target.value })
+                }
+                placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
+                style={{ resize: "vertical" }}
+              />
             </div>
-            <textarea
-              className="input"
-              rows={3}
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData({ ...formData, notes: e.target.value })
-              }
-              placeholder="أي تفاصيل طبية أو ملاحظات أخرى..."
-              style={{ resize: "vertical" }}
-            />
           </div>
 
-          {/* أزرار الإجراءات في النموذج */}
+          {/* أزرار الإجراءات */}
           <div
             style={{
-              gridColumn: "span 12",
               display: "flex",
               justifyContent: "flex-end",
               gap: 10,
-              marginTop: 10,
+              marginTop: 24,
             }}
           >
             <button
@@ -1175,7 +1089,6 @@ export default function Children() {
         </div>
       </Modal>
 
-      {/* حوار تأكيد الحذف */}
       <ConfirmDialog
         open={confirm.open}
         title="تأكيد الحذف"
