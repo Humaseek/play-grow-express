@@ -464,8 +464,8 @@ const CHILDREN_STYLES = `
   
   /* تجاوز تنسيقات المودال الأساسية الموضعية */
   .Modal__content {
-     top: 10% !important;
-     transform: translateY(-50%) !important;
+     top: 20% !important;
+     transform: translateY(-20%) !important;
      margin-top: 0 !important;
   }
 
