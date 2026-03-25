@@ -175,29 +175,28 @@ const PROFILE_STYLES = `
 .col-4 { grid-column: span 4; }
 .col-12 { grid-column: span 12; }
 
-@media (max-width: 1024px) {
+@media (max-width: 980px) {
   .col-8, .col-4 { grid-column: span 12; }
-}
 
-/* --- التحكم في المودال (النافذة المنبثقة) للموبايل --- */
+  /* --- التحكم في المودال (النافذة المنبثقة) للموبايل --- */
   div.modalOverlay {
     align-items: center !important; 
     padding: 16px !important;
   }
   
   div.modalOverlay > div.modalCard {
-    border-radius: 24px !important; 
-    margin: auto !important; 
-    width: 92% !important; 
-    max-height: 85vh !important; 
-    margin-bottom: auto !important; 
-    transform: translateY(-5vh) !important;
+      border-radius: 24px !important; 
+      margin: auto !important; 
+      width: 95% !important;        /* 👈 هان عرض الموبايل فقط صار صح */
+      max-height: 85vh !important;  
+      transform: translateY(-2vh) !important; 
   }
 
   .modal-form-scroll-container {
-    max-height: calc(85vh - 250px) !important; 
-    padding: 0 5px;
+      max-height: calc(85vh - 130px) !important; 
+      padding: 0 5px;
   }
+}
 
 .section-head {
   display: flex;
