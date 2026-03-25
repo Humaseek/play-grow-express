@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom"; // إضافة البورتال للزر العائم
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
 import Modal from "../components/Modal";
@@ -20,34 +21,147 @@ const emptyForm = {
   notes: "",
 };
 
-const formLabelStyle = {
-  fontSize: 13,
-  fontWeight: 800,
-  color: "#4b3f62",
-  marginBottom: 8,
-  textAlign: "right",
-  lineHeight: 1.4,
-  paddingInline: 4,
-};
+// --- تنسيقات CSS مدمجة خاصة بالمودال والزر العائم للموبايل ---
+const COURSES_STYLES = `
+.btn-add {
+  background: #7c3aed !important; /* لون بنفسجي لصفحة الدورات */
+  color: #fff !important;
+  border: none !important;
+  border-radius: 14px !important;
+  padding: 10px 20px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.2) !important;
+  transition: all 0.2s !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 
-const formInputStyle = {
-  width: "100%",
-  textAlign: "right",
-  direction: "rtl",
-  boxSizing: "border-box",
-  background: "#ffffff",
-  border: "1px solid #d8d1e4",
-  borderRadius: 999,
-  minHeight: 46,
-  padding: "11px 16px",
-  color: "#1f172b",
-  outline: "none",
-  boxShadow: "none",
-};
+.btn-add:hover {
+  transform: translateY(-2px);
+  background: #6d28d9 !important;
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3) !important;
+}
 
-const formFieldCardStyle = {
-  minWidth: 0,
-};
+/* =========================================
+   تنسيقات النموذج (المودال) - ثابتة لجميع الشاشات
+========================================= */
+.form-section-title {
+  margin: 0 0 16px 0;
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 800;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.modal-form-scroll-container {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 8px;
+  max-height: 65vh;
+}
+
+.modal-form-scroll-container::-webkit-scrollbar {
+  width: 5px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+.modal-form-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.responsive-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding-bottom: 16px;
+}
+
+.form-col-full { grid-column: span 2; }
+.form-col { grid-column: span 1; }
+
+.modal-fixed-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 16px;
+  margin-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* الزر العائم في الموبايل */
+.fab-button {
+  position: fixed !important;
+  bottom: 95px !important;
+  right: 20px !important;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #7c3aed; /* لون بنفسجي للدورات */
+  color: white;
+  border: none;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 999999 !important;
+}
+
+/* =========================================
+   التجاوب الخاص بالموبايل وإلغاء Bottom Sheet
+========================================= */
+@media (max-width: 980px) {
+  div.modalOverlay {
+    align-items: center !important; 
+    padding: 16px !important;
+  }
+  
+  div.modalOverlay > div.modalCard {
+    border-radius: 24px !important; 
+    margin: auto !important; 
+    width: 92% !important; 
+    max-height: 85vh !important; 
+    margin-bottom: auto !important; 
+    transform: translateY(-5vh) !important;
+  }
+
+  .modal-form-scroll-container {
+    max-height: calc(85vh - 140px) !important; 
+    padding: 0 5px;
+  }
+
+  .btn-add-desktop { display: none !important; }
+  .page--courses { padding-bottom: 120px; }
+  
+  /* زيادة عرض الفلاتر والكروت في الموبايل */
+  .filtersBar { margin: 0 4px !important; }
+  .cardsGrid { gap: 12px; padding: 0 4px !important; }
+  
+  /* ترتيب الفورم (عمودين) على الموبايل */
+  .responsive-form-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+    padding-bottom: 12px;
+  }
+  
+  .form-col-full { grid-column: span 2 !important; }
+  .form-col { grid-column: span 1 !important; }
+
+  .form-section-title { margin: 10px 0 10px 0; font-size: 14px; }
+  .input { padding: 10px 14px; font-size: 13px; }
+  .modal-fixed-footer { padding-bottom: 10px; margin-top: 5px; }
+}
+
+@media (min-width: 981px) {
+  .fab-button { display: none !important; }
+}
+`;
 
 function InfoBox({ label, value }) {
   return (
@@ -254,7 +368,7 @@ export default function Courses() {
   }
 
   async function save(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setSaving(true);
     setError(null);
 
@@ -326,6 +440,8 @@ export default function Courses() {
 
   return (
     <div className="container page page--courses" dir="rtl" lang="ar">
+      <style>{COURSES_STYLES}</style>
+
       <PageHeader
         title="الدورات"
         subtitle="إدارة الدورات والورشات"
@@ -388,7 +504,10 @@ export default function Courses() {
             ]}
           />
 
-          <button className="btn primary filtersBar__btn" onClick={openCreate}>
+          <button
+            className="btn btn-add btn-add-desktop filtersBar__btn"
+            onClick={openCreate}
+          >
             <Plus size={18} /> إضافة
           </button>
         </div>
@@ -577,112 +696,96 @@ export default function Courses() {
         </div>
       )}
 
+      {/* الزر العائم للموبايل - يختفي عند فتح المودال */}
+      {!openForm &&
+        createPortal(
+          <button
+            className="fab-button"
+            onClick={openCreate}
+            title="إضافة دورة"
+          >
+            <Plus size={30} strokeWidth={2.5} />
+          </button>,
+          document.body,
+        )}
+
+      {/* نافذة الإضافة/التعديل بالتصميم الموحد الملموم */}
       <Modal
         open={openForm}
         title={form.id ? "تعديل دورة" : "إضافة دورة"}
         onClose={() => {
-          setOpenForm(false);
-          setForm(emptyForm);
+          if (!saving) {
+            setOpenForm(false);
+            setForm(emptyForm);
+          }
         }}
       >
-        <div
-          className="page page--courses"
-          dir="rtl"
-          lang="ar"
-          style={{
-            direction: "rtl",
-            width: "100%",
-            maxWidth: 420,
-            margin: "0 auto",
-            padding: "0 18px 12px",
-          }}
-        >
-          <form
-            onSubmit={save}
-            style={{
-              display: "grid",
-              gap: 14,
-            }}
-          >
-            <div style={formFieldCardStyle}>
-              <div style={formLabelStyle}>العنوان *</div>
+        <div className="modal-form-scroll-container">
+          <h4 className="form-section-title">
+            <BookOpen size={18} color="#64748b" /> البيانات الأساسية
+          </h4>
+          <div className="responsive-form-grid">
+            <div className="form-col-full">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                العنوان *
+              </div>
               <input
                 className="input"
-                style={formInputStyle}
                 value={form.title}
                 onChange={(e) =>
                   setForm((p) => ({ ...p, title: e.target.value }))
                 }
+                placeholder="مثال: دورة برمجة..."
               />
             </div>
 
-            <div style={formFieldCardStyle}>
-              <div style={formLabelStyle}>النوع</div>
-              <div dir="rtl">
-                <ModernSelect
-                  value={form.kind}
-                  onChange={(v) => setForm((p) => ({ ...p, kind: v }))}
-                  menuWidth="trigger"
-                  options={[
-                    { value: "course", label: "دورة" },
-                    { value: "workshop", label: "ورشة" },
-                  ]}
-                />
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                النوع
               </div>
+              <ModernSelect
+                value={form.kind}
+                onChange={(v) => setForm((p) => ({ ...p, kind: v }))}
+                options={[
+                  { value: "course", label: "دورة" },
+                  { value: "workshop", label: "ورشة" },
+                ]}
+              />
             </div>
 
-            <div style={formFieldCardStyle}>
-              <div style={formLabelStyle}>السعر</div>
+            <div className="form-col">
+              <div className="muted" style={{ marginBottom: 6 }}>
+                السعر (₪)
+              </div>
               <input
                 className="input"
-                style={formInputStyle}
                 type="number"
                 min="0"
                 step="0.01"
                 value={form.default_price}
                 onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    default_price: e.target.value,
-                  }))
+                  setForm((p) => ({ ...p, default_price: e.target.value }))
                 }
               />
             </div>
+          </div>
+        </div>
 
-            <button
-              className="btn primary"
-              disabled={saving}
-              style={{
-                width: "100%",
-                justifyContent: "center",
-                borderRadius: 999,
-                minHeight: 46,
-                marginTop: 6,
-              }}
-            >
-              {saving ? "جارٍ الحفظ..." : "حفظ"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setOpenForm(false);
-                setForm(emptyForm);
-              }}
-              style={{
-                background: "transparent",
-                border: "none",
-                padding: 0,
-                cursor: "pointer",
-                color: "#6c5f85",
-                fontSize: 15,
-                fontWeight: 700,
-                textAlign: "center",
-              }}
-            >
-              إلغاء
-            </button>
-          </form>
+        <div className="modal-fixed-footer">
+          <button
+            className="btn"
+            type="button"
+            onClick={() => {
+              setOpenForm(false);
+              setForm(emptyForm);
+            }}
+            disabled={saving}
+          >
+            إلغاء
+          </button>
+          <button className="btn btn-add" onClick={save} disabled={saving}>
+            {saving ? "جارٍ الحفظ..." : "حفظ البيانات"}
+          </button>
         </div>
       </Modal>
 
