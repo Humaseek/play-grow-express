@@ -221,6 +221,108 @@ const ATTENDANCE_STYLES = `
   opacity: 0.7 !important;
   cursor: not-allowed;
 }
+
+/* =========================================
+   📱 تجاوب الموبايل الخرافي (Mobile Pro Fixes)
+========================================= */
+@media (max-width: 980px) {
+  .attendancePage .toolbar {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .attendancePage .toolbar .btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  /* تحويل شبكة الإحصائيات لعمودين */
+  .att-summary-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .att-stat-card {
+    padding: 12px !important;
+  }
+  .att-stat-val {
+    font-size: 22px !important;
+  }
+
+  /* أزرار التحكم السريع */
+  .attendancePage .mainCard > div:first-child {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+  .attendancePage .mainCard > div:first-child > div {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    margin-top: 10px;
+  }
+  .att-quick-btn {
+    justify-content: center;
+    text-align: center;
+    padding: 8px 4px !important;
+    font-size: 11px !important;
+  }
+
+  /* تحويل الجدول إلى كروت */
+  .attendancePage .table,
+  .attendancePage .table tbody,
+  .attendancePage .table tr,
+  .attendancePage .table td {
+    display: block !important;
+    width: 100% !important;
+  }
+  .attendancePage .table thead {
+    display: none !important;
+  }
+  
+  .attendancePage .table tr {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 16px !important;
+    position: relative;
+  }
+  
+  .attendancePage .table td {
+    padding: 0 !important;
+    border: none !important;
+    text-align: right !important;
+  }
+  
+  /* إبعاد أزرار الحضور عن اسم الطالب */
+  .attendancePage .table td:first-child {
+    margin-bottom: 16px;
+    padding-right: 0 !important;
+  }
+  
+  /* توزيع أزرار الحضور بالتساوي لتسهيل الضغط */
+  .attendancePage .table td:last-child .row {
+    justify-content: space-between !important;
+    width: 100%;
+    gap: 0 !important;
+  }
+  
+  /* تكبير الأزرار قليلاً للّمس */
+  .att-action-btn {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  /* تنسيق العناوين الفاصلة (الرصيد) */
+  .section-title-td-ok, 
+  .section-title-td-danger {
+    padding: 12px 16px !important;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    margin-top: 8px;
+    text-align: right !important;
+  }
+}
 `;
 
 export default function Attendance() {
