@@ -500,7 +500,7 @@ const CHILDREN_STYLES = `
   }
 
   .modal-form-scroll-container {
-    max-height: calc(85vh - 350px) !important; 
+    max-height: calc(85vh - 500px) !important; 
     padding: 0 5px;
   }
 
