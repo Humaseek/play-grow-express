@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom"; // إضافة البورتال للزر العائم
+import { createPortal } from "react-dom";
 import { supabase } from "../supabaseClient";
 import ErrorBanner from "../components/ErrorBanner";
 import Modal from "../components/Modal";
@@ -24,7 +24,7 @@ const emptyForm = {
 // --- تنسيقات CSS مدمجة خاصة بالمودال والزر العائم للموبايل ---
 const COURSES_STYLES = `
 .btn-add {
-  background: #7c3aed !important; /* لون بنفسجي لصفحة الدورات */
+  background: #7c3aed !important;
   color: #fff !important;
   border: none !important;
   border-radius: 14px !important;
@@ -103,7 +103,7 @@ const COURSES_STYLES = `
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: #7c3aed; /* لون بنفسجي للدورات */
+  background: #7c3aed; 
   color: white;
   border: none;
   box-shadow: 0 6px 16px rgba(124, 58, 237, 0.3);
@@ -137,6 +137,10 @@ const COURSES_STYLES = `
   }
 
   .btn-add-desktop { display: none !important; }
+  
+  /* 👇 الكلاس الجديد لإخفاء العناصر من الموبايل 👇 */
+  .hide-on-mobile { display: none !important; }
+
   .page--courses { padding-bottom: 120px; }
   
   /* زيادة عرض الفلاتر والكروت في الموبايل */
@@ -447,7 +451,12 @@ export default function Courses() {
         subtitle="إدارة الدورات والورشات"
         actions={
           <div className="pageHeader__actions">
-            <button className="btn soft" onClick={load} title="تحديث">
+            {/* 👇 أضفنا الكلاس hide-on-mobile للزر عشان يختفي من الموبايل 👇 */}
+            <button
+              className="btn soft hide-on-mobile"
+              onClick={load}
+              title="تحديث"
+            >
               تحديث
             </button>
           </div>
