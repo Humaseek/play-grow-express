@@ -585,19 +585,19 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   div.modalOverlay {
     align-items: center !important; 
     padding: 16px !important;
+    z-index: 99999 !important; /* 👈 هان السر: هذا السطر رح يجبر المودال يغطي الشريط السفلي */
   }
   
   div.modalOverlay > div.modalCard {
     border-radius: 24px !important; 
     margin: auto !important; 
     width: 95% !important; 
-    max-height: 85vh !important; /* 👈 هان السر: كبرنا الطول لـ 85% من الشاشة */
+    max-height: 85vh !important; /* رجعنا الطول لـ 85 عشان يوخذ راحته */
     margin-bottom: auto !important; 
-    transform: translateY(-2vh) !important; /* 👈 رفعة خفيفة لفوق عشان الكيبورد */
   }
 
   .modal-form-scroll-container {
-    max-height: calc(85vh - 130px) !important; /* 👈 زبطنا السكرول الداخلي عشان يوسع القائمة */
+    max-height: calc(85vh - 130px) !important; 
     padding: 0 5px;
   }
 
