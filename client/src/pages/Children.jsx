@@ -320,6 +320,11 @@ const CHILDREN_STYLES = `
   grid-column: span 6;
 }
 
+.modal-scroll-fix {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 /* =========================================
    تصميم كروت الموبايل الفني والجديد كلياً
 ========================================= */
@@ -478,6 +483,10 @@ const CHILDREN_STYLES = `
 
 /* التجاوب (Media Queries) */
 @media (max-width: 768px) {
+  .modal-scroll-fix {
+    max-height: calc(100vh - 180px);
+    padding-bottom: 100px !important;
+  }
   .desktop-table-container { 
     display: none; 
   }
@@ -935,7 +944,10 @@ export default function Children() {
         title={editingId ? "تعديل بيانات الطفل" : "إضافة طفل جديد"}
         onClose={() => !saving && setIsModalOpen(false)}
       >
-        <div className="grid" style={{ gap: "20px", padding: "10px 0" }}>
+        <div
+          className="grid modal-scroll-fix"
+          style={{ gap: "20px", padding: "10px 0" }}
+        >
           {/* قسم البيانات الأساسية */}
           <div className="form-col-full">
             <h4 className="form-section-title">
