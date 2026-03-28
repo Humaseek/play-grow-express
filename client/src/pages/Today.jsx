@@ -1407,7 +1407,7 @@ export default function Dashboard() {
   const [pickerQ, setPickerQ] = useState("");
 
   // ==========================================
-  // حالات وإعدادات إضافة طالب جديد
+  // حالات وإعدادات إضافة طفل جديد
   // ==========================================
   const [openChildAdd, setOpenChildAdd] = useState(false);
   const [savingChild, setSavingChild] = useState(false);
@@ -1557,7 +1557,7 @@ export default function Dashboard() {
           ...recentPays.map((p) => ({
             type: "income",
             id: `p_${p.id}`,
-            title: p.child_name || "دفعة طالب",
+            title: p.child_name || "دفعة طفل",
             subtitle:
               p.method === "cash"
                 ? "كاش"
@@ -1808,7 +1808,7 @@ export default function Dashboard() {
 
   async function handleSavePayment() {
     if (!payEnrId) {
-      toast("الرجاء اختيار الطالب والاشتراك.", "warn");
+      toast("الرجاء اختيار الطفل والاشتراك.", "warn");
       return;
     }
     const val = Number(payAmt);
@@ -1844,7 +1844,7 @@ export default function Dashboard() {
   }
 
   // ============================================================================
-  // دوال نافذة إضافة طالب (النسخة الأصلية)
+  // دوال نافذة إضافة طفل (النسخة الأصلية)
   // ============================================================================
   async function loadChildPicklists() {
     const [cRes, clRes] = await Promise.all([
@@ -1875,7 +1875,7 @@ export default function Dashboard() {
 
   async function handleSaveChild() {
     if (!formData.name.trim()) {
-      toast("يرجى إدخال اسم الطالب.", "warn");
+      toast("يرجى إدخال اسم الطفل.", "warn");
       return;
     }
 
@@ -1917,7 +1917,7 @@ export default function Dashboard() {
       const { error } = await supabase.from("children").insert([payload]);
 
       if (error) throw error;
-      toast("تم إضافة الطالب بنجاح.", "ok");
+      toast("تم إضافة الطفل بنجاح.", "ok");
       setOpenChildAdd(false);
       loadDashboard();
     } catch (e) {
@@ -2619,7 +2619,7 @@ export default function Dashboard() {
                           (e.currentTarget.style.background = "#fff5f5")
                         }
                       >
-                        عرض القائمة الكاملة ({dashData.debtors.length} طلاب)
+                        عرض القائمة الكاملة ({dashData.debtors.length} اطفال)
                       </button>
                     )}
                   </div>
@@ -2844,7 +2844,7 @@ export default function Dashboard() {
                   className="input"
                   value={expDesc}
                   onChange={(e) => setExpDesc(e.target.value)}
-                  placeholder="مثال: ضيافة للطلاب، قرطاسية..."
+                  placeholder="مثال: ضيافة للاطفال، قرطاسية..."
                 />
               </div>
             </div>
@@ -2884,7 +2884,7 @@ export default function Dashboard() {
                 className="search-input"
                 value={pickerQ}
                 onChange={(e) => setPickerQ(e.target.value)}
-                placeholder="ابحث باسم الطالب أو الدورة..."
+                placeholder="ابحث باسم الطفل أو الدورة..."
               />
             </div>
             <div className="enrollment-picker-list">
@@ -3161,7 +3161,7 @@ export default function Dashboard() {
         {/* 4. نافذة القائمة الكاملة لرادار الديون */}
         <Modal
           open={openDebtorsModal}
-          title={`الطلاب المتأخرين بالدفع (${dashData.debtors.length})`}
+          title={`الاطفال المتأخرين بالدفع (${dashData.debtors.length})`}
           onClose={() => setOpenDebtorsModal(false)}
         >
           <div className="modal-form-scroll-container">
@@ -3210,7 +3210,7 @@ export default function Dashboard() {
           message={
             confirm.action === "done"
               ? "هل أنت متأكد من تعليم هذه الجلسة كمكتملة؟ سيتم إغلاقها ولن تظهر كمجدولة."
-              : "هل أنت متأكد من إلغاء هذه الجلسة؟ لن يتم احتسابها من أرصدة الطلاب."
+              : "هل أنت متأكد من إلغاء هذه الجلسة؟ لن يتم احتسابها من أرصدة الاطفال."
           }
           confirmText="نعم، تأكيد الإجراء"
           cancelText="تراجع"

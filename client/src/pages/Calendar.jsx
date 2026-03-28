@@ -764,7 +764,7 @@ export default function CalendarPage() {
                   <span className="cal-stat-icon">
                     <Users size={14} /> حضور
                   </span>
-                  <span>{data.attendance} طالب</span>
+                  <span>{data.attendance} طفل</span>
                 </div>
               )}
             </div>
@@ -917,10 +917,10 @@ export default function CalendarPage() {
             </div>
             <div>
               <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
-                إجمالي حضور الطلاب
+                إجمالي حضور الاطفال
               </div>
               <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
-                {loading ? "..." : monthTotals.attendance} طالب
+                {loading ? "..." : monthTotals.attendance} طفل
               </div>
             </div>
           </div>
@@ -961,7 +961,10 @@ export default function CalendarPage() {
                   )}
                 </div>
               </div>
-              <button className="cal-sheet-close" onClick={() => setSheet(null)}>
+              <button
+                className="cal-sheet-close"
+                onClick={() => setSheet(null)}
+              >
                 ✕
               </button>
             </div>
@@ -978,7 +981,9 @@ export default function CalendarPage() {
                     <span className="stat-left">
                       <TrendingUp size={20} /> إيرادات
                     </span>
-                    <span className="stat-val">{fmtMoney(sheet.data.income)} ₪</span>
+                    <span className="stat-val">
+                      {fmtMoney(sheet.data.income)} ₪
+                    </span>
                   </div>
                 )}
                 {sheet.data.expense > 0 && (
@@ -986,7 +991,9 @@ export default function CalendarPage() {
                     <span className="stat-left">
                       <TrendingDown size={20} /> مصاريف
                     </span>
-                    <span className="stat-val">{fmtMoney(sheet.data.expense)} ₪</span>
+                    <span className="stat-val">
+                      {fmtMoney(sheet.data.expense)} ₪
+                    </span>
                   </div>
                 )}
                 {sheet.data.sessions > 0 && (
@@ -1000,9 +1007,11 @@ export default function CalendarPage() {
                 {sheet.data.attendance > 0 && (
                   <div className="cal-sheet-stat attendance">
                     <span className="stat-left">
-                      <Users size={20} /> حضور الطلاب
+                      <Users size={20} /> حضور الاطفال
                     </span>
-                    <span className="stat-val">{sheet.data.attendance} طالب</span>
+                    <span className="stat-val">
+                      {sheet.data.attendance} طفل
+                    </span>
                   </div>
                 )}
               </div>

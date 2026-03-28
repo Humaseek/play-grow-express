@@ -211,7 +211,7 @@ const PROFILE_STYLES = `
   border-bottom: 2px solid #f1f5f9;
 }
 
-/* معلومات الطالب */
+/* معلومات الطفل */
 .info-matrix {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -434,7 +434,7 @@ export default function ChildDetails() {
     if (!childId) return;
     setLoading(true);
     try {
-      // 1. جلب بيانات الطالب
+      // 1. جلب بيانات الطفل
       const { data: childData, error: childErr } = await supabase
         .from("children_view")
         .select("*")
@@ -481,7 +481,7 @@ export default function ChildDetails() {
       if (payErr) throw payErr;
       setPayments(payData || []);
     } catch (err) {
-      setError("حدث خطأ أثناء تحميل بيانات الطالب: " + err.message);
+      setError("حدث خطأ أثناء تحميل الطفل: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -569,7 +569,7 @@ export default function ChildDetails() {
             fontWeight: 800,
           }}
         >
-          جاري تهيئة لوحة تحكم الطالب...
+          جاري تهيئة لوحة تحكم الطفل...
         </h2>
       </div>
     );
@@ -578,7 +578,7 @@ export default function ChildDetails() {
   if (!child)
     return (
       <div className="loader-wrapper">
-        <h2>الطالب غير موجود.</h2>
+        <h2>الطفل غير موجود.</h2>
       </div>
     );
 
@@ -796,9 +796,9 @@ export default function ChildDetails() {
           </div>
         </div>
 
-        {/* === القسم الثالث: تفاصيل الطالب (Bento) === */}
+        {/* === القسم الثالث: تفاصيل الطفل (Bento) === */}
         <div className="bento-grid">
-          {/* بيانات الطالب */}
+          {/* بيانات الطفل */}
           <div className="bento-box col-8">
             <h2 className="section-head">
               <UserRound color="#3b82f6" size={24} /> البيانات الأساسية
@@ -886,7 +886,7 @@ export default function ChildDetails() {
                   style={{ margin: "0 auto" }}
                 />
                 <h3>لا توجد اشتراكات</h3>
-                <p>هذا الطالب غير مسجل في أي دورة أو مجموعة حالياً.</p>
+                <p>هذا الطفل غير مسجل في أي دورة أو مجموعة حالياً.</p>
               </div>
             ) : (
               <div className="table-responsive">
@@ -998,7 +998,7 @@ export default function ChildDetails() {
                   style={{ margin: "0 auto" }}
                 />
                 <h3>لا توجد دفعات مسجلة</h3>
-                <p>لم يقم الطالب بدفع أي أقساط حتى الآن.</p>
+                <p>لم يقم الطفل بدفع أي أقساط حتى الآن.</p>
               </div>
             ) : (
               <div className="table-responsive">
@@ -1150,16 +1150,16 @@ export default function ChildDetails() {
               طريقة الدفع
             </div>
             <ModernSelect
-                    value={payMethod}
-                    onChange={setPayMethod}
-                    options={[
-                      { value: "cash", label: "كاش" },
-                      { value: "card", label: "بطاقة" },
-                      { value: "transfer", label: "تحويل بنكي" },
-                      { value: "bit", label: "بييت" },
-                      { value: "other", label: "أخرى" },
-                    ]}
-                  />
+              value={payMethod}
+              onChange={setPayMethod}
+              options={[
+                { value: "cash", label: "كاش" },
+                { value: "card", label: "بطاقة" },
+                { value: "transfer", label: "تحويل بنكي" },
+                { value: "bit", label: "بييت" },
+                { value: "other", label: "أخرى" },
+              ]}
+            />
           </div>
 
           <div style={{ gridColumn: "span 12" }}>

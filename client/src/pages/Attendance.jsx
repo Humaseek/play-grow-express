@@ -375,7 +375,7 @@ const ATTENDANCE_STYLES = `
     width: 100% !important;
   }
 
-  /* --- الكروت (صفوف الطلاب) --- */
+  /* --- الكروت (صفوف الاطفال) --- */
   .attendancePage .table tr {
     display: flex !important;
     flex-direction: column !important;
@@ -442,11 +442,10 @@ const ATTENDANCE_STYLES = `
   /* --- خلية الأزرار --- */
   .attendancePage .table td:last-child {
     overflow: visible !important;
-    text-align: center !important;
   }
 
-  /* إبطال .table td > div من styles.css العام */
-  .attendancePage .table td:last-child > div {
+  /* --- صف الأزرار الأربعة (إبطال margins السالبة لـ .row) --- */
+  .attendancePage .table td:last-child .row {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -454,7 +453,8 @@ const ATTENDANCE_STYLES = `
     box-sizing: border-box !important;
     gap: 10px !important;
     flex-wrap: nowrap !important;
-    margin: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
   }
@@ -521,7 +521,7 @@ export default function Attendance() {
   const [session, setSession] = useState(null);
   const [summary, setSummary] = useState(null);
 
-  const [rows, setRows] = useState([]); // الطلاب المسموح لهم
+  const [rows, setRows] = useState([]); // الاطفال المسموح لهم
   const [att, setAtt] = useState({});
   const [initialAtt, setInitialAtt] = useState({});
   const [loading, setLoading] = useState(true);
@@ -567,7 +567,7 @@ export default function Attendance() {
     }
     setSummary(sum.data);
 
-    // 3. جلب جميع الطلاب المسجلين (نشط)
+    // 3. جلب جميع الاطفال المسجلين (نشط)
     const p = await supabase
       .from("run_participants_view")
       .select("*")
@@ -794,7 +794,7 @@ export default function Attendance() {
     );
   };
 
-  // تقسيم الطلاب بناءً على الرصيد المتبقي
+  // تقسيم الاطفال بناءً على الرصيد المتبقي
   const hasBalanceRows = rows.filter(
     (r) => Number(r.package_sessions_remaining || 0) > 0,
   );
@@ -977,8 +977,8 @@ export default function Attendance() {
         {rows.length === 0 ? (
           <EmptyState
             icon={Users}
-            title="لا يوجد طلاب متاحين"
-            description="جميع الطلاب المسجلين بالدورة اشتروا باقاتهم بعد تاريخ هذه الجلسة، أو لا يوجد طلاب نشطين."
+            title="لا يوجد اطفال متاحين"
+            description="جميع الاطفال المسجلين بالدورة اشتروا باقاتهم بعد تاريخ هذه الجلسة، أو لا يوجد اطفال نشطين."
             actionLabel="العودة للدورة"
             onAction={() => summary && navigate(`/runs/${summary.run_id}`)}
           />
@@ -1046,14 +1046,14 @@ export default function Attendance() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* قسم الطلاب اللي معهم رصيد */}
+                  {/* قسم الاطفال اللي معهم رصيد */}
                   {hasBalanceRows.length > 0 && (
                     <>
                       <tr className="section-title-row">
                         <td colSpan="2" className="section-title-td-ok">
                           <CheckCircle2 size={18} />
                           <span>
-                            طلاب لديهم رصيد جلسات ({hasBalanceRows.length})
+                            اطفال لديهم رصيد جلسات ({hasBalanceRows.length})
                           </span>
                         </td>
                       </tr>
@@ -1061,14 +1061,14 @@ export default function Attendance() {
                     </>
                   )}
 
-                  {/* قسم الطلاب اللي خلص رصيدهم */}
+                  {/* قسم الاطفال اللي خلص رصيدهم */}
                   {noBalanceRows.length > 0 && (
                     <>
                       <tr className="section-title-row">
                         <td colSpan="2" className="section-title-td-danger">
                           <AlertCircle size={18} />
                           <span>
-                            طلاب انتهى رصيدهم ({noBalanceRows.length})
+                            اطفال انتهى رصيدهم ({noBalanceRows.length})
                           </span>
                         </td>
                       </tr>

@@ -627,7 +627,7 @@ export default function DayDetails() {
                   letterSpacing: "-0.02em",
                 }}
               >
-                {data.attendanceCount} طالب
+                {data.attendanceCount} طفل
               </div>
             </div>
           </div>
