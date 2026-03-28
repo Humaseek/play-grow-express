@@ -1288,8 +1288,8 @@ export default function RunDetails() {
       );
     // النشطين دايماً فوق الغير نشطين
     list.sort((a, b) => {
-      const aActive = a.enrollment_status === "withdrawn" ? 1 : 0;
-      const bActive = b.enrollment_status === "withdrawn" ? 1 : 0;
+      const aActive = a.enrollment_status === "active" ? 0 : 1;
+      const bActive = b.enrollment_status === "active" ? 0 : 1;
       return aActive - bActive;
     });
     return list;
@@ -2743,7 +2743,7 @@ export default function RunDetails() {
                   else if (paid > 0) balClass = "stat-yellow";
                   else balClass = "stat-red";
 
-                  const isInactive = p.enrollment_status === "withdrawn";
+                  const isInactive = p.enrollment_status === "paused";
                   return (
                     <div
                       key={p.enrollment_id}
@@ -3977,7 +3977,7 @@ export default function RunDetails() {
                           );
                           return;
                         }
-                        setEnrollmentStatus(manageP.enrollment_id, "withdrawn");
+                        setEnrollmentStatus(manageP.enrollment_id, "paused");
                       }}
                       style={{
                         background: "#fee2e2",
