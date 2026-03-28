@@ -1215,13 +1215,13 @@ const DASHBOARD_STYLES = `
   .dash-greeting { font-size: 24px; margin-bottom: 0; }
   .dash-controls { width: 100%; justify-content: space-between; }
   .smart-filter-wrapper { width: 100%; justify-content: space-between; }
-  
+
   /* التابات قابلة للسحب أفقياً لتجنب الانضغاط */
-  .dash-tabs { 
-    width: 100%; 
-    overflow-x: auto; 
-    white-space: nowrap; 
-    padding-bottom: 4px; 
+  .dash-tabs {
+    width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 4px;
     justify-content: flex-start;
   }
   .dash-tabs::-webkit-scrollbar { display: none; }
@@ -1233,7 +1233,7 @@ const DASHBOARD_STYLES = `
     max-height: 85vh !important; margin-bottom: auto !important; transform: translateY(-5vh) !important;
   }
   .modal-form-scroll-container { max-height: calc(85vh - 140px) !important; padding: 0 5px; }
-  
+
   .responsive-form-grid {
     grid-template-columns: 1fr 1fr !important;
     gap: 12px;
@@ -1243,6 +1243,92 @@ const DASHBOARD_STYLES = `
   .form-col { grid-column: span 1 !important; }
   .form-section-title { margin: 10px 0 10px 0; font-size: 14px; }
   .modal-fixed-footer { padding-bottom: 10px; margin-top: 5px; }
+
+  /* =========================================
+     📅 إصلاح قسم جدول اليوم (Timeline)
+  ========================================= */
+
+  /* السماح للبطاقة الأم بالتمدد لتسع المحتوى */
+  .bento-item {
+    overflow: visible !important;
+    min-height: unset !important;
+    height: auto !important;
+  }
+
+  /* العنوان والشارة */
+  .section-header {
+    margin-bottom: 14px !important;
+  }
+  .section-title {
+    font-size: 16px !important;
+  }
+
+  /* الصف الكامل للجلسة */
+  .tl-row {
+    gap: 10px !important;
+  }
+  .tl-indicator {
+    width: 16px !important;
+  }
+  .tl-dot {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* بطاقة الجلسة */
+  .tl-card {
+    padding: 14px !important;
+    border-radius: 16px !important;
+    margin-bottom: 12px !important;
+  }
+  .tl-card:hover {
+    transform: none !important;
+  }
+
+  /* الصف الداخلي: يتحول لعمود كامل العرض */
+  .tl-card > div {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* قسم الأزرار: يأخذ عرض كامل وmin-width يُلغى */
+  .tl-card > div > div:last-child {
+    min-width: 0 !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  /* الوقت */
+  .tl-time {
+    font-size: 14px !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  /* اسم الدورة */
+  .tl-course {
+    font-size: 16px !important;
+    margin-bottom: 4px !important;
+  }
+
+  /* الفوج */
+  .tl-run {
+    font-size: 13px !important;
+  }
+
+  /* الأزرار السفلية */
+  .tl-actions {
+    gap: 8px !important;
+    margin-top: 12px !important;
+    padding-top: 12px !important;
+  }
+  .btn-tl {
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding: 10px 8px !important;
+    font-size: 12px !important;
+    border-radius: 12px !important;
+  }
 }
 `;
 
