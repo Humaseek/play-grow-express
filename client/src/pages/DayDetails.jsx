@@ -224,6 +224,107 @@ const DAY_DETAILS_STYLES = `
   transform: translateX(-4px);
   box-shadow: 0 6px 15px rgba(0,0,0,0.05);
 }
+
+/* =========================================
+   📱 موبايل
+========================================= */
+@media (max-width: 980px) {
+  .page--day-details {
+    padding-bottom: 40px;
+  }
+
+  /* --- زر العودة --- */
+  .back-btn {
+    width: 100%;
+    justify-content: center;
+    border-radius: 16px !important;
+    padding: 12px 20px !important;
+  }
+
+  /* --- كروت الملخص العلوية: 2×2 --- */
+  .dd-summary-cards {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    margin-top: 6px;
+  }
+  .dd-sum-card {
+    padding: 14px !important;
+    border-radius: 18px !important;
+    gap: 10px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .dd-sum-card > div:first-child {
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+  .dd-sum-card > div:last-child > div:first-child {
+    font-size: 11px !important;
+  }
+  .dd-sum-card > div:last-child > div:last-child {
+    font-size: 20px !important;
+  }
+
+  /* --- الـ Grid الرئيسي: عمود واحد --- */
+  .dd-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    margin-top: 16px;
+  }
+  .dd-col-main, .dd-col-side {
+    grid-column: span 1 !important;
+  }
+
+  /* --- بطاقات الأقسام --- */
+  .dd-card {
+    padding: 18px !important;
+    border-radius: 20px !important;
+  }
+  .dd-section-title {
+    font-size: 16px !important;
+    margin-bottom: 16px !important;
+    padding-bottom: 12px !important;
+  }
+
+  /* --- Timeline: إزالة overflow:hidden وتعديل التخطيط --- */
+  .tl-row {
+    gap: 12px !important;
+  }
+  .tl-card {
+    overflow: visible !important;
+    padding: 14px !important;
+    border-radius: 16px !important;
+  }
+  .tl-card:hover {
+    transform: none !important;
+  }
+
+  /* الصف الداخلي في الجلسة: يتحول لعمود */
+  .tl-card > div {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  /* --- قوائم الدفعات والمصاريف --- */
+  .dd-list-item {
+    padding: 12px !important;
+    border-radius: 14px !important;
+    flex-wrap: nowrap !important;
+  }
+  .dd-li-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    flex-shrink: 0 !important;
+  }
+  .dd-li-title { font-size: 13px !important; }
+  .dd-li-sub   { font-size: 11px !important; }
+  .dd-li-val   { font-size: 15px !important; white-space: nowrap !important; }
+  .dd-li-info  { gap: 10px !important; }
+  .dd-list-item:hover { transform: none !important; }
+}
 `;
 
 function fmtMoney(n) {
