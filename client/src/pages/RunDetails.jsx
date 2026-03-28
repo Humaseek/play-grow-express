@@ -723,11 +723,41 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
     max-height: 88vh !important;
     margin-bottom: auto !important;
     overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
-  .modal-form-scroll-container {
-    max-height: calc(88vh - 120px) !important; 
+
+  /* المحتوى الداخلي للمودال يأخذ باقي المساحة ويتمدد */
+  div.modalOverlay > div.modalCard > *:last-child {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
     overflow-y: auto !important;
-    padding: 0 4px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* الـ wrapper الداخلي (modal-wide-*) يتمدد بالكامل */
+  .modal-wide-1000,
+  .modal-wide-900 {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+  }
+
+  /* الجدول داخل البالك مودال: ارتفاع محدود ومرن */
+  .modal-wide-1000 .card[style*="overflow"],
+  .modal-wide-900 .card[style*="overflow"] {
+    max-height: clamp(160px, 35vh, 45vh) !important;
+  }
+
+  /* أزرار الأسفل: تثبت في الأسفل دائماً */
+  .modal-wide-1000 > .row:last-child,
+  .modal-wide-900 > .row:last-child {
+    flex-shrink: 0 !important;
+    margin-top: 12px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid rgba(15,23,42,0.06) !important;
   }
 
   /* داخل المودالات: الـ grid يصبح عمود واحد */
@@ -4574,7 +4604,12 @@ export default function RunDetails() {
           title="إضافة أطفال للدورة"
           onClose={() => setOpenBulk(false)}
         >
-          <div dir="rtl" lang="ar" className="modal-wide-1000">
+          <div
+            dir="rtl"
+            lang="ar"
+            className="modal-wide-1000"
+            style={{ display: "flex", flexDirection: "column", minHeight: 0 }}
+          >
             {bulkStep === 1 && (
               <>
                 <div className="muted" style={{ lineHeight: 1.5 }}>
@@ -4616,7 +4651,14 @@ export default function RunDetails() {
                     المحدد: <b>{bulkSelectedCount}</b>
                   </div>
                 </div>
-                <div style={{ marginTop: 12 }}>
+                <div
+                  style={{
+                    marginTop: 12,
+                    minHeight: 0,
+                    flex: "1 1 auto",
+                    overflow: "hidden",
+                  }}
+                >
                   {bulkCandidates.length === 0 ? (
                     <div className="card">لا يوجد أطفال.</div>
                   ) : (
@@ -4625,7 +4667,7 @@ export default function RunDetails() {
                       style={{
                         padding: 0,
                         overflow: "auto",
-                        maxHeight: "50vh",
+                        maxHeight: "clamp(180px, 38vh, 50vh)",
                         direction: "rtl",
                       }}
                     >
