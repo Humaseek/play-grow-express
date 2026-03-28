@@ -2176,6 +2176,7 @@ export default function RunDetails() {
         .select("*")
         .eq("child_id", pRow.child_id)
         .eq("course_id", summary.template_id)
+        .eq("status", "active")
         .order("created_at", { ascending: false });
       if (error) throw error;
       setPkgHistoryRows(data || []);
