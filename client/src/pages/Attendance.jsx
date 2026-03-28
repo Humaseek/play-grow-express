@@ -360,6 +360,7 @@ const ATTENDANCE_STYLES = `
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
+    min-width: 0 !important;
     box-sizing: border-box !important;
     background: transparent !important;
   }
@@ -441,10 +442,11 @@ const ATTENDANCE_STYLES = `
   /* --- خلية الأزرار --- */
   .attendancePage .table td:last-child {
     overflow: visible !important;
+    text-align: center !important;
   }
 
-  /* --- صف الأزرار الأربعة (إبطال margins السالبة لـ .row) --- */
-  .attendancePage .table td:last-child .row {
+  /* إبطال .table td > div من styles.css العام */
+  .attendancePage .table td:last-child > div {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -452,8 +454,7 @@ const ATTENDANCE_STYLES = `
     box-sizing: border-box !important;
     gap: 10px !important;
     flex-wrap: nowrap !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
+    margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
   }
