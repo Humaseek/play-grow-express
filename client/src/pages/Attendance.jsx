@@ -87,17 +87,29 @@ const ATTENDANCE_STYLES = `
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0,0,0,0.04);
 }
-.att-stat-val { 
-  font-size: 26px; 
-  font-weight: 900; 
-  color: #0f172a; 
-  line-height: 1; 
-  margin-top: 6px; 
+.att-stat-val {
+  font-size: 26px;
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1;
+  margin-top: 6px;
 }
-.att-stat-label { 
-  font-size: 13px; 
-  font-weight: 800; 
-  color: #64748b; 
+.att-stat-label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+/* --- العنوان الفرعي --- */
+.att-header-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.att-subtitle-sep {
+  color: #cbd5e1;
 }
 
 /* --- أزرار التحكم السريع --- */
@@ -120,23 +132,50 @@ const ATTENDANCE_STYLES = `
   color: #0f172a;
 }
 
+/* --- قسم التحكم السريع --- */
+.att-quick-controls {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #f8fafc;
+  border-radius: 22px 22px 0 0;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+.att-quick-controls-title {
+  margin: 0;
+  font-size: 16px;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.att-quick-controls-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* --- أزرار الحضور بالجدول (دائرية دائماً، بدون نص) --- */
 .att-action-btn {
-  display: inline-flex; 
-  align-items: center; 
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  width: 44px; /* حجم الديسكتوب */
+  width: 44px;
   height: 44px;
-  padding: 0; 
-  border-radius: 50%; 
+  padding: 0;
+  border-radius: 50%;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid transparent;
 }
 
 /* إخفاء النص في الكمبيوتر والموبايل */
 .att-action-btn .btn-label {
-  display: none !important; 
+  display: none !important;
 }
 
 /* الوضع غير المفعل (ألوان فاتحة) - Inactive State */
@@ -159,7 +198,7 @@ const ATTENDANCE_STYLES = `
 /* --- الجدول للديسكتوب --- */
 .attendancePage .tableWrap {
   border-radius: 0 0 22px 22px;
-  overflow: visible !important; 
+  overflow: visible !important;
   background: #fff;
 }
 
@@ -178,7 +217,7 @@ const ATTENDANCE_STYLES = `
 }
 
 .attendancePage .table td {
-  padding: 12px 24px !important; 
+  padding: 12px 24px !important;
   background: #fff !important;
   border-bottom: 1px solid #f1f5f9 !important;
   font-size: 15px;
@@ -232,9 +271,14 @@ const ATTENDANCE_STYLES = `
 }
 
 /* =========================================
-   📱 تجاوب الموبايل الخرافي والمضبوط 100%
+   📱 تجاوب الموبايل
 ========================================= */
 @media (max-width: 980px) {
+  .attendancePage {
+    padding-block: 12px 32px;
+  }
+
+  /* --- الـ Toolbar --- */
   .attendancePage .toolbar {
     width: 100%;
     display: flex;
@@ -245,39 +289,58 @@ const ATTENDANCE_STYLES = `
   .attendancePage .toolbar .btn {
     flex: 1;
     justify-content: center;
-    padding: 8px 12px !important;
-    font-size: 13px !important;
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    min-height: 40px !important;
   }
 
+  /* --- ملخص الحضور --- */
   .att-summary-grid {
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px !important;
   }
   .att-stat-card {
     padding: 12px !important;
+    border-radius: 14px !important;
   }
   .att-stat-val {
     font-size: 22px !important;
   }
-
-  .attendancePage .mainCard > div:first-child {
-    flex-direction: column;
-    align-items: stretch !important;
+  .att-stat-label {
+    font-size: 12px !important;
   }
-  .attendancePage .mainCard > div:first-child > div {
+
+  /* --- العنوان الفرعي --- */
+  .att-header-subtitle {
+    gap: 6px !important;
+    margin-top: 4px !important;
+  }
+  .att-subtitle-sep {
+    display: none !important;
+  }
+
+  /* --- قسم التحكم السريع --- */
+  .att-quick-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 14px 16px !important;
+    gap: 10px !important;
+    border-radius: 22px 22px 0 0 !important;
+  }
+  .att-quick-controls-btns {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
     gap: 8px !important;
-    margin-top: 10px;
   }
   .att-quick-btn {
-    justify-content: center;
-    text-align: center;
-    padding: 8px 4px !important;
-    font-size: 11px !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 10px 6px !important;
+    font-size: 12px !important;
+    border-radius: 12px !important;
   }
 
-  /* 🚨 إبطال تأثير ملف styles.css اللي كان يخرب الجدول 🚨 */
+  /* --- إبطال overflow الجدول --- */
   .attendancePage .tableWrap {
     width: 100% !important;
     overflow: hidden !important;
@@ -305,91 +368,112 @@ const ATTENDANCE_STYLES = `
     width: 100% !important;
   }
 
-  /* --- الكروت المستقلة (صفوف الطلاب) --- */
+  /* --- الكروت (صفوف الطلاب) --- */
   .attendancePage .table tr {
     display: flex !important;
     flex-direction: column !important;
-    margin: 0 16px 14px 16px !important; /* هذا اللي ببعدها عن الحواف */
-    width: calc(100% - 32px) !important; /* عرض الشاشة ناقص الحواف */
+    margin: 0 12px 12px 12px !important;
+    width: calc(100% - 24px) !important;
     box-sizing: border-box !important;
-    padding: 16px !important;
+    padding: 14px !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 18px !important;
+    border-radius: 16px !important;
     background: #fff !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.04) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04) !important;
   }
 
-  /* --- صفوف العناوين الفاصلة (لا تظهر ككروت) --- */
+  /* --- صفوف العناوين الفاصلة --- */
   .attendancePage .table tr.section-title-row {
-    margin: 10px 16px 6px 16px !important;
+    margin: 8px 12px 4px 12px !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
     background: transparent !important;
-    width: calc(100% - 32px) !important;
+    width: calc(100% - 24px) !important;
   }
 
-  /* --- إجبار النص على الالتفاف (عشان ما ينقص) --- */
+  /* --- خلايا الجدول داخل الكروت --- */
   .attendancePage .table td {
     display: block !important;
     width: 100% !important;
     box-sizing: border-box !important;
     padding: 0 !important;
     border: none !important;
-    white-space: normal !important; /* 🚨 سر حل المشكلة 🚨 */
+    white-space: normal !important;
     text-align: right !important;
   }
 
-  .section-title-td-ok, 
+  .section-title-td-ok,
   .section-title-td-danger {
-    padding: 12px 16px !important;
+    padding: 10px 14px !important;
     border-radius: 12px !important;
-    white-space: normal !important; /* 🚨 سر حل المشكلة 🚨 */
+    white-space: normal !important;
     line-height: 1.5 !important;
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
+    font-size: 14px !important;
   }
 
   .section-title-td-ok span,
   .section-title-td-danger span {
-    white-space: normal !important; 
+    white-space: normal !important;
   }
 
-  /* 1. فاصل تحت اسم الطالب */
+  /* --- خلية اسم الطفل --- */
   .attendancePage .table td:first-child {
-    margin-bottom: 16px !important;
-    padding-bottom: 16px !important;
-    border-bottom: 1px dashed #e2e8f0 !important; 
+    margin-bottom: 14px !important;
+    padding-bottom: 14px !important;
+    border-bottom: 1px dashed #e2e8f0 !important;
   }
 
-  /* 2. توزيع الأزرار (4 أزرار) بالتساوي على عرض الكرت */
+  /* --- صف الأزرار الأربعة --- */
   .attendancePage .table td:last-child .row {
     display: flex !important;
-    justify-content: center !important; /* توسيط الأزرار */
+    justify-content: center !important;
     align-items: center !important;
-    width: 50% !important;
+    width: 100% !important;
     box-sizing: border-box !important;
-    gap: 12px !important; /* مسافة آمنة بين الأزرار */
-    flex-wrap: wrap !important; /* 🚨 السر هون: إذا الشاشة صغيرة كتير، بينزلوا سطر وما بينقصوا */
+    gap: 14px !important;
+    flex-wrap: nowrap !important;
   }
 
-  /* 3. الأيقونات الدائرية */
+  /* --- الأيقونات الدائرية --- */
   .att-action-btn {
-    width: 46px !important; /* صغرنا الحجم شوي ليناسب كل الشاشات */
-    height: 46px !important;
-    flex-shrink: 1 !important; /* 🚨 نسمح للزر يزغر شوي لو الشاشة ضيقة جداً */
+    width: 52px !important;
+    height: 52px !important;
+    flex-shrink: 0 !important;
     border-radius: 50% !important;
   }
-  
+
+  /* --- صف اسم الطفل والشارة --- */
   .child-name-row {
     display: flex !important;
     flex-direction: row !important;
     justify-content: space-between !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 8px !important;
     width: 100% !important;
-    flex-wrap: wrap !important;
+    flex-wrap: nowrap !important;
+  }
+  .child-name-row > span:first-child {
+    font-size: 15px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}
+
+/* --- شاشات صغيرة جداً (< 400px) --- */
+@media (max-width: 400px) {
+  .att-action-btn {
+    width: 46px !important;
+    height: 46px !important;
+  }
+  .attendancePage .table td:last-child .row {
+    gap: 10px !important;
   }
 }
 `;
