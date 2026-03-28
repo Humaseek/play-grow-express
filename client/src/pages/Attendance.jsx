@@ -780,19 +780,11 @@ export default function Attendance() {
   // إعداد العنوان الفرعي بشكل احترافي لتجنب مشاكل الاتجاهات (RTL/LTR)
   const headerSubtitle =
     session && summary ? (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          flexWrap: "wrap",
-          marginTop: "6px",
-        }}
-      >
+      <div className="att-header-subtitle">
         <span style={{ fontWeight: 800, color: "#334155", fontSize: "15px" }}>
           {summary.title}
         </span>
-        <span style={{ color: "#cbd5e1" }}>|</span>
+        <span className="att-subtitle-sep">|</span>
         <span
           style={{
             display: "flex",
@@ -806,7 +798,7 @@ export default function Attendance() {
           <CalendarDays size={16} />
           <span style={{ fontWeight: 700 }}>{fmtDate(session.start_at)}</span>
         </span>
-        <span style={{ color: "#cbd5e1" }}>|</span>
+        <span className="att-subtitle-sep">|</span>
         <span
           style={{
             display: "flex",
@@ -966,33 +958,11 @@ export default function Attendance() {
             }}
           >
             {/* --- قسم التحكم السريع فوق الجدول --- */}
-            <div
-              style={{
-                padding: "16px 24px",
-                borderBottom: "1px solid #f1f5f9",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: "12px",
-                background: "#f8fafc",
-                borderRadius: "22px 22px 0 0",
-                border: "1px solid rgba(15, 23, 42, 0.08)",
-              }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: 16,
-                  color: "#0f172a",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+            <div className="att-quick-controls">
+              <h3 className="att-quick-controls-title">
                 <MousePointerClick size={18} color="#64748b" /> التحكم السريع
               </h3>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <div className="att-quick-controls-btns">
                 <button
                   className="att-quick-btn"
                   onClick={() => setAll("present")}
