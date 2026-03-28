@@ -1431,9 +1431,10 @@ export default function RunDetails() {
   }
 
   function paymentMethodLabel(v) {
-    if (v === "cash") return "نقداً";
-    if (v === "card") return "بطاقة ائتمان";
-    if (v === "transfer") return "حوالة بنكية";
+    if (v === "cash") return "كاش";
+    if (v === "card") return "بطاقة";
+    if (v === "transfer") return "تحويل بنكي";
+    if (v === "bit") return "بييت";
     if (v === "other") return "أخرى";
     return v || "-";
   }
@@ -4990,28 +4991,22 @@ export default function RunDetails() {
                                   </td>
                                   <td>
                                     {isPaid ? (
-                                      <select
-                                        className="input"
-                                        style={{ height: 38, fontSize: 13 }}
-                                        value={
-                                          bulkPerChildPayMethod[c.id] || "cash"
-                                        }
-                                        onChange={(e) =>
+                                      <ModernSelect
+                                        value={bulkPerChildPayMethod[c.id] || "cash"}
+                                        onChange={(val) =>
                                           setBulkPerChildPayMethod((prev) => ({
                                             ...prev,
-                                            [c.id]: e.target.value,
+                                            [c.id]: val,
                                           }))
                                         }
-                                      >
-                                        <option value="cash">نقداً</option>
-                                        <option value="card">
-                                          بطاقة ائتمان
-                                        </option>
-                                        <option value="transfer">
-                                          حوالة بنكية
-                                        </option>
-                                        <option value="other">أخرى</option>
-                                      </select>
+                                        options={[
+                                          { value: "cash", label: "كاش" },
+                                          { value: "card", label: "بطاقة" },
+                                          { value: "transfer", label: "تحويل بنكي" },
+                                          { value: "bit", label: "بييت" },
+                                          { value: "other", label: "أخرى" },
+                                        ]}
+                                      />
                                     ) : (
                                       <span
                                         className="muted"
