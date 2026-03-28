@@ -182,6 +182,7 @@ const PROFILE_STYLES = `
   div.modalOverlay {
     align-items: center !important; 
     padding: 16px !important;
+    z-index: 99999 !important;
   }
   
   div.modalOverlay > div.modalCard {
