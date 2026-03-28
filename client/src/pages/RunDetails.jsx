@@ -1721,7 +1721,7 @@ export default function RunDetails() {
         return;
       }
 
-      if (existing && existing.enrollment_status === "active") {
+      if (existing && (existing.enrollment_status === "active" || existing.enrollment_status === "paused")) {
         const sessionsToAdd = Number(buySessions) || 0;
         const priceToAdd = Number(buyPriceTotal) || 0;
 
@@ -1749,6 +1749,7 @@ export default function RunDetails() {
           .update({
             package_id: newPkgId,
             agreed_price: newAgreedPrice,
+            status: "active",
           })
           .eq("id", existing.enrollment_id);
 
@@ -1757,7 +1758,7 @@ export default function RunDetails() {
         await bumpEnrollmentAllocated(existing.enrollment_id, sessionsToAdd);
 
         await loadFixed();
-        toast("تم إضافة الجلسات كباقة جديدة بنجاح.", "ok");
+        toast("تم إضافة الجلسات وتفعيل الاشتراك بنجاح.", "ok");
         closeSubModalAndReopen(setOpenEnroll);
         if (!enrollLocked && !shouldReopenManage) setTab("participants");
         return;
