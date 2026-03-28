@@ -1262,7 +1262,6 @@ export default function RunDetails() {
           .toLowerCase()
           .includes(s),
       );
-    list = list.filter((p) => p.enrollment_status !== "withdrawn");
     if (childStatusFilter !== "all")
       list = list.filter((p) =>
         childStatusFilter === "active"
@@ -1289,8 +1288,8 @@ export default function RunDetails() {
       );
     // النشطين دايماً فوق الغير نشطين
     list.sort((a, b) => {
-      const aActive = a.enrollment_status === "active" ? 0 : 1;
-      const bActive = b.enrollment_status === "active" ? 0 : 1;
+      const aActive = a.enrollment_status === "withdrawn" ? 1 : 0;
+      const bActive = b.enrollment_status === "withdrawn" ? 1 : 0;
       return aActive - bActive;
     });
     return list;
@@ -2734,7 +2733,7 @@ export default function RunDetails() {
                   else if (paid > 0) balClass = "stat-yellow";
                   else balClass = "stat-red";
 
-                  const isInactive = p.enrollment_status !== "active";
+                  const isInactive = p.enrollment_status === "withdrawn";
                   return (
                     <div
                       key={p.enrollment_id}
@@ -3945,7 +3944,7 @@ export default function RunDetails() {
                           toast("لا يمكن تعطيل الطفل ولديه جلسات في رصيده.", "warn");
                           return;
                         }
-                        setEnrollmentStatus(manageP.enrollment_id, "inactive");
+                        setEnrollmentStatus(manageP.enrollment_id, "withdrawn");
                       }}
                     >
                       <UserX size={16} />
