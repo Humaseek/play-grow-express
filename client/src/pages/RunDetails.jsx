@@ -1914,10 +1914,13 @@ export default function RunDetails() {
       .from("enrollments")
       .update({ status })
       .eq("id", enrollmentId);
-    if (!u.error) {
-      toast("Status updated.", "ok");
-      await loadFixed();
+    if (u.error) {
+      console.error("setEnrollmentStatus error:", u.error);
+      toast("فشل تحديث الحالة: " + u.error.message, "danger");
+      return;
     }
+    toast(status === "active" ? "تم تفعيل الاشتراك." : "تم تعطيل الاشتراك.", "ok");
+    await loadFixed();
   }
 
   async function deleteEnrollment(enrollmentId, childId, courseId) {
