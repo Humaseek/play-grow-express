@@ -1700,30 +1700,6 @@ export default function RunDetails() {
         (p) => Number(p.child_id) === Number(selectedChildId),
       );
 
-      if (enrollMode === "use_existing") {
-        if (Number(pkgInfo?.sessions_remaining ?? 0) <= 0) {
-          toast("هذا الطفل لا يملك رصيد كافٍ.", "warn");
-          setEnrollSaving(false);
-          return;
-        }
-        const rpc = await supabase.rpc("enroll_from_existing_package", {
-          p_run_id: Number(runId),
-          p_child_id: Number(selectedChildId),
-        });
-        if (rpc.error) {
-          if (rpc.error.message.includes("uq_run_child")) {
-            await reactivateWithdrawnEnrollment(selectedChildId);
-            return;
-          }
-          throw rpc.error;
-        }
-        await loadFixed();
-        toast("تم التسجيل باستخدام الرصيد السابق.", "ok");
-        closeSubModalAndReopen(setOpenEnroll);
-        if (!enrollLocked && !shouldReopenManage) setTab("participants");
-        return;
-      }
-
       if (existing && (existing.enrollment_status === "active" || existing.enrollment_status === "paused")) {
         const sessionsToAdd = Number(buySessions) || 0;
         const priceToAdd = Number(buyPriceTotal) || 0;
@@ -1773,6 +1749,25 @@ export default function RunDetails() {
         (await reactivateWithdrawnEnrollment(selectedChildId))
       )
         return;
+
+      // Child is not enrolled yet — use existing package if chosen
+      if (enrollMode === "use_existing") {
+        if (Number(pkgInfo?.sessions_remaining ?? 0) <= 0) {
+          toast("هذا الطفل لا يملك رصيد كافٍ.", "warn");
+          setEnrollSaving(false);
+          return;
+        }
+        const rpc = await supabase.rpc("enroll_from_existing_package", {
+          p_run_id: Number(runId),
+          p_child_id: Number(selectedChildId),
+        });
+        if (rpc.error) throw rpc.error;
+        await loadFixed();
+        toast("تم التسجيل باستخدام الرصيد السابق.", "ok");
+        closeSubModalAndReopen(setOpenEnroll);
+        if (!enrollLocked && !shouldReopenManage) setTab("participants");
+        return;
+      }
 
       await purchaseAndEnrollSpecificChild(selectedChildId);
     } catch (e) {
