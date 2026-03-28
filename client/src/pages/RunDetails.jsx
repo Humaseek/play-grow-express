@@ -2467,20 +2467,6 @@ export default function RunDetails() {
             >
               رجوع
             </button>
-            <button
-              type="button"
-              className="btn primary"
-              style={{
-                borderRadius: "999px",
-                fontWeight: "bold",
-                padding: "8px 24px",
-                border: "none",
-                boxShadow: "0 2px 8px rgba(0,172,71,0.2)",
-              }}
-              onClick={() => setTab("sessions")}
-            >
-              الحضور
-            </button>
           </div>
         </div>
 
