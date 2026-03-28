@@ -2739,7 +2739,8 @@ export default function RunDetails() {
                           ? "pBar pBarUnpaid"
                           : "pBar pBarFree";
                   let balClass = "stat-gray";
-                  if (agreed === 0 || balance <= 0) balClass = "stat-green";
+                  if (balance <= 0 && pkgRemain <= 0) balClass = "stat-gray";
+                  else if (agreed === 0 || balance <= 0) balClass = "stat-green";
                   else if (paid > 0) balClass = "stat-yellow";
                   else balClass = "stat-red";
 
@@ -2785,6 +2786,7 @@ export default function RunDetails() {
                       <div className="pQuickStats">
                         <div
                           className={`pStatBlock ${balClass} participantList__balance`}
+                          style={balance <= 0 && pkgRemain <= 0 ? { opacity: 0.4 } : {}}
                         >
                           <div className="pStatLabel">
                             <Hourglass size={14} />
