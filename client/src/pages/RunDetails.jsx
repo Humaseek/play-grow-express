@@ -3961,6 +3961,11 @@ export default function RunDetails() {
                         }
                         setEnrollmentStatus(manageP.enrollment_id, "withdrawn");
                       }}
+                      style={{
+                        background: "#fee2e2",
+                        color: "#dc2626",
+                        borderRadius: 10,
+                      }}
                     >
                       <UserX size={16} />
                     </IconButton>
@@ -3969,6 +3974,11 @@ export default function RunDetails() {
                       title="تفعيل الاشتراك"
                       variant="ghost"
                       onClick={() => setEnrollmentStatus(manageP.enrollment_id, "active")}
+                      style={{
+                        background: "#dcfce7",
+                        color: "#16a34a",
+                        borderRadius: 10,
+                      }}
                     >
                       <UserCheck size={16} />
                     </IconButton>
