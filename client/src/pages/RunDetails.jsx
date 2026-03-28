@@ -39,6 +39,8 @@ import {
   CalendarCheck,
   Phone,
   ChevronDown,
+  UserX,
+  UserCheck,
 } from "lucide-react";
 
 const LOCALE_LATN = "en-IL";
@@ -2850,55 +2852,6 @@ export default function RunDetails() {
                         </div>
                       </div>
 
-                      <div style={{ marginTop: 12 }}>
-                        {isInactive ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEnrollmentStatus(p.enrollment_id, "active");
-                            }}
-                            style={{
-                              width: "100%",
-                              fontSize: 13,
-                              fontWeight: 600,
-                              padding: "8px 0",
-                              borderRadius: 10,
-                              border: "1.5px solid #bbf7d0",
-                              cursor: "pointer",
-                              background: "#f0fdf4",
-                              color: "#16a34a",
-                            }}
-                          >
-                            تفعيل
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (pkgRemain > 0) {
-                                toast("لا يمكن تعطيل الطفل ولديه جلسات في رصيده.", "warn");
-                                return;
-                              }
-                              setEnrollmentStatus(p.enrollment_id, "inactive");
-                            }}
-                            style={{
-                              width: "100%",
-                              fontSize: 13,
-                              fontWeight: 600,
-                              padding: "8px 0",
-                              borderRadius: 10,
-                              border: pkgRemain > 0 ? "1.5px solid #e2e8f0" : "1.5px solid #fecaca",
-                              cursor: pkgRemain > 0 ? "not-allowed" : "pointer",
-                              background: pkgRemain > 0 ? "#f8fafc" : "#fff5f5",
-                              color: pkgRemain > 0 ? "#94a3b8" : "#dc2626",
-                            }}
-                          >
-                            تعطيل
-                          </button>
-                        )}
-                      </div>
                     </div>
                   );
                 })}
@@ -3979,6 +3932,30 @@ export default function RunDetails() {
                   >
                     <Trash2 size={16} />
                   </IconButton>
+                  {manageP.enrollment_status === "active" ? (
+                    <IconButton
+                      title="تعطيل الاشتراك"
+                      variant="ghost"
+                      disabled={Number(manageP.package_sessions_remaining || 0) > 0}
+                      onClick={() => {
+                        if (Number(manageP.package_sessions_remaining || 0) > 0) {
+                          toast("لا يمكن تعطيل الطفل ولديه جلسات في رصيده.", "warn");
+                          return;
+                        }
+                        setEnrollmentStatus(manageP.enrollment_id, "inactive");
+                      }}
+                    >
+                      <UserX size={16} />
+                    </IconButton>
+                  ) : (
+                    <IconButton
+                      title="تفعيل الاشتراك"
+                      variant="ghost"
+                      onClick={() => setEnrollmentStatus(manageP.enrollment_id, "active")}
+                    >
+                      <UserCheck size={16} />
+                    </IconButton>
+                  )}
                 </div>
               </div>
             </div>
