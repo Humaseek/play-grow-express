@@ -222,57 +222,131 @@ const CALENDAR_STYLES = `
 }
 
 /* =========================================
-   📱 تجاوب الموبايل (Mobile Fixes)
+   📱 تجاوب الموبايل
 ========================================= */
 @media (max-width: 980px) {
+  .page--calendar {
+    padding-bottom: 40px;
+  }
+
+  /* --- زر العودة --- */
+  .back-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 20px !important;
+    border-radius: 16px !important;
+    font-size: 14px;
+  }
+
+  /* --- الهيدر --- */
   .cal-header-container {
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
-    padding-bottom: 16px;
+    gap: 12px;
+    padding-bottom: 12px;
+    padding-top: 8px !important;
   }
   .cal-title {
-    font-size: 22px;
+    font-size: 20px;
     justify-content: center;
+  }
+  .cal-title > div:first-child {
+    padding: 8px !important;
+    border-radius: 12px !important;
   }
   .cal-controls {
     justify-content: space-between;
+    padding: 6px 12px;
+    border-radius: 16px !important;
   }
-  
-  /* تحويل الكروت لشبكة 2x2 */
+  .cal-month-label {
+    font-size: 15px !important;
+    min-width: unset;
+    flex: 1;
+  }
+
+  /* --- كروت الملخص (2×2) --- */
   .cal-summary-cards {
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: 10px;
+    margin-bottom: 16px;
   }
   .cal-summary-card {
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 16px 12px;
-    gap: 10px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    gap: 8px;
+    border-radius: 16px;
   }
   .cal-summary-card > div:first-child {
-    padding: 10px !important;
+    padding: 8px !important;
+    border-radius: 10px !important;
   }
   .cal-summary-card > div:last-child > div:first-child {
-    font-size: 12px !important;
+    font-size: 11px !important;
+    line-height: 1.3;
   }
   .cal-summary-card > div:last-child > div:last-child {
-    font-size: 18px !important;
+    font-size: 17px !important;
+    font-weight: 900 !important;
   }
-  
-  /* الحفاظ على عرض الجدول وتفعيل السحب (Swipe) */
+
+  /* --- منطقة التقويم: بدون سكرول أفقي على الموبايل --- */
+  .cal-scroll-area {
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  /* --- شبكة التقويم المضغوطة --- */
   .cal-grid {
-    min-width: 800px; 
-    gap: 8px;
+    min-width: 0 !important;
+    gap: 4px;
   }
+
+  /* --- أيام الأسبوع --- */
+  .cal-weekday {
+    font-size: 10px;
+    padding: 6px 2px;
+    font-weight: 900;
+  }
+
+  /* --- خلية اليوم --- */
   .cal-day-cell {
-    min-height: 100px;
-    padding: 8px;
+    min-height: 58px;
+    padding: 6px 5px;
+    border-radius: 12px;
+    gap: 2px;
   }
-  .cal-stat-row {
-    padding: 4px 6px;
+  .cal-day-cell:hover {
+    transform: none;
+  }
+
+  /* --- رقم اليوم --- */
+  .cal-day-number {
+    font-size: 13px;
+    font-weight: 900;
+    margin-bottom: 3px;
+  }
+  .cal-day-cell.is-today .cal-day-number {
+    width: 22px;
+    height: 22px;
     font-size: 11px;
+  }
+
+  /* --- مؤشرات النشاط: شرائط ملونة صغيرة بدل النص الطويل --- */
+  .cal-stat-row {
+    padding: 0;
+    margin-bottom: 2px;
+    height: 5px;
+    border-radius: 3px;
+    font-size: 0;        /* إخفاء النص */
+    min-height: 5px;
+  }
+  .cal-stat-row span { display: none !important; }
+
+  /* لا نشاط */
+  .cal-day-cell .no-activity-label {
+    display: none !important;
   }
 }
 `;
@@ -521,6 +595,7 @@ export default function CalendarPage() {
             </div>
           ) : (
             <div
+              className="no-activity-label"
               style={{
                 flex: 1,
                 display: "flex",
