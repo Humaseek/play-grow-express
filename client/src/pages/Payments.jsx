@@ -898,9 +898,8 @@ export default function Payments() {
                 />
               </div>
 
-              <div className="filter-select">
+              <div style={{ minWidth: 160 }}>
                 <ModernSelect
-                  bare
                   value={rangePreset}
                   onChange={setRangePreset}
                   options={[
