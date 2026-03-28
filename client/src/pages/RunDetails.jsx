@@ -1137,15 +1137,12 @@ export default function RunDetails() {
           .from("package_balance_view")
           .select("package_id,sessions_remaining")
           .eq("course_id", Number(summary.template_id))
-          .eq("child_id", Number(selectedChildId))
-          .limit(1);
-        const row = res.data?.[0] ?? null;
+          .eq("child_id", Number(selectedChildId));
+        const row =
+          (res.data ?? []).find((r) => Number(r.sessions_remaining) > 0) ??
+          null;
         setPkgInfo(row);
-        setEnrollMode(
-          row && Number(row.sessions_remaining) > 0
-            ? "use_existing"
-            : "buy_new",
-        );
+        setEnrollMode(row ? "use_existing" : "buy_new");
       } catch {
         setEnrollMode("buy_new");
       } finally {
