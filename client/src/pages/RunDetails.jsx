@@ -1918,7 +1918,10 @@ export default function RunDetails() {
       toast("فشل تحديث الحالة: " + u.error.message, "danger");
       return;
     }
-    toast(status === "active" ? "تم تفعيل الاشتراك." : "تم تعطيل الاشتراك.", "ok");
+    toast(
+      status === "active" ? "تم تفعيل الاشتراك." : "تم تعطيل الاشتراك.",
+      "ok",
+    );
     await loadFixed();
   }
 
@@ -2662,8 +2665,14 @@ export default function RunDetails() {
                       value={childSort}
                       onChange={setChildSort}
                       options={[
-                        { value: "balance_desc", label: "المتبقي: من الأعلى للأقل" },
-                        { value: "balance_asc", label: "المتبقي: من الأقل للأعلى" },
+                        {
+                          value: "balance_desc",
+                          label: "المتبقي: من الأعلى للأقل",
+                        },
+                        {
+                          value: "balance_asc",
+                          label: "المتبقي: من الأقل للأعلى",
+                        },
                         { value: "name_asc", label: "الاسم: أ-ي" },
                         { value: "name_desc", label: "الاسم: ي-أ" },
                       ]}
@@ -2751,22 +2760,11 @@ export default function RunDetails() {
                     >
                       <div className="pHead" style={{ marginBottom: "20px" }}>
                         <div style={{ minWidth: 0 }}>
-                          <div className="pName participantList__name" style={isInactive ? { color: "#94a3b8" } : {}}>
+                          <div
+                            className="pName participantList__name"
+                            style={isInactive ? { color: "#94a3b8" } : {}}
+                          >
                             {p.child_name}
-                            {isInactive && (
-                              <span style={{
-                                marginRight: 8,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                padding: "2px 8px",
-                                borderRadius: 999,
-                                background: "#e2e8f0",
-                                color: "#64748b",
-                                verticalAlign: "middle",
-                              }}>
-                                غير نشط
-                              </span>
-                            )}
                           </div>
                           <div className="pMeta">
                             <span className="metaItem" title="الصف">
@@ -2800,7 +2798,10 @@ export default function RunDetails() {
                             {fmtILS(balance)}
                           </div>
                         </div>
-                        <div className="pStatBlock" style={isInactive ? { opacity: 0.4 } : {}}>
+                        <div
+                          className="pStatBlock"
+                          style={isInactive ? { opacity: 0.4 } : {}}
+                        >
                           <div className="pStatLabel">
                             <CreditCard size={14} />
                             <span>المدفوع</span>
@@ -2811,7 +2812,11 @@ export default function RunDetails() {
                         </div>
                         <div
                           className={`pStatBlock ${pkgRemain < 0 ? "stat-red" : ""}`}
-                          style={isInactive && pkgRemain === 0 ? { opacity: 0.4 } : {}}
+                          style={
+                            isInactive && pkgRemain === 0
+                              ? { opacity: 0.4 }
+                              : {}
+                          }
                         >
                           <div className="pStatLabel">
                             <Ticket size={14} />
@@ -2829,7 +2834,10 @@ export default function RunDetails() {
                             {fmtNum(pkgRemain)}
                           </div>
                         </div>
-                        <div className="pStatBlock" style={isInactive ? { opacity: 0.4 } : {}}>
+                        <div
+                          className="pStatBlock"
+                          style={isInactive ? { opacity: 0.4 } : {}}
+                        >
                           <div className="pStatLabel">
                             <CalendarDays size={14} />
                             <span>حضر</span>
@@ -2840,7 +2848,10 @@ export default function RunDetails() {
                         </div>
                       </div>
 
-                      <div className="pProgressWrap" style={isInactive ? { opacity: 0.4 } : {}}>
+                      <div
+                        className="pProgressWrap"
+                        style={isInactive ? { opacity: 0.4 } : {}}
+                      >
                         <div className="pProgressHead">
                           <span className="muted">
                             المتفق عليه:{" "}
@@ -2868,7 +2879,6 @@ export default function RunDetails() {
                           <span style={{ width: `${pct}%` }} />
                         </div>
                       </div>
-
                     </div>
                   );
                 })}
@@ -3953,10 +3963,17 @@ export default function RunDetails() {
                     <IconButton
                       title="تعطيل الاشتراك"
                       variant="ghost"
-                      disabled={Number(manageP.package_sessions_remaining || 0) > 0}
+                      disabled={
+                        Number(manageP.package_sessions_remaining || 0) > 0
+                      }
                       onClick={() => {
-                        if (Number(manageP.package_sessions_remaining || 0) > 0) {
-                          toast("لا يمكن تعطيل الطفل ولديه جلسات في رصيده.", "warn");
+                        if (
+                          Number(manageP.package_sessions_remaining || 0) > 0
+                        ) {
+                          toast(
+                            "لا يمكن تعطيل الطفل ولديه جلسات في رصيده.",
+                            "warn",
+                          );
                           return;
                         }
                         setEnrollmentStatus(manageP.enrollment_id, "withdrawn");
@@ -3973,7 +3990,9 @@ export default function RunDetails() {
                     <IconButton
                       title="تفعيل الاشتراك"
                       variant="ghost"
-                      onClick={() => setEnrollmentStatus(manageP.enrollment_id, "active")}
+                      onClick={() =>
+                        setEnrollmentStatus(manageP.enrollment_id, "active")
+                      }
                       style={{
                         background: "#dcfce7",
                         color: "#16a34a",
