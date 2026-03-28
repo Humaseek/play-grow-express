@@ -2826,14 +2826,14 @@ export default function RunDetails() {
                           <div className="pStatLabel">
                             <Hourglass size={14} />
                             <span className="participantList__balance-label">
-                              المتبقي
+                              {balance < 0 ? "رصيد زائد" : "المتبقي"}
                             </span>
                           </div>
                           <div
                             className="pStatValue ltrIso participantList__balance-value"
                             dir="ltr"
                           >
-                            {fmtILS(balance)}
+                            {balance < 0 ? fmtILS(Math.abs(balance)) : fmtILS(balance)}
                           </div>
                         </div>
                         <div
@@ -3717,7 +3717,7 @@ export default function RunDetails() {
                       marginBottom: 4,
                     }}
                   >
-                    المتبقي
+                    {manageP.balance < 0 ? "رصيد زائد" : "المتبقي"}
                   </div>
                   <div
                     style={{
@@ -3727,7 +3727,7 @@ export default function RunDetails() {
                     }}
                     className="ltrIso"
                   >
-                    {fmtILS(manageP.balance)}
+                    {manageP.balance < 0 ? fmtILS(Math.abs(manageP.balance)) : fmtILS(manageP.balance)}
                   </div>
                 </div>
                 <div>
