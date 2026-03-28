@@ -2636,31 +2636,29 @@ export default function RunDetails() {
                       style={{ width: "100%", paddingLeft: 38 }}
                     />
                   </div>
-                  <select
-                    className="input"
-                    value={childStatusFilter}
-                    onChange={(e) => setChildStatusFilter(e.target.value)}
-                    style={{ flex: "0 1 150px", minWidth: 130 }}
-                  >
-                    <option value="all">الكل</option>
-                    <option value="active">نشط</option>
-                    <option value="inactive">غير نشط</option>
-                  </select>
-                  <select
-                    className="input"
-                    value={childSort}
-                    onChange={(e) => setChildSort(e.target.value)}
-                    style={{ flex: "0 1 210px", minWidth: 170 }}
-                  >
-                    <option value="balance_desc">
-                      المتبقي: من الأعلى للأقل
-                    </option>
-                    <option value="balance_asc">
-                      المتبقي: من الأقل للأعلى
-                    </option>
-                    <option value="name_asc">الاسم: أ-ي</option>
-                    <option value="name_desc">الاسم: ي-أ</option>
-                  </select>
+                  <div style={{ minWidth: 130 }}>
+                    <ModernSelect
+                      value={childStatusFilter}
+                      onChange={setChildStatusFilter}
+                      options={[
+                        { value: "all", label: "الكل" },
+                        { value: "active", label: "نشط" },
+                        { value: "inactive", label: "غير نشط" },
+                      ]}
+                    />
+                  </div>
+                  <div style={{ minWidth: 200 }}>
+                    <ModernSelect
+                      value={childSort}
+                      onChange={setChildSort}
+                      options={[
+                        { value: "balance_desc", label: "المتبقي: من الأعلى للأقل" },
+                        { value: "balance_asc", label: "المتبقي: من الأقل للأعلى" },
+                        { value: "name_asc", label: "الاسم: أ-ي" },
+                        { value: "name_desc", label: "الاسم: ي-أ" },
+                      ]}
+                    />
+                  </div>
                 </div>
                 <div
                   style={{

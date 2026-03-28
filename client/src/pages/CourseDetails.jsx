@@ -652,7 +652,7 @@ export default function CourseDetails() {
               onClick={() => navigate("/courses")}
               style={{ display: "flex", alignItems: "center", gap: "6px" }}
             >
-              رجوع <ArrowRight size={18} />
+              الدورات <ArrowRight size={18} />
             </button>
           </div>
         }
