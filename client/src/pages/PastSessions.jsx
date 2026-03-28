@@ -38,49 +38,145 @@ function fmtWeekday(dt) {
   );
 }
 
-// --- تنسيقات الموبايل المضافة (فقط للموبايل) ---
-const PAST_SESSIONS_MOBILE_STYLES = `
-.desktop-only { display: block; }
-.mobile-only { display: none; }
+const PAST_SESSIONS_STYLES = `
+.page.page--runs {
+  background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
+}
 
+/* --- قائمة الجلسات --- */
+.pastSessions .sessionList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pastSessions .sessionRow {
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.94);
+  transition: all 0.2s ease;
+  display: grid;
+  grid-template-columns: minmax(120px, 1.2fr) minmax(140px, 1fr) minmax(80px, 0.6fr) auto;
+  gap: 12px;
+  padding: 14px 16px;
+  align-items: center;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.pastSessions .sessionRow:hover {
+  background: #fff !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.05);
+}
+
+.pastSessions .sessionList__time .ps-date {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 15px;
+}
+.pastSessions .sessionList__time .ps-weekday {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.pastSessions .sessionList__main .ps-time {
+  font-weight: 600;
+  color: #334155;
+  font-size: 14px;
+}
+.pastSessions .sessionList__main .ps-duration {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.pastSessions .ps-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* --- الكرت العلوي (العنوان والحالة) --- */
+.pastSessions .psCard {
+  background: #fff;
+  border-radius: 22px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pastSessions .psCard .ps-count {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+/* =========================================
+   📱 موبايل
+========================================= */
 @media (max-width: 980px) {
-  .desktop-only { display: none !important; }
-  .mobile-only { display: flex !important; flex-direction: column; gap: 12px; }
-
-  .mobile-session-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 16px;
-    border: 1px solid rgba(15,23,42,0.06);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  .pastSessions .sessionRow {
+    grid-template-columns: 1fr !important;
+    padding: 14px !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
   }
 
-  .mobile-session-card .mobile-actions {
-    display: flex;
-    gap: 8px;
-    border-top: 1px solid #f1f5f9;
-    padding-top: 12px;
-    margin-top: 4px;
+  .pastSessions .sessionList__time {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+    padding-bottom: 10px !important;
   }
 
-  .mobile-session-card .mobile-actions .btn {
-    flex: 1;
-    justify-content: center;
-    padding: 10px !important;
+  .pastSessions .sessionList__main {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
   }
-  
+
+  .pastSessions .sessionList__status {
+    display: none !important;
+  }
+
+  .pastSessions .ps-actions {
+    justify-content: flex-start !important;
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    border-top: 1px solid rgba(0,0,0,0.05) !important;
+    padding-top: 10px !important;
+    gap: 8px !important;
+  }
+
+  .pastSessions .ps-actions .btn {
+    flex: 1 !important;
+    justify-content: center !important;
+    min-height: 42px !important;
+    font-size: 13px !important;
+  }
+
+  .pastSessions .psCard {
+    padding: 14px 16px !important;
+    border-radius: 16px !important;
+  }
+
   div.modalOverlay {
-    align-items: center !important; 
+    align-items: center !important;
     padding: 16px !important;
   }
   div.modalOverlay > div.modalCard {
-    border-radius: 24px !important; 
-    margin: auto !important; 
-    width: 95% !important; 
-    max-height: 88vh !important; 
+    border-radius: 24px !important;
+    margin: auto !important;
+    width: 95% !important;
+    max-height: 88vh !important;
   }
 }
 `;
@@ -238,8 +334,8 @@ export default function PastSessions() {
 
   return (
     <div className="page page--runs" dir="rtl" lang="ar">
-      <style>{PAST_SESSIONS_MOBILE_STYLES}</style>
-      <div className="container runDetails">
+      <style>{PAST_SESSIONS_STYLES}</style>
+      <div className="container pastSessions">
         <PageHeader
           title={
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -270,238 +366,106 @@ export default function PastSessions() {
         <ErrorBanner error={error} />
 
         {loading ? (
-          <div
-            className="card"
-            style={{ padding: "20px", textAlign: "center" }}
-          >
+          <div className="card" style={{ padding: "20px", textAlign: "center" }}>
             جارٍ التحميل...
           </div>
         ) : sessions.length === 0 ? (
-          <div
-            className="card"
-            style={{
-              padding: "20px",
-              textAlign: "center",
-              color: "#64748b",
-            }}
-          >
+          <div className="card" style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>
             لا يوجد جلسات سابقة.
           </div>
         ) : (
           <>
-            {/* عرض الكمبيوتر الأصلي (يختفي في الموبايل) */}
-            <div className="tableWrap inCard desktop-only">
-              <table className="table modal-compact-table">
-                <thead>
-                  <tr>
-                    <th>تاريخ ووقت الجلسة</th>
-                    <th>المدة</th>
-                    <th>الحالة</th>
-                    <th style={{ textAlign: "center" }}>الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((s) => (
-                    <tr key={s.id}>
-                      <td>
-                        <div style={{ fontWeight: 800, color: "#0f172a" }}>
-                          {fmtDate(s.start_at)}
-                        </div>
-                        <div
-                          style={{ fontSize: 13, color: "#64748b" }}
-                          className="ltrIso"
-                        >
-                          {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
-                        </div>
-                      </td>
-                      <td style={{ fontWeight: 700, color: "#475569" }}>
-                        {Math.max(
-                          1,
-                          Math.round(
-                            (new Date(s.end_at).getTime() -
-                              new Date(s.start_at).getTime()) /
-                              60000,
-                          ),
-                        )}{" "}
-                        دقيقة
-                      </td>
-                      <td>{renderStatusBadge(s.status)}</td>
-                      <td>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                            justifyContent: "center",
-                            alignItems: "center",
-                          }}
-                        >
-                          <button
-                            className="btn primary iconOnly"
-                            title="تسجيل الحضور"
-                            style={{
-                              background: "#00ac47",
-                              borderColor: "#00ac47",
-                              color: "white",
-                              padding: "8px",
-                              borderRadius: "8px",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                            onClick={() =>
-                              navigate(`/sessions/${s.id}/attendance`)
-                            }
-                          >
-                            <Settings2 size={16} />
-                          </button>
-                          <button
-                            className="btn iconOnly"
-                            title="تعديل"
-                            style={{
-                              background: "#f1f5f9",
-                              color: "#475569",
-                              padding: "8px",
-                              borderRadius: "8px",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                            onClick={() => openEditSession(s)}
-                          >
-                            <Pencil size={16} />
-                          </button>
-                          <button
-                            className="btn danger iconOnly"
-                            title="حذف"
-                            style={{
-                              background: "#fef2f2",
-                              color: "#ef4444",
-                              padding: "8px",
-                              borderRadius: "8px",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                            onClick={() =>
-                              setConfirm({
-                                open: true,
-                                type: "deleteSession",
-                                id: s.id,
-                                text: "هل أنت متأكد أنك تريد حذف هذه الجلسة نهائياً؟",
-                              })
-                            }
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* شريط العنوان مع عدد الجلسات */}
+            <div className="psCard">
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Clock size={18} color="#64748b" />
+                <span style={{ fontWeight: 800, color: "#0f172a", fontSize: 15 }}>
+                  سجل الجلسات
+                </span>
+              </div>
+              <span className="ps-count">{sessions.length} جلسة</span>
             </div>
 
-            {/* عرض الموبايل (يظهر فقط في الموبايل) */}
-            <div className="mobile-only">
-              {sessions.map((s) => (
-                <div key={s.id} className="mobile-session-card">
+            {/* قائمة الجلسات */}
+            <div className="sessionList">
+              {sessions.map((s) => {
+                const duration = Math.max(
+                  1,
+                  Math.round(
+                    (new Date(s.end_at).getTime() - new Date(s.start_at).getTime()) / 60000,
+                  ),
+                );
+                const borderColor =
+                  s.status === "done"
+                    ? "#00ac47"
+                    : s.status === "canceled"
+                      ? "#ef4444"
+                      : "#0ea5e9";
+
+                return (
                   <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
+                    key={s.id}
+                    className="sessionRow"
+                    style={{ borderRight: `4px solid ${borderColor}` }}
                   >
-                    <div
-                      style={{
-                        fontWeight: 800,
-                        color: "#0f172a",
-                        fontSize: 16,
-                      }}
-                    >
-                      {fmtDate(s.start_at)}
+                    {/* التاريخ واليوم */}
+                    <div className="sessionList__time">
+                      <div className="ps-date">{fmtDate(s.start_at)}</div>
+                      <div className="ps-weekday">{fmtWeekday(s.start_at)}</div>
                     </div>
-                    {renderStatusBadge(s.status)}
+
+                    {/* الوقت والمدة */}
+                    <div className="sessionList__main">
+                      <div className="ps-time" dir="ltr">
+                        {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
+                      </div>
+                      <div className="ps-duration">{duration} دقيقة</div>
+                    </div>
+
+                    {/* الحالة */}
+                    <div className="sessionList__status">
+                      {renderStatusBadge(s.status)}
+                    </div>
+
+                    {/* الأزرار */}
+                    <div className="ps-actions">
+                      <button
+                        className="btn primary"
+                        title="تسجيل الحضور"
+                        onClick={() => navigate(`/sessions/${s.id}/attendance`)}
+                      >
+                        <Settings2 size={16} /> <span>الحضور</span>
+                      </button>
+                      <button
+                        className="btn"
+                        title="تعديل"
+                        onClick={() => openEditSession(s)}
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        className="btn danger iconOnly"
+                        title="حذف"
+                        onClick={() =>
+                          setConfirm({
+                            open: true,
+                            type: "deleteSession",
+                            id: s.id,
+                            text: "هل أنت متأكد أنك تريد حذف هذه الجلسة نهائياً؟",
+                          })
+                        }
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      fontSize: 14,
-                      color: "#64748b",
-                    }}
-                  >
-                    <span className="ltrIso" style={{ fontWeight: 600 }}>
-                      {fmtTimeHM(s.start_at)} → {fmtTimeHM(s.end_at)}
-                    </span>
-                    <span>
-                      {Math.max(
-                        1,
-                        Math.round(
-                          (new Date(s.end_at).getTime() -
-                            new Date(s.start_at).getTime()) /
-                            60000,
-                        ),
-                      )}{" "}
-                      دقيقة
-                    </span>
-                  </div>
-                  <div className="mobile-actions">
-                    <button
-                      className="btn primary iconOnly"
-                      title="تسجيل الحضور"
-                      style={{
-                        background: "#00ac47",
-                        borderColor: "#00ac47",
-                        color: "white",
-                        borderRadius: "8px",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => navigate(`/sessions/${s.id}/attendance`)}
-                    >
-                      <Settings2 size={18} />
-                    </button>
-                    <button
-                      className="btn iconOnly"
-                      title="تعديل"
-                      style={{
-                        background: "#f1f5f9",
-                        color: "#475569",
-                        borderRadius: "8px",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => openEditSession(s)}
-                    >
-                      <Pencil size={18} />
-                    </button>
-                    <button
-                      className="btn danger iconOnly"
-                      title="حذف"
-                      style={{
-                        background: "#fef2f2",
-                        color: "#ef4444",
-                        borderRadius: "8px",
-                        border: "none",
-                        cursor: "pointer",
-                      }}
-                      onClick={() =>
-                        setConfirm({
-                          open: true,
-                          type: "deleteSession",
-                          id: s.id,
-                          text: "هل أنت متأكد أنك تريد حذف هذه الجلسة نهائياً؟",
-                        })
-                      }
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
 
-        {/* المودال الأصلي كما هو بدون تغيير */}
+        {/* المودال */}
         <Modal
           open={isEditModalOpen}
           title="تعديل الجلسة"
