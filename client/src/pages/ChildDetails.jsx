@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useOutletContext } from "react-router-dom";
 import { supabase } from "../supabaseClient";
+import ModernSelect from "../components/ModernSelect";
 
 import {
   UserRound,

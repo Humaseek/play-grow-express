@@ -1000,9 +1000,8 @@ export default function Expenses() {
                     />
                   </div>
 
-                  <div className="filter-select">
+                  <div style={{ minWidth: 140 }}>
                     <ModernSelect
-                      bare
                       value={cat}
                       onChange={setCat}
                       placeholder="كل الفئات"
@@ -1013,9 +1012,8 @@ export default function Expenses() {
                     />
                   </div>
 
-                  <div className="filter-select">
+                  <div style={{ minWidth: 140 }}>
                     <ModernSelect
-                      bare
                       value={partyFilter}
                       onChange={setPartyFilter}
                       placeholder="كل الأشخاص"
@@ -1026,9 +1024,8 @@ export default function Expenses() {
                     />
                   </div>
 
-                  <div className="filter-select">
+                  <div style={{ minWidth: 160 }}>
                     <ModernSelect
-                      bare
                       value={rangePreset}
                       onChange={setRangePreset}
                       placeholder="هذا الشهر"
@@ -1334,7 +1331,7 @@ export default function Expenses() {
                   className="input"
                   value={expDesc}
                   onChange={(e) => setExpDesc(e.target.value)}
-                  placeholder="مثال: شراء ضيافة للطلاب..."
+                  placeholder="مثال: شراء ضيافة للاطفال..."
                 />
               </div>
             </div>
