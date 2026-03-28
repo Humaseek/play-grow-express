@@ -312,10 +312,11 @@ const CALENDAR_STYLES = `
 
   /* --- خلية اليوم --- */
   .cal-day-cell {
-    min-height: 58px;
+    min-height: 68px;
     padding: 6px 5px;
     border-radius: 12px;
-    gap: 2px;
+    gap: 0;
+    justify-content: space-between;
   }
   .cal-day-cell:hover {
     transform: none;
@@ -325,7 +326,7 @@ const CALENDAR_STYLES = `
   .cal-day-number {
     font-size: 13px;
     font-weight: 900;
-    margin-bottom: 3px;
+    margin-bottom: 0;
   }
   .cal-day-cell.is-today .cal-day-number {
     width: 22px;
@@ -333,16 +334,28 @@ const CALENDAR_STYLES = `
     font-size: 11px;
   }
 
-  /* --- مؤشرات النشاط: شرائط ملونة صغيرة بدل النص الطويل --- */
+  /* --- مؤشرات النشاط: نقاط ملونة مرتبة --- */
+  .cal-day-cell > div:last-child:not(.no-activity-label) {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+    width: 100% !important;
+  }
+
   .cal-stat-row {
-    padding: 0;
-    margin-bottom: 2px;
-    height: 5px;
-    border-radius: 3px;
-    font-size: 0;        /* إخفاء النص */
-    min-height: 5px;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+    height: 7px !important;
+    min-height: 7px !important;
+    border-radius: 4px !important;
+    font-size: 0 !important;
+    width: 100% !important;
   }
   .cal-stat-row span { display: none !important; }
+  .cal-stat-row.income  { background: #10b981 !important; opacity: 0.85; }
+  .cal-stat-row.expense { background: #ef4444 !important; opacity: 0.85; }
+  .cal-stat-row.sessions { background: #3b82f6 !important; opacity: 0.85; }
+  .cal-stat-row.attendance { background: #8b5cf6 !important; opacity: 0.85; }
 
   /* لا نشاط */
   .cal-day-cell .no-activity-label {
