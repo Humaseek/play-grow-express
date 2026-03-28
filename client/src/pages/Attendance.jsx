@@ -159,6 +159,12 @@ const ATTENDANCE_STYLES = `
   flex-wrap: wrap;
 }
 
+/* --- حاوية أزرار الحضور (إبطال margins السالبة لـ .row) --- */
+.att-btn-row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
 /* --- أزرار الحضور بالجدول (دائرية دائماً، بدون نص) --- */
 .att-action-btn {
   display: inline-flex;
@@ -427,23 +433,38 @@ const ATTENDANCE_STYLES = `
     border-bottom: 1px dashed #e2e8f0 !important;
   }
 
-  /* --- صف الأزرار الأربعة --- */
+  /* --- الكرت لا يقطع المحتوى --- */
+  .attendancePage .table tr {
+    overflow: visible !important;
+  }
+
+  /* --- خلية الأزرار --- */
+  .attendancePage .table td:last-child {
+    overflow: visible !important;
+  }
+
+  /* --- صف الأزرار الأربعة (إبطال margins السالبة لـ .row) --- */
   .attendancePage .table td:last-child .row {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
     width: 100% !important;
     box-sizing: border-box !important;
-    gap: 14px !important;
+    gap: 10px !important;
     flex-wrap: nowrap !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
 
   /* --- الأيقونات الدائرية --- */
   .att-action-btn {
-    width: 52px !important;
-    height: 52px !important;
+    width: 50px !important;
+    height: 50px !important;
     flex-shrink: 0 !important;
     border-radius: 50% !important;
+    min-width: 50px !important;
   }
 
   /* --- صف اسم الطفل والشارة --- */
@@ -469,11 +490,24 @@ const ATTENDANCE_STYLES = `
 /* --- شاشات صغيرة جداً (< 400px) --- */
 @media (max-width: 400px) {
   .att-action-btn {
-    width: 46px !important;
-    height: 46px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
   }
   .attendancePage .table td:last-child .row {
-    gap: 10px !important;
+    gap: 8px !important;
+  }
+}
+
+/* --- شاشات صغيرة جداً جداً (< 340px) --- */
+@media (max-width: 340px) {
+  .att-action-btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+  }
+  .attendancePage .table td:last-child .row {
+    gap: 6px !important;
   }
 }
 `;
@@ -723,11 +757,12 @@ export default function Attendance() {
         </td>
         <td style={{ textAlign: "center" }}>
           <div
-            className="row"
+            className="row att-btn-row"
             style={{
               flexWrap: "nowrap",
               justifyContent: "center",
               alignItems: "center",
+              margin: 0,
             }}
           >
             {STATUS.map((s) => {
