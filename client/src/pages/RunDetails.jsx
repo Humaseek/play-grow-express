@@ -1909,7 +1909,8 @@ export default function RunDetails() {
     }
   }
 
-  async function autoReactivateIfSessionsAdded(enrollmentId) {
+  // returns true if reactivated
+  async function autoReactivateIfNeeded(enrollmentId) {
     const { data } = await supabase
       .from("run_participants_view")
       .select("enrollment_status, package_sessions_remaining")
@@ -1917,8 +1918,9 @@ export default function RunDetails() {
       .maybeSingle();
     if (data?.enrollment_status === "paused" && Number(data?.package_sessions_remaining || 0) > 0) {
       await supabase.from("enrollments").update({ status: "active" }).eq("id", enrollmentId);
-      toast("تم تفعيل الاشتراك تلقائياً لوجود رصيد جلسات.", "ok");
+      return true;
     }
+    return false;
   }
 
   async function setEnrollmentStatus(enrollmentId, status) {
@@ -2230,12 +2232,12 @@ export default function RunDetails() {
           .eq("id", editPkgData.id);
       }
 
-      toast("تم التعديل", "ok");
+      const reactivated = await autoReactivateIfNeeded(historyEnrollment.enrollment_id);
+      toast(reactivated ? "تم التعديل وتم تفعيل الاشتراك تلقائياً." : "تم التعديل", "ok");
 
       setOpenEditPkg(false);
       fetchPkgHistory(historyEnrollment);
       await loadFixed();
-      await autoReactivateIfSessionsAdded(historyEnrollment.enrollment_id);
     } catch {
       toast("فشل التعديل. تأكد من إضافة دالة الـ SQL أولاً.", "danger");
     } finally {
@@ -2261,17 +2263,11 @@ export default function RunDetails() {
         .eq("id", packageId);
       if (u.error) throw u.error;
 
-      toast(
-        delta > 0
-          ? `تم إضافة ${Math.abs(delta)} جلسة.`
-          : `تم خصم ${Math.abs(delta)} جلسة.`,
-        "ok",
-      );
-      await loadFixed();
+      let reactivated = false;
       if (delta > 0) {
         const { data: pkg } = await supabase
           .from("course_packages")
-          .select("child_id, course_id")
+          .select("child_id")
           .eq("id", packageId)
           .maybeSingle();
         if (pkg) {
@@ -2281,9 +2277,16 @@ export default function RunDetails() {
             .eq("child_id", pkg.child_id)
             .eq("run_id", runId)
             .maybeSingle();
-          if (enr) await autoReactivateIfSessionsAdded(enr.id);
+          if (enr) reactivated = await autoReactivateIfNeeded(enr.id);
         }
       }
+      toast(
+        delta > 0
+          ? `تم إضافة ${Math.abs(delta)} جلسة.${reactivated ? " وتم تفعيل الاشتراك تلقائياً." : ""}`
+          : `تم خصم ${Math.abs(delta)} جلسة.`,
+        "ok",
+      );
+      await loadFixed();
     } catch (e) {
       console.error(e);
       toast("فشل التعديل.", "danger");
