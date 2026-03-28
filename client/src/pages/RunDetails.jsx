@@ -2763,55 +2763,6 @@ export default function RunDetails() {
                             </span>
                           </div>
                         </div>
-                        {p.enrollment_status === "active" ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (pkgRemain > 0) {
-                                toast("لا يمكن تعطيل الطفل ولديه جلسات في رصيده.", "warn");
-                                return;
-                              }
-                              setEnrollmentStatus(p.enrollment_id, "inactive");
-                            }}
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              padding: "4px 12px",
-                              borderRadius: 999,
-                              border: "none",
-                              cursor: pkgRemain > 0 ? "not-allowed" : "pointer",
-                              background: pkgRemain > 0 ? "#f1f5f9" : "#fee2e2",
-                              color: pkgRemain > 0 ? "#94a3b8" : "#dc2626",
-                              whiteSpace: "nowrap",
-                              flexShrink: 0,
-                            }}
-                          >
-                            تعطيل
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEnrollmentStatus(p.enrollment_id, "active");
-                            }}
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 600,
-                              padding: "4px 12px",
-                              borderRadius: 999,
-                              border: "none",
-                              cursor: "pointer",
-                              background: "#dcfce7",
-                              color: "#16a34a",
-                              whiteSpace: "nowrap",
-                              flexShrink: 0,
-                            }}
-                          >
-                            تفعيل
-                          </button>
-                        )}
                       </div>
 
                       <div className="pQuickStats">
@@ -2897,6 +2848,56 @@ export default function RunDetails() {
                         <div className={barClass} aria-hidden="true">
                           <span style={{ width: `${pct}%` }} />
                         </div>
+                      </div>
+
+                      <div style={{ marginTop: 12 }}>
+                        {isInactive ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEnrollmentStatus(p.enrollment_id, "active");
+                            }}
+                            style={{
+                              width: "100%",
+                              fontSize: 13,
+                              fontWeight: 600,
+                              padding: "8px 0",
+                              borderRadius: 10,
+                              border: "1.5px solid #bbf7d0",
+                              cursor: "pointer",
+                              background: "#f0fdf4",
+                              color: "#16a34a",
+                            }}
+                          >
+                            تفعيل
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (pkgRemain > 0) {
+                                toast("لا يمكن تعطيل الطفل ولديه جلسات في رصيده.", "warn");
+                                return;
+                              }
+                              setEnrollmentStatus(p.enrollment_id, "inactive");
+                            }}
+                            style={{
+                              width: "100%",
+                              fontSize: 13,
+                              fontWeight: 600,
+                              padding: "8px 0",
+                              borderRadius: 10,
+                              border: pkgRemain > 0 ? "1.5px solid #e2e8f0" : "1.5px solid #fecaca",
+                              cursor: pkgRemain > 0 ? "not-allowed" : "pointer",
+                              background: pkgRemain > 0 ? "#f8fafc" : "#fff5f5",
+                              color: pkgRemain > 0 ? "#94a3b8" : "#dc2626",
+                            }}
+                          >
+                            تعطيل
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
