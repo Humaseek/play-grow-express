@@ -362,6 +362,155 @@ const CALENDAR_STYLES = `
     display: none !important;
   }
 }
+
+/* =========================================
+   Bottom Sheet للموبايل
+========================================= */
+.cal-sheet-overlay {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  .cal-sheet-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 9999;
+    align-items: flex-end;
+    justify-content: center;
+    animation: cal-fade-in 0.2s ease;
+  }
+
+  @keyframes cal-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .cal-sheet {
+    background: #ffffff;
+    border-radius: 28px 28px 0 0;
+    width: 100%;
+    max-width: 520px;
+    padding: 0 0 32px 0;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.12);
+    animation: cal-slide-up 0.28s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+
+  @keyframes cal-slide-up {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  /* شريط السحب */
+  .cal-sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    margin: 14px auto 20px;
+  }
+
+  .cal-sheet-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .cal-sheet-date {
+    font-size: 20px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .cal-sheet-weekday {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .cal-sheet-close {
+    background: #f1f5f9;
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .cal-sheet-stats {
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cal-sheet-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-radius: 16px;
+    font-weight: 800;
+  }
+
+  .cal-sheet-stat .stat-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+  }
+
+  .cal-sheet-stat .stat-val {
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .cal-sheet-stat.income   { background: #f0fdf4; color: #16a34a; }
+  .cal-sheet-stat.expense  { background: #fef2f2; color: #ef4444; }
+  .cal-sheet-stat.sessions { background: #eff6ff; color: #3b82f6; }
+  .cal-sheet-stat.attendance { background: #faf5ff; color: #8b5cf6; }
+
+  .cal-sheet-empty {
+    padding: 32px 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .cal-sheet-open-btn {
+    margin: 4px 20px 0;
+    width: calc(100% - 40px);
+    background: #0f172a;
+    color: #fff;
+    border: none;
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+
+  .cal-sheet-open-btn:hover {
+    background: #1e293b;
+  }
+}
 `;
 
 // ============================================================================
@@ -378,6 +527,19 @@ export default function CalendarPage() {
     sessions: 0,
     attendance: 0,
   });
+
+  // Bottom Sheet للموبايل
+  const [sheet, setSheet] = useState(null); // { dateStr, data }
+
+  const isMobile = () => window.innerWidth <= 980;
+
+  const handleDayClick = (dateStr, data) => {
+    if (isMobile()) {
+      setSheet({ dateStr, data });
+    } else {
+      navigate(`/calendar/${dateStr}`);
+    }
+  };
 
   const weekDays = [
     "الأحد",
@@ -563,7 +725,7 @@ export default function CalendarPage() {
         <div
           key={dateStr}
           className={`cal-day-cell ${isToday ? "is-today" : ""}`}
-          onClick={() => navigate(`/calendar/${dateStr}`)} // <-- الضغطة السحرية هنا
+          onClick={() => handleDayClick(dateStr, data)}
         >
           <span className="cal-day-number">{day}</span>
 
@@ -777,6 +939,84 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
+
+      {/* ===== Bottom Sheet للموبايل ===== */}
+      {sheet && (
+        <div className="cal-sheet-overlay" onClick={() => setSheet(null)}>
+          <div className="cal-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="cal-sheet-handle" />
+
+            <div className="cal-sheet-header">
+              <div>
+                <div className="cal-sheet-date">
+                  {new Intl.DateTimeFormat("ar", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }).format(new Date(sheet.dateStr + "T12:00:00"))}
+                </div>
+                <div className="cal-sheet-weekday">
+                  {new Intl.DateTimeFormat("ar", { weekday: "long" }).format(
+                    new Date(sheet.dateStr + "T12:00:00"),
+                  )}
+                </div>
+              </div>
+              <button className="cal-sheet-close" onClick={() => setSheet(null)}>
+                ✕
+              </button>
+            </div>
+
+            {sheet.data.income === 0 &&
+            sheet.data.expense === 0 &&
+            sheet.data.sessions === 0 &&
+            sheet.data.attendance === 0 ? (
+              <div className="cal-sheet-empty">لا يوجد نشاط في هذا اليوم</div>
+            ) : (
+              <div className="cal-sheet-stats">
+                {sheet.data.income > 0 && (
+                  <div className="cal-sheet-stat income">
+                    <span className="stat-left">
+                      <TrendingUp size={20} /> إيرادات
+                    </span>
+                    <span className="stat-val">{fmtMoney(sheet.data.income)} ₪</span>
+                  </div>
+                )}
+                {sheet.data.expense > 0 && (
+                  <div className="cal-sheet-stat expense">
+                    <span className="stat-left">
+                      <TrendingDown size={20} /> مصاريف
+                    </span>
+                    <span className="stat-val">{fmtMoney(sheet.data.expense)} ₪</span>
+                  </div>
+                )}
+                {sheet.data.sessions > 0 && (
+                  <div className="cal-sheet-stat sessions">
+                    <span className="stat-left">
+                      <CheckCircle2 size={20} /> جلسات
+                    </span>
+                    <span className="stat-val">{sheet.data.sessions}</span>
+                  </div>
+                )}
+                {sheet.data.attendance > 0 && (
+                  <div className="cal-sheet-stat attendance">
+                    <span className="stat-left">
+                      <Users size={20} /> حضور الطلاب
+                    </span>
+                    <span className="stat-val">{sheet.data.attendance} طالب</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              className="cal-sheet-open-btn"
+              onClick={() => navigate(`/calendar/${sheet.dateStr}`)}
+            >
+              عرض التفاصيل الكاملة <ArrowRight size={18} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
