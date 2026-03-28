@@ -4398,7 +4398,7 @@ export default function RunDetails() {
               <div className="grid">
                 <div style={{ gridColumn: "span 12" }}>
                   <div className="muted" style={{ marginBottom: 6 }}>
-                    الاسم الرباعي *
+                    الاسم *
                   </div>
                   <input
                     className="input"
@@ -5112,9 +5112,10 @@ export default function RunDetails() {
                 value={payMethod}
                 onChange={setPayMethod}
                 options={[
-                  { value: "cash", label: "نقداً" },
-                  { value: "card", label: "بطاقة ائتمان" },
-                  { value: "transfer", label: "حوالة بنكية" },
+                  { value: "cash", label: "كاش" },
+                  { value: "card", label: "بطاقة" },
+                  { value: "transfer", label: "تحويل بنكي" },
+                  { value: "bit", label: "بييت" },
                   { value: "other", label: "أخرى" },
                 ]}
               />

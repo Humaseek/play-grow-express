@@ -1989,19 +1989,19 @@ export default function Dashboard() {
           <div className="dash-controls">
             <div className="smart-filter-wrapper">
               <Filter size={16} color="#64748b" />
-              <select
-                className="smart-select"
+              <ModernSelect
                 value={preset}
-                onChange={(e) => setPreset(e.target.value)}
-              >
-                <option value="today">اليوم</option>
-                <option value="7d">آخر 7 أيام</option>
-                <option value="this_month">هذا الشهر</option>
-                <option value="30d">آخر 30 يوم</option>
-                <option value="this_year">هذه السنة</option>
-                <option value="all">كل الوقت</option>
-                <option value="custom">تاريخ مخصص...</option>
-              </select>
+                onChange={setPreset}
+                options={[
+                  { value: "today", label: "اليوم" },
+                  { value: "7d", label: "آخر 7 أيام" },
+                  { value: "this_month", label: "هذا الشهر" },
+                  { value: "30d", label: "آخر 30 يوم" },
+                  { value: "this_year", label: "هذه السنة" },
+                  { value: "all", label: "كل الوقت" },
+                  { value: "custom", label: "تاريخ مخصص..." },
+                ]}
+              />
 
               {preset === "custom" && (
                 <div
@@ -2507,21 +2507,21 @@ export default function Dashboard() {
                     <div className="qa-icon-wrap">
                       <CreditCard size={28} />
                     </div>
-                    قبض دفعة
+                    إضافة دفعة
                   </div>
 
                   <div onClick={openExpenseModal} className="qa-btn danger">
                     <div className="qa-icon-wrap">
                       <Receipt size={28} />
                     </div>
-                    صرف مبلغ
+                    إضافة مصروف
                   </div>
 
                   <div onClick={openChildModal} className="qa-btn primary">
                     <div className="qa-icon-wrap">
                       <UserPlus size={28} />
                     </div>
-                    إضافة طالب
+                    إضافة طفل
                   </div>
 
                   <Link to="/calendar" className="qa-btn purple">
@@ -2535,7 +2535,7 @@ export default function Dashboard() {
               <div className="bento-item" style={{ flex: 1 }}>
                 <div className="section-header" style={{ marginBottom: 20 }}>
                   <h2 className="section-title" style={{ color: "#ef4444" }}>
-                    <BellRing size={22} color="#ef4444" /> رادار الديون
+                    <BellRing size={22} color="#ef4444" /> الديون
                   </h2>
                   {!loading && (
                     <Badge variant="danger" style={{ fontSize: 14 }}>
@@ -2948,6 +2948,7 @@ export default function Dashboard() {
                         { value: "cash", label: "كاش" },
                         { value: "card", label: "بطاقة" },
                         { value: "transfer", label: "تحويل بنكي" },
+                        { value: "bit", label: "بييت" },
                         { value: "other", label: "أخرى" },
                       ]}
                     />
@@ -3005,7 +3006,7 @@ export default function Dashboard() {
             </h4>
             <div className="responsive-form-grid">
               <div className="form-col-full">
-                <div className="muted">الاسم الرباعي *</div>
+                <div className="muted">الاسم *</div>
                 <input
                   className="input"
                   value={formData.name}

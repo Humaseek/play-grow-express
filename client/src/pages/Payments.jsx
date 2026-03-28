@@ -1234,6 +1234,7 @@ export default function Payments() {
                       { value: "cash", label: "كاش" },
                       { value: "card", label: "بطاقة" },
                       { value: "transfer", label: "تحويل بنكي" },
+                      { value: "bit", label: "بييت" },
                       { value: "other", label: "أخرى" },
                     ]}
                   />

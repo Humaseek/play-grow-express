@@ -1149,16 +1149,17 @@ export default function ChildDetails() {
             >
               طريقة الدفع
             </div>
-            <select
-              className="modal-input"
-              value={payMethod}
-              onChange={(e) => setPayMethod(e.target.value)}
-            >
-              <option value="cash">كاش نقدي</option>
-              <option value="card">بطاقة بنكية</option>
-              <option value="transfer">تحويل بنكي</option>
-              <option value="other">أخرى</option>
-            </select>
+            <ModernSelect
+                    value={payMethod}
+                    onChange={setPayMethod}
+                    options={[
+                      { value: "cash", label: "كاش" },
+                      { value: "card", label: "بطاقة" },
+                      { value: "transfer", label: "تحويل بنكي" },
+                      { value: "bit", label: "بييت" },
+                      { value: "other", label: "أخرى" },
+                    ]}
+                  />
           </div>
 
           <div style={{ gridColumn: "span 12" }}>
