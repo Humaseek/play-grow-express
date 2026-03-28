@@ -1285,6 +1285,12 @@ export default function RunDetails() {
           "en",
         ),
       );
+    // النشطين دايماً فوق الغير نشطين
+    list.sort((a, b) => {
+      const aActive = a.enrollment_status === "active" ? 0 : 1;
+      const bActive = b.enrollment_status === "active" ? 0 : 1;
+      return aActive - bActive;
+    });
     return list;
   }, [participants, childSearch, childStatusFilter, childSort]);
 
@@ -2723,6 +2729,7 @@ export default function RunDetails() {
                   else if (paid > 0) balClass = "stat-yellow";
                   else balClass = "stat-red";
 
+                  const isInactive = p.enrollment_status !== "active";
                   return (
                     <div
                       key={p.enrollment_id}
@@ -2731,12 +2738,16 @@ export default function RunDetails() {
                         width: 380,
                         maxWidth: "100%",
                         cursor: "pointer",
+                        ...(isInactive && {
+                          background: "#f8fafc",
+                          borderColor: "#e2e8f0",
+                        }),
                       }}
                       onClick={() => openإدارةFor(p)}
                     >
                       <div className="pHead" style={{ marginBottom: "20px" }}>
                         <div style={{ minWidth: 0 }}>
-                          <div className="pName participantList__name">
+                          <div className="pName participantList__name" style={isInactive ? { color: "#94a3b8" } : {}}>
                             {p.child_name}
                           </div>
                           <div className="pMeta">
@@ -2752,6 +2763,55 @@ export default function RunDetails() {
                             </span>
                           </div>
                         </div>
+                        {p.enrollment_status === "active" ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (pkgRemain > 0) {
+                                toast("لا يمكن تعطيل الطفل ولديه جلسات في رصيده.", "warn");
+                                return;
+                              }
+                              setEnrollmentStatus(p.enrollment_id, "inactive");
+                            }}
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              padding: "4px 12px",
+                              borderRadius: 999,
+                              border: "none",
+                              cursor: pkgRemain > 0 ? "not-allowed" : "pointer",
+                              background: pkgRemain > 0 ? "#f1f5f9" : "#fee2e2",
+                              color: pkgRemain > 0 ? "#94a3b8" : "#dc2626",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}
+                          >
+                            تعطيل
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEnrollmentStatus(p.enrollment_id, "active");
+                            }}
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              padding: "4px 12px",
+                              borderRadius: 999,
+                              border: "none",
+                              cursor: "pointer",
+                              background: "#dcfce7",
+                              color: "#16a34a",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}
+                          >
+                            تفعيل
+                          </button>
+                        )}
                       </div>
 
                       <div className="pQuickStats">
@@ -2771,7 +2831,7 @@ export default function RunDetails() {
                             {fmtILS(balance)}
                           </div>
                         </div>
-                        <div className="pStatBlock">
+                        <div className="pStatBlock" style={isInactive ? { opacity: 0.4 } : {}}>
                           <div className="pStatLabel">
                             <CreditCard size={14} />
                             <span>المدفوع</span>
@@ -2799,7 +2859,7 @@ export default function RunDetails() {
                             {fmtNum(pkgRemain)}
                           </div>
                         </div>
-                        <div className="pStatBlock">
+                        <div className="pStatBlock" style={isInactive ? { opacity: 0.4 } : {}}>
                           <div className="pStatLabel">
                             <CalendarDays size={14} />
                             <span>حضر</span>
@@ -2810,7 +2870,7 @@ export default function RunDetails() {
                         </div>
                       </div>
 
-                      <div className="pProgressWrap">
+                      <div className="pProgressWrap" style={isInactive ? { opacity: 0.4 } : {}}>
                         <div className="pProgressHead">
                           <span className="muted">
                             المتفق عليه:{" "}
