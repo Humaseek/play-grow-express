@@ -1789,8 +1789,9 @@ export default function Dashboard() {
 
   const pickerFiltered = useMemo(() => {
     const s = pickerQ.trim().toLowerCase();
-    if (!s) return pickerRows;
-    return pickerRows.filter((r) => {
+    const unpaid = pickerRows.filter((r) => Number(r.balance) > 0);
+    if (!s) return unpaid;
+    return unpaid.filter((r) => {
       const cName = String(r.child_name || "").toLowerCase();
       const crs = String(r.course_title || "").toLowerCase();
       return cName.includes(s) || crs.includes(s);
