@@ -458,6 +458,9 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 .runDetails .pStatBlock.stat-yellow .pStatValue { color: rgb(217, 119, 6); }
 .runDetails .pStatBlock.stat-red { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.15); }
 .runDetails .pStatBlock.stat-red .pStatValue { color: rgb(220, 38, 38) !important; }
+.runDetails .pStatBlock.stat-credit { background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.20); }
+.runDetails .pStatBlock.stat-credit .pStatValue { color: rgb(99, 102, 241); }
+.runDetails .pStatBlock.stat-credit .pStatLabel { color: rgb(99, 102, 241); }
 
 .runDetails .pStatLabel { display: flex; align-items: center; justify-content: center; gap: 6px; color: rgb(100, 116, 139); font-size: 13px; font-weight: 700; margin: 0; white-space: nowrap; }
 .runDetails .pStatValue { font-size: 18px; font-weight: 900; line-height: 1; color: rgb(15, 23, 42); }
@@ -2775,7 +2778,8 @@ export default function RunDetails() {
                             : "pBar pBarFree";
                   let balClass = "stat-gray";
                   if (balance <= 0 && pkgRemain <= 0) balClass = "stat-gray";
-                  else if (agreed === 0 || balance <= 0) balClass = "stat-green";
+                  else if (balance < 0) balClass = "stat-credit";
+                  else if (agreed === 0 || balance === 0) balClass = "stat-green";
                   else if (paid > 0) balClass = "stat-yellow";
                   else balClass = "stat-red";
 
@@ -3723,7 +3727,7 @@ export default function RunDetails() {
                     style={{
                       fontSize: 18,
                       fontWeight: 900,
-                      color: manageP.balance <= 0 ? "#16a34a" : "#dc2626",
+                      color: manageP.balance < 0 ? "#6366f1" : manageP.balance === 0 ? "#16a34a" : "#dc2626",
                     }}
                     className="ltrIso"
                   >
