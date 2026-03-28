@@ -2731,13 +2731,15 @@ export default function RunDetails() {
                     agreed > 0 ? clamp((paid / agreed) * 100, 0, 100) : 0;
                   const status = p.payment_status || "free";
                   const barClass =
-                    status === "paid"
-                      ? "pBar pBarPaid"
-                      : status === "partial"
-                        ? "pBar pBarPartial"
-                        : status === "unpaid"
-                          ? "pBar pBarUnpaid"
-                          : "pBar pBarFree";
+                    balance <= 0 && pkgRemain <= 0
+                      ? "pBar pBarFree"
+                      : status === "paid"
+                        ? "pBar pBarPaid"
+                        : status === "partial"
+                          ? "pBar pBarPartial"
+                          : status === "unpaid"
+                            ? "pBar pBarUnpaid"
+                            : "pBar pBarFree";
                   let balClass = "stat-gray";
                   if (balance <= 0 && pkgRemain <= 0) balClass = "stat-gray";
                   else if (agreed === 0 || balance <= 0) balClass = "stat-green";
