@@ -482,137 +482,267 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 .mobile-only { display: none; }
 .session-actions-desktop { display: flex; gap: 8px; justify-content: flex-end; }
 
+/* --- Mobile Data Cards (Payments/Expenses) --- */
+.mobile-card { 
+  background: #fff; 
+  border-radius: 16px; 
+  padding: 16px; 
+  border: 1px solid rgba(15,23,42,0.06); 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03); 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+  position: relative; 
+  margin-bottom: 12px;
+}
+
 @media (max-width: 980px) {
   .desktop-only { display: none !important; }
   .mobile-only { display: flex !important; flex-direction: column; gap: 12px; }
-  
-  /* --- Header & Title --- */
+
+  /* ── صفحة الـ Run بالكامل ── */
+  .runDetails { padding-block: 12px 32px; }
+  .container { padding-inline: 12px !important; }
+
+  /* --- Hero Header --- */
   .runHeroTitle { 
-    font-size: 22px !important; 
+    font-size: 20px !important; 
     white-space: normal !important; 
     text-align: center !important; 
-    width: 100%; 
-    padding: 14px !important;
-  }
-  .run-header-actions {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 10px;
-  }
-  .run-header-actions button {
-    flex: 1;
-    justify-content: center;
+    width: 100% !important; 
+    padding: 12px 16px !important;
+    border-radius: 16px !important;
   }
 
-  /* --- KPIs --- */
-  .summaryGridSoft { 
-    grid-template-columns: 1fr 1fr !important; 
+  /* الـ wrapper الخارجي للهيدر: عمودي على الموبايل */
+  .runDetails > .container > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
     gap: 12px !important;
   }
+
+  /* صف العنوان + الـ chips: عمودي */
+  .runDetails > .container > div:first-child > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  /* الـ chips تتمدد بالكامل وتلتف */
+  .runDetails > .container > div:first-child > div:first-child > div {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .heroMiniChip {
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+    min-width: 100px !important;
+    font-size: 13px !important;
+    padding: 6px 12px !important;
+    min-height: 36px !important;
+  }
+
+  .run-header-actions {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: stretch !important;
+    gap: 10px !important;
+    margin-top: 0 !important;
+  }
+  .run-header-actions button {
+    flex: 1 !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+  }
+
+  /* --- KPIs Grid --- */
+  .summaryGridSoft { 
+    grid-template-columns: 1fr 1fr !important; 
+    gap: 10px !important;
+  }
   .summaryCardSoft {
-    padding: 16px 12px !important;
+    padding: 14px 12px !important;
   }
   .summaryValue {
-    font-size: 22px !important;
+    font-size: 20px !important;
   }
+  .summaryLabel { font-size: 13px !important; }
+  .summaryNote { font-size: 11px !important; }
+  .summaryIcon { width: 36px !important; height: 36px !important; }
 
   /* --- Tabs --- */
   .runDetails .tabs { 
-    width: 100%; 
-    overflow-x: auto; 
-    white-space: nowrap; 
-    flex-wrap: nowrap; 
-    justify-content: flex-start; 
-    padding-bottom: 4px;
+    width: 100% !important; 
+    overflow-x: auto !important; 
+    white-space: nowrap !important; 
+    flex-wrap: nowrap !important; 
+    justify-content: flex-start !important; 
+    padding-bottom: 4px !important;
+    border-radius: 16px !important;
+    gap: 4px !important;
   }
   .runDetails .tabs::-webkit-scrollbar { display: none; }
+  .runDetails .tab {
+    font-size: 13px !important;
+    padding-inline: 12px !important;
+    min-height: 36px !important;
+  }
 
-  /* --- Filters & Controls --- */
-  .runDetails .pGrid { grid-template-columns: 1fr !important; }
-  .pControls { min-width: 100% !important; }
+  /* --- Participants Tab Toolbar --- */
+  .pToolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .pControls {
+    min-width: 100% !important;
+    flex: none !important;
+  }
   .pControls-filters {
     flex-wrap: wrap !important;
     overflow-x: hidden !important;
+    gap: 8px !important;
   }
   .pControls-filters > * {
-    flex: 1 1 100% !important;
+    flex: 1 1 calc(50% - 4px) !important;
     max-width: 100% !important;
+    min-width: 0 !important;
   }
-  .pControls select.input { width: 100% !important; flex: none !important; }
-  .tab-add-btn { width: 100%; justify-content: center; margin-top: 5px; }
-  
+  /* حقل البحث يأخذ عرض كامل */
+  .pControls-filters > div:first-child {
+    flex: 1 1 100% !important;
+  }
+  .pControls select.input { 
+    width: 100% !important; 
+    flex: 1 1 calc(50% - 4px) !important; 
+  }
+  .tab-add-btn { 
+    width: 100% !important; 
+    justify-content: center !important; 
+    margin-top: 4px !important; 
+  }
+
+  /* --- Participant Cards Grid --- */
+  .runDetails .pGrid { grid-template-columns: 1fr !important; }
+
+  /* بطاقة الطفل: تحسينات داخلية */
+  .runDetails .pCard { 
+    padding: 14px !important; 
+    border-radius: 18px !important;
+  }
+  .runDetails .pName { font-size: 18px !important; }
+  .runDetails .pQuickStats { 
+    grid-template-columns: repeat(2, 1fr) !important; 
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+  }
+  .runDetails .pStatValue { font-size: 16px !important; }
+  .runDetails .pStatLabel { font-size: 12px !important; }
+  .runDetails .metaItem { font-size: 11px !important; }
+
   /* --- Session Cards --- */
   .sessionRow { 
     grid-template-columns: 1fr !important; 
-    padding: 16px !important; 
+    padding: 14px !important; 
     align-items: flex-start !important; 
-    gap: 12px !important;
+    gap: 10px !important;
   }
   .sessionList__time {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    padding-bottom: 8px;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    border-bottom: 1px solid rgba(0,0,0,0.06) !important;
+    padding-bottom: 8px !important;
   }
-  
-  /* جعل أزرار الجلسات مرنة وعملية للّمس في الموبايل */
+
+  /* أزرار الجلسات في الموبايل */
   .session-actions-desktop { 
     display: flex !important; 
     flex-wrap: wrap !important;
-    width: 100%;
+    width: 100% !important;
     justify-content: flex-start !important;
-    margin-top: 8px;
+    margin-top: 4px !important;
     gap: 8px !important;
+    border-top: 1px solid rgba(0,0,0,0.05) !important;
+    padding-top: 10px !important;
   }
   .session-actions-desktop .btn {
-    flex: 1;
-    min-width: calc(33.33% - 8px);
-    justify-content: center;
-    font-size: 13px;
+    flex: 1 1 auto !important;
+    min-width: calc(33.33% - 8px) !important;
+    justify-content: center !important;
+    font-size: 13px !important;
+    min-height: 40px !important;
   }
 
-  /* --- Participant Manage Modal --- */
-  .actionSquare { min-height: 70px !important; }
+  /* --- Expenses Tab --- */
+  /* بطاقات الإحصاء العلوية في تبويب المصاريف */
+  .tab-expenses-summary {
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  /* على الشاشات الصغيرة جداً: عمود واحد */
+  @media (max-width: 480px) {
+    .tab-expenses-summary {
+      grid-template-columns: 1fr !important;
+    }
+  }
+  /* نضمن أن الـ gridColumn span لا يتعارض مع الموبايل */
+  .tab-expenses-summary > .card {
+    grid-column: span 1 !important;
+  }
+
+  /* --- Payments & Expenses Row spacing --- */
+  .runDetails .card { 
+    padding: 14px !important; 
+    border-radius: 18px !important;
+  }
+
+  /* --- Participant Manage Modal Actions Grid --- */
+  .actionSquare { 
+    min-height: 70px !important; 
+    padding: 10px 6px !important;
+  }
+  .actionSquare span { font-size: 11px !important; }
   .modal-stats {
     grid-template-columns: 1fr 1fr !important;
   }
-  
+
   /* --- General Modals --- */
   div.modalOverlay {
     align-items: center !important; 
-    padding: 16px !important;
-    z-index: 99999 !important; /* 👈 هان السر: هذا السطر رح يجبر المودال يغطي الشريط السفلي */
+    padding: 12px !important;
+    z-index: 99999 !important;
   }
-  
   div.modalOverlay > div.modalCard {
-    border-radius: 24px !important; 
+    border-radius: 22px !important; 
     margin: auto !important; 
-    width: 95% !important; 
-    max-height: 85vh !important; /* رجعنا الطول لـ 85 عشان يوخذ راحته */
-    margin-bottom: auto !important; 
+    width: 96% !important; 
+    max-height: 88vh !important;
+    margin-bottom: auto !important;
+    overflow: hidden !important;
   }
-
   .modal-form-scroll-container {
-    max-height: calc(85vh - 130px) !important; 
-    padding: 0 5px;
+    max-height: calc(88vh - 120px) !important; 
+    overflow-y: auto !important;
+    padding: 0 4px !important;
   }
 
-  /* --- Mobile Data Cards (Payments/Expenses) --- */
-  .mobile-card { 
-    background: #fff; 
-    border-radius: 16px; 
-    padding: 16px; 
-    border: 1px solid rgba(15,23,42,0.06); 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03); 
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-    position: relative; 
-    margin-bottom: 12px;
+  /* داخل المودالات: الـ grid يصبح عمود واحد */
+  div.modalCard .grid > div[style*="gridColumn: span 6"] {
+    grid-column: span 12 !important;
+  }
+
+  /* جدول التاريخ داخل المودال */
+  .modal-compact-table th { 
+    font-size: 13px !important; 
+    padding: 12px 8px !important; 
+  }
+  .modal-compact-table td { 
+    font-size: 13px !important; 
+    padding: 12px 8px !important; 
   }
 }
 `;
@@ -3143,7 +3273,7 @@ export default function RunDetails() {
             ) : (
               <>
                 <div
-                  className="grid"
+                  className="grid tab-expenses-summary"
                   style={{ marginTop: 14, marginBottom: 12 }}
                 >
                   <div className="card" style={{ gridColumn: "span 4" }}>
