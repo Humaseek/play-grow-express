@@ -1909,6 +1909,18 @@ export default function RunDetails() {
     }
   }
 
+  async function autoReactivateIfSessionsAdded(enrollmentId) {
+    const { data } = await supabase
+      .from("run_participants_view")
+      .select("enrollment_status, package_sessions_remaining")
+      .eq("enrollment_id", enrollmentId)
+      .maybeSingle();
+    if (data?.enrollment_status === "paused" && Number(data?.package_sessions_remaining || 0) > 0) {
+      await supabase.from("enrollments").update({ status: "active" }).eq("id", enrollmentId);
+      toast("تم تفعيل الاشتراك تلقائياً لوجود رصيد جلسات.", "ok");
+    }
+  }
+
   async function setEnrollmentStatus(enrollmentId, status) {
     const u = await supabase
       .from("enrollments")
@@ -2222,7 +2234,8 @@ export default function RunDetails() {
 
       setOpenEditPkg(false);
       fetchPkgHistory(historyEnrollment);
-      loadFixed();
+      await loadFixed();
+      await autoReactivateIfSessionsAdded(historyEnrollment.enrollment_id);
     } catch {
       toast("فشل التعديل. تأكد من إضافة دالة الـ SQL أولاً.", "danger");
     } finally {
@@ -2255,6 +2268,22 @@ export default function RunDetails() {
         "ok",
       );
       await loadFixed();
+      if (delta > 0) {
+        const { data: pkg } = await supabase
+          .from("course_packages")
+          .select("child_id, course_id")
+          .eq("id", packageId)
+          .maybeSingle();
+        if (pkg) {
+          const { data: enr } = await supabase
+            .from("enrollments")
+            .select("id")
+            .eq("child_id", pkg.child_id)
+            .eq("run_id", runId)
+            .maybeSingle();
+          if (enr) await autoReactivateIfSessionsAdded(enr.id);
+        }
+      }
     } catch (e) {
       console.error(e);
       toast("فشل التعديل.", "danger");
