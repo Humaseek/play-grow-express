@@ -3846,6 +3846,14 @@ export default function RunDetails() {
                   >
                     <button
                       className="actionSquare"
+                      disabled={
+                        Number(manageP?.package_sessions_remaining ?? 0) > 0
+                      }
+                      title={
+                        Number(manageP?.package_sessions_remaining ?? 0) > 0
+                          ? "الطفل لديه رصيد جلسات متبقٍ"
+                          : ""
+                      }
                       onClick={() => {
                         const currentP = manageP;
                         if (!currentP) return;
