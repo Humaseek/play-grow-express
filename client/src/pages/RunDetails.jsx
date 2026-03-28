@@ -2465,7 +2465,7 @@ export default function RunDetails() {
               }}
               onClick={() => navigate(`/courses/${summary.template_id}`)}
             >
-              رجوع
+              {summary.title || "رجوع"}
             </button>
           </div>
         </div>
