@@ -4992,7 +4992,9 @@ export default function RunDetails() {
                                   <td>
                                     {isPaid ? (
                                       <ModernSelect
-                                        value={bulkPerChildPayMethod[c.id] || "cash"}
+                                        value={
+                                          bulkPerChildPayMethod[c.id] || "cash"
+                                        }
                                         onChange={(val) =>
                                           setBulkPerChildPayMethod((prev) => ({
                                             ...prev,
@@ -5002,7 +5004,10 @@ export default function RunDetails() {
                                         options={[
                                           { value: "cash", label: "كاش" },
                                           { value: "card", label: "بطاقة" },
-                                          { value: "transfer", label: "تحويل بنكي" },
+                                          {
+                                            value: "transfer",
+                                            label: "تحويل بنكي",
+                                          },
                                           { value: "bit", label: "بييت" },
                                           { value: "other", label: "أخرى" },
                                         ]}
