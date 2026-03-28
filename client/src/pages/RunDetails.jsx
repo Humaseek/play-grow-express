@@ -2753,6 +2753,20 @@ export default function RunDetails() {
                         <div style={{ minWidth: 0 }}>
                           <div className="pName participantList__name" style={isInactive ? { color: "#94a3b8" } : {}}>
                             {p.child_name}
+                            {isInactive && (
+                              <span style={{
+                                marginRight: 8,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                padding: "2px 8px",
+                                borderRadius: 999,
+                                background: "#e2e8f0",
+                                color: "#64748b",
+                                verticalAlign: "middle",
+                              }}>
+                                غير نشط
+                              </span>
+                            )}
                           </div>
                           <div className="pMeta">
                             <span className="metaItem" title="الصف">
@@ -2797,6 +2811,7 @@ export default function RunDetails() {
                         </div>
                         <div
                           className={`pStatBlock ${pkgRemain < 0 ? "stat-red" : ""}`}
+                          style={isInactive && pkgRemain === 0 ? { opacity: 0.4 } : {}}
                         >
                           <div className="pStatLabel">
                             <Ticket size={14} />
