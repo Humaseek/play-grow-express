@@ -639,6 +639,12 @@ export default function Expenses() {
   const [editingCatValue, setEditingCatValue] = useState("");
   const [catSaving, setCatSaving] = useState(false);
 
+  // Party management
+  const [openPartyMgmt, setOpenPartyMgmt] = useState(false);
+  const [editingParty, setEditingParty] = useState(null);
+  const [editingPartyValue, setEditingPartyValue] = useState("");
+  const [partySaving, setPartySaving] = useState(false);
+
   function computeRange() {
     if (rangePreset === "all") return { from: null, to: null };
     const now = new Date();
@@ -909,6 +915,43 @@ export default function Expenses() {
     }
   }
 
+  async function renameParty(oldName, newName) {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === oldName) { setEditingParty(null); return; }
+    setPartySaving(true);
+    try {
+      const [partyUpd, expUpd] = await Promise.all([
+        supabase.from("expense_parties").update({ name: trimmed }).eq("name", oldName),
+        supabase.from("expenses").update({ party: trimmed }).eq("party", oldName),
+      ]);
+      if (partyUpd.error) throw partyUpd.error;
+      if (expUpd.error) throw expUpd.error;
+      await Promise.all([loadPicklists(), load()]);
+      toast("تم تعديل الشخص/المتجر بنجاح.", "ok");
+      setEditingParty(null);
+    } catch (e) {
+      console.error(e);
+      toast("فشل تعديل الشخص/المتجر.", "danger");
+    } finally {
+      setPartySaving(false);
+    }
+  }
+
+  async function deleteParty(name) {
+    setPartySaving(true);
+    try {
+      const del = await supabase.from("expense_parties").delete().eq("name", name);
+      if (del.error) throw del.error;
+      await loadPicklists();
+      toast("تم حذف الشخص/المتجر من القائمة.", "ok");
+    } catch (e) {
+      console.error(e);
+      toast("فشل الحذف.", "danger");
+    } finally {
+      setPartySaving(false);
+    }
+  }
+
   async function saveExpense() {
     const amount = Number(expAmount);
     if (!expDate) {
@@ -1079,16 +1122,25 @@ export default function Expenses() {
                     </button>
                   </div>
 
-                  <div style={{ minWidth: 140 }}>
-                    <ModernSelect
-                      value={partyFilter}
-                      onChange={setPartyFilter}
-                      placeholder="كل الأشخاص"
-                      options={[
-                        { value: "all", label: "كل الأشخاص" },
-                        ...parties.map((p) => ({ value: p, label: p })),
-                      ]}
-                    />
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ minWidth: 140 }}>
+                      <ModernSelect
+                        value={partyFilter}
+                        onChange={setPartyFilter}
+                        placeholder="كل الأشخاص"
+                        options={[
+                          { value: "all", label: "كل الأشخاص" },
+                          ...parties.map((p) => ({ value: p, label: p })),
+                        ]}
+                      />
+                    </div>
+                    <button
+                      title="إدارة الأشخاص/المتاجر"
+                      onClick={() => { setEditingParty(null); setOpenPartyMgmt(true); }}
+                      style={{ padding: "7px 9px", borderRadius: 8, border: "1.5px solid #e2e8f0", background: "#f8fafc", cursor: "pointer", display: "flex", alignItems: "center", color: "#64748b" }}
+                    >
+                      <Settings2 size={16} />
+                    </button>
                   </div>
 
                   <div style={{ minWidth: 160 }}>
@@ -1423,6 +1475,74 @@ export default function Expenses() {
         </Modal>
 
         {/* حوار التأكيد للحذف */}
+        {/* Modal: إدارة الأشخاص/المتاجر */}
+        <Modal
+          open={openPartyMgmt}
+          title="إدارة الأشخاص / المتاجر"
+          onClose={() => { setOpenPartyMgmt(false); setEditingParty(null); }}
+        >
+          {partyOptions.length === 0 ? (
+            <p style={{ color: "#64748b", textAlign: "center", padding: 20 }}>لا توجد أشخاص/متاجر محفوظة</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {partyOptions.map((name) => (
+                <div
+                  key={name}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", background: editingParty === name ? "#f0fdf4" : "#f8fafc" }}
+                >
+                  {editingParty === name ? (
+                    <>
+                      <input
+                        autoFocus
+                        className="input"
+                        style={{ flex: 1, fontSize: 14, padding: "6px 10px" }}
+                        value={editingPartyValue}
+                        onChange={(e) => setEditingPartyValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") renameParty(name, editingPartyValue);
+                          if (e.key === "Escape") setEditingParty(null);
+                        }}
+                      />
+                      <button
+                        disabled={partySaving}
+                        onClick={() => renameParty(name, editingPartyValue)}
+                        style={{ padding: "5px 8px", borderRadius: 7, border: "none", background: "#16a34a", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center" }}
+                      >
+                        <Check size={15} />
+                      </button>
+                      <button
+                        onClick={() => setEditingParty(null)}
+                        style={{ padding: "5px 8px", borderRadius: 7, border: "none", background: "#e2e8f0", color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center" }}
+                      >
+                        <X size={15} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ flex: 1, fontWeight: 700, color: "#0f172a", fontSize: 14 }}>{name}</span>
+                      <button
+                        onClick={() => { setEditingParty(name); setEditingPartyValue(name); }}
+                        style={{ padding: "5px 8px", borderRadius: 7, border: "none", background: "#e0f2fe", color: "#0284c7", cursor: "pointer", display: "flex", alignItems: "center" }}
+                        title="تعديل"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        disabled={partySaving}
+                        onClick={() => deleteParty(name)}
+                        style={{ padding: "5px 8px", borderRadius: 7, border: "none", background: "#fee2e2", color: "#dc2626", cursor: "pointer", display: "flex", alignItems: "center" }}
+                        title="حذف من القائمة"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Modal>
+
         {/* Modal: إدارة الفئات */}
         <Modal
           open={openCatMgmt}
