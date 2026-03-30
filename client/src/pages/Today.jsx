@@ -468,7 +468,13 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
               key={i}
               className="chart-col-group"
               style={{ position: "relative", zIndex: isHovered ? 10 : 1 }}
-              onMouseEnter={() => setHoveredIdx(i)}
+              onMouseEnter={(e) => {
+                if (tooltipRef.current) {
+                  tooltipRef.current.style.left = e.clientX + 14 + "px";
+                  tooltipRef.current.style.top = e.clientY - 40 + "px";
+                }
+                setHoveredIdx(i);
+              }}
               onMouseMove={(e) => {
                 if (tooltipRef.current) {
                   tooltipRef.current.style.left = e.clientX + 14 + "px";
