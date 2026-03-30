@@ -429,7 +429,7 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
   }
 
   return (
-    <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px" }}>
+    <>
       <div
         ref={tooltipRef}
         style={{
@@ -452,6 +452,7 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
         <span className="tt-exp" style={{ color: "#fca5a5" }} />
       </div>
 
+    <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px" }}>
       <div
         style={{
           minWidth: minWidth,
@@ -500,6 +501,7 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
         })}
       </div>
     </div>
+    </>
   );
 };
 
