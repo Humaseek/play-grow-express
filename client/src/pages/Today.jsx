@@ -398,11 +398,40 @@ const Sparkline = ({ data, color, type = "line" }) => {
 };
 
 const DualBarChart = ({ incomeData, expenseData, labels }) => {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+
   const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
   const minWidth = labels.length > 10 ? `${labels.length * 40}px` : "100%";
 
   return (
-    <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px" }}>
+    <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px", position: "relative" }}>
+      {hoveredIdx !== null && (
+        <div
+          style={{
+            position: "fixed",
+            left: tooltipPos.x + 14,
+            top: tooltipPos.y - 10,
+            zIndex: 9999,
+            background: "#0f172a",
+            color: "#fff",
+            borderRadius: 10,
+            padding: "8px 13px",
+            fontSize: 13,
+            fontWeight: 700,
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
+          }}
+        >
+          <div style={{ color: "#86efac", marginBottom: 2 }}>
+            الإيرادات: {fmtMoney(incomeData[hoveredIdx])} ₪
+          </div>
+          <div style={{ color: "#fca5a5" }}>
+            المصاريف: {fmtMoney(expenseData[hoveredIdx])} ₪
+          </div>
+        </div>
+      )}
       <div
         style={{
           minWidth: minWidth,
@@ -428,33 +457,35 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
           }}
         >
           {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              style={{
-                borderTop: "1px dashed #e2e8f0",
-                width: "100%",
-                height: 0,
-              }}
-            ></div>
+            <div key={i} style={{ borderTop: "1px dashed #e2e8f0", width: "100%", height: 0 }} />
           ))}
         </div>
 
         {(labels || []).map((label, i) => {
           const incHeight = ((incomeData[i] || 0) / maxVal) * 100;
           const expHeight = ((expenseData[i] || 0) / maxVal) * 100;
+          const isHovered = hoveredIdx === i;
 
           return (
-            <div key={i} className="chart-col-group">
+            <div
+              key={i}
+              className="chart-col-group"
+              style={{ position: "relative" }}
+              onMouseEnter={(e) => {
+                setHoveredIdx(i);
+                setTooltipPos({ x: e.clientX, y: e.clientY });
+              }}
+              onMouseMove={(e) => setTooltipPos({ x: e.clientX, y: e.clientY })}
+              onMouseLeave={() => setHoveredIdx(null)}
+            >
               <div className="chart-bars-wrap">
                 <div
                   className="chart-bar income-bar"
-                  title={`الإيرادات: ${fmtMoney(incomeData[i])} ₪`}
-                  style={{ height: `${incHeight}%` }}
+                  style={{ height: `${incHeight}%`, opacity: isHovered ? 1 : 0.85, transition: "opacity 0.15s" }}
                 />
                 <div
                   className="chart-bar expense-bar"
-                  title={`المصاريف: ${fmtMoney(expenseData[i])} ₪`}
-                  style={{ height: `${expHeight}%` }}
+                  style={{ height: `${expHeight}%`, opacity: isHovered ? 1 : 0.85, transition: "opacity 0.15s" }}
                 />
               </div>
               <div className="chart-label">{label}</div>
