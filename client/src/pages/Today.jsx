@@ -466,112 +466,116 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
   );
 };
 
-const ExpenseDonutChart = ({ data }) => {
+const DonutChart = ({ data, colors: customColors, emptyMsg }) => {
+  const [hovered, setHovered] = useState(null);
+
+  const colors = customColors || [
+    "#ef4444", "#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#64748b",
+  ];
+
   if (!data || data.length === 0)
     return (
       <div className="muted text-center" style={{ padding: 20 }}>
-        لا توجد مصاريف لتحليلها
+        {emptyMsg || "لا توجد بيانات"}
       </div>
     );
 
   const total = data.reduce((sum, item) => sum + item.value, 0);
-  let cumulativePercent = 0;
+  let cum = 0;
 
-  const getCoordinatesForPercent = (percent) => {
-    const x = Math.cos(2 * Math.PI * percent);
-    const y = Math.sin(2 * Math.PI * percent);
-    return [x, y];
-  };
-
-  const colors = [
-    "#ef4444",
-    "#f59e0b",
-    "#3b82f6",
-    "#8b5cf6",
-    "#10b981",
-    "#64748b",
+  const getCoords = (pct) => [
+    Math.cos(2 * Math.PI * pct),
+    Math.sin(2 * Math.PI * pct),
   ];
 
+  const centerLabel = hovered ? hovered.label : "الإجمالي";
+  const centerValue = hovered ? hovered.value : total;
+  const centerPct = hovered
+    ? Math.round((hovered.value / total) * 100) + "%"
+    : null;
+
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-      <div style={{ position: "relative", width: "120px", height: "120px" }}>
-        <svg viewBox="-1 -1 2 2" style={{ transform: "rotate(-90deg)" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      <div style={{ position: "relative", width: "110px", height: "110px", flexShrink: 0 }}>
+        <svg
+          viewBox="-1 -1 2 2"
+          style={{ transform: "rotate(-90deg)", width: "100%", height: "100%" }}
+        >
           {data.map((slice, i) => {
             const percent = slice.value / total;
-            const [startX, startY] =
-              getCoordinatesForPercent(cumulativePercent);
-            cumulativePercent += percent;
-            const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
+            const [startX, startY] = getCoords(cum);
+            cum += percent;
+            const [endX, endY] = getCoords(cum);
             const largeArcFlag = percent > 0.5 ? 1 : 0;
-            const pathData = [
-              `M ${startX} ${startY}`,
-              `A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY}`,
-              `L 0 0`,
-            ].join(" ");
-
+            const pathData = `M ${startX} ${startY} A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY} L 0 0`;
             return (
-              <path key={i} d={pathData} fill={colors[i % colors.length]} />
+              <path
+                key={i}
+                d={pathData}
+                fill={colors[i % colors.length]}
+                style={{
+                  cursor: "pointer",
+                  opacity: hovered && hovered !== slice ? 0.45 : 1,
+                  transition: "opacity 0.15s",
+                }}
+                onMouseEnter={() => setHovered(slice)}
+                onMouseLeave={() => setHovered(null)}
+              />
             );
           })}
-          <circle cx="0" cy="0" r="0.6" fill="#fff" />
+          <circle cx="0" cy="0" r="0.62" fill="#fff" />
         </svg>
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            top: 0, left: 0, right: 0, bottom: 0,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "column",
+            pointerEvents: "none",
+            gap: 1,
           }}
         >
-          <span style={{ fontSize: "10px", color: "#64748b", fontWeight: 800 }}>
-            الإجمالي
+          <span style={{ fontSize: "9px", color: "#64748b", fontWeight: 800, textAlign: "center", maxWidth: "80%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {centerLabel}
           </span>
-          <span
-            style={{ fontSize: "14px", color: "#0f172a", fontWeight: 900 }}
-            className="ltrIso"
-          >
-            {fmtMoney(total)}
+          {centerPct && (
+            <span style={{ fontSize: "11px", color: "#0f172a", fontWeight: 900 }}>
+              {centerPct}
+            </span>
+          )}
+          <span style={{ fontSize: "13px", color: "#0f172a", fontWeight: 900 }} className="ltrIso">
+            {fmtMoney(centerValue)}
           </span>
         </div>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px",
-        }}
-      >
-        {data.slice(0, 4).map((slice, i) => (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "5px" }}>
+        {data.slice(0, 5).map((slice, i) => (
           <div
             key={i}
             style={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              fontSize: "13px",
+              fontSize: "12px",
+              cursor: "pointer",
+              padding: "3px 5px",
+              borderRadius: 6,
+              background: hovered === slice ? "rgba(0,0,0,0.05)" : "transparent",
+              transition: "background 0.1s",
             }}
+            onMouseEnter={() => setHovered(slice)}
+            onMouseLeave={() => setHovered(null)}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <div
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  borderRadius: "50%",
-                  background: colors[i % colors.length],
-                }}
-              ></div>
-              <span style={{ fontWeight: 700, color: "#334155" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", minWidth: 0 }}>
+              <div style={{ width: "9px", height: "9px", borderRadius: "50%", background: colors[i % colors.length], flexShrink: 0 }} />
+              <span style={{ fontWeight: 700, color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {slice.label}
               </span>
             </div>
-            <span style={{ fontWeight: 900, color: "#0f172a" }}>
+            <span style={{ fontWeight: 900, color: "#0f172a", flexShrink: 0, marginRight: 4 }}>
               {Math.round((slice.value / total) * 100)}%
             </span>
           </div>
@@ -1368,6 +1372,7 @@ export default function Dashboard() {
     debtors: [],
     recentTransactions: [],
     expenseCategories: [],
+    incomeByRun: [],
   });
 
   const [confirm, setConfirm] = useState({
@@ -1494,6 +1499,11 @@ export default function Dashboard() {
         .select("amount, created_at")
         .gte("created_at", fromIso)
         .lte("created_at", toIso);
+      const qPaymentsByCourse = supabase
+        .from("payments_details_view")
+        .select("amount, course_title, created_at")
+        .gte("created_at", fromIso)
+        .lte("created_at", toIso);
       const qExpenses = supabase
         .from("expenses")
         .select("amount, category, spent_on")
@@ -1509,6 +1519,7 @@ export default function Dashboard() {
         { data: recentExps, error: e6 },
         { data: paymentsData, error: e7 },
         { data: expensesData, error: e8 },
+        { data: paysByCourse, error: e9 },
       ] = await Promise.all([
         qTotalChildren,
         qSessionsToday,
@@ -1518,9 +1529,10 @@ export default function Dashboard() {
         qRecentExps,
         qPayments,
         qExpenses,
+        qPaymentsByCourse,
       ]);
 
-      const errs = [e1, e2, e3, e4, e5, e6, e7, e8].filter(Boolean);
+      const errs = [e1, e2, e3, e4, e5, e6, e7, e8, e9].filter(Boolean);
       if (errs.length > 0) {
         console.error("Dashboard Fetch Errors:", errs);
         setError({
@@ -1603,6 +1615,15 @@ export default function Dashboard() {
         .map(([label, value]) => ({ label, value }))
         .sort((a, b) => b.value - a.value);
 
+      const incCourseMap = new Map();
+      (paysByCourse || []).forEach((p) => {
+        const course = p.course_title || "غير محدد";
+        incCourseMap.set(course, (incCourseMap.get(course) || 0) + Number(p.amount || 0));
+      });
+      const incomeByRun = Array.from(incCourseMap.entries())
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value);
+
       const incTrendArr = bins.map((b) => {
         return (paymentsData || [])
           .filter((p) => {
@@ -1634,6 +1655,7 @@ export default function Dashboard() {
         debtors: enrichedDebtors,
         recentTransactions: combinedTx,
         expenseCategories: expCategories,
+        incomeByRun,
       });
     } catch (err) {
       console.error("Dashboard Hard Crash:", err);
@@ -2688,29 +2710,43 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="bento-item span-4">
-              <div className="section-header">
-                <h2 className="section-title">
-                  <Briefcase size={22} color="#0f172a" /> توزيع المصاريف
-                </h2>
-              </div>
-              {loading ? (
-                <div
-                  style={{
-                    height: 200,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <div
-                    className="skeleton-pulse"
-                    style={{ height: 120, width: 120, borderRadius: "50%" }}
-                  ></div>
+            <div className="bento-item span-4" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div>
+                <div className="section-header">
+                  <h2 className="section-title">
+                    <TrendingUp size={20} color="#10b981" /> الدخل بالدورات
+                  </h2>
                 </div>
-              ) : (
-                <ExpenseDonutChart data={dashData.expenseCategories} />
-              )}
+                {loading ? (
+                  <div style={{ display: "flex", justifyContent: "center", paddingTop: 8 }}>
+                    <div className="skeleton-pulse" style={{ height: 110, width: 110, borderRadius: "50%" }} />
+                  </div>
+                ) : (
+                  <DonutChart
+                    data={dashData.incomeByRun}
+                    colors={["#10b981","#3b82f6","#8b5cf6","#f59e0b","#06b6d4","#64748b"]}
+                    emptyMsg="لا توجد إيرادات في هذه الفترة"
+                  />
+                )}
+              </div>
+
+              <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 20 }}>
+                <div className="section-header">
+                  <h2 className="section-title">
+                    <Briefcase size={20} color="#ef4444" /> توزيع المصاريف
+                  </h2>
+                </div>
+                {loading ? (
+                  <div style={{ display: "flex", justifyContent: "center", paddingTop: 8 }}>
+                    <div className="skeleton-pulse" style={{ height: 110, width: 110, borderRadius: "50%" }} />
+                  </div>
+                ) : (
+                  <DonutChart
+                    data={dashData.expenseCategories}
+                    emptyMsg="لا توجد مصاريف لتحليلها"
+                  />
+                )}
+              </div>
             </div>
           </div>
         )}
