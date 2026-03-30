@@ -398,14 +398,60 @@ const Sparkline = ({ data, color, type = "line" }) => {
 };
 
 const DualBarChart = ({ incomeData, expenseData, labels }) => {
-  const [hoveredIdx, setHoveredIdx] = useState(null);
   const tooltipRef = useRef(null);
+  const incomeDataRef = useRef(incomeData);
+  const expenseDataRef = useRef(expenseData);
+  incomeDataRef.current = incomeData;
+  expenseDataRef.current = expenseData;
 
   const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
   const minWidth = labels.length > 10 ? `${labels.length * 40}px` : "100%";
 
+  function showTooltip(e, i) {
+    const el = tooltipRef.current;
+    if (!el) return;
+    el.querySelector(".tt-inc").textContent = `↑ ${fmtMoney(incomeDataRef.current[i])} ₪`;
+    el.querySelector(".tt-exp").textContent = `↓ ${fmtMoney(expenseDataRef.current[i])} ₪`;
+    el.style.display = "flex";
+    el.style.left = e.clientX + 14 + "px";
+    el.style.top = e.clientY - 40 + "px";
+  }
+
+  function moveTooltip(e) {
+    const el = tooltipRef.current;
+    if (!el) return;
+    el.style.left = e.clientX + 14 + "px";
+    el.style.top = e.clientY - 40 + "px";
+  }
+
+  function hideTooltip() {
+    if (tooltipRef.current) tooltipRef.current.style.display = "none";
+  }
+
   return (
     <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px" }}>
+      <div
+        ref={tooltipRef}
+        style={{
+          position: "fixed",
+          display: "none",
+          zIndex: 9999,
+          background: "#0f172a",
+          color: "#fff",
+          borderRadius: 9,
+          padding: "7px 14px",
+          fontSize: 13,
+          fontWeight: 700,
+          whiteSpace: "nowrap",
+          pointerEvents: "none",
+          boxShadow: "0 4px 16px rgba(0,0,0,0.22)",
+          gap: 14,
+        }}
+      >
+        <span className="tt-inc" style={{ color: "#86efac" }} />
+        <span className="tt-exp" style={{ color: "#fca5a5" }} />
+      </div>
+
       <div
         style={{
           minWidth: minWidth,
@@ -432,60 +478,21 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
           ))}
         </div>
 
-        <div
-          ref={tooltipRef}
-          style={{
-            position: "fixed",
-            zIndex: 9999,
-            background: "#0f172a",
-            color: "#fff",
-            borderRadius: 9,
-            padding: "7px 14px",
-            fontSize: 13,
-            fontWeight: 700,
-            whiteSpace: "nowrap",
-            pointerEvents: "none",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.22)",
-            display: hoveredIdx !== null ? "flex" : "none",
-            gap: 14,
-          }}
-        >
-          {hoveredIdx !== null && (
-            <>
-              <span style={{ color: "#86efac" }}>↑ {fmtMoney(incomeData[hoveredIdx])} ₪</span>
-              <span style={{ color: "#fca5a5" }}>↓ {fmtMoney(expenseData[hoveredIdx])} ₪</span>
-            </>
-          )}
-        </div>
-
         {(labels || []).map((label, i) => {
           const incHeight = ((incomeData[i] || 0) / maxVal) * 100;
           const expHeight = ((expenseData[i] || 0) / maxVal) * 100;
-          const isHovered = hoveredIdx === i;
 
           return (
             <div
               key={i}
               className="chart-col-group"
-              style={{ position: "relative", zIndex: isHovered ? 10 : 1 }}
-              onMouseEnter={(e) => {
-                if (tooltipRef.current) {
-                  tooltipRef.current.style.left = e.clientX + 14 + "px";
-                  tooltipRef.current.style.top = e.clientY - 40 + "px";
-                }
-                setHoveredIdx(i);
-              }}
-              onMouseMove={(e) => {
-                if (tooltipRef.current) {
-                  tooltipRef.current.style.left = e.clientX + 14 + "px";
-                  tooltipRef.current.style.top = e.clientY - 40 + "px";
-                }
-              }}
-              onMouseLeave={() => setHoveredIdx(null)}
+              onMouseEnter={(e) => showTooltip(e, i)}
+              onMouseMove={moveTooltip}
+              onMouseLeave={hideTooltip}
             >
               <div className="chart-bars-wrap">
-                <div className="chart-bar income-bar" style={{ height: `${incHeight}%`, opacity: isHovered ? 1 : 0.85 }} />
-                <div className="chart-bar expense-bar" style={{ height: `${expHeight}%`, opacity: isHovered ? 1 : 0.85 }} />
+                <div className="chart-bar income-bar" style={{ height: `${incHeight}%` }} />
+                <div className="chart-bar expense-bar" style={{ height: `${expHeight}%` }} />
               </div>
               <div className="chart-label">{label}</div>
             </div>
