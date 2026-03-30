@@ -399,6 +399,7 @@ const Sparkline = ({ data, color, type = "line" }) => {
 
 const DualBarChart = ({ incomeData, expenseData, labels }) => {
   const [hoveredIdx, setHoveredIdx] = useState(null);
+  const tooltipRef = useRef(null);
 
   const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
   const minWidth = labels.length > 10 ? `${labels.length * 40}px` : "100%";
@@ -431,13 +432,11 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
           ))}
         </div>
 
-        {hoveredIdx !== null && (
-          <div style={{
-            position: "absolute",
-            top: 20,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 50,
+        <div
+          ref={tooltipRef}
+          style={{
+            position: "fixed",
+            zIndex: 9999,
             background: "#0f172a",
             color: "#fff",
             borderRadius: 9,
@@ -447,13 +446,17 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
             whiteSpace: "nowrap",
             pointerEvents: "none",
             boxShadow: "0 4px 16px rgba(0,0,0,0.22)",
-            display: "flex",
+            display: hoveredIdx !== null ? "flex" : "none",
             gap: 14,
-          }}>
-            <span style={{ color: "#86efac" }}>↑ {fmtMoney(incomeData[hoveredIdx])} ₪</span>
-            <span style={{ color: "#fca5a5" }}>↓ {fmtMoney(expenseData[hoveredIdx])} ₪</span>
-          </div>
-        )}
+          }}
+        >
+          {hoveredIdx !== null && (
+            <>
+              <span style={{ color: "#86efac" }}>↑ {fmtMoney(incomeData[hoveredIdx])} ₪</span>
+              <span style={{ color: "#fca5a5" }}>↓ {fmtMoney(expenseData[hoveredIdx])} ₪</span>
+            </>
+          )}
+        </div>
 
         {(labels || []).map((label, i) => {
           const incHeight = ((incomeData[i] || 0) / maxVal) * 100;
@@ -466,6 +469,12 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
               className="chart-col-group"
               style={{ position: "relative", zIndex: isHovered ? 10 : 1 }}
               onMouseEnter={() => setHoveredIdx(i)}
+              onMouseMove={(e) => {
+                if (tooltipRef.current) {
+                  tooltipRef.current.style.left = e.clientX + 14 + "px";
+                  tooltipRef.current.style.top = e.clientY - 40 + "px";
+                }
+              }}
               onMouseLeave={() => setHoveredIdx(null)}
             >
               <div className="chart-bars-wrap">
