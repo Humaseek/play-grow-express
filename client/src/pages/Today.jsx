@@ -398,110 +398,105 @@ const Sparkline = ({ data, color, type = "line" }) => {
 };
 
 const DualBarChart = ({ incomeData, expenseData, labels }) => {
-  const tooltipRef = useRef(null);
-  const incomeDataRef = useRef(incomeData);
-  const expenseDataRef = useRef(expenseData);
-  incomeDataRef.current = incomeData;
-  expenseDataRef.current = expenseData;
+  const [tooltip, setTooltip] = useState(null);
+  const wrapRef = useRef(null);
 
   const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
   const minWidth = labels.length > 10 ? `${labels.length * 40}px` : "100%";
 
-  function showTooltip(e, i) {
-    const el = tooltipRef.current;
-    if (!el) return;
-    el.querySelector(".tt-inc").textContent = `↑ ${fmtMoney(incomeDataRef.current[i])} ₪`;
-    el.querySelector(".tt-exp").textContent = `↓ ${fmtMoney(expenseDataRef.current[i])} ₪`;
-    el.style.display = "flex";
-    el.style.left = e.clientX + 14 + "px";
-    el.style.top = e.clientY - 40 + "px";
+  function handleMouseEnter(e, i) {
+    const rect = wrapRef.current.getBoundingClientRect();
+    setTooltip({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top - 55,
+      inc: incomeData[i] || 0,
+      exp: expenseData[i] || 0,
+    });
   }
 
-  function moveTooltip(e) {
-    const el = tooltipRef.current;
-    if (!el) return;
-    el.style.left = e.clientX + 14 + "px";
-    el.style.top = e.clientY - 40 + "px";
-  }
-
-  function hideTooltip() {
-    if (tooltipRef.current) tooltipRef.current.style.display = "none";
+  function handleMouseMove(e) {
+    const rect = wrapRef.current.getBoundingClientRect();
+    setTooltip((t) => t ? { ...t, x: e.clientX - rect.left, y: e.clientY - rect.top - 55 } : null);
   }
 
   return (
-    <>
-      <div
-        ref={tooltipRef}
-        style={{
-          position: "fixed",
-          display: "none",
-          zIndex: 9999,
-          background: "#0f172a",
-          color: "#fff",
-          borderRadius: 9,
-          padding: "7px 14px",
-          fontSize: 13,
-          fontWeight: 700,
-          whiteSpace: "nowrap",
-          pointerEvents: "none",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.22)",
-          gap: 14,
-        }}
-      >
-        <span className="tt-inc" style={{ color: "#86efac" }} />
-        <span className="tt-exp" style={{ color: "#fca5a5" }} />
-      </div>
-
-    <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px" }}>
-      <div
-        style={{
-          minWidth: minWidth,
-          height: "220px",
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          paddingTop: 20,
-          position: "relative",
-        }}
-      >
+    <div ref={wrapRef} style={{ position: "relative", width: "100%" }}>
+      {tooltip && (
         <div
           style={{
             position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 25,
+            left: tooltip.x,
+            top: tooltip.y,
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            background: "#0f172a",
+            color: "#fff",
+            borderRadius: 9,
+            padding: "7px 14px",
+            fontSize: 13,
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.22)",
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            zIndex: 0,
+            gap: 14,
           }}
         >
-          {[...Array(4)].map((_, i) => (
-            <div key={i} style={{ borderTop: "1px dashed #e2e8f0", width: "100%", height: 0 }} />
-          ))}
+          <span style={{ color: "#86efac" }}>↑ {fmtMoney(tooltip.inc)} ₪</span>
+          <span style={{ color: "#fca5a5" }}>↓ {fmtMoney(tooltip.exp)} ₪</span>
         </div>
+      )}
 
-        {(labels || []).map((label, i) => {
-          const incHeight = ((incomeData[i] || 0) / maxVal) * 100;
-          const expHeight = ((expenseData[i] || 0) / maxVal) * 100;
+      <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px" }}>
+        <div
+          style={{
+            minWidth: minWidth,
+            height: "220px",
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            paddingTop: 20,
+            position: "relative",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: 0, left: 0, right: 0, bottom: 25,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              zIndex: 0,
+            }}
+          >
+            {[...Array(4)].map((_, i) => (
+              <div key={i} style={{ borderTop: "1px dashed #e2e8f0", width: "100%", height: 0 }} />
+            ))}
+          </div>
 
-          return (
-            <div
-              key={i}
-              className="chart-col-group"
-              onMouseEnter={(e) => showTooltip(e, i)}
-              onMouseMove={moveTooltip}
-              onMouseLeave={hideTooltip}
-            >
-              <div className="chart-bars-wrap">
-                <div className="chart-bar income-bar" style={{ height: `${incHeight}%` }} />
-                <div className="chart-bar expense-bar" style={{ height: `${expHeight}%` }} />
+          {(labels || []).map((label, i) => {
+            const incHeight = ((incomeData[i] || 0) / maxVal) * 100;
+            const expHeight = ((expenseData[i] || 0) / maxVal) * 100;
+
+            return (
+              <div
+                key={i}
+                className="chart-col-group"
+                onMouseEnter={(e) => handleMouseEnter(e, i)}
+                onMouseMove={handleMouseMove}
+                onMouseLeave={() => setTooltip(null)}
+              >
+                <div className="chart-bars-wrap">
+                  <div className="chart-bar income-bar" style={{ height: `${incHeight}%` }} />
+                  <div className="chart-bar expense-bar" style={{ height: `${expHeight}%` }} />
+                </div>
+                <div className="chart-label">{label}</div>
               </div>
-              <div className="chart-label">{label}</div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
-    </>
   );
 };
 
