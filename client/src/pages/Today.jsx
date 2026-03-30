@@ -399,39 +399,12 @@ const Sparkline = ({ data, color, type = "line" }) => {
 
 const DualBarChart = ({ incomeData, expenseData, labels }) => {
   const [hoveredIdx, setHoveredIdx] = useState(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
 
   const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
   const minWidth = labels.length > 10 ? `${labels.length * 40}px` : "100%";
 
   return (
     <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px", position: "relative" }}>
-      {hoveredIdx !== null && (
-        <div
-          style={{
-            position: "fixed",
-            left: tooltipPos.x + 14,
-            top: tooltipPos.y - 10,
-            zIndex: 9999,
-            background: "#0f172a",
-            color: "#fff",
-            borderRadius: 10,
-            padding: "8px 13px",
-            fontSize: 13,
-            fontWeight: 700,
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
-          }}
-        >
-          <div style={{ color: "#86efac", marginBottom: 2 }}>
-            الإيرادات: {fmtMoney(incomeData[hoveredIdx])} ₪
-          </div>
-          <div style={{ color: "#fca5a5" }}>
-            المصاريف: {fmtMoney(expenseData[hoveredIdx])} ₪
-          </div>
-        </div>
-      )}
       <div
         style={{
           minWidth: minWidth,
@@ -471,21 +444,38 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
               key={i}
               className="chart-col-group"
               style={{ position: "relative" }}
-              onMouseEnter={(e) => {
-                setHoveredIdx(i);
-                setTooltipPos({ x: e.clientX, y: e.clientY });
-              }}
-              onMouseMove={(e) => setTooltipPos({ x: e.clientX, y: e.clientY })}
+              onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
             >
+              {isHovered && (
+                <div style={{
+                  position: "absolute",
+                  bottom: "calc(100% - 20px)",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  zIndex: 100,
+                  background: "#0f172a",
+                  color: "#fff",
+                  borderRadius: 9,
+                  padding: "7px 11px",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  whiteSpace: "nowrap",
+                  pointerEvents: "none",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.22)",
+                }}>
+                  <div style={{ color: "#86efac", marginBottom: 2 }}>↑ {fmtMoney(incomeData[i])} ₪</div>
+                  <div style={{ color: "#fca5a5" }}>↓ {fmtMoney(expenseData[i])} ₪</div>
+                </div>
+              )}
               <div className="chart-bars-wrap">
                 <div
                   className="chart-bar income-bar"
-                  style={{ height: `${incHeight}%`, opacity: isHovered ? 1 : 0.85, transition: "opacity 0.15s" }}
+                  style={{ height: `${incHeight}%`, opacity: isHovered ? 1 : 0.8, transition: "opacity 0.15s" }}
                 />
                 <div
                   className="chart-bar expense-bar"
-                  style={{ height: `${expHeight}%`, opacity: isHovered ? 1 : 0.85, transition: "opacity 0.15s" }}
+                  style={{ height: `${expHeight}%`, opacity: isHovered ? 1 : 0.8, transition: "opacity 0.15s" }}
                 />
               </div>
               <div className="chart-label">{label}</div>
