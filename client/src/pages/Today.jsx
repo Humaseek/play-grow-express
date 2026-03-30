@@ -431,6 +431,30 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
           ))}
         </div>
 
+        {hoveredIdx !== null && (
+          <div style={{
+            position: "absolute",
+            top: 20,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 50,
+            background: "#0f172a",
+            color: "#fff",
+            borderRadius: 9,
+            padding: "7px 14px",
+            fontSize: 13,
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.22)",
+            display: "flex",
+            gap: 14,
+          }}>
+            <span style={{ color: "#86efac" }}>↑ {fmtMoney(incomeData[hoveredIdx])} ₪</span>
+            <span style={{ color: "#fca5a5" }}>↓ {fmtMoney(expenseData[hoveredIdx])} ₪</span>
+          </div>
+        )}
+
         {(labels || []).map((label, i) => {
           const incHeight = ((incomeData[i] || 0) / maxVal) * 100;
           const expHeight = ((expenseData[i] || 0) / maxVal) * 100;
@@ -444,28 +468,6 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
               onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
             >
-              {isHovered && (
-                <div style={{
-                  position: "absolute",
-                  bottom: "100%",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  marginBottom: 6,
-                  zIndex: 999,
-                  background: "#0f172a",
-                  color: "#fff",
-                  borderRadius: 9,
-                  padding: "7px 11px",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  whiteSpace: "nowrap",
-                  pointerEvents: "none",
-                  boxShadow: "0 4px 16px rgba(0,0,0,0.22)",
-                }}>
-                  <div style={{ color: "#86efac", marginBottom: 2 }}>↑ {fmtMoney(incomeData[i])} ₪</div>
-                  <div style={{ color: "#fca5a5" }}>↓ {fmtMoney(expenseData[i])} ₪</div>
-                </div>
-              )}
               <div className="chart-bars-wrap">
                 <div className="chart-bar income-bar" style={{ height: `${incHeight}%`, opacity: isHovered ? 1 : 0.85 }} />
                 <div className="chart-bar expense-bar" style={{ height: `${expHeight}%`, opacity: isHovered ? 1 : 0.85 }} />
