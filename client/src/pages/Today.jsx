@@ -399,13 +399,12 @@ const Sparkline = ({ data, color, type = "line" }) => {
 
 const DualBarChart = ({ incomeData, expenseData, labels }) => {
   const [hoveredIdx, setHoveredIdx] = useState(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
   const minWidth = labels.length > 10 ? `${labels.length * 40}px` : "100%";
 
   return (
-    <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px", position: "relative" }}>
+    <div style={{ width: "100%", overflowX: "auto", paddingBottom: "10px" }}>
       <div
         style={{
           minWidth: minWidth,
@@ -420,10 +419,7 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
         <div
           style={{
             position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 25,
+            top: 0, left: 0, right: 0, bottom: 25,
             display: "flex",
             flexDirection: "column",
             justifyContent: "space-between",
@@ -444,17 +440,18 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
             <div
               key={i}
               className="chart-col-group"
-              style={{ position: "relative" }}
-              onMouseEnter={(e) => { setHoveredIdx(i); setMousePos({ x: e.clientX, y: e.clientY }); }}
-              onMouseMove={(e) => setMousePos({ x: e.clientX, y: e.clientY })}
+              style={{ position: "relative", zIndex: isHovered ? 10 : 1 }}
+              onMouseEnter={() => setHoveredIdx(i)}
               onMouseLeave={() => setHoveredIdx(null)}
             >
               {isHovered && (
                 <div style={{
-                  position: "fixed",
-                  left: mousePos.x + 14,
-                  top: mousePos.y - 40,
-                  zIndex: 9999,
+                  position: "absolute",
+                  bottom: "100%",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  marginBottom: 6,
+                  zIndex: 999,
                   background: "#0f172a",
                   color: "#fff",
                   borderRadius: 9,
@@ -470,14 +467,8 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
                 </div>
               )}
               <div className="chart-bars-wrap">
-                <div
-                  className="chart-bar income-bar"
-                  style={{ height: `${incHeight}%`, opacity: isHovered ? 1 : 0.8, transition: "opacity 0.15s" }}
-                />
-                <div
-                  className="chart-bar expense-bar"
-                  style={{ height: `${expHeight}%`, opacity: isHovered ? 1 : 0.8, transition: "opacity 0.15s" }}
-                />
+                <div className="chart-bar income-bar" style={{ height: `${incHeight}%`, opacity: isHovered ? 1 : 0.85 }} />
+                <div className="chart-bar expense-bar" style={{ height: `${expHeight}%`, opacity: isHovered ? 1 : 0.85 }} />
               </div>
               <div className="chart-label">{label}</div>
             </div>
