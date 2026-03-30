@@ -759,6 +759,15 @@ export default function Expenses() {
     return uniqSorted(rows.map((r) => r.party));
   }, [hasPicklists, partyOptions, rows]);
 
+  const partiesForCategory = useMemo(() => {
+    const cat = expCategory?.trim();
+    if (!cat) return parties;
+    const used = new Set(
+      rows.filter((r) => r.category === cat && r.party).map((r) => r.party)
+    );
+    return used.size > 0 ? parties.filter((p) => used.has(p)) : parties;
+  }, [expCategory, rows, parties]);
+
   const filtered = useMemo(() => {
     let list = [...rows];
 
@@ -1437,7 +1446,7 @@ export default function Expenses() {
                 <CustomCombobox
                   value={expParty}
                   onChange={setExpParty}
-                  options={parties.map((p) => ({ value: p, label: p }))}
+                  options={partiesForCategory.map((p) => ({ value: p, label: p }))}
                   placeholder="اختر أو اكتب شخص/متجر..."
                 />
               </div>
