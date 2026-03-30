@@ -435,7 +435,7 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
           <div style={{
             position: "absolute",
             top: 20,
-            right: `${((hoveredIdx + 0.5) / labels.length) * 100}%`,
+            right: `clamp(0px, ${((hoveredIdx + 0.5) / labels.length) * 100}%, calc(100% - 160px))`,
             transform: "translateX(50%)",
             zIndex: 50,
             background: "#0f172a",
