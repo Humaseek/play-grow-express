@@ -397,9 +397,10 @@ const Sparkline = ({ data, color, type = "line" }) => {
   );
 };
 
-const DualBarChart = ({ incomeData, expenseData, labels }) => {
+const DualBarChart = ({ incomeData, expenseData, labels, dates }) => {
   const [tooltip, setTooltip] = useState(null);
   const wrapRef = useRef(null);
+  const navigate = useNavigate();
 
   const maxVal = Math.max(...(incomeData || []), ...(expenseData || [])) || 1;
   const minWidth = labels.length > 10 ? `${labels.length * 40}px` : "100%";
@@ -485,6 +486,8 @@ const DualBarChart = ({ incomeData, expenseData, labels }) => {
                 onMouseEnter={(e) => handleMouseEnter(e, i)}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={() => setTooltip(null)}
+                onClick={() => dates?.[i] && navigate(`/calendar/${dates[i]}`)}
+                style={{ cursor: dates?.[i] ? "pointer" : "default" }}
               >
                 <div className="chart-bars-wrap">
                   <div className="chart-bar income-bar" style={{ height: `${incHeight}%` }} />
@@ -1402,6 +1405,7 @@ export default function Dashboard() {
     incomeTrend: [],
     expenseTrend: [],
     chartLabels: [],
+    chartDates: [],
     todaySessions: [],
     debtors: [],
     recentTransactions: [],
@@ -1685,6 +1689,10 @@ export default function Dashboard() {
         incomeTrend: incTrendArr,
         expenseTrend: expTrendArr,
         chartLabels: bins.map((b) => b.label),
+        chartDates: bins.map((b) => {
+          const d = new Date(b.start);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        }),
         todaySessions: enrichedSessions,
         debtors: enrichedDebtors,
         recentTransactions: combinedTx,
@@ -2740,6 +2748,7 @@ export default function Dashboard() {
                   incomeData={dashData.incomeTrend}
                   expenseData={dashData.expenseTrend}
                   labels={dashData.chartLabels}
+                  dates={dashData.chartDates}
                 />
               )}
             </div>
