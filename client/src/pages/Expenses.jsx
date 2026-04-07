@@ -620,6 +620,7 @@ export default function Expenses() {
   // Picklists
   const [catOptions, setCatOptions] = useState([]);
   const [partyOptions, setPartyOptions] = useState([]);
+  const [itemOptions, setItemOptions] = useState([]);
   const [hasPicklists, setHasPicklists] = useState(true);
 
   // Modal
@@ -628,6 +629,7 @@ export default function Expenses() {
   const [expDate, setExpDate] = useState(isoDate(new Date()));
   const [expAmount, setExpAmount] = useState("");
   const [expCategory, setExpCategory] = useState("");
+  const [expItem, setExpItem] = useState("");
   const [expParty, setExpParty] = useState("");
   const [expDesc, setExpDesc] = useState("");
 
@@ -673,7 +675,7 @@ export default function Expenses() {
   async function loadPicklists() {
     setHasPicklists(true);
 
-    const [catsRes, partiesRes] = await Promise.all([
+    const [catsRes, partiesRes, itemsRes] = await Promise.all([
       supabase
         .from("expense_categories")
         .select("name")
@@ -681,6 +683,10 @@ export default function Expenses() {
       supabase
         .from("expense_parties")
         .select("name")
+        .order("name", { ascending: true }),
+      supabase
+        .from("expense_items")
+        .select("name,category")
         .order("name", { ascending: true }),
     ]);
 
@@ -691,17 +697,20 @@ export default function Expenses() {
         setHasPicklists(false);
         setCatOptions([]);
         setPartyOptions([]);
+        setItemOptions([]);
         return;
       }
       setError(anyErr);
       setHasPicklists(false);
       setCatOptions([]);
       setPartyOptions([]);
+      setItemOptions([]);
       return;
     }
 
     setCatOptions((catsRes.data || []).map((x) => x.name).filter(Boolean));
     setPartyOptions((partiesRes.data || []).map((x) => x.name).filter(Boolean));
+    setItemOptions(itemsRes.data || []);
   }
 
   async function load() {
@@ -713,7 +722,7 @@ export default function Expenses() {
     let query = supabase
       .from("expenses_details_view")
       .select(
-        "id,spent_on,amount,category,party,description,created_at,run_id,course_id,course_title,run_label",
+        "id,spent_on,amount,category,item,party,description,created_at,run_id,course_id,course_title,run_label",
       )
       .order("spent_on", { ascending: false })
       .order("id", { ascending: false });
@@ -767,6 +776,12 @@ export default function Expenses() {
     );
     return used.size > 0 ? parties.filter((p) => used.has(p)) : parties;
   }, [expCategory, rows, parties]);
+
+  const itemsForCategory = useMemo(() => {
+    const cat = expCategory?.trim();
+    if (!cat) return itemOptions.map((i) => i.name);
+    return itemOptions.filter((i) => i.category === cat).map((i) => i.name);
+  }, [expCategory, itemOptions]);
 
   const filtered = useMemo(() => {
     let list = [...rows];
@@ -839,6 +854,7 @@ export default function Expenses() {
     setExpDate(isoDate(new Date()));
     setExpAmount("");
     setExpCategory("");
+    setExpItem("");
     setExpParty("");
     setExpDesc("");
     setEditId(null);
@@ -854,6 +870,7 @@ export default function Expenses() {
     setExpDate(row.spent_on ? String(row.spent_on) : isoDate(new Date()));
     setExpAmount(String(row.amount ?? ""));
     setExpCategory(String(row.category ?? ""));
+    setExpItem(String(row.item ?? ""));
     setExpParty(String(row.party ?? ""));
     setExpDesc(String(row.description ?? ""));
     setOpenAdd(true);
@@ -980,11 +997,20 @@ export default function Expenses() {
       if (expParty?.trim()) {
         await safeInsertPicklist("expense_parties", expParty);
       }
+      if (expItem?.trim()) {
+        await supabase.from("expense_items").insert([{
+          name: expItem.trim(),
+          category: expCategory?.trim() || null,
+        }]).then(({ error: e }) => {
+          if (e && e.code !== "23505") console.warn("item insert:", e.message);
+        });
+      }
 
       const payload = {
         spent_on: expDate,
         amount,
         category: expCategory?.trim() || null,
+        item: expItem?.trim() || null,
         party: expParty?.trim() || null,
         description: expDesc?.trim() || null,
       };
@@ -1433,9 +1459,21 @@ export default function Expenses() {
                 </div>
                 <CustomCombobox
                   value={expCategory}
-                  onChange={setExpCategory}
+                  onChange={(v) => { setExpCategory(v); setExpItem(""); }}
                   options={categories.map((c) => ({ value: c, label: c }))}
                   placeholder="اختر أو اكتب فئة..."
+                />
+              </div>
+
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  منتج / آخر
+                </div>
+                <CustomCombobox
+                  value={expItem}
+                  onChange={setExpItem}
+                  options={itemsForCategory.map((i) => ({ value: i, label: i }))}
+                  placeholder="اختر أو اكتب منتج..."
                 />
               </div>
 

@@ -802,6 +802,7 @@ export default function RunDetails() {
 
   const [expCatOptions, setExpCatOptions] = useState([]);
   const [expPartyOptions, setExpPartyOptions] = useState([]);
+  const [expItemOptions, setExpItemOptions] = useState([]);
   const [expHasPicklists, setExpHasPicklists] = useState(true);
 
   const [openExpenseModal, setOpenExpenseModal] = useState(false);
@@ -809,6 +810,7 @@ export default function RunDetails() {
   const [expDate, setExpDate] = useState(isoDate(new Date()));
   const [expAmount, setExpAmount] = useState("");
   const [expCategory, setExpCategory] = useState("");
+  const [expItem, setExpItem] = useState("");
   const [expParty, setExpParty] = useState("");
   const [expDesc, setExpDesc] = useState("");
   const [expSaving, setExpSaving] = useState(false);
@@ -1075,16 +1077,14 @@ export default function RunDetails() {
 
   async function loadExpensePicklistsSafe() {
     try {
-      const cRes = await supabase
-        .from("expense_categories")
-        .select("name")
-        .order("name", { ascending: true });
-      const pRes = await supabase
-        .from("expense_parties")
-        .select("name")
-        .order("name", { ascending: true });
+      const [cRes, pRes, iRes] = await Promise.all([
+        supabase.from("expense_categories").select("name").order("name", { ascending: true }),
+        supabase.from("expense_parties").select("name").order("name", { ascending: true }),
+        supabase.from("expense_items").select("name,category").order("name", { ascending: true }),
+      ]);
       if (cRes.data) setExpCatOptions(cRes.data.map((r) => r.name));
       if (pRes.data) setExpPartyOptions(pRes.data.map((r) => r.name));
+      if (iRes.data) setExpItemOptions(iRes.data);
       setExpHasPicklists(true);
     } catch {
       setExpHasPicklists(false);
@@ -1095,7 +1095,7 @@ export default function RunDetails() {
     try {
       const res = await supabase
         .from("expenses")
-        .select("id,spent_on,amount,category,party,description,created_at")
+        .select("id,spent_on,amount,category,item,party,description,created_at")
         .eq("run_id", Number(runId))
         .order("spent_on", { ascending: false });
       if (res.error) throw res.error;
@@ -2336,6 +2336,7 @@ export default function RunDetails() {
     setExpDate(isoDate(new Date()));
     setExpAmount("");
     setExpCategory("");
+    setExpItem("");
     setExpParty("");
     setExpDesc("");
   }
@@ -2350,6 +2351,7 @@ export default function RunDetails() {
     setExpDate(row.spent_on ? String(row.spent_on) : isoDate(new Date()));
     setExpAmount(String(row.amount ?? ""));
     setExpCategory(String(row.category ?? ""));
+    setExpItem(String(row.item ?? ""));
     setExpParty(String(row.party ?? ""));
     setExpDesc(String(row.description ?? ""));
     setOpenExpenseModal(true);
@@ -2366,12 +2368,21 @@ export default function RunDetails() {
         await safeInsertPicklist("expense_categories", expCategory);
       if (expParty?.trim())
         await safeInsertPicklist("expense_parties", expParty);
+      if (expItem?.trim()) {
+        await supabase.from("expense_items").insert([{
+          name: expItem.trim(),
+          category: expCategory?.trim() || null,
+        }]).then(({ error: e }) => {
+          if (e && e.code !== "23505") console.warn("item insert:", e.message);
+        });
+      }
 
       const payload = {
         run_id: Number(runId),
         spent_on: expDate || isoDate(new Date()),
         amount: Number(expAmount),
         category: expCategory.trim() || null,
+        item: expItem?.trim() || null,
         party: expParty.trim() || null,
         description: expDesc.trim() || null,
       };
@@ -5366,12 +5377,25 @@ export default function RunDetails() {
               </div>
               <CustomCombobox
                 value={expCategory}
-                onChange={(v) => setExpCategory(v)}
+                onChange={(v) => { setExpCategory(v); setExpItem(""); }}
                 options={expCategories.map((x) => ({
                   value: x,
                   label: x,
                 }))}
                 placeholder="اختر أو اكتب تصنيفاً..."
+              />
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                منتج / آخر
+              </div>
+              <CustomCombobox
+                value={expItem}
+                onChange={(v) => setExpItem(v)}
+                options={expItemOptions
+                  .filter((i) => !expCategory?.trim() || i.category === expCategory.trim())
+                  .map((i) => ({ value: i.name, label: i.name }))}
+                placeholder="اختر أو اكتب منتج..."
               />
             </div>
             <div style={{ gridColumn: "span 6" }}>

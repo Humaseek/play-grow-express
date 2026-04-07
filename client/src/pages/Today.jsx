@@ -1428,12 +1428,14 @@ export default function Dashboard() {
   );
   const [expAmount, setExpAmount] = useState("");
   const [expCategory, setExpCategory] = useState("");
+  const [expItem, setExpItem] = useState("");
   const [expParty, setExpParty] = useState("");
   const [expDesc, setExpDesc] = useState("");
   const [savingExp, setSavingExp] = useState(false);
 
   const [catOptions, setCatOptions] = useState([]);
   const [partyOptions, setPartyOptions] = useState([]);
+  const [itemOptions, setItemOptions] = useState([]);
 
   // ==========================================
   // حالات وإعدادات إضافة دفعة (قبض دفعة)
@@ -1729,7 +1731,7 @@ export default function Dashboard() {
   // دوال نافذة المصاريف
   // ============================================================================
   async function loadPicklists() {
-    const [catsRes, partiesRes] = await Promise.all([
+    const [catsRes, partiesRes, itemsRes] = await Promise.all([
       supabase
         .from("expense_categories")
         .select("name")
@@ -1738,6 +1740,10 @@ export default function Dashboard() {
         .from("expense_parties")
         .select("name")
         .order("name", { ascending: true }),
+      supabase
+        .from("expense_items")
+        .select("name,category")
+        .order("name", { ascending: true }),
     ]);
     if (!catsRes.error && !partiesRes.error) {
       setCatOptions((catsRes.data || []).map((x) => x.name).filter(Boolean));
@@ -1745,6 +1751,7 @@ export default function Dashboard() {
         (partiesRes.data || []).map((x) => x.name).filter(Boolean),
       );
     }
+    if (!itemsRes.error) setItemOptions(itemsRes.data || []);
   }
 
   async function safeInsertPicklist(tableName, rawName) {
@@ -1764,6 +1771,7 @@ export default function Dashboard() {
     setExpDate(new Date().toISOString().split("T")[0]);
     setExpAmount("");
     setExpCategory("");
+    setExpItem("");
     setExpParty("");
     setExpDesc("");
     loadPicklists();
@@ -1787,11 +1795,20 @@ export default function Dashboard() {
         await safeInsertPicklist("expense_categories", expCategory);
       if (expParty?.trim())
         await safeInsertPicklist("expense_parties", expParty);
+      if (expItem?.trim()) {
+        await supabase.from("expense_items").insert([{
+          name: expItem.trim(),
+          category: expCategory?.trim() || null,
+        }]).then(({ error: e }) => {
+          if (e && e.code !== "23505") console.warn("item insert:", e.message);
+        });
+      }
 
       const payload = {
         spent_on: expDate,
         amount,
         category: expCategory?.trim() || null,
+        item: expItem?.trim() || null,
         party: expParty?.trim() || null,
         description: expDesc?.trim() || null,
       };
@@ -2904,9 +2921,20 @@ export default function Dashboard() {
                 <div className="muted">الفئة</div>
                 <CustomCombobox
                   value={expCategory}
-                  onChange={setExpCategory}
+                  onChange={(v) => { setExpCategory(v); setExpItem(""); }}
                   options={catOptions.map((c) => ({ value: c, label: c }))}
                   placeholder="اختر أو اكتب فئة..."
+                />
+              </div>
+              <div className="form-col">
+                <div className="muted">منتج / آخر</div>
+                <CustomCombobox
+                  value={expItem}
+                  onChange={setExpItem}
+                  options={itemOptions
+                    .filter((i) => !expCategory?.trim() || i.category === expCategory.trim())
+                    .map((i) => ({ value: i.name, label: i.name }))}
+                  placeholder="اختر أو اكتب منتج..."
                 />
               </div>
               <div className="form-col">
