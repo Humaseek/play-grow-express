@@ -28,7 +28,6 @@ import {
   Search,
   Cake,
   Tag,
-  ExternalLink,
   Settings2,
   Plus,
   Minus,
@@ -3679,7 +3678,12 @@ export default function RunDetails() {
                       fontWeight: 900,
                       marginBottom: 8,
                       color: "#0f172a",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                      textUnderlineOffset: 3,
                     }}
+                    onClick={() => navigate(`/children/${manageP.child_id}`)}
+                    title="ملف الطالب"
                   >
                     {manageP.child_name}
                   </h2>
@@ -3703,12 +3707,6 @@ export default function RunDetails() {
                     {manageP.is_free && <Badge variant="info">مجاني</Badge>}
                   </div>
                 </div>
-                <IconButton
-                  icon={<ExternalLink size={18} />}
-                  onClick={() => navigate(`/children/${manageP.child_id}`)}
-                  title="ملف الطالب"
-                  variant="ghost"
-                />
               </div>
 
               <div
