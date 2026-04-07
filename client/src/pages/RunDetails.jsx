@@ -4114,7 +4114,9 @@ export default function RunDetails() {
                   <thead>
                     <tr>
                       <th>تاريخ بداية الباقة</th>
-                      <th>عدد الجلسات</th>
+                      <th>الجلسات</th>
+                      <th>مستخدم</th>
+                      <th>رصيد الجلسات</th>
                       <th>السعر (₪)</th>
                       <th>المدفوع (₪)</th>
                       <th>المتبقي للدفع (₪)</th>
@@ -4122,11 +4124,22 @@ export default function RunDetails() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pkgHistoryRows.map((pkg) => (
+                    {(() => {
+                      let attended = Number(historyEnrollment?.sessions_attended_in_run ?? 0);
+                      return pkgHistoryRows.map((pkg, idx) => {
+                        const isLast = idx === pkgHistoryRows.length - 1;
+                        const sessionsUsed = isLast
+                          ? attended
+                          : Math.min(pkg.sessions_total, Math.max(0, attended));
+                        attended -= sessionsUsed;
+                        const sessionsBalance = pkg.sessions_total - sessionsUsed;
+                        return (
                       <tr key={pkg.package_id}>
                         <td className="muted">{fmtDate(pkg.created_at)}</td>
-                        <td style={{ fontWeight: 800 }}>
-                          {pkg.sessions_total}
+                        <td style={{ fontWeight: 800 }}>{pkg.sessions_total}</td>
+                        <td style={{ fontWeight: 700 }}>{sessionsUsed}</td>
+                        <td style={{ fontWeight: 700, color: sessionsBalance < 0 ? "#dc2626" : sessionsBalance === 0 ? "#64748b" : "#16a34a" }}>
+                          {sessionsBalance}
                         </td>
                         <td style={{ fontWeight: 900, color: "#0f172a" }}>
                           <span dir="ltr">{fmtNum(Number(pkg.price_total))}</span>
@@ -4182,7 +4195,9 @@ export default function RunDetails() {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                        );
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>
