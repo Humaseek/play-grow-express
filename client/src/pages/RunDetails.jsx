@@ -1819,10 +1819,11 @@ export default function RunDetails() {
         if (isNaN(priceNum) || priceNum < 0)
           priceNum = Number(defaultPrice) || 0;
 
+        const workshopDate = isWorkshop && sessions[0]?.start_at ? isoDate(new Date(sessions[0].start_at)) : isoDate(new Date());
         const dateStr =
           bulkPerChildDate[cid] !== undefined
             ? bulkPerChildDate[cid]
-            : isoDate(new Date());
+            : workshopDate;
 
         const isoD = updateDateKeepTime(dateStr);
 
@@ -4953,9 +4954,11 @@ export default function RunDetails() {
                       >
                         <tr>
                           <th style={{ textAlign: "right" }}>الاسم</th>
-                          <th style={{ textAlign: "right", width: 140 }}>
-                            تاريخ بداية الباقة
-                          </th>
+                          {!isWorkshop && (
+                            <th style={{ textAlign: "right", width: 140 }}>
+                              تاريخ بداية الباقة
+                            </th>
+                          )}
                           {!isWorkshop && (
                             <th style={{ width: 100, textAlign: "center" }}>
                               الحصص
@@ -4982,30 +4985,32 @@ export default function RunDetails() {
                           return (
                             <tr key={c.id}>
                               <td style={{ fontWeight: 850 }}>{c.name}</td>
-                              <td>
-                                <input
-                                  className="input"
-                                  style={{
-                                    width: "100%",
-                                    minWidth: 130,
-                                    height: 38,
-                                    textAlign: "center",
-                                    fontSize: 13,
-                                  }}
-                                  type="date"
-                                  value={
-                                    bulkPerChildDate[c.id] !== undefined
-                                      ? bulkPerChildDate[c.id]
-                                      : isoDate(new Date())
-                                  }
-                                  onChange={(e) =>
-                                    setBulkPerChildDate((prev) => ({
-                                      ...prev,
-                                      [c.id]: e.target.value,
-                                    }))
-                                  }
-                                />
-                              </td>
+                              {!isWorkshop && (
+                                <td>
+                                  <input
+                                    className="input"
+                                    style={{
+                                      width: "100%",
+                                      minWidth: 130,
+                                      height: 38,
+                                      textAlign: "center",
+                                      fontSize: 13,
+                                    }}
+                                    type="date"
+                                    value={
+                                      bulkPerChildDate[c.id] !== undefined
+                                        ? bulkPerChildDate[c.id]
+                                        : isoDate(new Date())
+                                    }
+                                    onChange={(e) =>
+                                      setBulkPerChildDate((prev) => ({
+                                        ...prev,
+                                        [c.id]: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                </td>
+                              )}
                               {!isWorkshop && (
                                 <td>
                                   <input
