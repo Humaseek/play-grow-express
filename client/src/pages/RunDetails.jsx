@@ -81,7 +81,7 @@ function fmtNum(n) {
   }).format(x);
 }
 
-function fmtILS(n, digits = 2) {
+function fmtILS(n, digits = 0) {
   const x = Number(n ?? 0);
   if (!Number.isFinite(x))
     return new Intl.NumberFormat(LOCALE_LATN, {
