@@ -536,7 +536,7 @@ export default function DayDetails() {
             </div>
             <div>
               <div style={{ fontSize: 14, color: "#64748b", fontWeight: 800 }}>
-                إيرادات اليوم
+                دخل اليوم
               </div>
               <div
                 style={{
@@ -766,7 +766,7 @@ export default function DayDetails() {
               padding: 0,
             }}
           >
-            {/* بطاقة الإيرادات */}
+            {/* بطاقة الدخل */}
             <div className="dd-card" style={{ padding: "28px" }}>
               <h2
                 className="dd-section-title"
@@ -778,7 +778,7 @@ export default function DayDetails() {
                 >
                   <CreditCard size={22} color="#10b981" />
                 </div>
-                الإيرادات (الدفعات)
+                الدخل (الدفعات)
               </h2>
               {data.payments.length === 0 ? (
                 <div
@@ -792,7 +792,7 @@ export default function DayDetails() {
                     borderRadius: 16,
                   }}
                 >
-                  لا توجد إيرادات مسجلة
+                  لا توجد دخل مسجلة
                 </div>
               ) : (
                 <div className="dd-list">

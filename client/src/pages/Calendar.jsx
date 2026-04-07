@@ -869,7 +869,7 @@ export default function CalendarPage() {
             </div>
             <div>
               <div style={{ fontSize: 13, color: "#64748b", fontWeight: 800 }}>
-                إجمالي إيرادات الشهر
+                إجمالي دخل الشهر
               </div>
               <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
                 {loading ? "..." : fmtMoney(monthTotals.income)} ₪
@@ -979,7 +979,7 @@ export default function CalendarPage() {
                 {sheet.data.income > 0 && (
                   <div className="cal-sheet-stat income">
                     <span className="stat-left">
-                      <TrendingUp size={20} /> إيرادات
+                      <TrendingUp size={20} /> دخل
                     </span>
                     <span className="stat-val">
                       {fmtMoney(sheet.data.income)} ₪

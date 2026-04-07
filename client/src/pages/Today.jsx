@@ -2152,7 +2152,7 @@ export default function Dashboard() {
               >
                 <TrendingUp size={20} color="#10b981" />
               </div>
-              الإيرادات ({rangeLabels[preset]})
+              الدخل ({rangeLabels[preset]})
             </div>
             {loading ? (
               <div
@@ -2286,7 +2286,7 @@ export default function Dashboard() {
               ) : dashData.netFiltered >= 0 ? (
                 "أداء مالي إيجابي لهذه الفترة"
               ) : (
-                "تنبيه: المصاريف تتجاوز الإيرادات!"
+                "تنبيه: المصاريف تتجاوز الدخل!"
               )}
             </div>
           </div>
@@ -2711,7 +2711,7 @@ export default function Dashboard() {
                   marginBottom: 20,
                 }}
               >
-                الإيرادات مقابل المصاريف ({rangeLabels[preset]}).
+                الدخل مقابل المصاريف ({rangeLabels[preset]}).
               </div>
               <div className="chart-legend">
                 <div className="legend-item">
@@ -2719,7 +2719,7 @@ export default function Dashboard() {
                     className="legend-color"
                     style={{ background: "#10b981" }}
                   ></div>{" "}
-                  الإيرادات
+                  الدخل
                 </div>
                 <div className="legend-item">
                   <div
@@ -2768,7 +2768,7 @@ export default function Dashboard() {
                   <DonutChart
                     data={dashData.incomeByRun}
                     colors={["#10b981","#3b82f6","#8b5cf6","#f59e0b","#06b6d4","#64748b"]}
-                    emptyMsg="لا توجد إيرادات في هذه الفترة"
+                    emptyMsg="لا توجد دخل في هذه الفترة"
                   />
                 )}
               </div>
