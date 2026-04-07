@@ -1516,7 +1516,7 @@ export default function RunDetails() {
 
       const payload = {
         name,
-        birth_date: `${birthYear}-01-01`,
+        birth_year: birthYear,
         class: typedClass || null,
         gender: newChildForm.gender || "male",
         mother_name: (newChildForm.mother_name || "").trim() || null,

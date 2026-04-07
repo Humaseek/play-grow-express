@@ -645,7 +645,7 @@ export default function Children() {
     setEditingId(child.id);
     setFormData({
       name: child.name || "",
-      age: child.birth_date ? new Date(child.birth_date).getFullYear() : "",
+      age: child.birth_year ?? "",
       class: child.class || "",
       gender: child.gender || "male",
       country_name: child.country || "",
@@ -695,7 +695,7 @@ export default function Children() {
 
       const payload = {
         name,
-        birth_date: birthYear ? `${birthYear}-01-01` : null,
+        birth_year: birthYear || null,
         class: typedClass || null,
         gender: formData.gender,
         country_id: countryId,

@@ -1968,7 +1968,7 @@ export default function Dashboard() {
 
       const payload = {
         name: formData.name.trim(),
-        birth_date: formData.age ? `${parseInt(formData.age)}-01-01` : null,
+        birth_year: formData.age ? parseInt(formData.age) : null,
         class: formData.class?.trim() || null,
         gender: formData.gender,
         country_id: countryId,
