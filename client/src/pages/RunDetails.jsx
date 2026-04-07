@@ -1042,7 +1042,7 @@ export default function RunDetails() {
     const tryView = await supabase
       .from("children_view")
       .select(
-        "id,name,age,class,gender,country_id,country_name,mother_name,mother_phone,father_name,father_phone,created_at",
+        "id,name,age,birth_year,class,gender,country_id,country_name,mother_name,mother_phone,father_name,father_phone,created_at",
       )
       .order("name", { ascending: true });
 
@@ -1570,6 +1570,9 @@ export default function RunDetails() {
       const alloc = Math.min(sessionsToBuy, futureCount);
 
       const enrollIso = updateDateKeepTime(enrollDate);
+      const enrollYear = new Date(enrollDate).getFullYear();
+      const childData = children.find((c) => Number(c.id) === Number(childId));
+      const ageAtEnroll = childData?.birth_year ? enrollYear - childData.birth_year : null;
 
       const insPkg = await supabase
         .from("course_packages")
@@ -1598,6 +1601,7 @@ export default function RunDetails() {
           agreed_price: priceNum,
           status: "active",
           created_at: enrollIso,
+          age_at_enrollment: ageAtEnroll,
         },
       ]);
 
