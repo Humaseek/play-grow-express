@@ -2554,7 +2554,7 @@ export default function RunDetails() {
               </span>
             </div>
             <div className="summaryValue">
-              <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
+              <span className="ltrIso">{fmtILS(totals.agreed)}</span>
             </div>
             <div className="summaryNote">إجمالي مبلغ سعر الدورات.</div>
           </div>
@@ -2566,7 +2566,7 @@ export default function RunDetails() {
               </span>
             </div>
             <div className="summaryValue">
-              <span className="ltrIso">{fmtILS(totals.paid, 2)}</span>
+              <span className="ltrIso">{fmtILS(totals.paid)}</span>
             </div>
             <div className="summaryNote">
               نسبة الدفع الحالية{" "}
@@ -2583,7 +2583,7 @@ export default function RunDetails() {
               </span>
             </div>
             <div className="summaryValue">
-              <span className="ltrIso">{fmtILS(runExpensesTotal, 2)}</span>
+              <span className="ltrIso">{fmtILS(runExpensesTotal)}</span>
             </div>
             <div className="summaryNote">
               {expFeatureAvailable
@@ -2601,7 +2601,7 @@ export default function RunDetails() {
               </span>
             </div>
             <div className="summaryValue">
-              <span className="ltrIso">{fmtILS(totals.balance, 2)}</span>
+              <span className="ltrIso">{fmtILS(totals.balance)}</span>
             </div>
             <div className="summaryNote">
               الصافي بعد المصاريف{" "}
@@ -3405,7 +3405,7 @@ export default function RunDetails() {
                     <div className="muted">المجموع</div>
                     <div style={{ fontSize: 22, fontWeight: 900 }}>
                       <span className="ltrIso">
-                        {fmtILS(runExpensesTotal, 2)}
+                        {fmtILS(runExpensesTotal)}
                       </span>
                     </div>
                   </div>
@@ -3419,7 +3419,7 @@ export default function RunDetails() {
                     <div className="muted">الصافي</div>
                     <div style={{ fontSize: 22, fontWeight: 900 }}>
                       <span className="ltrIso">
-                        {fmtILS(totals.paid - runExpensesTotal, 2)}
+                        {fmtILS(totals.paid - runExpensesTotal)}
                       </span>
                     </div>
                   </div>
@@ -3514,7 +3514,7 @@ export default function RunDetails() {
                               <td className="muted">{r.party || "—"}</td>
                               <td className="muted">{r.description || "—"}</td>
                               <td style={{ fontWeight: 900, color: "#0f172a" }}>
-                                <span dir="ltr">{fmtILS(r.amount, 2)}</span>
+                                <span dir="ltr">{fmtILS(r.amount)}</span>
                               </td>
                               <td style={{ textAlign: "center" }}>
                                 <div
@@ -3580,7 +3580,7 @@ export default function RunDetails() {
                               }}
                               dir="ltr"
                             >
-                              {fmtILS(r.amount, 2)}
+                              {fmtILS(r.amount)}
                             </span>
                           </div>
                           <div
