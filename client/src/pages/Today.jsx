@@ -2927,6 +2927,15 @@ export default function Dashboard() {
                 />
               </div>
               <div className="form-col">
+                <div className="muted">شخص / المتجر</div>
+                <CustomCombobox
+                  value={expParty}
+                  onChange={setExpParty}
+                  options={partyOptions.map((p) => ({ value: p, label: p }))}
+                  placeholder="اختر أو اكتب متجر..."
+                />
+              </div>
+              <div className="form-col">
                 <div className="muted">منتج / آخر</div>
                 <CustomCombobox
                   value={expItem}
@@ -2935,15 +2944,6 @@ export default function Dashboard() {
                     .filter((i) => !expCategory?.trim() || i.category === expCategory.trim())
                     .map((i) => ({ value: i.name, label: i.name }))}
                   placeholder="اختر أو اكتب منتج..."
-                />
-              </div>
-              <div className="form-col">
-                <div className="muted">شخص / المتجر</div>
-                <CustomCombobox
-                  value={expParty}
-                  onChange={setExpParty}
-                  options={partyOptions.map((p) => ({ value: p, label: p }))}
-                  placeholder="اختر أو اكتب متجر..."
                 />
               </div>
               <div className="form-col-full">

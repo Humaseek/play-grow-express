@@ -1467,18 +1467,6 @@ export default function Expenses() {
 
               <div className="form-col">
                 <div className="muted" style={{ marginBottom: 6 }}>
-                  منتج / آخر
-                </div>
-                <CustomCombobox
-                  value={expItem}
-                  onChange={setExpItem}
-                  options={itemsForCategory.map((i) => ({ value: i, label: i }))}
-                  placeholder="اختر أو اكتب منتج..."
-                />
-              </div>
-
-              <div className="form-col">
-                <div className="muted" style={{ marginBottom: 6 }}>
                   شخص / المتجر
                 </div>
                 <CustomCombobox
@@ -1486,6 +1474,18 @@ export default function Expenses() {
                   onChange={setExpParty}
                   options={partiesForCategory.map((p) => ({ value: p, label: p }))}
                   placeholder="اختر أو اكتب شخص/متجر..."
+                />
+              </div>
+
+              <div className="form-col">
+                <div className="muted" style={{ marginBottom: 6 }}>
+                  منتج / آخر
+                </div>
+                <CustomCombobox
+                  value={expItem}
+                  onChange={setExpItem}
+                  options={itemsForCategory.map((i) => ({ value: i, label: i }))}
+                  placeholder="اختر أو اكتب منتج..."
                 />
               </div>
 

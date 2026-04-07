@@ -5387,19 +5387,6 @@ export default function RunDetails() {
             </div>
             <div style={{ gridColumn: "span 6" }}>
               <div className="muted" style={{ marginBottom: 6 }}>
-                منتج / آخر
-              </div>
-              <CustomCombobox
-                value={expItem}
-                onChange={(v) => setExpItem(v)}
-                options={expItemOptions
-                  .filter((i) => !expCategory?.trim() || i.category === expCategory.trim())
-                  .map((i) => ({ value: i.name, label: i.name }))}
-                placeholder="اختر أو اكتب منتج..."
-              />
-            </div>
-            <div style={{ gridColumn: "span 6" }}>
-              <div className="muted" style={{ marginBottom: 6 }}>
                 الشخص
               </div>
               <CustomCombobox
@@ -5410,6 +5397,19 @@ export default function RunDetails() {
                   label: x,
                 }))}
                 placeholder="اختر أو اكتب شخصاً..."
+              />
+            </div>
+            <div style={{ gridColumn: "span 6" }}>
+              <div className="muted" style={{ marginBottom: 6 }}>
+                منتج / آخر
+              </div>
+              <CustomCombobox
+                value={expItem}
+                onChange={(v) => setExpItem(v)}
+                options={expItemOptions
+                  .filter((i) => !expCategory?.trim() || i.category === expCategory.trim())
+                  .map((i) => ({ value: i.name, label: i.name }))}
+                placeholder="اختر أو اكتب منتج..."
               />
             </div>
             <div style={{ gridColumn: "span 12" }}>
