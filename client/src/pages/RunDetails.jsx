@@ -1478,7 +1478,12 @@ export default function RunDetails() {
   async function createChildInline({ enrollNow = false } = {}) {
     const name = (newChildForm.name || "").trim();
     const birthYear = Number(String(newChildForm.age ?? "").trim());
-    if (!name || !birthYear || birthYear < 1900 || birthYear > new Date().getFullYear()) {
+    if (
+      !name ||
+      !birthYear ||
+      birthYear < 1900 ||
+      birthYear > new Date().getFullYear()
+    ) {
       toast("الاسم وسنة الميلاد مطلوبان.", "warn");
       return;
     }
@@ -3404,9 +3409,7 @@ export default function RunDetails() {
                   <div className="card" style={{ gridColumn: "span 4" }}>
                     <div className="muted">المجموع</div>
                     <div style={{ fontSize: 22, fontWeight: 900 }}>
-                      <span className="ltrIso">
-                        {fmtILS(runExpensesTotal)}
-                      </span>
+                      <span className="ltrIso">{fmtILS(runExpensesTotal)}</span>
                     </div>
                   </div>
                   <div className="card" style={{ gridColumn: "span 4" }}>
