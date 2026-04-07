@@ -1452,7 +1452,7 @@ export default function RunDetails() {
     const s0 = defaultSessionsTotal;
     setBuySessions(s0);
     setBuyPriceTotal(String(defaultPrice));
-    setEnrollDate(isoDate(new Date()));
+    setEnrollDate(isWorkshop && sessions[0]?.start_at ? isoDate(new Date(sessions[0].start_at)) : isoDate(new Date()));
     setPkgInfo(null);
     setEnrollMode("buy_new");
     setOpenEnroll(true);
@@ -1470,7 +1470,7 @@ export default function RunDetails() {
         : Number(defaultPrice || 0) / Math.max(1, defaultSessionsTotal);
     setBuySessions(s1);
     setBuyPriceTotal(u > 0 ? (s1 * u).toFixed(2) : "");
-    setEnrollDate(isoDate(new Date()));
+    setEnrollDate(isWorkshop && sessions[0]?.start_at ? isoDate(new Date(sessions[0].start_at)) : isoDate(new Date()));
     setEnrollMode("buy_new");
     setOpenEnroll(true);
   }
@@ -4134,7 +4134,7 @@ export default function RunDetails() {
                   <tbody>
                     {(() => {
                       let attended = Number(historyEnrollment?.total_sessions_used ?? historyEnrollment?.sessions_attended_in_run ?? 0);
-                      return pkgHistoryRows.map((pkg, idx) => {
+                      const enriched = pkgHistoryRows.map((pkg, idx) => {
                         const isLast = idx === pkgHistoryRows.length - 1;
                         const sessionsUsed = isLast
                           ? attended
@@ -4205,6 +4205,7 @@ export default function RunDetails() {
                       </tr>
                         );
                       });
+                      return [...enriched].reverse();
                     })()}
                   </tbody>
                 </table>
@@ -4504,15 +4505,17 @@ export default function RunDetails() {
                     onChange={(e) => setBuyPriceTotal(e.target.value)}
                   />
                 </div>
-                <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted">تاريخ التسجيل</div>
-                  <input
-                    className="input"
-                    type="date"
-                    value={enrollDate}
-                    onChange={(e) => setEnrollDate(e.target.value)}
-                  />
-                </div>
+                {!isWorkshop && (
+                  <div style={{ gridColumn: "span 4" }}>
+                    <div className="muted">تاريخ التسجيل</div>
+                    <input
+                      className="input"
+                      type="date"
+                      value={enrollDate}
+                      onChange={(e) => setEnrollDate(e.target.value)}
+                    />
+                  </div>
+                )}
               </>
             )}
             <div className="row" style={{ gridColumn: "span 12" }}>
@@ -4953,7 +4956,7 @@ export default function RunDetails() {
                         <tr>
                           <th style={{ textAlign: "right" }}>الاسم</th>
                           <th style={{ textAlign: "right", width: 140 }}>
-                            تاريخ الإضافة
+                            تاريخ بداية الباقة
                           </th>
                           {!isWorkshop && (
                             <th style={{ width: 100, textAlign: "center" }}>
