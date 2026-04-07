@@ -1698,7 +1698,11 @@ export default function RunDetails() {
         (p) => Number(p.child_id) === Number(selectedChildId),
       );
 
-      if (existing && (existing.enrollment_status === "active" || existing.enrollment_status === "paused")) {
+      if (
+        existing &&
+        (existing.enrollment_status === "active" ||
+          existing.enrollment_status === "paused")
+      ) {
         const sessionsToAdd = Number(buySessions) || 0;
         const priceToAdd = Number(buyPriceTotal) || 0;
 
@@ -1913,8 +1917,14 @@ export default function RunDetails() {
       .select("enrollment_status, package_sessions_remaining")
       .eq("enrollment_id", enrollmentId)
       .maybeSingle();
-    if (data?.enrollment_status === "paused" && Number(data?.package_sessions_remaining || 0) > 0) {
-      await supabase.from("enrollments").update({ status: "active" }).eq("id", enrollmentId);
+    if (
+      data?.enrollment_status === "paused" &&
+      Number(data?.package_sessions_remaining || 0) > 0
+    ) {
+      await supabase
+        .from("enrollments")
+        .update({ status: "active" })
+        .eq("id", enrollmentId);
       return true;
     }
     return false;
@@ -2229,8 +2239,13 @@ export default function RunDetails() {
           .eq("id", editPkgData.id);
       }
 
-      const reactivated = await autoReactivateIfNeeded(historyEnrollment.enrollment_id);
-      toast(reactivated ? "تم التعديل وتم تفعيل الاشتراك تلقائياً." : "تم التعديل", "ok");
+      const reactivated = await autoReactivateIfNeeded(
+        historyEnrollment.enrollment_id,
+      );
+      toast(
+        reactivated ? "تم التعديل وتم تفعيل الاشتراك تلقائياً." : "تم التعديل",
+        "ok",
+      );
 
       setOpenEditPkg(false);
       fetchPkgHistory(historyEnrollment);
@@ -2331,8 +2346,10 @@ export default function RunDetails() {
     }
     setExpSaving(true);
     try {
-      if (expCategory?.trim()) await safeInsertPicklist("expense_categories", expCategory);
-      if (expParty?.trim()) await safeInsertPicklist("expense_parties", expParty);
+      if (expCategory?.trim())
+        await safeInsertPicklist("expense_categories", expCategory);
+      if (expParty?.trim())
+        await safeInsertPicklist("expense_parties", expParty);
 
       const payload = {
         run_id: Number(runId),
@@ -2531,7 +2548,7 @@ export default function RunDetails() {
         <div className="summaryGridSoft">
           <div className="card summaryCardSoft is-agreed">
             <div className="summaryCardTop">
-              <span className="summaryLabel">سعر الدورة</span>
+              <span className="summaryLabel">مجموع سعر الدورات</span>
               <span className="summaryIcon" aria-hidden="true">
                 <Tag size={18} />
               </span>
@@ -2539,7 +2556,7 @@ export default function RunDetails() {
             <div className="summaryValue">
               <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
             </div>
-            <div className="summaryNote">إجمالي المبلغ سعر الدورة.</div>
+            <div className="summaryNote">إجمالي المبلغ سعر الدورات.</div>
           </div>
           <div className="card summaryCardSoft is-paid">
             <div className="summaryCardTop">
@@ -2578,7 +2595,7 @@ export default function RunDetails() {
             className={`card summaryCardSoft is-balance ${totals.balance <= 0 ? "is-good" : ""}`}
           >
             <div className="summaryCardTop">
-              <span className="summaryLabel">المتبقي</span>
+              <span className="summaryLabel">المتبقي للدفع</span>
               <span className="summaryIcon" aria-hidden="true">
                 <Hourglass size={18} />
               </span>
@@ -2710,11 +2727,11 @@ export default function RunDetails() {
                       options={[
                         {
                           value: "balance_desc",
-                          label: "المتبقي: من الأعلى للأقل",
+                          label: "المتبقي للدفع: من الأعلى للأقل",
                         },
                         {
                           value: "balance_asc",
-                          label: "المتبقي: من الأقل للأعلى",
+                          label: "المتبقي للدفع: من الأقل للأعلى",
                         },
                         { value: "name_asc", label: "الاسم: أ-ي" },
                         { value: "name_desc", label: "الاسم: ي-أ" },
@@ -2785,7 +2802,8 @@ export default function RunDetails() {
                   let balClass = "stat-gray";
                   if (balance <= 0 && pkgRemain <= 0) balClass = "stat-gray";
                   else if (balance < 0) balClass = "stat-credit";
-                  else if (agreed === 0 || balance === 0) balClass = "stat-green";
+                  else if (agreed === 0 || balance === 0)
+                    balClass = "stat-green";
                   else if (paid > 0) balClass = "stat-yellow";
                   else balClass = "stat-red";
 
@@ -2831,19 +2849,25 @@ export default function RunDetails() {
                       <div className="pQuickStats">
                         <div
                           className={`pStatBlock ${balClass} participantList__balance`}
-                          style={balance <= 0 && pkgRemain <= 0 ? { opacity: 0.4 } : {}}
+                          style={
+                            balance <= 0 && pkgRemain <= 0
+                              ? { opacity: 0.4 }
+                              : {}
+                          }
                         >
                           <div className="pStatLabel">
                             <Hourglass size={14} />
                             <span className="participantList__balance-label">
-                              {balance < 0 ? "رصيد زائد" : "المتبقي"}
+                              {balance < 0 ? "رصيد زائد" : "المتبقي للدفع"}
                             </span>
                           </div>
                           <div
                             className="pStatValue ltrIso participantList__balance-value"
                             dir="ltr"
                           >
-                            {balance < 0 ? fmtILS(Math.abs(balance)) : fmtILS(balance)}
+                            {balance < 0
+                              ? fmtILS(Math.abs(balance))
+                              : fmtILS(balance)}
                           </div>
                         </div>
                         <div
@@ -2902,7 +2926,7 @@ export default function RunDetails() {
                       >
                         <div className="pProgressHead">
                           <span className="muted">
-                            سعر الدورة:{" "}
+                            إجمالي سعر الدورات:{" "}
                             <b
                               style={{ color: "#0f172a", fontSize: "15px" }}
                               className="ltrIso"
@@ -3691,7 +3715,7 @@ export default function RunDetails() {
                       marginBottom: 4,
                     }}
                   >
-                    سعر الدورة
+                    إجمالي سعر الدورات
                   </div>
                   <div
                     style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}
@@ -3727,17 +3751,24 @@ export default function RunDetails() {
                       marginBottom: 4,
                     }}
                   >
-                    {manageP.balance < 0 ? "رصيد زائد" : "المتبقي"}
+                    {manageP.balance < 0 ? "رصيد زائد" : "المتبقي للدفع"}
                   </div>
                   <div
                     style={{
                       fontSize: 18,
                       fontWeight: 900,
-                      color: manageP.balance < 0 ? "#6366f1" : manageP.balance === 0 ? "#16a34a" : "#dc2626",
+                      color:
+                        manageP.balance < 0
+                          ? "#6366f1"
+                          : manageP.balance === 0
+                            ? "#16a34a"
+                            : "#dc2626",
                     }}
                     className="ltrIso"
                   >
-                    {manageP.balance < 0 ? fmtILS(Math.abs(manageP.balance)) : fmtILS(manageP.balance)}
+                    {manageP.balance < 0
+                      ? fmtILS(Math.abs(manageP.balance))
+                      : fmtILS(manageP.balance)}
                   </div>
                 </div>
                 <div>
@@ -3935,7 +3966,7 @@ export default function RunDetails() {
                       }}
                     >
                       <ShoppingCart size={26} style={{ color: "#7a5cff" }} />
-                      <span>شراء جلسات</span>
+                      <span>إضافة باقة</span>
                     </button>
                     <button
                       className="actionSquare"
@@ -4076,7 +4107,7 @@ export default function RunDetails() {
                 <table className="table modal-compact-table">
                   <thead>
                     <tr>
-                      <th>تاريخ الشراء</th>
+                      <th>تاريخ بداية الباقة</th>
                       <th>عدد الجلسات</th>
                       <th>السعر (₪)</th>
                       <th style={{ textAlign: "center" }}>إجراءات</th>
@@ -4195,7 +4226,7 @@ export default function RunDetails() {
             </div>
             <div>
               <div className="muted" style={{ marginBottom: 4 }}>
-                تاريخ الشراء
+                تاريخ بداية الباقة
               </div>
               <input
                 className="input"
@@ -5128,7 +5159,7 @@ export default function RunDetails() {
                 options={[
                   { value: "scheduled", label: "مجدولة" },
                   { value: "done", label: "مكتملة" },
-                  { value: "canceled", label: "ملغاة" },
+                  { value: "canceled", label: "ملغي" },
                 ]}
               />
             </div>
