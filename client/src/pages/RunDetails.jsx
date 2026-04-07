@@ -2548,7 +2548,7 @@ export default function RunDetails() {
         <div className="summaryGridSoft">
           <div className="card summaryCardSoft is-agreed">
             <div className="summaryCardTop">
-              <span className="summaryLabel">مجموع سعر الدورات</span>
+              <span className="summaryLabel">سعر الدورات</span>
               <span className="summaryIcon" aria-hidden="true">
                 <Tag size={18} />
               </span>
@@ -2556,7 +2556,7 @@ export default function RunDetails() {
             <div className="summaryValue">
               <span className="ltrIso">{fmtILS(totals.agreed, 2)}</span>
             </div>
-            <div className="summaryNote">إجمالي المبلغ سعر الدورات.</div>
+            <div className="summaryNote">إجمالي مبلغ سعر الدورات.</div>
           </div>
           <div className="card summaryCardSoft is-paid">
             <div className="summaryCardTop">
@@ -2926,7 +2926,7 @@ export default function RunDetails() {
                       >
                         <div className="pProgressHead">
                           <span className="muted">
-                            إجمالي سعر الدورات:{" "}
+                            سعر الدورات:{" "}
                             <b
                               style={{ color: "#0f172a", fontSize: "15px" }}
                               className="ltrIso"
@@ -3715,7 +3715,7 @@ export default function RunDetails() {
                       marginBottom: 4,
                     }}
                   >
-                    إجمالي سعر الدورات
+                    سعر الدورات
                   </div>
                   <div
                     style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}
