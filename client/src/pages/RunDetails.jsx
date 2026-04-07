@@ -822,7 +822,7 @@ export default function RunDetails() {
 
   const [childSearch, setChildSearch] = useState("");
   const [childStatusFilter, setChildStatusFilter] = useState("all");
-  const [childSort, setChildSort] = useState("balance_desc");
+  const [childSort, setChildSort] = useState("name_asc");
 
   const [openEnroll, setOpenEnroll] = useState(false);
   const [selectedChildId, setSelectedChildId] = useState("");
@@ -4409,18 +4409,19 @@ export default function RunDetails() {
                 ]}
               />
             </div>
-            <div style={{ gridColumn: "span 12" }}>
-              <div className="muted">طريقة التسجيل</div>
-              <ModernSelect
-                value={enrollMode}
-                onChange={setEnrollMode}
-                disabled={enrollLocked}
-                options={[
-                  { value: "use_existing", label: "استخدام الرصيد السابق" },
-                  { value: "buy_new", label: "إضافة جلسات (شراء/شحن)" },
-                ]}
-              />
-            </div>
+            {!enrollLocked && Number(pkgInfo?.sessions_remaining ?? 0) > 0 && (
+              <div style={{ gridColumn: "span 12" }}>
+                <div className="muted">طريقة التسجيل</div>
+                <ModernSelect
+                  value={enrollMode}
+                  onChange={setEnrollMode}
+                  options={[
+                    { value: "use_existing", label: "استخدام الرصيد السابق" },
+                    { value: "buy_new", label: "إضافة جلسات (شراء/شحن)" },
+                  ]}
+                />
+              </div>
+            )}
             {(enrollMode === "buy_new" || enrollLocked) && (
               <>
                 <div style={{ gridColumn: "span 4" }}>
