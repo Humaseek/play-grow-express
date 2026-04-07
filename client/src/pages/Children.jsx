@@ -488,7 +488,7 @@ const CHILDREN_STYLES = `
   div.modalOverlay {
     align-items: center !important; 
     padding: 16px !important;
-    div.modalOverlay
+    z-index: 99999 !important;
   }
   
   div.modalOverlay > div.modalCard {
