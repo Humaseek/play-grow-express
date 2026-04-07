@@ -1078,9 +1078,18 @@ export default function RunDetails() {
   async function loadExpensePicklistsSafe() {
     try {
       const [cRes, pRes, iRes] = await Promise.all([
-        supabase.from("expense_categories").select("name").order("name", { ascending: true }),
-        supabase.from("expense_parties").select("name").order("name", { ascending: true }),
-        supabase.from("expense_items").select("name,category").order("name", { ascending: true }),
+        supabase
+          .from("expense_categories")
+          .select("name")
+          .order("name", { ascending: true }),
+        supabase
+          .from("expense_parties")
+          .select("name")
+          .order("name", { ascending: true }),
+        supabase
+          .from("expense_items")
+          .select("name,category")
+          .order("name", { ascending: true }),
       ]);
       if (cRes.data) setExpCatOptions(cRes.data.map((r) => r.name));
       if (pRes.data) setExpPartyOptions(pRes.data.map((r) => r.name));
@@ -1451,7 +1460,11 @@ export default function RunDetails() {
     const s0 = defaultSessionsTotal;
     setBuySessions(s0);
     setBuyPriceTotal(String(defaultPrice));
-    setEnrollDate(isWorkshop && sessions[0]?.start_at ? isoDate(new Date(sessions[0].start_at)) : isoDate(new Date()));
+    setEnrollDate(
+      isWorkshop && sessions[0]?.start_at
+        ? isoDate(new Date(sessions[0].start_at))
+        : isoDate(new Date()),
+    );
     setPkgInfo(null);
     setEnrollMode("buy_new");
     setOpenEnroll(true);
@@ -1469,7 +1482,11 @@ export default function RunDetails() {
         : Number(defaultPrice || 0) / Math.max(1, defaultSessionsTotal);
     setBuySessions(s1);
     setBuyPriceTotal(u > 0 ? (s1 * u).toFixed(2) : "");
-    setEnrollDate(isWorkshop && sessions[0]?.start_at ? isoDate(new Date(sessions[0].start_at)) : isoDate(new Date()));
+    setEnrollDate(
+      isWorkshop && sessions[0]?.start_at
+        ? isoDate(new Date(sessions[0].start_at))
+        : isoDate(new Date()),
+    );
     setEnrollMode("buy_new");
     setOpenEnroll(true);
   }
@@ -1571,7 +1588,9 @@ export default function RunDetails() {
       const enrollIso = updateDateKeepTime(enrollDate);
       const enrollYear = new Date(enrollDate).getFullYear();
       const childData = children.find((c) => Number(c.id) === Number(childId));
-      const ageAtEnroll = childData?.birth_year ? enrollYear - childData.birth_year : null;
+      const ageAtEnroll = childData?.birth_year
+        ? enrollYear - childData.birth_year
+        : null;
 
       const insPkg = await supabase
         .from("course_packages")
@@ -1819,7 +1838,10 @@ export default function RunDetails() {
         if (isNaN(priceNum) || priceNum < 0)
           priceNum = Number(defaultPrice) || 0;
 
-        const workshopDate = isWorkshop && sessions[0]?.start_at ? isoDate(new Date(sessions[0].start_at)) : isoDate(new Date());
+        const workshopDate =
+          isWorkshop && sessions[0]?.start_at
+            ? isoDate(new Date(sessions[0].start_at))
+            : isoDate(new Date());
         const dateStr =
           bulkPerChildDate[cid] !== undefined
             ? bulkPerChildDate[cid]
@@ -2215,7 +2237,9 @@ export default function RunDetails() {
       const [pkgRes, attRes] = await Promise.all([
         supabase
           .from("package_payment_allocation_view")
-          .select("package_id,sessions_total,price_total,paid_amount,remaining_amount,created_at")
+          .select(
+            "package_id,sessions_total,price_total,paid_amount,remaining_amount,created_at",
+          )
           .eq("child_id", pRow.child_id)
           .eq("course_id", summary.template_id)
           .order("created_at", { ascending: true }),
@@ -2369,12 +2393,18 @@ export default function RunDetails() {
       if (expParty?.trim())
         await safeInsertPicklist("expense_parties", expParty);
       if (expItem?.trim()) {
-        await supabase.from("expense_items").insert([{
-          name: expItem.trim(),
-          category: expCategory?.trim() || null,
-        }]).then(({ error: e }) => {
-          if (e && e.code !== "23505") console.warn("item insert:", e.message);
-        });
+        await supabase
+          .from("expense_items")
+          .insert([
+            {
+              name: expItem.trim(),
+              category: expCategory?.trim() || null,
+            },
+          ])
+          .then(({ error: e }) => {
+            if (e && e.code !== "23505")
+              console.warn("item insert:", e.message);
+          });
       }
 
       const payload = {
@@ -3490,7 +3520,7 @@ export default function RunDetails() {
                       value={expCatFilter}
                       onChange={setExpCatFilter}
                       options={[
-                        { value: "all", label: "كل التصنيفات" },
+                        { value: "all", label: "كل الفئات" },
                         ...expCategories.map((x) => ({ value: x, label: x })),
                       ]}
                     />
@@ -3518,8 +3548,8 @@ export default function RunDetails() {
                         <thead>
                           <tr>
                             <th style={{ width: 140 }}>التاريخ</th>
-                            <th>التصنيف</th>
-                            <th style={{ width: 180 }}>الشخص</th>
+                            <th>الفئة</th>
+                            <th style={{ width: 180 }}>شخص / المتجر</th>
                             <th>الوصف</th>
                             <th style={{ width: 140 }}>المبلغ</th>
                             <th style={{ textAlign: "center" }}>الإجراءات</th>
@@ -4143,76 +4173,107 @@ export default function RunDetails() {
                   </thead>
                   <tbody>
                     {(() => {
-                      let attended = Number(historyEnrollment?.total_sessions_used ?? historyEnrollment?.sessions_attended_in_run ?? 0);
+                      let attended = Number(
+                        historyEnrollment?.total_sessions_used ??
+                          historyEnrollment?.sessions_attended_in_run ??
+                          0,
+                      );
                       const enriched = pkgHistoryRows.map((pkg, idx) => {
                         const isLast = idx === pkgHistoryRows.length - 1;
                         const sessionsUsed = isLast
                           ? attended
                           : Math.min(pkg.sessions_total, Math.max(0, attended));
                         attended -= sessionsUsed;
-                        const sessionsBalance = pkg.sessions_total - sessionsUsed;
+                        const sessionsBalance =
+                          pkg.sessions_total - sessionsUsed;
                         return (
-                      <tr key={pkg.package_id}>
-                        <td className="muted">{fmtDate(pkg.created_at)}</td>
-                        <td style={{ fontWeight: 800 }}>{pkg.sessions_total}</td>
-                        <td style={{ fontWeight: 700 }}>{sessionsUsed}</td>
-                        <td style={{ fontWeight: 700, color: sessionsBalance < 0 ? "#dc2626" : sessionsBalance === 0 ? "#64748b" : "#16a34a" }}>
-                          {sessionsBalance}
-                        </td>
-                        <td style={{ fontWeight: 900, color: "#0f172a" }}>
-                          <span dir="ltr">{fmtNum(Number(pkg.price_total))}</span>
-                        </td>
-                        <td style={{ fontWeight: 700, color: "#16a34a" }}>
-                          <span dir="ltr">{fmtNum(Number(pkg.paid_amount))}</span>
-                        </td>
-                        <td style={{ fontWeight: 700, color: Number(pkg.remaining_amount) > 0 ? "#dc2626" : "#16a34a" }}>
-                          <span dir="ltr">{fmtNum(Number(pkg.remaining_amount))}</span>
-                        </td>
-                        <td>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "8px",
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            <button
-                              className="btn iconOnly"
-                              title="تعديل الباقة"
-                              onClick={() => {
-                                setEditPkgData({
-                                  id: pkg.package_id,
-                                  sessions_total: pkg.sessions_total,
-                                  price_total: pkg.price_total,
-                                  created_at: isoDate(pkg.created_at),
-                                });
-                                setOpenEditPkg(true);
+                          <tr key={pkg.package_id}>
+                            <td className="muted">{fmtDate(pkg.created_at)}</td>
+                            <td style={{ fontWeight: 800 }}>
+                              {pkg.sessions_total}
+                            </td>
+                            <td style={{ fontWeight: 700 }}>{sessionsUsed}</td>
+                            <td
+                              style={{
+                                fontWeight: 700,
+                                color:
+                                  sessionsBalance < 0
+                                    ? "#dc2626"
+                                    : sessionsBalance === 0
+                                      ? "#64748b"
+                                      : "#16a34a",
                               }}
                             >
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              className="btn danger iconOnly"
-                              title="حذف الباقة"
-                              onClick={() =>
-                                setConfirm({
-                                  open: true,
-                                  type: "deletePackage",
-                                  id: {
-                                    packageId: pkg.package_id,
-                                    enrollmentId:
-                                      historyEnrollment.enrollment_id,
-                                  },
-                                  text: "هل أنت متأكد من حذف هذه الباقة؟ سيتم خصم جلساتها من رصيد الطالب.",
-                                })
-                              }
+                              {sessionsBalance}
+                            </td>
+                            <td style={{ fontWeight: 900, color: "#0f172a" }}>
+                              <span dir="ltr">
+                                {fmtNum(Number(pkg.price_total))}
+                              </span>
+                            </td>
+                            <td style={{ fontWeight: 700, color: "#16a34a" }}>
+                              <span dir="ltr">
+                                {fmtNum(Number(pkg.paid_amount))}
+                              </span>
+                            </td>
+                            <td
+                              style={{
+                                fontWeight: 700,
+                                color:
+                                  Number(pkg.remaining_amount) > 0
+                                    ? "#dc2626"
+                                    : "#16a34a",
+                              }}
                             >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                              <span dir="ltr">
+                                {fmtNum(Number(pkg.remaining_amount))}
+                              </span>
+                            </td>
+                            <td>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: "8px",
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <button
+                                  className="btn iconOnly"
+                                  title="تعديل الباقة"
+                                  onClick={() => {
+                                    setEditPkgData({
+                                      id: pkg.package_id,
+                                      sessions_total: pkg.sessions_total,
+                                      price_total: pkg.price_total,
+                                      created_at: isoDate(pkg.created_at),
+                                    });
+                                    setOpenEditPkg(true);
+                                  }}
+                                >
+                                  <Pencil size={16} />
+                                </button>
+                                <button
+                                  className="btn danger iconOnly"
+                                  title="حذف الباقة"
+                                  onClick={() =>
+                                    setConfirm({
+                                      open: true,
+                                      type: "deletePackage",
+                                      id: {
+                                        packageId: pkg.package_id,
+                                        enrollmentId:
+                                          historyEnrollment.enrollment_id,
+                                      },
+                                      text: "هل أنت متأكد من حذف هذه الباقة؟ سيتم خصم جلساتها من رصيد الطالب.",
+                                    })
+                                  }
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
                         );
                       });
                       return [...enriched].reverse();
@@ -5373,21 +5434,24 @@ export default function RunDetails() {
             </div>
             <div style={{ gridColumn: "span 6" }}>
               <div className="muted" style={{ marginBottom: 6 }}>
-                التصنيف
+                الفئة
               </div>
               <CustomCombobox
                 value={expCategory}
-                onChange={(v) => { setExpCategory(v); setExpItem(""); }}
+                onChange={(v) => {
+                  setExpCategory(v);
+                  setExpItem("");
+                }}
                 options={expCategories.map((x) => ({
                   value: x,
                   label: x,
                 }))}
-                placeholder="اختر أو اكتب تصنيفاً..."
+                placeholder="اختر أو اكتب فئة..."
               />
             </div>
             <div style={{ gridColumn: "span 6" }}>
               <div className="muted" style={{ marginBottom: 6 }}>
-                الشخص
+                شخص / المتجر
               </div>
               <CustomCombobox
                 value={expParty}
@@ -5396,7 +5460,7 @@ export default function RunDetails() {
                   value: x,
                   label: x,
                 }))}
-                placeholder="اختر أو اكتب شخصاً..."
+                placeholder="اختر أو اكتب شخص / متجر..."
               />
             </div>
             <div style={{ gridColumn: "span 6" }}>
@@ -5407,7 +5471,10 @@ export default function RunDetails() {
                 value={expItem}
                 onChange={(v) => setExpItem(v)}
                 options={expItemOptions
-                  .filter((i) => !expCategory?.trim() || i.category === expCategory.trim())
+                  .filter(
+                    (i) =>
+                      !expCategory?.trim() || i.category === expCategory.trim(),
+                  )
                   .map((i) => ({ value: i.name, label: i.name }))}
                 placeholder="اختر أو اكتب منتج..."
               />
