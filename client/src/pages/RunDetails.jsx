@@ -1477,9 +1477,9 @@ export default function RunDetails() {
 
   async function createChildInline({ enrollNow = false } = {}) {
     const name = (newChildForm.name || "").trim();
-    const ageNum = Number(String(newChildForm.age ?? "").trim());
-    if (!name || isNaN(ageNum)) {
-      toast("الاسم والعمر مطلوبان.", "warn");
+    const birthYear = Number(String(newChildForm.age ?? "").trim());
+    if (!name || !birthYear || birthYear < 1900 || birthYear > new Date().getFullYear()) {
+      toast("الاسم وسنة الميلاد مطلوبان.", "warn");
       return;
     }
 
@@ -1511,7 +1511,7 @@ export default function RunDetails() {
 
       const payload = {
         name,
-        age: ageNum,
+        birth_date: `${birthYear}-01-01`,
         class: typedClass || null,
         gender: newChildForm.gender || "male",
         mother_name: (newChildForm.mother_name || "").trim() || null,
@@ -4532,18 +4532,18 @@ export default function RunDetails() {
                 </div>
                 <div style={{ gridColumn: "span 6" }}>
                   <div className="muted" style={{ marginBottom: 6 }}>
-                    العمر *
+                    سنة الميلاد *
                   </div>
                   <input
                     className="input"
                     type="number"
-                    min={0}
-                    max={120}
+                    min={1900}
+                    max={new Date().getFullYear()}
                     value={newChildForm.age}
                     onChange={(e) =>
                       setNewChildForm((p) => ({ ...p, age: e.target.value }))
                     }
-                    placeholder="بالسنوات"
+                    placeholder="مثال: 2020"
                   />
                 </div>
                 <div style={{ gridColumn: "span 6" }}>

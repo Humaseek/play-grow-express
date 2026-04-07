@@ -645,7 +645,7 @@ export default function Children() {
     setEditingId(child.id);
     setFormData({
       name: child.name || "",
-      age: child.age ?? "",
+      age: child.birth_date ? new Date(child.birth_date).getFullYear() : "",
       class: child.class || "",
       gender: child.gender || "male",
       country_name: child.country || "",
@@ -660,7 +660,7 @@ export default function Children() {
 
   async function handleSave() {
     const name = formData.name.trim();
-    const ageNum = Number(formData.age);
+    const birthYear = Number(formData.age);
 
     if (!name) {
       alert("الرجاء إدخال اسم الطفل.");
@@ -695,7 +695,7 @@ export default function Children() {
 
       const payload = {
         name,
-        age: isNaN(ageNum) ? null : ageNum,
+        birth_date: birthYear ? `${birthYear}-01-01` : null,
         class: typedClass || null,
         gender: formData.gender,
         country_id: countryId,
@@ -989,18 +989,18 @@ export default function Children() {
             </div>
             <div className="form-col">
               <div className="muted" style={{ marginBottom: 6 }}>
-                العمر
+                سنة الميلاد
               </div>
               <input
                 className="input"
                 type="number"
-                min={0}
-                max={120}
+                min={1900}
+                max={new Date().getFullYear()}
                 value={formData.age}
                 onChange={(e) =>
                   setFormData({ ...formData, age: e.target.value })
                 }
-                placeholder=""
+                placeholder="مثال: 2020"
               />
             </div>
 

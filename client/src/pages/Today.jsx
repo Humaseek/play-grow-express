@@ -1968,7 +1968,7 @@ export default function Dashboard() {
 
       const payload = {
         name: formData.name.trim(),
-        age: formData.age ? parseInt(formData.age) : null,
+        birth_date: formData.age ? `${parseInt(formData.age)}-01-01` : null,
         class: formData.class?.trim() || null,
         gender: formData.gender,
         country_id: countryId,
@@ -3097,17 +3097,17 @@ export default function Dashboard() {
                 />
               </div>
               <div className="form-col">
-                <div className="muted">العمر</div>
+                <div className="muted">سنة الميلاد</div>
                 <input
                   className="input"
                   type="number"
-                  min={0}
-                  max={120}
+                  min={1900}
+                  max={new Date().getFullYear()}
                   value={formData.age || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, age: e.target.value })
                   }
-                  placeholder="بالسنوات"
+                  placeholder="مثال: 2020"
                 />
               </div>
               <div className="form-col">
