@@ -2212,14 +2212,22 @@ export default function RunDetails() {
     setOpenPkgHistory(true);
     setPkgHistoryLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("package_payment_allocation_view")
-        .select("package_id,sessions_total,price_total,paid_amount,remaining_amount,created_at")
-        .eq("child_id", pRow.child_id)
-        .eq("course_id", summary.template_id)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      setPkgHistoryRows(data || []);
+      const [pkgRes, attRes] = await Promise.all([
+        supabase
+          .from("package_payment_allocation_view")
+          .select("package_id,sessions_total,price_total,paid_amount,remaining_amount,created_at")
+          .eq("child_id", pRow.child_id)
+          .eq("course_id", summary.template_id)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("attendance")
+          .select("id", { count: "exact", head: true })
+          .eq("enrollment_id", pRow.enrollment_id)
+          .in("status", ["present", "absent"]),
+      ]);
+      if (pkgRes.error) throw pkgRes.error;
+      setPkgHistoryRows(pkgRes.data || []);
+      setHistoryEnrollment({ ...pRow, total_sessions_used: attRes.count ?? 0 });
     } catch {
       toast("فشل تحميل سجل الباقات", "danger");
     } finally {
@@ -4125,7 +4133,7 @@ export default function RunDetails() {
                   </thead>
                   <tbody>
                     {(() => {
-                      let attended = Number(historyEnrollment?.sessions_attended_in_run ?? 0);
+                      let attended = Number(historyEnrollment?.total_sessions_used ?? historyEnrollment?.sessions_attended_in_run ?? 0);
                       return pkgHistoryRows.map((pkg, idx) => {
                         const isLast = idx === pkgHistoryRows.length - 1;
                         const sessionsUsed = isLast
