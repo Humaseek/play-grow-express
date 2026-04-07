@@ -798,8 +798,12 @@ export default function RunDetails() {
   const [expFeatureAvailable, setExpFeatureAvailable] = useState(true);
 
   const [expQ, setExpQ] = useState("");
-  const [expCatFilter, setExpCatFilter] = useState("all");
-  const [expPartyFilter, setExpPartyFilter] = useState("all");
+  const [expCatFilter, setExpCatFilter] = useState(
+    () => localStorage.getItem("runDetails_expCatFilter") || "all"
+  );
+  const [expPartyFilter, setExpPartyFilter] = useState(
+    () => localStorage.getItem("runDetails_expPartyFilter") || "all"
+  );
 
   const [expCatOptions, setExpCatOptions] = useState([]);
   const [expPartyOptions, setExpPartyOptions] = useState([]);
@@ -3428,7 +3432,7 @@ export default function RunDetails() {
                   <div style={{ width: 220, minWidth: 170 }}>
                     <ModernSelect
                       value={expCatFilter}
-                      onChange={setExpCatFilter}
+                      onChange={(v) => { setExpCatFilter(v); localStorage.setItem("runDetails_expCatFilter", v); }}
                       options={[
                         { value: "all", label: "كل التصنيفات" },
                         ...expCategories.map((x) => ({ value: x, label: x })),
@@ -3438,7 +3442,7 @@ export default function RunDetails() {
                   <div style={{ width: 220, minWidth: 170 }}>
                     <ModernSelect
                       value={expPartyFilter}
-                      onChange={setExpPartyFilter}
+                      onChange={(v) => { setExpPartyFilter(v); localStorage.setItem("runDetails_expPartyFilter", v); }}
                       options={[
                         { value: "all", label: "كل الأشخاص" },
                         ...expParties.map((x) => ({ value: x, label: x })),
