@@ -798,12 +798,8 @@ export default function RunDetails() {
   const [expFeatureAvailable, setExpFeatureAvailable] = useState(true);
 
   const [expQ, setExpQ] = useState("");
-  const [expCatFilter, setExpCatFilter] = useState(
-    () => localStorage.getItem("runDetails_expCatFilter") || "all"
-  );
-  const [expPartyFilter, setExpPartyFilter] = useState(
-    () => localStorage.getItem("runDetails_expPartyFilter") || "all"
-  );
+  const [expCatFilter, setExpCatFilter] = useState("all");
+  const [expPartyFilter, setExpPartyFilter] = useState("all");
 
   const [expCatOptions, setExpCatOptions] = useState([]);
   const [expPartyOptions, setExpPartyOptions] = useState([]);
@@ -2296,6 +2292,16 @@ export default function RunDetails() {
     }
   }
 
+  async function safeInsertPicklist(tableName, rawName) {
+    const name = String(rawName || "").trim();
+    if (!name) return;
+    const ins = await supabase.from(tableName).insert([{ name }]);
+    if (ins.error) {
+      const msg = String(ins.error.message || "").toLowerCase();
+      if (ins.error.code === "23505" || msg.includes("duplicate")) return;
+    }
+  }
+
   function resetExpenseForm() {
     setExpenseEditId(null);
     setExpDate(isoDate(new Date()));
@@ -2327,6 +2333,9 @@ export default function RunDetails() {
     }
     setExpSaving(true);
     try {
+      if (expCategory?.trim()) await safeInsertPicklist("expense_categories", expCategory);
+      if (expParty?.trim()) await safeInsertPicklist("expense_parties", expParty);
+
       const payload = {
         run_id: Number(runId),
         spent_on: expDate || isoDate(new Date()),
@@ -2351,7 +2360,7 @@ export default function RunDetails() {
 
       setOpenExpenseModal(false);
       resetExpenseForm();
-      await loadFixed();
+      await Promise.all([loadFixed(), loadExpensePicklistsSafe()]);
     } catch (e) {
       console.error("Error saving expense:", e);
       toast("حدث خطأ أثناء حفظ المصروف", "danger");
@@ -3432,7 +3441,7 @@ export default function RunDetails() {
                   <div style={{ width: 220, minWidth: 170 }}>
                     <ModernSelect
                       value={expCatFilter}
-                      onChange={(v) => { setExpCatFilter(v); localStorage.setItem("runDetails_expCatFilter", v); }}
+                      onChange={setExpCatFilter}
                       options={[
                         { value: "all", label: "كل التصنيفات" },
                         ...expCategories.map((x) => ({ value: x, label: x })),
@@ -3442,7 +3451,7 @@ export default function RunDetails() {
                   <div style={{ width: 220, minWidth: 170 }}>
                     <ModernSelect
                       value={expPartyFilter}
-                      onChange={(v) => { setExpPartyFilter(v); localStorage.setItem("runDetails_expPartyFilter", v); }}
+                      onChange={setExpPartyFilter}
                       options={[
                         { value: "all", label: "كل الأشخاص" },
                         ...expParties.map((x) => ({ value: x, label: x })),
