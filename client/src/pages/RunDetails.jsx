@@ -2213,12 +2213,11 @@ export default function RunDetails() {
     setPkgHistoryLoading(true);
     try {
       const { data, error } = await supabase
-        .from("course_packages")
-        .select("*")
+        .from("package_payment_allocation_view")
+        .select("package_id,sessions_total,price_total,paid_amount,remaining_amount,created_at")
         .eq("child_id", pRow.child_id)
         .eq("course_id", summary.template_id)
-        .eq("status", "active")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
       if (error) throw error;
       setPkgHistoryRows(data || []);
     } catch {
@@ -4117,25 +4116,26 @@ export default function RunDetails() {
                       <th>تاريخ بداية الباقة</th>
                       <th>عدد الجلسات</th>
                       <th>السعر (₪)</th>
+                      <th>المدفوع (₪)</th>
+                      <th>المتبقي للدفع (₪)</th>
                       <th style={{ textAlign: "center" }}>إجراءات</th>
                     </tr>
                   </thead>
                   <tbody>
                     {pkgHistoryRows.map((pkg) => (
-                      <tr key={pkg.id}>
+                      <tr key={pkg.package_id}>
                         <td className="muted">{fmtDate(pkg.created_at)}</td>
                         <td style={{ fontWeight: 800 }}>
                           {pkg.sessions_total}
                         </td>
-                        <td
-                          style={{
-                            fontWeight: 900,
-                            color: "#0f172a",
-                          }}
-                        >
-                          <span dir="ltr">
-                            {Number(pkg.price_total).toFixed(2)}
-                          </span>
+                        <td style={{ fontWeight: 900, color: "#0f172a" }}>
+                          <span dir="ltr">{fmtNum(Number(pkg.price_total))}</span>
+                        </td>
+                        <td style={{ fontWeight: 700, color: "#16a34a" }}>
+                          <span dir="ltr">{fmtNum(Number(pkg.paid_amount))}</span>
+                        </td>
+                        <td style={{ fontWeight: 700, color: Number(pkg.remaining_amount) > 0 ? "#dc2626" : "#16a34a" }}>
+                          <span dir="ltr">{fmtNum(Number(pkg.remaining_amount))}</span>
                         </td>
                         <td>
                           <div
@@ -4151,7 +4151,7 @@ export default function RunDetails() {
                               title="تعديل الباقة"
                               onClick={() => {
                                 setEditPkgData({
-                                  id: pkg.id,
+                                  id: pkg.package_id,
                                   sessions_total: pkg.sessions_total,
                                   price_total: pkg.price_total,
                                   created_at: isoDate(pkg.created_at),
@@ -4169,7 +4169,7 @@ export default function RunDetails() {
                                   open: true,
                                   type: "deletePackage",
                                   id: {
-                                    packageId: pkg.id,
+                                    packageId: pkg.package_id,
                                     enrollmentId:
                                       historyEnrollment.enrollment_id,
                                   },
