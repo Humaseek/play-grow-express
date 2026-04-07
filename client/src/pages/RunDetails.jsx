@@ -831,8 +831,7 @@ export default function RunDetails() {
 
   const [buySessions, setBuySessions] = useState(8);
   const [buyPriceTotal, setBuyPriceTotal] = useState("");
-  const [buyUnitPrice, setBuyUnitPrice] = useState("");
-  const [buyPriceEditMode, setBuyPriceEditMode] = useState("total");
+  const [enrollDate, setEnrollDate] = useState(isoDate(new Date()));
 
   const [enrollSaving, setEnrollSaving] = useState(false);
 
@@ -1453,8 +1452,7 @@ export default function RunDetails() {
     const s0 = defaultSessionsTotal;
     setBuySessions(s0);
     setBuyPriceTotal(String(defaultPrice));
-    setBuyUnitPrice(s0 > 0 ? (Number(defaultPrice || 0) / s0).toFixed(2) : "");
-    setBuyPriceEditMode("total");
+    setEnrollDate(isoDate(new Date()));
     setPkgInfo(null);
     setEnrollMode("buy_new");
     setOpenEnroll(true);
@@ -1471,9 +1469,8 @@ export default function RunDetails() {
           participantRow.sessions_allocated
         : Number(defaultPrice || 0) / Math.max(1, defaultSessionsTotal);
     setBuySessions(s1);
-    setBuyUnitPrice(u > 0 ? u.toFixed(2) : "");
     setBuyPriceTotal(u > 0 ? (s1 * u).toFixed(2) : "");
-    setBuyPriceEditMode("unit");
+    setEnrollDate(isoDate(new Date()));
     setEnrollMode("buy_new");
     setOpenEnroll(true);
   }
@@ -1567,6 +1564,8 @@ export default function RunDetails() {
       const futureCount = futureSessions ? futureSessions.length : 0;
       const alloc = Math.min(sessionsToBuy, futureCount);
 
+      const enrollIso = updateDateKeepTime(enrollDate);
+
       const insPkg = await supabase
         .from("course_packages")
         .insert([
@@ -1576,6 +1575,7 @@ export default function RunDetails() {
             sessions_total: sessionsToBuy,
             price_total: priceNum,
             status: "active",
+            created_at: enrollIso,
           },
         ])
         .select("id")
@@ -1592,6 +1592,7 @@ export default function RunDetails() {
           sessions_allocated: alloc,
           agreed_price: priceNum,
           status: "active",
+          created_at: enrollIso,
         },
       ]);
 
@@ -1638,10 +1639,7 @@ export default function RunDetails() {
     );
     if (!existing) return false;
     const s = Number(buySessions) || 0;
-    const priceTotalNum =
-      buyPriceEditMode === "unit"
-        ? (Number(buyUnitPrice) || 0) * s
-        : Number(buyPriceTotal) || 0;
+    const priceTotalNum = Number(buyPriceTotal) || 0;
     try {
       const u1 = await supabase
         .from("enrollments")
@@ -4431,36 +4429,7 @@ export default function RunDetails() {
                     className="input"
                     type="number"
                     value={buySessions}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setBuySessions(v);
-                      const s = Number(v);
-                      if (buyPriceEditMode === "unit") {
-                        const u = Number(buyUnitPrice || 0);
-                        if (s > 0 && u > 0)
-                          setBuyPriceTotal((s * u).toFixed(2));
-                      } else {
-                        const t = Number(buyPriceTotal || 0);
-                        if (s > 0) setBuyUnitPrice((t / s).toFixed(2));
-                      }
-                    }}
-                  />
-                </div>
-                <div style={{ gridColumn: "span 4" }}>
-                  <div className="muted">سعر الجلسة</div>
-                  <input
-                    className="input"
-                    type="number"
-                    step="0.01"
-                    value={buyUnitPrice}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setBuyUnitPrice(v);
-                      setBuyPriceEditMode("unit");
-                      const s = Number(buySessions || 0);
-                      const u = Number(v || 0);
-                      if (s > 0) setBuyPriceTotal((s * u).toFixed(2));
-                    }}
+                    onChange={(e) => setBuySessions(e.target.value)}
                   />
                 </div>
                 <div style={{ gridColumn: "span 4" }}>
@@ -4470,14 +4439,16 @@ export default function RunDetails() {
                     type="number"
                     step="0.01"
                     value={buyPriceTotal}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      setBuyPriceTotal(v);
-                      setBuyPriceEditMode("total");
-                      const s = Number(buySessions || 0);
-                      const t = Number(v || 0);
-                      if (s > 0) setBuyUnitPrice((t / s).toFixed(2));
-                    }}
+                    onChange={(e) => setBuyPriceTotal(e.target.value)}
+                  />
+                </div>
+                <div style={{ gridColumn: "span 4" }}>
+                  <div className="muted">تاريخ التسجيل</div>
+                  <input
+                    className="input"
+                    type="date"
+                    value={enrollDate}
+                    onChange={(e) => setEnrollDate(e.target.value)}
                   />
                 </div>
               </>
