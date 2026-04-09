@@ -46,16 +46,6 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
-function monthRange() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const lastDay = new Date(y, d.getMonth() + 1, 0).getDate();
-  return {
-    from: `${y}-${m}-01`,
-    to: `${y}-${m}-${String(lastDay).padStart(2, "0")}`,
-  };
-}
 
 
 
@@ -252,7 +242,6 @@ export default function StaffHours() {
   const navigate = useNavigate();
 
   const [staff, setStaff] = useState([]);
-  const [hours, setHours] = useState([]);
   const [allHours, setAllHours] = useState([]);
   const [allPayments, setAllPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -276,25 +265,19 @@ export default function StaffHours() {
   const [monthsLoading, setMonthsLoading]     = useState(false);
   const [converting, setConverting]           = useState(null); // key being converted
 
-  const { from, to } = useMemo(() => monthRange(), []);
-
   /* ─── load ─── */
   async function load() {
     setLoading(true);
     setErr(null);
     try {
-      const [{ data: s, error: se }, { data: h, error: he }, { data: ah, error: ahe }, { data: ap, error: ape }] = await Promise.all([
+      const [{ data: s, error: se }, { data: ah, error: ahe }, { data: ap, error: ape }] = await Promise.all([
         supabase.from("staff").select("*").order("name"),
-        supabase.from("staff_hours").select("*")
-          .gte("work_date", from).lte("work_date", to)
-          .order("work_date", { ascending: false }),
         supabase.from("staff_hours").select("staff_id, work_date, start_time, end_time, hourly_rate"),
         supabase.from("staff_salary_payments").select("staff_id, date_from, date_to"),
       ]);
       if (se) throw se;
-      if (he || ahe || ape) throw he || ahe || ape;
+      if (ahe || ape) throw ahe || ape;
       setStaff(s || []);
-      setHours(h || []);
       setAllHours(ah || []);
       setAllPayments(ap || []);
     } catch (e) {
@@ -305,20 +288,8 @@ export default function StaffHours() {
   }
   useEffect(() => { load(); }, []);
 
-  /* ─── per-staff stats (current month) ─── */
-  const staffStats = useMemo(() => {
-    const map = {};
-    for (const row of hours) {
-      if (!map[row.staff_id]) map[row.staff_id] = { totalHours: 0, totalAmount: 0, count: 0 };
-      const h = calcHours(row.start_time, row.end_time);
-      map[row.staff_id].totalHours += h;
-      map[row.staff_id].totalAmount += h * Number(row.hourly_rate || 0);
-      map[row.staff_id].count += 1;
-    }
-    return map;
-  }, [hours]);
 
-  /* ─── per-staff unpaid amount (all time) ─── */
+  /* ─── per-staff unpaid (all time) ─── */
   const staffUnpaid = useMemo(() => {
     const map = {};
     for (const row of allHours) {
@@ -328,23 +299,24 @@ export default function StaffHours() {
         row.work_date <= p.date_to
       );
       if (!covered) {
-        if (!map[row.staff_id]) map[row.staff_id] = 0;
+        if (!map[row.staff_id]) map[row.staff_id] = { amount: 0, hours: 0 };
         const h = calcHours(row.start_time, row.end_time);
-        map[row.staff_id] += h * Number(row.hourly_rate || 0);
+        map[row.staff_id].amount += h * Number(row.hourly_rate || 0);
+        map[row.staff_id].hours += h;
       }
     }
     return map;
   }, [allHours, allPayments]);
 
-  /* ─── global KPIs ─── */
+  /* ─── global KPIs (unpaid totals) ─── */
   const kpi = useMemo(() => {
     let totalHours = 0, totalAmount = 0;
-    for (const v of Object.values(staffStats)) {
-      totalHours += v.totalHours;
-      totalAmount += v.totalAmount;
+    for (const v of Object.values(staffUnpaid)) {
+      totalHours += v.hours;
+      totalAmount += v.amount;
     }
     return { totalHours, totalAmount, staffCount: staff.length };
-  }, [staffStats, staff]);
+  }, [staffUnpaid, staff]);
 
   /* ─── monthly modal data ─── */
   async function loadMonthsData(staffId) {
