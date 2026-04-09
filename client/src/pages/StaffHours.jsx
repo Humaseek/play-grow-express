@@ -19,7 +19,7 @@ import {
   Pencil,
   TrendingUp,
   BarChart2,
-  UserRound,
+
   ChevronLeft,
   CheckCircle2,
   Receipt,
@@ -493,12 +493,14 @@ export default function StaffHours() {
               <div key={member.id} className="sh-teacher-card" style={{ cursor: "pointer" }}
                 onClick={() => navigate(`/staff-hours/${member.id}`)}>
                 <div className="sh-card-header">
-                  <div className="sh-avatar">
-                    <UserRound size={22} />
-                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="sh-card-name">{member.name}</div>
-                    {member.role && <div className="sh-card-role">{member.role}</div>}
+                    <div style={{
+                      fontSize: 22, fontWeight: 900, color: "#1e293b",
+                      letterSpacing: "-0.5px", lineHeight: 1.2,
+                      background: "linear-gradient(135deg, #1e293b 0%, #00ac47 100%)",
+                      WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    }}>{member.name}</div>
+                    {member.role && <div className="sh-card-role" style={{ marginTop: 3 }}>{member.role}</div>}
                   </div>
                   <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
                     <IconButton icon={Pencil} size={15} title="تعديل" onClick={e => { e.stopPropagation(); setStaffModal(member); setStaffForm({ name: member.name, role: member.role || "", phone: member.phone || "" }); }} />
