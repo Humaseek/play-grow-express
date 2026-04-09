@@ -494,13 +494,13 @@ export default function StaffHours() {
                     <div className="sh-card-name">{member.name}</div>
                     {member.role && <div className="sh-card-role">{member.role}</div>}
                   </div>
-                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                    <IconButton icon={Pencil} size={15} title="تعديل" onClick={() => { setStaffModal(member); setStaffForm({ name: member.name, role: member.role || "", phone: member.phone || "" }); }} />
-                    <IconButton icon={Trash2} size={15} title="حذف" variant="danger" onClick={() => setDeleteStaff(member)} />
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                    <IconButton icon={Pencil} size={15} title="تعديل" onClick={e => { e.stopPropagation(); setStaffModal(member); setStaffForm({ name: member.name, role: member.role || "", phone: member.phone || "" }); }} />
+                    <IconButton icon={Trash2} size={15} title="حذف" variant="danger" onClick={e => { e.stopPropagation(); setDeleteStaff(member); }} />
                   </div>
                 </div>
 
-                <div className="sh-card-stats" onClick={e => e.stopPropagation()}>
+                <div className="sh-card-stats">
                   <div className="sh-stat-box">
                     <div className="sh-stat-label">المستحق غير المدفوع</div>
                     <div className="sh-stat-value" style={{ fontSize: 16, color: unpaidAmount > 0 ? "#d97706" : "#00ac47" }}>
@@ -515,11 +515,11 @@ export default function StaffHours() {
                   </div>
                 </div>
 
-                <div className="sh-card-actions" onClick={e => e.stopPropagation()}>
-                  <button className="sh-btn-primary" onClick={() => openLog(member)}>
+                <div className="sh-card-actions">
+                  <button className="sh-btn-primary" onClick={e => { e.stopPropagation(); openLog(member); }}>
                     <Plus size={16} /> تسجيل ساعات
                   </button>
-                  <button className="sh-btn-secondary" onClick={() => { setMonthsModal({ staffId: member.id, staffName: member.name }); loadMonthsData(member.id); }}>
+                  <button className="sh-btn-secondary" onClick={e => { e.stopPropagation(); setMonthsModal({ staffId: member.id, staffName: member.name }); loadMonthsData(member.id); }}>
                     <BarChart2 size={16} /> الأشهر
                   </button>
                 </div>
