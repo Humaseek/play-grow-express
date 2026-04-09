@@ -687,6 +687,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
               {filteredHours.map(row => {
                 const h = calcHours(row.start_time, row.end_time);
                 const total = h * Number(row.hourly_rate || 0);
+                const isUnpaid = unpaidHours.some(u => u.id === row.id);
                 return (
                   <tr key={row.id}>
                     <td>{fmtDate(row.work_date)}</td>
@@ -697,7 +698,10 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
                     <td style={{ fontWeight: 800 }}>{fmtMoney(total)} ₪</td>
                     <td style={{ color: "#94a3b8", fontSize: 13 }}>{row.notes || "—"}</td>
                     <td>
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                        {isUnpaid && (
+                          <IconButton icon={Receipt} size={14} title="تحويل لمصروف" onClick={() => openConvertModal(row.work_date, row.work_date)} />
+                        )}
                         <IconButton icon={Pencil} size={14} title="تعديل" onClick={() => openLog(row)} />
                         <IconButton icon={Trash2} size={14} title="حذف" variant="danger" onClick={() => setDeleteLog(row)} />
                       </div>
