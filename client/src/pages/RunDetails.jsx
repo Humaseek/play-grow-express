@@ -230,36 +230,295 @@ function CustomCombobox({ value, onChange, options, placeholder, disabled }) {
 // 👇 تنسيقات CSS - لم يتم تخريب الديسكتوب، تم إضافة التجاوب للموبايل بالأسفل 👇
 // ============================================================================
 const RUN_DETAILS_SOFT_UI_STYLES = `
+/* ─── Page Shell ─── */
 .page.page--runs {
-  background: linear-gradient(180deg, rgba(0, 172, 71, 0.08) 0%, #f7faf8 240px, #f4f6f8 100%) !important;
+  background: #f3f6f4 !important;
+  min-height: 100vh;
 }
 
-.runDetails {
-  padding-block: 22px 40px;
+/* ─── Hero ─── */
+.rd-hero {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+  border: 1px solid rgba(0,172,71,0.12);
+  border-radius: 24px;
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0,172,71,0.07), 0 1px 3px rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
+.rd-hero-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.rd-back-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: #fff; border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 12px; padding: 8px 16px;
+  font-size: 13px; font-weight: 700; color: #475569;
+  cursor: pointer; transition: all 0.18s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.rd-back-btn:hover { border-color: rgba(0,172,71,0.4); color: #00ac47; transform: translateY(-1px); }
+.rd-title {
+  font-size: clamp(20px, 2.2vw, 28px);
+  font-weight: 900;
+  color: #0f172a;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.rd-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.rd-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,172,71,0.08); border: 1px solid rgba(0,172,71,0.18);
+  color: #15803d; border-radius: 999px; padding: 5px 13px;
+  font-size: 12.5px; font-weight: 700; white-space: nowrap;
+}
+.rd-chip.neutral { background: rgba(15,23,42,0.05); border-color: rgba(15,23,42,0.1); color: #475569; }
 
-.modalCard:has(.modal-wide-1000) {
-  width: 95% !important;
-  max-width: 1000px !important;
+/* ─── KPI Summary Row ─── */
+.rd-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+  margin-bottom: 20px;
 }
+.rd-kpi {
+  background: #fff;
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 20px;
+  padding: 18px 20px 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.rd-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.rd-kpi::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 3px; border-radius: 0 0 20px 20px;
+}
+.rd-kpi.kpi-purple::after { background: #7c3aed; }
+.rd-kpi.kpi-green::after  { background: #00ac47; }
+.rd-kpi.kpi-orange::after { background: #f97316; }
+.rd-kpi.kpi-red::after    { background: #dc2626; }
+.rd-kpi.kpi-teal::after   { background: #0891b2; }
 
-.modalCard:has(.modal-wide-900) {
-  width: 95% !important;
-  max-width: 900px !important;
+.rd-kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.rd-kpi-icon {
+  width: 38px; height: 38px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
 }
+.kpi-purple .rd-kpi-icon { background: rgba(124,58,237,0.1); color: #7c3aed; }
+.kpi-green  .rd-kpi-icon { background: rgba(0,172,71,0.1);   color: #00ac47; }
+.kpi-orange .rd-kpi-icon { background: rgba(249,115,22,0.1); color: #f97316; }
+.kpi-red    .rd-kpi-icon { background: rgba(220,38,38,0.1);  color: #dc2626; }
+.kpi-teal   .rd-kpi-icon { background: rgba(8,145,178,0.1);  color: #0891b2; }
+
+.rd-kpi-badge { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.kpi-purple .rd-kpi-badge { background: rgba(124,58,237,0.1); color: #7c3aed; }
+.kpi-green  .rd-kpi-badge { background: rgba(0,172,71,0.1);   color: #00ac47; }
+.kpi-orange .rd-kpi-badge { background: rgba(249,115,22,0.1); color: #ea580c; }
+.kpi-red    .rd-kpi-badge { background: rgba(220,38,38,0.1);  color: #dc2626; }
+.kpi-teal   .rd-kpi-badge { background: rgba(8,145,178,0.1);  color: #0891b2; }
+
+.rd-kpi-label { font-size: 11.5px; font-weight: 600; color: #94a3b8; letter-spacing: 0.3px; margin-bottom: 5px; }
+.rd-kpi-value { font-size: 26px; font-weight: 900; line-height: 1.1; letter-spacing: -1px; direction: ltr; text-align: right; }
+.kpi-purple .rd-kpi-value { color: #0f172a; }
+.kpi-green  .rd-kpi-value { color: #00ac47; }
+.kpi-orange .rd-kpi-value { color: #0f172a; }
+.kpi-red    .rd-kpi-value { color: #dc2626; }
+.kpi-teal   .rd-kpi-value { color: #0f172a; }
+.rd-kpi-sub { font-size: 11px; color: #94a3b8; margin-top: 9px; padding-top: 9px; border-top: 1px solid rgba(15,23,42,0.06); }
+
+/* ─── Panel (card wrapper for tab content) ─── */
+.rd-panel {
+  background: #fff;
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+.rd-panel-head {
+  padding: 18px 24px;
+  border-bottom: 1px solid rgba(15,23,42,0.07);
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  background: #fcfcfc;
+}
+.rd-panel-title { font-size: 16px; font-weight: 900; color: #0f172a; }
+.rd-panel-count {
+  font-size: 11px; font-weight: 700; color: #64748b;
+  background: #f1f5f9; border: 1px solid #e2e8f0;
+  padding: 3px 11px; border-radius: 999px;
+}
+.rd-panel-body { padding: 20px 24px; }
+
+/* ─── Tabs ─── */
+.rd-tabs-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  margin-bottom: 18px; flex-wrap: wrap;
+}
+.rd-tabs {
+  display: inline-flex; gap: 3px;
+  background: #fff; border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 14px; padding: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.rd-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border-radius: 11px;
+  font-size: 13px; font-weight: 700; color: #64748b;
+  cursor: pointer; border: none; background: none;
+  font-family: inherit; transition: all 0.15s;
+}
+.rd-tab:hover { color: #0f172a; background: rgba(15,23,42,0.04); }
+.rd-tab.active {
+  background: rgba(0,172,71,0.1); color: #00ac47;
+  box-shadow: 0 1px 4px rgba(0,172,71,0.15);
+}
+.rd-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 18px; padding: 0 5px;
+  border-radius: 999px; font-size: 10px; font-weight: 800;
+  background: #e2e8f0; color: #64748b;
+}
+.rd-tab.active .rd-tab-count { background: rgba(0,172,71,0.2); color: #15803d; }
+
+/* ─── Controls toolbar ─── */
+.rd-toolbar {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 20px;
+}
+.rd-toolbar-title { flex: 0 0 auto; }
+.rd-toolbar-title h2 { font-size: 18px; font-weight: 900; color: #0f172a; margin: 0; }
+.rd-toolbar-title .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+.rd-toolbar-filters { display: flex; gap: 9px; flex: 1 1 0; flex-wrap: wrap; align-items: center; }
+.rd-toolbar-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+
+/* ─── Participant Cards ─── */
+.rd-p-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+  align-items: stretch;
+}
+.rd-p-card {
+  background: #fff;
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 20px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: transform 0.22s cubic-bezier(.22,1,.36,1), box-shadow 0.22s, border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.rd-p-card::before {
+  content: ''; position: absolute; top: 0; right: 0; left: 0; height: 3px;
+  background: #e2e8f0; border-radius: 20px 20px 0 0;
+  transition: background 0.2s;
+}
+.rd-p-card.status-paid::before   { background: #00ac47; }
+.rd-p-card.status-partial::before { background: #f59e0b; }
+.rd-p-card.status-unpaid::before  { background: #ef4444; }
+.rd-p-card.status-free::before    { background: #94a3b8; }
+.rd-p-card:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.09); border-color: rgba(0,172,71,0.2); }
+.rd-p-card.is-inactive { opacity: 0.6; background: #f8fafc; }
+
+.rd-p-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+.rd-p-avatar {
+  width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800;
+}
+.rd-p-name { font-size: 17px; font-weight: 900; color: #0f172a; line-height: 1.2; margin-bottom: 6px; }
+.rd-p-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.rd-p-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  color: #64748b; font-size: 11.5px; font-weight: 700;
+  padding: 3px 9px; border-radius: 999px;
+}
+.rd-p-chip svg { width: 11px; height: 11px; }
+
+.rd-p-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 14px; }
+.rd-stat {
+  background: #f8fafc; border: 1px solid #f1f5f9;
+  border-radius: 12px; padding: 11px 12px;
+  display: flex; flex-direction: column; gap: 3px; align-items: center; text-align: center;
+  transition: background 0.15s;
+}
+.rd-stat.s-red    { background: rgba(220,38,38,0.06);  border-color: rgba(220,38,38,0.18);  }
+.rd-stat.s-yellow { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.2);  }
+.rd-stat.s-green  { background: rgba(0,172,71,0.07);   border-color: rgba(0,172,71,0.2);    }
+.rd-stat.s-credit { background: rgba(99,102,241,0.07); border-color: rgba(99,102,241,0.2);  }
+.rd-stat-label { font-size: 11px; font-weight: 700; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
+.rd-stat-label svg { width: 11px; height: 11px; }
+.rd-stat-value { font-size: 18px; font-weight: 900; line-height: 1; color: #0f172a; direction: ltr; }
+.rd-stat.s-red    .rd-stat-value { color: #dc2626; }
+.rd-stat.s-yellow .rd-stat-value { color: #d97706; }
+.rd-stat.s-green  .rd-stat-value { color: #00ac47; }
+.rd-stat.s-credit .rd-stat-value { color: #6366f1; }
+
+.rd-prog { margin-top: 4px; }
+.rd-prog-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11.5px; color: #94a3b8; font-weight: 600; }
+.rd-prog-pct { font-weight: 800; }
+.rd-prog-track { height: 7px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+.rd-prog-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+
+/* ─── Session Rows ─── */
+.rd-session-row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 14px; align-items: center;
+  padding: 14px 18px;
+  background: #fff;
+  border: 1px solid rgba(15,23,42,0.07);
+  border-radius: 16px;
+  position: relative; overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.rd-session-row::before {
+  content: ''; position: absolute;
+  top: 0; right: 0; bottom: 0; width: 4px;
+}
+.rd-session-row.s-scheduled::before { background: #0ea5e9; }
+.rd-session-row.s-done::before      { background: #00ac47; }
+.rd-session-row.s-canceled::before  { background: #ef4444; }
+.rd-session-row:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.07); transform: translateY(-1px); }
+
+.rd-session-date { font-weight: 800; font-size: 14px; color: #0f172a; }
+.rd-session-day  { font-size: 12px; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+.rd-session-time { font-size: 13px; font-weight: 700; color: #475569; direction: ltr; }
+.rd-session-status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; margin-top: 4px;
+}
+.s-scheduled .rd-session-status-badge { background: rgba(14,165,233,0.1); color: #0284c7; }
+.s-done      .rd-session-status-badge { background: rgba(0,172,71,0.1);   color: #15803d; }
+.s-canceled  .rd-session-status-badge { background: rgba(239,68,68,0.1);  color: #dc2626; }
+
+/* ─── Past sessions button ─── */
+.rd-past-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px; border-radius: 16px;
+  background: #f8fafc; border: 1px solid #e2e8f0; color: #64748b;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: all 0.18s;
+}
+.rd-past-btn:hover { background: #f1f5f9; border-color: #cbd5e1; color: #334155; transform: translateY(-1px); }
+
+/* ─── Table styles ─── */
+.modalCard:has(.modal-wide-1000) { width: 95% !important; max-width: 1000px !important; }
+.modalCard:has(.modal-wide-900)  { width: 95% !important; max-width: 900px !important; }
 
 .runDetails .tableWrap.inCard {
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  border-radius: 18px;
-  overflow: visible !important; 
+  border: 1px solid rgba(15,23,42,0.06);
+  border-radius: 18px; overflow: visible !important;
 }
-
 .modal-compact-table {
-  width: 100% !important;
-  min-width: 100% !important;
-  border-collapse: separate !important;
-  border-spacing: 0 8px !important;
-  table-layout: auto !important; 
+  width: 100% !important; min-width: 100% !important;
+  border-collapse: separate !important; border-spacing: 0 7px !important;
+  table-layout: auto !important;
 }
 
 .modal-compact-table th,
@@ -291,493 +550,153 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
 
 .runDetails .card {
   background: #ffffff !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid rgba(15,23,42,0.08) !important;
   border-radius: 22px !important;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+  box-shadow: 0 2px 10px rgba(15,23,42,0.04) !important;
 }
 
 .actionSquare {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  background: #ffffff; border: 1px solid rgba(15,23,42,0.06); border-radius: 16px; padding: 14px 8px;
-  color: #475569; transition: all 0.2s ease; cursor: pointer; min-height: 86px; width: 100%; box-shadow: 0 2px 8px rgba(0,0,0,0.01);
+  background: #fff; border: 1px solid rgba(15,23,42,0.08); border-radius: 16px; padding: 14px 8px;
+  color: #475569; transition: all 0.2s; cursor: pointer; min-height: 86px; width: 100%;
 }
-.actionSquare:hover:not(:disabled) { background: #f8fafc; border-color: rgba(15,23,42,0.12); color: #0f172a; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+.actionSquare:hover:not(:disabled) {
+  background: #f0fdf4; border-color: rgba(0,172,71,0.3); color: #00ac47;
+  transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,172,71,0.1);
+}
 .actionSquare span { font-size: 11.5px; font-weight: 800; text-align: center; line-height: 1.2; }
-.actionSquare:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.runHeroTitle {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 54px;
-  max-width: 100%;
-  padding: 10px 18px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
-  font-size: clamp(20px, 2vw, 32px);
-  font-weight: 900;
-  line-height: 1.15;
-  color: rgb(24, 24, 24);
-  letter-spacing: -0.015em;
-  white-space: nowrap;
-}
-
-.heroMiniChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: none;
-  white-space: nowrap;
-}
+.actionSquare:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .runDetails .btn {
-  border-radius: 14px !important;
-  min-height: 42px;
-  padding-inline: 16px !important;
-  box-shadow: none !important;
+  border-radius: 12px !important; min-height: 40px;
+  padding-inline: 16px !important; font-weight: 700; transition: all 0.18s !important;
 }
-
-.runDetails .btn.primary,
-.runDetails .btn.btn-primary {
-  background: rgb(0, 172, 71) !important;
-  border-color: rgb(0, 172, 71) !important;
+.runDetails .btn.primary, .runDetails .btn.btn-primary {
+  background: #00ac47 !important; border-color: #00ac47 !important;
+  box-shadow: 0 2px 8px rgba(0,172,71,0.25) !important;
 }
-
-.summaryGridSoft {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.summaryCardSoft {
-  padding: 18px;
-}
-
-.summaryCardTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.summaryLabel {
-  font-size: 14px;
-  font-weight: 800;
-  color: rgb(82, 82, 82);
-}
-
-.summaryIcon {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: rgba(248, 250, 252, 0.95);
-  color: rgb(24, 24, 24);
-}
-
-.summaryCardSoft.is-agreed .summaryIcon { background: rgba(122, 92, 255, 0.10); color: rgb(122, 92, 255); }
-.summaryCardSoft.is-paid .summaryIcon { background: rgba(0, 172, 71, 0.10); color: rgb(0, 172, 71); }
-.summaryCardSoft.is-expenses .summaryIcon { background: rgba(255, 153, 0, 0.12); color: rgb(255, 153, 0); }
-.summaryCardSoft.is-balance .summaryIcon { background: rgba(239, 68, 68, 0.10); color: rgb(239, 68, 68); }
-.summaryCardSoft.is-balance.is-good .summaryIcon { background: rgba(0, 172, 71, 0.10); color: rgb(0, 172, 71); }
-
-.summaryValue { font-size: clamp(28px, 2vw, 34px); font-weight: 900; line-height: 1.1; margin-bottom: 8px; }
-.summaryNote { color: rgb(82, 82, 82); font-size: 12px; line-height: 1.5; }
-
-.runDetails .tabs {
-  display: inline-flex; flex-wrap: wrap; gap: 8px; padding: 6px; border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.08); background: rgba(255, 255, 255, 0.8); margin-bottom: 12px !important;
-}
-
-.runDetails .tab {
-  border-radius: 999px !important; min-height: 40px; padding-inline: 16px !important;
-  font-weight: 800; color: rgb(82, 82, 82);
-}
-
-.runDetails .tab.active {
-  background: rgba(0, 172, 71, 0.12) !important; border-color: rgba(0, 172, 71, 0.18) !important;
-  color: rgb(0, 172, 71) !important;
-}
-
-.runDetails .pToolbar { gap: 20px !important; }
-.runDetails .pTitle h2, .runDetails .h1 { font-size: 28px; line-height: 1.2; }
+.runDetails .btn.primary:hover { background: #008f3d !important; }
 
 .runDetails .input, .runDetails select.input {
-  min-height: 46px; border-radius: 14px !important;
-  border: 1px solid rgba(15, 23, 42, 0.10) !important; background: #fff !important;
+  min-height: 42px; border-radius: 12px !important;
+  border: 1px solid rgba(15,23,42,0.1) !important; background: #fff !important;
 }
 
 .runDetails .pGrid {
   display: grid !important; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 16px !important; align-items: stretch !important;
 }
-
 .runDetails .pCard {
-  width: 100% !important; border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  width: 100% !important; border: 1px solid rgba(15,23,42,0.08) !important;
   border-radius: 22px !important; padding: 18px !important; background: #fff !important;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 2px 8px rgba(15,23,42,0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
-
 .runDetails .pCard:hover {
-  transform: translateY(-2px); box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08); border-color: rgba(0, 172, 71, 0.18) !important;
+  transform: translateY(-2px); box-shadow: 0 14px 30px rgba(15,23,42,0.08); border-color: rgba(0,172,71,0.18) !important;
 }
-
 .runDetails .pHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-.runDetails .pName { font-size: 21px; font-weight: 900; line-height: 1.2; margin-bottom: 6px; }
+.runDetails .pName { font-size: 20px; font-weight: 900; line-height: 1.2; margin-bottom: 6px; }
 .runDetails .pMeta { display: flex; flex-wrap: wrap; gap: 8px; }
 .runDetails .metaItem {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 6px 10px;
-  border-radius: 999px; background: rgba(248, 250, 252, 1); border: 1px solid rgba(15, 23, 42, 0.06);
-  color: rgb(82, 82, 82); font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 4px 10px;
+  border-radius: 999px; background: #f8fafc; border: 1px solid #e2e8f0;
+  color: #64748b; font-size: 12px; font-weight: 700;
 }
-
-.runDetails .pQuickStats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+.runDetails .pQuickStats { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin-bottom: 16px; }
 .runDetails .pStatBlock {
-  padding: 14px 10px; border-radius: 16px; background: rgba(248, 250, 252, 0.8);
-  border: 1px solid rgba(15, 23, 42, 0.04); display: flex; flex-direction: column; align-items: center;
-  justify-content: center; text-align: center; gap: 8px; transition: all 0.2s ease;
+  padding: 12px 10px; border-radius: 14px; background: #f8fafc;
+  border: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; gap: 6px;
 }
-.runDetails .pStatBlock.stat-green { background: rgba(0, 172, 71, 0.08); border-color: rgba(0, 172, 71, 0.15); }
-.runDetails .pStatBlock.stat-green .pStatValue { color: rgb(0, 172, 71); }
-.runDetails .pStatBlock.stat-yellow { background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.15); }
-.runDetails .pStatBlock.stat-yellow .pStatValue { color: rgb(217, 119, 6); }
-.runDetails .pStatBlock.stat-red { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.15); }
-.runDetails .pStatBlock.stat-red .pStatValue { color: rgb(220, 38, 38) !important; }
-.runDetails .pStatBlock.stat-credit { background: rgba(99, 102, 241, 0.08); border-color: rgba(99, 102, 241, 0.20); }
-.runDetails .pStatBlock.stat-credit .pStatValue { color: rgb(99, 102, 241); }
-.runDetails .pStatBlock.stat-credit .pStatLabel { color: rgb(99, 102, 241); }
+.runDetails .pStatBlock.stat-green { background: rgba(0,172,71,0.07); border-color: rgba(0,172,71,0.18); }
+.runDetails .pStatBlock.stat-green .pStatValue { color: #00ac47; }
+.runDetails .pStatBlock.stat-yellow { background: rgba(245,158,11,0.07); border-color: rgba(245,158,11,0.18); }
+.runDetails .pStatBlock.stat-yellow .pStatValue { color: #d97706; }
+.runDetails .pStatBlock.stat-red { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.18); }
+.runDetails .pStatBlock.stat-red .pStatValue { color: #dc2626 !important; }
+.runDetails .pStatBlock.stat-credit { background: rgba(99,102,241,0.07); border-color: rgba(99,102,241,0.2); }
+.runDetails .pStatBlock.stat-credit .pStatValue, .runDetails .pStatBlock.stat-credit .pStatLabel { color: #6366f1; }
+.runDetails .pStatLabel { display: flex; align-items: center; justify-content: center; gap: 5px; color: #94a3b8; font-size: 12px; font-weight: 700; margin: 0; white-space: nowrap; }
+.runDetails .pStatValue { font-size: 17px; font-weight: 900; line-height: 1; color: #0f172a; }
 
-.runDetails .pStatLabel { display: flex; align-items: center; justify-content: center; gap: 6px; color: rgb(100, 116, 139); font-size: 13px; font-weight: 700; margin: 0; white-space: nowrap; }
-.runDetails .pStatValue { font-size: 18px; font-weight: 900; line-height: 1; color: rgb(15, 23, 42); }
-
-.runDetails .pProgressWrap { padding: 12px 0 0; margin-top: 2px; }
-.runDetails .pProgressHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: rgb(82, 82, 82); margin-bottom: 8px; }
-.runDetails .pBar { height: 8px !important; border-radius: 999px !important; background: rgba(15, 23, 42, 0.08) !important; overflow: hidden; }
-.runDetails .pBar span { display: block; height: 100%; border-radius: inherit; background: rgb(0, 172, 71); }
-.runDetails .pBarPartial span { background: rgb(245, 158, 11); }
-.runDetails .pBarUnpaid span { background: rgb(239, 68, 68); }
-.runDetails .pBarFree span { background: rgb(148, 163, 184); }
+.runDetails .pProgressWrap { padding: 10px 0 0; }
+.runDetails .pProgressHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+.runDetails .pBar { height: 7px !important; border-radius: 999px !important; background: #f1f5f9 !important; overflow: hidden; }
+.runDetails .pBar span { display: block; height: 100%; border-radius: inherit; background: #00ac47; }
+.runDetails .pBarPartial span { background: #f59e0b; }
+.runDetails .pBarUnpaid span { background: #ef4444; }
+.runDetails .pBarFree span { background: #cbd5e1; }
 
 .runDetails .sessionRow {
-  border-radius: 18px !important; background: rgba(255, 255, 255, 0.94); transition: all 0.2s ease;
-  border-left: 1px solid transparent; border-top: 1px solid transparent; border-bottom: 1px solid transparent;
+  border-radius: 16px !important; background: #fff; transition: all 0.2s ease;
 }
-.runDetails .sessionRow:hover { background: #fff !important; box-shadow: 0 6px 16px rgba(0,0,0,0.04); }
-.runDetails .sectionHeader { font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 10px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.runDetails .sessionRow:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.07); transform: translateY(-1px); }
+.runDetails .sectionHeader { font-size: 17px; font-weight: 900; color: #0f172a; margin-top: 10px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
 
-/* =========================================
-   📱 تجاوب الموبايل الخرافي (Mobile Pro Fixes)
-========================================= */
 .desktop-only { display: block; }
 .mobile-only { display: none; }
 .session-actions-desktop { display: flex; gap: 8px; justify-content: flex-end; }
-
-/* --- Mobile Data Cards (Payments/Expenses) --- */
-.mobile-card { 
-  background: #fff; 
-  border-radius: 16px; 
-  padding: 16px; 
-  border: 1px solid rgba(15,23,42,0.06); 
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03); 
-  display: flex; 
-  flex-direction: column; 
-  gap: 12px; 
-  position: relative; 
-  margin-bottom: 12px;
+.mobile-card {
+  background: #fff; border-radius: 16px; padding: 16px;
+  border: 1px solid rgba(15,23,42,0.06); box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;
 }
 
 @media (max-width: 980px) {
   .desktop-only { display: none !important; }
-  .mobile-only { display: flex !important; flex-direction: column; gap: 12px; }
-
-  /* ── صفحة الـ Run بالكامل ── */
+  .mobile-only  { display: flex !important; flex-direction: column; gap: 12px; }
   .runDetails { padding-block: 12px 32px; }
-  .container { padding-inline: 12px !important; }
-
-  /* --- Hero Header --- */
-  .runHeroTitle { 
-    font-size: 20px !important; 
-    white-space: normal !important; 
-    text-align: center !important; 
-    width: 100% !important; 
-    padding: 12px 16px !important;
-    border-radius: 16px !important;
-  }
-
-  /* الـ wrapper الخارجي للهيدر: عمودي على الموبايل */
-  .runDetails > .container > div:first-child {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-  }
-
-  /* صف العنوان + الـ chips: عمودي */
-  .runDetails > .container > div:first-child > div:first-child {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 10px !important;
-    width: 100% !important;
-  }
-
-  /* الـ chips تتمدد بالكامل وتلتف */
-  .runDetails > .container > div:first-child > div:first-child > div {
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-  }
-
-  .heroMiniChip {
-    flex: 1 1 auto !important;
-    justify-content: center !important;
-    min-width: 100px !important;
-    font-size: 13px !important;
-    padding: 6px 12px !important;
-    min-height: 36px !important;
-  }
-
-  .run-header-actions {
-    width: 100% !important;
-    display: flex !important;
-    justify-content: stretch !important;
-    gap: 10px !important;
-    margin-top: 0 !important;
-  }
-  .run-header-actions button {
-    flex: 1 !important;
-    justify-content: center !important;
-    font-size: 14px !important;
-  }
-
-  /* --- KPIs Grid --- */
-  .summaryGridSoft { 
-    grid-template-columns: 1fr 1fr !important; 
-    gap: 10px !important;
-  }
-  .summaryCardSoft {
-    padding: 14px 12px !important;
-  }
-  .summaryValue {
-    font-size: 20px !important;
-  }
+  .container   { padding-inline: 12px !important; }
+  .rd-hero { padding: 14px !important; flex-direction: column !important; gap: 10px !important; }
+  .rd-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 9px !important; }
+  .rd-kpi-value { font-size: 20px !important; }
+  .rd-tabs-bar { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
+  .rd-tabs { width: 100% !important; overflow-x: auto !important; flex-wrap: nowrap !important; }
+  .rd-tabs::-webkit-scrollbar { display: none; }
+  .rd-tab { font-size: 12px !important; padding-inline: 11px !important; min-height: 36px !important; }
+  .rd-toolbar { flex-direction: column !important; align-items: stretch !important; }
+  .pToolbar { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+  .pControls { min-width: 100% !important; flex: none !important; }
+  .pControls-filters { flex-wrap: wrap !important; gap: 8px !important; }
+  .pControls-filters > * { flex: 1 1 calc(50% - 4px) !important; min-width: 0 !important; }
+  .pControls-filters > div:first-child { flex: 1 1 100% !important; }
+  .tab-add-btn { width: 100% !important; justify-content: center !important; }
+  .runDetails .pGrid { grid-template-columns: 1fr !important; }
+  .runDetails .pCard { padding: 14px !important; border-radius: 18px !important; }
+  .runDetails .pName { font-size: 17px !important; }
+  .runDetails .pQuickStats { gap: 8px !important; margin-bottom: 12px !important; }
+  .runDetails .pStatValue { font-size: 15px !important; }
+  .runDetails .pStatLabel { font-size: 11px !important; }
+  .sessionRow { grid-template-columns: 1fr !important; padding: 12px !important; gap: 10px !important; }
+  .session-actions-desktop { flex-wrap: wrap !important; width: 100% !important; border-top: 1px solid rgba(0,0,0,0.05) !important; padding-top: 10px !important; }
+  .session-actions-desktop .btn { flex: 1 1 auto !important; justify-content: center !important; min-height: 38px !important; }
+  .summaryGridSoft { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .summaryCardSoft { padding: 14px 12px !important; }
+  .summaryValue { font-size: 20px !important; }
   .summaryLabel { font-size: 13px !important; }
   .summaryNote { font-size: 11px !important; }
   .summaryIcon { width: 36px !important; height: 36px !important; }
-
-  /* --- Tabs --- */
-  .runDetails .tabs { 
-    width: 100% !important; 
-    overflow-x: auto !important; 
-    white-space: nowrap !important; 
-    flex-wrap: nowrap !important; 
-    justify-content: flex-start !important; 
-    padding-bottom: 4px !important;
-    border-radius: 16px !important;
-    gap: 4px !important;
-  }
-  .runDetails .tabs::-webkit-scrollbar { display: none; }
-  .runDetails .tab {
-    font-size: 13px !important;
-    padding-inline: 12px !important;
-    min-height: 36px !important;
-  }
-
-  /* --- Participants Tab Toolbar --- */
-  .pToolbar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-  }
-  .pControls {
-    min-width: 100% !important;
-    flex: none !important;
-  }
-  .pControls-filters {
-    flex-wrap: wrap !important;
-    overflow-x: hidden !important;
-    gap: 8px !important;
-  }
-  .pControls-filters > * {
-    flex: 1 1 calc(50% - 4px) !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-  }
-  /* حقل البحث يأخذ عرض كامل */
-  .pControls-filters > div:first-child {
-    flex: 1 1 100% !important;
-  }
-  .pControls select.input { 
-    width: 100% !important; 
-    flex: 1 1 calc(50% - 4px) !important; 
-  }
-  .tab-add-btn { 
-    width: 100% !important; 
-    justify-content: center !important; 
-    margin-top: 4px !important; 
-  }
-
-  /* --- Participant Cards Grid --- */
-  .runDetails .pGrid { grid-template-columns: 1fr !important; }
-
-  /* بطاقة الطفل: تحسينات داخلية */
-  .runDetails .pCard { 
-    padding: 14px !important; 
-    border-radius: 18px !important;
-  }
-  .runDetails .pName { font-size: 18px !important; }
-  .runDetails .pQuickStats { 
-    grid-template-columns: repeat(2, 1fr) !important; 
-    gap: 8px !important;
-    margin-bottom: 14px !important;
-  }
-  .runDetails .pStatValue { font-size: 16px !important; }
-  .runDetails .pStatLabel { font-size: 12px !important; }
-  .runDetails .metaItem { font-size: 11px !important; }
-
-  /* --- Session Cards --- */
-  .sessionRow { 
-    grid-template-columns: 1fr !important; 
-    padding: 14px !important; 
-    align-items: flex-start !important; 
-    gap: 10px !important;
-  }
-  .sessionList__time {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    width: 100% !important;
-    border-bottom: 1px solid rgba(0,0,0,0.06) !important;
-    padding-bottom: 8px !important;
-  }
-
-  /* أزرار الجلسات في الموبايل */
-  .session-actions-desktop { 
-    display: flex !important; 
-    flex-wrap: wrap !important;
-    width: 100% !important;
-    justify-content: flex-start !important;
-    margin-top: 4px !important;
-    gap: 8px !important;
-    border-top: 1px solid rgba(0,0,0,0.05) !important;
-    padding-top: 10px !important;
-  }
-  .session-actions-desktop .btn {
-    flex: 1 1 auto !important;
-    min-width: calc(33.33% - 8px) !important;
-    justify-content: center !important;
-    font-size: 13px !important;
-    min-height: 40px !important;
-  }
-
-  /* --- Expenses Tab --- */
-  /* بطاقات الإحصاء العلوية في تبويب المصاريف */
-  .tab-expenses-summary {
-    grid-template-columns: 1fr 1fr 1fr !important;
-    gap: 8px !important;
-  }
-  /* على الشاشات الصغيرة جداً: عمود واحد */
-  @media (max-width: 480px) {
-    .tab-expenses-summary {
-      grid-template-columns: 1fr !important;
-    }
-  }
-  /* نضمن أن الـ gridColumn span لا يتعارض مع الموبايل */
-  .tab-expenses-summary > .card {
-    grid-column: span 1 !important;
-  }
-
-  /* --- Payments & Expenses Row spacing --- */
-  .runDetails .card { 
-    padding: 14px !important; 
-    border-radius: 18px !important;
-  }
-
-  /* --- Participant Manage Modal Actions Grid --- */
-  .actionSquare { 
-    min-height: 70px !important; 
-    padding: 10px 6px !important;
-  }
+  .tab-expenses-summary { grid-template-columns: 1fr 1fr 1fr !important; gap: 8px !important; }
+  .tab-expenses-summary > .card { grid-column: span 1 !important; }
+  .actionSquare { min-height: 70px !important; padding: 10px 6px !important; }
   .actionSquare span { font-size: 11px !important; }
-  .modal-stats {
-    grid-template-columns: 1fr 1fr !important;
-  }
-
-  /* --- General Modals --- */
-  div.modalOverlay {
-    align-items: center !important; 
-    padding: 12px !important;
-    z-index: 99999 !important;
-  }
+  .modal-stats { grid-template-columns: 1fr 1fr !important; }
+  div.modalOverlay { align-items: center !important; padding: 12px !important; z-index: 99999 !important; }
   div.modalOverlay > div.modalCard {
-    border-radius: 22px !important; 
-    margin: auto !important; 
-    width: 96% !important; 
-    max-height: 88vh !important;
-    margin-bottom: auto !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
+    border-radius: 22px !important; margin: auto !important; width: 96% !important;
+    max-height: 88vh !important; overflow: hidden !important; display: flex !important; flex-direction: column !important;
   }
-
-  /* المحتوى الداخلي للمودال يأخذ باقي المساحة ويتمدد */
   div.modalOverlay > div.modalCard > *:last-child {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
+    flex: 1 1 auto !important; min-height: 0 !important; overflow-y: auto !important;
+    display: flex !important; flex-direction: column !important;
   }
-
-  /* الـ wrapper الداخلي (modal-wide-*) يتمدد بالكامل */
-  .modal-wide-1000,
-  .modal-wide-900 {
-    display: flex !important;
-    flex-direction: column !important;
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-  }
-
-  /* الجدول داخل البالك مودال: ارتفاع محدود ومرن */
-  .modal-wide-1000 .card[style*="overflow"],
-  .modal-wide-900 .card[style*="overflow"] {
-    max-height: clamp(160px, 35vh, 45vh) !important;
-  }
-
-  /* أزرار الأسفل: تثبت في الأسفل دائماً */
-  .modal-wide-1000 > .row:last-child,
-  .modal-wide-900 > .row:last-child {
-    flex-shrink: 0 !important;
-    margin-top: 12px !important;
-    padding-top: 10px !important;
-    border-top: 1px solid rgba(15,23,42,0.06) !important;
-  }
-
-  /* داخل المودالات: الـ grid يصبح عمود واحد */
-  div.modalCard .grid > div[style*="gridColumn: span 6"] {
-    grid-column: span 12 !important;
-  }
-
-  /* جدول التاريخ داخل المودال */
-  .modal-compact-table th { 
-    font-size: 13px !important; 
-    padding: 12px 8px !important; 
-  }
-  .modal-compact-table td { 
-    font-size: 13px !important; 
-    padding: 12px 8px !important; 
-  }
+  .modal-wide-1000, .modal-wide-900 { display: flex !important; flex-direction: column !important; flex: 1 1 auto !important; min-height: 0 !important; }
+  .modal-wide-1000 .card[style*="overflow"], .modal-wide-900 .card[style*="overflow"] { max-height: clamp(160px,35vh,45vh) !important; }
+  .modal-wide-1000 > .row:last-child, .modal-wide-900 > .row:last-child { flex-shrink: 0 !important; margin-top: 12px !important; padding-top: 10px !important; border-top: 1px solid rgba(15,23,42,0.06) !important; }
+  div.modalCard .grid > div[style*="gridColumn: span 6"] { grid-column: span 12 !important; }
+  .modal-compact-table th { font-size: 13px !important; padding: 12px 8px !important; }
+  .modal-compact-table td { font-size: 13px !important; padding: 12px 8px !important; }
 }
 `;
 
@@ -2478,189 +2397,118 @@ export default function RunDetails() {
 
   // --- MAIN RETURN ---
   return (
-    <div
-      className="page page--runs page--run-details"
-      dir="rtl"
-      lang="ar"
-      style={{
-        background:
-          "linear-gradient(180deg, rgba(0,172,71,0.06) 0%, rgba(255,255,255,0) 320px)",
-      }}
-    >
+    <div className="page page--runs page--run-details" dir="rtl" lang="ar">
       <style>{RUN_DETAILS_SOFT_UI_STYLES}</style>
-      <div className="container runDetails">
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "16px",
-            marginBottom: "24px",
-            width: "100%",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div
-              className="runHeroTitle"
-              style={{
-                margin: 0,
-                padding: "10px 24px",
-                borderRadius: "999px",
-                background: "#fff",
-                fontSize: "24px",
-                fontWeight: 900,
-              }}
-            >
-              {runHeaderTitle}
-            </div>
-
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              <span
-                className="heroMiniChip"
-                style={{
-                  borderRadius: "999px",
-                  padding: "8px 16px",
-                  fontWeight: 800,
-                  fontSize: 14,
-                  border: "none",
-                  background: "#fff",
-                }}
-              >
-                <Clock
-                  size={16}
-                  className="ico"
-                  style={{ marginLeft: 6, color: "#000" }}
-                />
-                <span className="ltrIso">{scheduleInfo.timeRange}</span>{" "}
-                {scheduleInfo.weekday}
-              </span>
-              <span
-                className="heroMiniChip"
-                style={{
-                  borderRadius: "999px",
-                  padding: "8px 16px",
-                  fontWeight: 800,
-                  fontSize: 14,
-                  border: "none",
-                  background: "#fff",
-                }}
-              >
-                <Users
-                  size={16}
-                  className="ico"
-                  style={{ marginLeft: 6, color: "#000" }}
-                />
-                {fmtNum(totals.activeCount)}
-              </span>
-              <span
-                className="heroMiniChip"
-                style={{
-                  borderRadius: "999px",
-                  padding: "8px 16px",
-                  fontWeight: 800,
-                  fontSize: 14,
-                  border: "none",
-                  background: "#fff",
-                }}
-              >
-                <CalendarDays
-                  size={16}
-                  className="ico"
-                  style={{ marginLeft: 6, color: "#000" }}
-                />
-                {fmtNum(summary.sessions_count)}
-              </span>
-            </div>
-          </div>
-
-          <div className="run-header-actions">
+      <div
+        className="container runDetails"
+        style={{ paddingBlock: "22px 48px" }}
+      >
+        {/* ═══ HERO ═══ */}
+        <div className="rd-hero">
+          <div className="rd-hero-left">
             <button
               type="button"
-              className="btn"
-              style={{
-                borderRadius: "999px",
-                background: "#fff",
-                border: "none",
-                fontWeight: "bold",
-                padding: "8px 24px",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-              }}
+              className="rd-back-btn"
               onClick={() => navigate(`/courses/${summary.template_id}`)}
             >
-              {summary.title || "رجوع"}
+              ← {summary.title || "رجوع"}
             </button>
+            <div>
+              <div className="rd-title">{runHeaderTitle}</div>
+              <div className="rd-chips" style={{ marginTop: 8 }}>
+                <span className="rd-chip">
+                  <Clock size={13} />
+                  <span dir="ltr">{scheduleInfo.timeRange}</span>
+                  &nbsp;{scheduleInfo.weekday}
+                </span>
+                <span className="rd-chip">
+                  <Users size={13} /> {fmtNum(totals.activeCount)} طفل
+                </span>
+                <span className="rd-chip">
+                  <CalendarDays size={13} /> {fmtNum(summary.sessions_count)}{" "}
+                  جلسة
+                </span>
+                {isWorkshop && (
+                  <span className="rd-chip neutral">
+                    <Tag size={13} /> ورشة
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
         {error ? <ErrorBanner error={error} /> : null}
 
-        <div className="summaryGridSoft">
-          <div className="card summaryCardSoft is-agreed">
-            <div className="summaryCardTop">
-              <span className="summaryLabel">سعر الدورات</span>
-              <span className="summaryIcon" aria-hidden="true">
-                <Tag size={18} />
-              </span>
+        {/* ═══ KPI ROW ═══ */}
+        <div className="rd-kpi-grid">
+          <div className="rd-kpi kpi-purple">
+            <div className="rd-kpi-top">
+              <div className="rd-kpi-icon">
+                <Tag size={17} />
+              </div>
+              <span className="rd-kpi-badge">إجمالي</span>
             </div>
-            <div className="summaryValue">
+            <div className="rd-kpi-label">سعر الدورات</div>
+            <div className="rd-kpi-value">
               <span className="ltrIso">{fmtILS(totals.agreed)}</span>
             </div>
-            <div className="summaryNote">إجمالي مبلغ سعر الدورات.</div>
+            <div className="rd-kpi-sub">إجمالي مبلغ سعر الدورات</div>
           </div>
-          <div className="card summaryCardSoft is-paid">
-            <div className="summaryCardTop">
-              <span className="summaryLabel">المدفوع</span>
-              <span className="summaryIcon" aria-hidden="true">
-                <CreditCard size={18} />
+          <div className="rd-kpi kpi-green">
+            <div className="rd-kpi-top">
+              <div className="rd-kpi-icon">
+                <CreditCard size={17} />
+              </div>
+              <span className="rd-kpi-badge">
+                {fmtNum((totals.paidRatio * 100).toFixed(0))}% مُنجز
               </span>
             </div>
-            <div className="summaryValue">
+            <div className="rd-kpi-label">المدفوع</div>
+            <div className="rd-kpi-value">
               <span className="ltrIso">{fmtILS(totals.paid)}</span>
             </div>
-            <div className="summaryNote">
-              نسبة الدفع الحالية{" "}
-              <b className="ltrIso">
-                {fmtNum((totals.paidRatio * 100).toFixed(0))}%
-              </b>
+            <div className="rd-kpi-sub">
+              نسبة الدفع الحالية {fmtNum((totals.paidRatio * 100).toFixed(0))}%
             </div>
           </div>
-          <div className="card summaryCardSoft is-expenses">
-            <div className="summaryCardTop">
-              <span className="summaryLabel">المصاريف</span>
-              <span className="summaryIcon" aria-hidden="true">
-                <Receipt size={18} />
+          <div className="rd-kpi kpi-orange">
+            <div className="rd-kpi-top">
+              <div className="rd-kpi-icon">
+                <Receipt size={17} />
+              </div>
+              <span className="rd-kpi-badge">
+                {expFeatureAvailable
+                  ? `${fmtNum(expenses.length)} عملية`
+                  : "غير مفعّل"}
               </span>
             </div>
-            <div className="summaryValue">
+            <div className="rd-kpi-label">المصاريف</div>
+            <div className="rd-kpi-value">
               <span className="ltrIso">{fmtILS(runExpensesTotal)}</span>
             </div>
-            <div className="summaryNote">
+            <div className="rd-kpi-sub">
               {expFeatureAvailable
                 ? `عدد العمليات ${fmtNum(expenses.length)}`
                 : "ميزة المصاريف غير مفعّلة"}
             </div>
           </div>
           <div
-            className={`card summaryCardSoft is-balance ${totals.balance <= 0 ? "is-good" : ""}`}
+            className={`rd-kpi ${totals.balance <= 0 ? "kpi-teal" : "kpi-red"}`}
           >
-            <div className="summaryCardTop">
-              <span className="summaryLabel">المتبقي للدفع</span>
-              <span className="summaryIcon" aria-hidden="true">
-                <Hourglass size={18} />
+            <div className="rd-kpi-top">
+              <div className="rd-kpi-icon">
+                <Hourglass size={17} />
+              </div>
+              <span className="rd-kpi-badge">
+                {totals.balance <= 0 ? "مسدّد" : "متبقي"}
               </span>
             </div>
-            <div className="summaryValue">
+            <div className="rd-kpi-label">المتبقي للدفع</div>
+            <div className="rd-kpi-value">
               <span className="ltrIso">{fmtILS(totals.balance)}</span>
             </div>
-            <div className="summaryNote">
+            <div className="rd-kpi-sub">
               الصافي بعد المصاريف{" "}
               <b className="ltrIso">
                 {fmtILS(totals.paid - runExpensesTotal, 0)}
@@ -2669,350 +2517,401 @@ export default function RunDetails() {
           </div>
         </div>
 
-        <div className="tabs" style={{ marginBottom: 10 }}>
-          <button
-            type="button"
-            className={`tab ${tab === "participants" ? "active" : ""}`}
-            onClick={() => setTab("participants")}
-          >
-            الأطفال
-          </button>
-          <button
-            type="button"
-            className={`tab ${tab === "sessions" ? "active" : ""}`}
-            onClick={() => setTab("sessions")}
-          >
-            الجلسات
-          </button>
-          <button
-            type="button"
-            className={`tab ${tab === "payments" ? "active" : ""}`}
-            onClick={() => setTab("payments")}
-          >
-            المدفوعات
-          </button>
-          <button
-            type="button"
-            className={`tab ${tab === "expenses" ? "active" : ""}`}
-            onClick={() => setTab("expenses")}
-          >
-            المصاريف
-          </button>
-        </div>
-
-        {tab === "participants" && (
-          <div className="card pCard-wrapper">
-            <div
-              className="pToolbar"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-end",
-                gap: 16,
-                flexWrap: "wrap",
-              }}
+        {/* ═══ TABS BAR ═══ */}
+        <div className="rd-tabs-bar">
+          <div className="rd-tabs">
+            <button
+              type="button"
+              className={`rd-tab ${tab === "participants" ? "active" : ""}`}
+              onClick={() => setTab("participants")}
             >
-              <div className="pTitle">
-                <h2>الأطفال</h2>
-                <div className="muted small">
+              الأطفال{" "}
+              <span className="rd-tab-count">{participants.length}</span>
+            </button>
+            <button
+              type="button"
+              className={`rd-tab ${tab === "sessions" ? "active" : ""}`}
+              onClick={() => setTab("sessions")}
+            >
+              الجلسات <span className="rd-tab-count">{sessions.length}</span>
+            </button>
+            <button
+              type="button"
+              className={`rd-tab ${tab === "payments" ? "active" : ""}`}
+              onClick={() => setTab("payments")}
+            >
+              المدفوعات <span className="rd-tab-count">{payments.length}</span>
+            </button>
+            <button
+              type="button"
+              className={`rd-tab ${tab === "expenses" ? "active" : ""}`}
+              onClick={() => setTab("expenses")}
+            >
+              المصاريف <span className="rd-tab-count">{expenses.length}</span>
+            </button>
+          </div>
+        </div>
+        {tab === "participants" && (
+          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+            {/* Panel Header */}
+            <div className="rd-panel-head">
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span className="rd-panel-title">الأطفال</span>
+                <span className="rd-panel-count">
                   {participantsFiltered.length} من {participants.length}
-                </div>
+                </span>
               </div>
-
-              <div
-                className="pControls"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                  flex: "1 1 640px",
-                  minWidth: 320,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "nowrap",
-                    alignItems: "center",
-                    width: "100%",
-                    overflowX: "auto",
-                  }}
-                  className="pControls-filters"
+              <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="btn tab-add-btn"
+                  onClick={openBulkModal}
                 >
-                  <div
-                    style={{
-                      position: "relative",
-                      flex: "1 1 0px",
-                      minWidth: 0,
-                    }}
-                  >
-                    <Search
-                      size={16}
-                      style={{
-                        position: "absolute",
-                        left: 12,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        pointerEvents: "none",
-                        opacity: 0.7,
-                      }}
-                    />
-                    <input
-                      className="input"
-                      value={childSearch}
-                      onChange={(e) => setChildSearch(e.target.value)}
-                      placeholder="ابحث عن طفل..."
-                      style={{ width: "100%", paddingLeft: 38 }}
-                    />
-                  </div>
-                  <div style={{ minWidth: 130 }}>
-                    <ModernSelect
-                      value={childStatusFilter}
-                      onChange={setChildStatusFilter}
-                      options={[
-                        { value: "all", label: "الكل" },
-                        { value: "active", label: "نشط" },
-                        { value: "inactive", label: "غير نشط" },
-                      ]}
-                    />
-                  </div>
-                  <div style={{ minWidth: 200 }}>
-                    <ModernSelect
-                      value={childSort}
-                      onChange={setChildSort}
-                      options={[
-                        {
-                          value: "balance_desc",
-                          label: "المتبقي للدفع: من الأعلى للأقل",
-                        },
-                        {
-                          value: "balance_asc",
-                          label: "المتبقي للدفع: من الأقل للأعلى",
-                        },
-                        { value: "name_asc", label: "الاسم: أ-ي" },
-                        { value: "name_desc", label: "الاسم: ي-أ" },
-                      ]}
-                    />
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 10,
-                    flexWrap: "wrap",
-                    justifyContent: "flex-end",
-                  }}
+                  + إضافة طفل للدورة
+                </button>
+                <button
+                  type="button"
+                  className="btn primary tab-add-btn"
+                  onClick={openCreateEnroll}
                 >
-                  <button
-                    type="button"
-                    className="btn tab-add-btn"
-                    onClick={openBulkModal}
-                  >
-                    + إضافة طفل للدورة
-                  </button>
-                  <button
-                    type="button"
-                    className="btn primary tab-add-btn"
-                    onClick={openCreateEnroll}
-                  >
-                    <Plus size={16} /> إضافة وتسجيل
-                  </button>
-                </div>
+                  <Plus size={15} /> إضافة وتسجيل
+                </button>
               </div>
             </div>
 
-            <hr className="sep" />
-
-            {participantsFiltered.length === 0 ? (
-              <div className="muted">لا يوجد عناصر.</div>
-            ) : (
+            {/* Filters toolbar */}
+            <div
+              style={{
+                padding: "14px 22px",
+                borderBottom: "1px solid rgba(15,23,42,0.07)",
+                display: "flex",
+                gap: 10,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+              className="pControls pControls-filters"
+            >
               <div
-                className="pGrid"
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 16,
-                  alignItems: "stretch",
-                  justifyContent: "flex-start",
-                }}
+                style={{ position: "relative", flex: "1 1 200px", minWidth: 0 }}
               >
-                {participantsFiltered.map((p) => {
-                  const agreed = Number(p.agreed_price || 0);
-                  const paid = Number(p.paid_amount || 0);
-                  const balance = Number(p.balance || 0);
-                  const attended = Number(p.sessions_attended_in_run || 0);
-                  const pkgRemain = Number(p.package_sessions_remaining || 0);
-                  const pct =
-                    agreed > 0 ? clamp((paid / agreed) * 100, 0, 100) : 0;
-                  const status = p.payment_status || "free";
-                  const barClass =
-                    balance <= 0 && pkgRemain <= 0
-                      ? "pBar pBarFree"
-                      : status === "paid"
-                        ? "pBar pBarPaid"
-                        : status === "partial"
-                          ? "pBar pBarPartial"
-                          : status === "unpaid"
-                            ? "pBar pBarUnpaid"
-                            : "pBar pBarFree";
-                  let balClass = "stat-gray";
-                  if (balance <= 0 && pkgRemain <= 0) balClass = "stat-gray";
-                  else if (balance < 0) balClass = "stat-credit";
-                  else if (agreed === 0 || balance === 0)
-                    balClass = "stat-green";
-                  else if (paid > 0) balClass = "stat-yellow";
-                  else balClass = "stat-red";
+                <Search
+                  size={15}
+                  style={{
+                    position: "absolute",
+                    left: 12,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    pointerEvents: "none",
+                    color: "#94a3b8",
+                  }}
+                />
+                <input
+                  className="input"
+                  value={childSearch}
+                  onChange={(e) => setChildSearch(e.target.value)}
+                  placeholder="ابحث عن طفل..."
+                  style={{ width: "100%", paddingLeft: 38 }}
+                />
+              </div>
+              <div style={{ minWidth: 130 }}>
+                <ModernSelect
+                  value={childStatusFilter}
+                  onChange={setChildStatusFilter}
+                  options={[
+                    { value: "all", label: "الكل" },
+                    { value: "active", label: "نشط" },
+                    { value: "inactive", label: "غير نشط" },
+                  ]}
+                />
+              </div>
+              <div style={{ minWidth: 210 }}>
+                <ModernSelect
+                  value={childSort}
+                  onChange={setChildSort}
+                  options={[
+                    { value: "balance_desc", label: "المتبقي: من الأعلى" },
+                    { value: "balance_asc", label: "المتبقي: من الأقل" },
+                    { value: "name_asc", label: "الاسم: أ–ي" },
+                    { value: "name_desc", label: "الاسم: ي–أ" },
+                  ]}
+                />
+              </div>
+            </div>
 
-                  const isInactive = p.enrollment_status === "paused";
-                  return (
-                    <div
-                      key={p.enrollment_id}
-                      className="pCard participantList__item"
-                      style={{
-                        width: 380,
-                        maxWidth: "100%",
-                        cursor: "pointer",
-                        ...(isInactive && {
-                          background: "#f8fafc",
-                          borderColor: "#e2e8f0",
-                        }),
-                      }}
-                      onClick={() => openإدارةFor(p)}
-                    >
-                      <div className="pHead" style={{ marginBottom: "20px" }}>
-                        <div style={{ minWidth: 0 }}>
-                          <div
-                            className="pName participantList__name"
-                            style={isInactive ? { color: "#94a3b8" } : {}}
-                          >
-                            {p.child_name}
-                          </div>
-                          <div className="pMeta">
-                            <span className="metaItem" title="الصف">
-                              <GraduationCap size={14} className="ico" />
-                              <span>{p.class ?? "-"}</span>
-                            </span>
-                            <span className="metaItem" title="العمر">
-                              <Cake size={14} className="ico" />
-                              <span className="ltrIso">
-                                {p.age == null ? "—" : fmtNum(p.age)}
-                              </span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+            {/* Participants grid */}
+            <div style={{ padding: "20px 22px 24px" }}>
+              {participantsFiltered.length === 0 ? (
+                <div
+                  className="muted"
+                  style={{ textAlign: "center", padding: "40px 0" }}
+                >
+                  لا يوجد عناصر مطابقة.
+                </div>
+              ) : (
+                <div
+                  className="pGrid"
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(340px, 1fr))",
+                    gap: 14,
+                  }}
+                >
+                  {participantsFiltered.map((p) => {
+                    const agreed = Number(p.agreed_price || 0);
+                    const paid = Number(p.paid_amount || 0);
+                    const balance = Number(p.balance || 0);
+                    const attended = Number(p.sessions_attended_in_run || 0);
+                    const pkgRemain = Number(p.package_sessions_remaining || 0);
+                    const pct =
+                      agreed > 0 ? clamp((paid / agreed) * 100, 0, 100) : 0;
+                    const status = p.payment_status || "free";
+                    const barClass =
+                      balance <= 0 && pkgRemain <= 0
+                        ? "pBar pBarFree"
+                        : status === "paid"
+                          ? "pBar"
+                          : status === "partial"
+                            ? "pBar pBarPartial"
+                            : status === "unpaid"
+                              ? "pBar pBarUnpaid"
+                              : "pBar pBarFree";
 
-                      <div className="pQuickStats">
-                        <div
-                          className={`pStatBlock ${balClass} participantList__balance`}
-                          style={
-                            balance <= 0 && pkgRemain <= 0
-                              ? { opacity: 0.4 }
-                              : {}
-                          }
-                        >
-                          <div className="pStatLabel">
-                            <Hourglass size={14} />
-                            <span className="participantList__balance-label">
-                              {balance < 0 ? "رصيد زائد" : "المتبقي للدفع"}
-                            </span>
-                          </div>
-                          <div
-                            className="pStatValue ltrIso participantList__balance-value"
-                            dir="ltr"
-                          >
-                            {balance < 0
-                              ? fmtILS(Math.abs(balance))
-                              : fmtILS(balance)}
-                          </div>
-                        </div>
-                        <div
-                          className="pStatBlock"
-                          style={isInactive ? { opacity: 0.4 } : {}}
-                        >
-                          <div className="pStatLabel">
-                            <CreditCard size={14} />
-                            <span>المدفوع</span>
-                          </div>
-                          <div className="pStatValue ltrIso" dir="ltr">
-                            {fmtILS(paid)}
-                          </div>
-                        </div>
-                        <div
-                          className={`pStatBlock ${pkgRemain < 0 ? "stat-red" : ""}`}
-                          style={
-                            isInactive && pkgRemain === 0
-                              ? { opacity: 0.4 }
-                              : {}
-                          }
-                        >
-                          <div className="pStatLabel">
-                            <Ticket size={14} />
-                            <span
-                              style={pkgRemain < 0 ? { color: "#dc2626" } : {}}
-                            >
-                              رصيد الجلسات
-                            </span>
-                          </div>
-                          <div
-                            className="pStatValue ltrIso"
-                            dir="ltr"
-                            style={pkgRemain < 0 ? { color: "#dc2626" } : {}}
-                          >
-                            {fmtNum(pkgRemain)}
-                          </div>
-                        </div>
-                        <div
-                          className="pStatBlock"
-                          style={isInactive ? { opacity: 0.4 } : {}}
-                        >
-                          <div className="pStatLabel">
-                            <CalendarDays size={14} />
-                            <span>حضر</span>
-                          </div>
-                          <div className="pStatValue ltrIso" dir="ltr">
-                            {fmtNum(attended)}
-                          </div>
-                        </div>
-                      </div>
+                    let balClass = "stat-gray";
+                    if (balance <= 0 && pkgRemain <= 0) balClass = "stat-gray";
+                    else if (balance < 0) balClass = "stat-credit";
+                    else if (agreed === 0 || balance === 0)
+                      balClass = "stat-green";
+                    else if (paid > 0) balClass = "stat-yellow";
+                    else balClass = "stat-red";
 
+                    const isInactive = p.enrollment_status === "paused";
+
+                    // Avatar initials & color
+                    const nameParts = (p.child_name || "").trim().split(/\s+/);
+                    const initials =
+                      nameParts.length >= 2
+                        ? nameParts[0][0] + nameParts[1][0]
+                        : (nameParts[0] || "?")[0];
+                    const avatarColors = [
+                      ["#fef3c7", "#b45309"],
+                      ["#dbeafe", "#1d4ed8"],
+                      ["#dcfce7", "#15803d"],
+                      ["#fce7f3", "#be185d"],
+                      ["#ede9fe", "#6d28d9"],
+                      ["#cffafe", "#0e7490"],
+                      ["#ffedd5", "#c2410c"],
+                      ["#fae8ff", "#86198f"],
+                      ["#d1fae5", "#065f46"],
+                    ];
+                    const ac =
+                      avatarColors[
+                        (p.child_name || "").charCodeAt(0) % avatarColors.length
+                      ];
+
+                    return (
                       <div
-                        className="pProgressWrap"
-                        style={isInactive ? { opacity: 0.4 } : {}}
+                        key={p.enrollment_id}
+                        className={`pCard participantList__item${isInactive ? " is-inactive" : ""}`}
+                        style={{
+                          width: "100%",
+                          maxWidth: "100%",
+                          cursor: "pointer",
+                          position: "relative",
+                          overflow: "hidden",
+                          borderTop: `3px solid ${
+                            balance <= 0 && pkgRemain <= 0
+                              ? "#cbd5e1"
+                              : status === "paid"
+                                ? "#00ac47"
+                                : status === "partial"
+                                  ? "#f59e0b"
+                                  : status === "unpaid"
+                                    ? "#ef4444"
+                                    : "#cbd5e1"
+                          }`,
+                          ...(isInactive && {
+                            background: "#f8fafc",
+                            borderColor: "#e2e8f0",
+                          }),
+                        }}
+                        onClick={() => openإدارةFor(p)}
                       >
-                        <div className="pProgressHead">
-                          <span className="muted">
-                            سعر الدورات:{" "}
-                            <b
-                              style={{ color: "#0f172a", fontSize: "15px" }}
-                              className="ltrIso"
-                            >
-                              {fmtILS(agreed)}
-                            </b>
-                          </span>
+                        {/* Head */}
+                        <div className="pHead" style={{ marginBottom: 16 }}>
                           <div
                             style={{
                               display: "flex",
-                              alignItems: "center",
-                              gap: "6px",
+                              alignItems: "flex-start",
+                              gap: 12,
+                              minWidth: 0,
                             }}
                           >
-                            <span className="muted">نسبة الدفع</span>
-                            <b className="ltrIso" style={{ fontSize: "15px" }}>
-                              {fmtNum(pct.toFixed(0))}%
-                            </b>
+                            <div
+                              style={{
+                                width: 42,
+                                height: 42,
+                                borderRadius: 12,
+                                flexShrink: 0,
+                                background: ac[0],
+                                color: ac[1],
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 14,
+                                fontWeight: 800,
+                                opacity: isInactive ? 0.5 : 1,
+                              }}
+                            >
+                              {initials}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div
+                                className="pName participantList__name"
+                                style={isInactive ? { color: "#94a3b8" } : {}}
+                              >
+                                {p.child_name}
+                              </div>
+                              <div className="pMeta">
+                                {p.class && (
+                                  <span className="metaItem" title="الصف">
+                                    <GraduationCap size={12} />
+                                    <span>{p.class}</span>
+                                  </span>
+                                )}
+                                <span className="metaItem" title="العمر">
+                                  <Cake size={12} />
+                                  <span className="ltrIso">
+                                    {p.age == null ? "—" : fmtNum(p.age)}
+                                  </span>
+                                </span>
+                                {isInactive && (
+                                  <span
+                                    className="metaItem"
+                                    style={{
+                                      color: "#f59e0b",
+                                      borderColor: "rgba(245,158,11,0.25)",
+                                    }}
+                                  >
+                                    موقوف
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className={barClass} aria-hidden="true">
-                          <span style={{ width: `${pct}%` }} />
+
+                        {/* Stats grid */}
+                        <div className="pQuickStats">
+                          <div
+                            className={`pStatBlock ${balClass} participantList__balance`}
+                            style={
+                              balance <= 0 && pkgRemain <= 0
+                                ? { opacity: 0.4 }
+                                : {}
+                            }
+                          >
+                            <div className="pStatLabel">
+                              <Hourglass size={12} />
+                              <span className="participantList__balance-label">
+                                {balance < 0 ? "رصيد زائد" : "المتبقي"}
+                              </span>
+                            </div>
+                            <div
+                              className="pStatValue ltrIso participantList__balance-value"
+                              dir="ltr"
+                            >
+                              {balance < 0
+                                ? fmtILS(Math.abs(balance))
+                                : fmtILS(balance)}
+                            </div>
+                          </div>
+                          <div
+                            className="pStatBlock"
+                            style={isInactive ? { opacity: 0.4 } : {}}
+                          >
+                            <div className="pStatLabel">
+                              <CreditCard size={12} />
+                              <span>المدفوع</span>
+                            </div>
+                            <div className="pStatValue ltrIso" dir="ltr">
+                              {fmtILS(paid)}
+                            </div>
+                          </div>
+                          <div
+                            className={`pStatBlock ${pkgRemain < 0 ? "stat-red" : ""}`}
+                            style={
+                              isInactive && pkgRemain === 0
+                                ? { opacity: 0.4 }
+                                : {}
+                            }
+                          >
+                            <div className="pStatLabel">
+                              <Ticket size={12} />
+                              <span
+                                style={
+                                  pkgRemain < 0 ? { color: "#dc2626" } : {}
+                                }
+                              >
+                                رصيد الجلسات
+                              </span>
+                            </div>
+                            <div
+                              className="pStatValue ltrIso"
+                              dir="ltr"
+                              style={pkgRemain < 0 ? { color: "#dc2626" } : {}}
+                            >
+                              {fmtNum(pkgRemain)}
+                            </div>
+                          </div>
+                          <div
+                            className="pStatBlock"
+                            style={isInactive ? { opacity: 0.4 } : {}}
+                          >
+                            <div className="pStatLabel">
+                              <CalendarDays size={12} />
+                              <span>حضر</span>
+                            </div>
+                            <div className="pStatValue ltrIso" dir="ltr">
+                              {fmtNum(attended)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div
+                          className="pProgressWrap"
+                          style={isInactive ? { opacity: 0.4 } : {}}
+                        >
+                          <div className="pProgressHead">
+                            <span className="muted">نسبة الدفع</span>
+                            <span
+                              style={{
+                                fontWeight: 800,
+                                fontSize: 12,
+                                color:
+                                  pct === 100
+                                    ? "#00ac47"
+                                    : pct > 50
+                                      ? "#d97706"
+                                      : pct > 0
+                                        ? "#ef4444"
+                                        : "#94a3b8",
+                              }}
+                            >
+                              {fmtNum(pct.toFixed(0))}%
+                            </span>
+                          </div>
+                          <div className={barClass}>
+                            <span style={{ width: `${pct}%` }} />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -3091,7 +2990,10 @@ export default function RunDetails() {
               </div>
             </div>
 
-            <div className="card" style={{ gridColumn: "span 8" }}>
+            <div
+              className="card"
+              style={{ gridColumn: "span 8", padding: "20px 22px" }}
+            >
               {!sessions?.length ? (
                 <>
                   <div className="h1">قائمة الجلسات</div>
@@ -3109,15 +3011,19 @@ export default function RunDetails() {
                         className="btn tab-add-btn"
                         style={{
                           width: "100%",
-                          minHeight: 54,
+                          minHeight: 50,
                           display: "flex",
                           justifyContent: "center",
                           alignItems: "center",
                           gap: 10,
-                          fontSize: 16,
+                          fontSize: 14,
+                          fontWeight: 700,
                           background: "#f8fafc",
                           border: "1px solid #e2e8f0",
-                          color: "#475569",
+                          borderRadius: 14,
+                          color: "#64748b",
+                          cursor: "pointer",
+                          transition: "all 0.18s",
                         }}
                         onClick={() => navigate(`/runs/${runId}/past-sessions`)}
                       >
@@ -3159,42 +3065,98 @@ export default function RunDetails() {
                             rowBorder = "1px solid rgba(14, 165, 233, 0.25)";
                           }
 
+                          const statusLabel =
+                            s.status === "done"
+                              ? "منتهية"
+                              : s.status === "canceled"
+                                ? "ملغاة"
+                                : "مجدولة";
+
                           return (
                             <div
                               key={s.id}
-                              className="sessionRow sessionList__item"
+                              className={`sessionRow sessionList__item`}
                               style={{
                                 display: "grid",
-                                gridTemplateColumns:
-                                  "minmax(120px, 1fr) minmax(140px, 1fr) auto",
-                                gap: 12,
-                                padding: "12px 14px",
+                                gridTemplateColumns: "110px 1fr auto",
+                                gap: 14,
+                                padding: "14px 18px",
                                 alignItems: "center",
-                                background: rowBg,
-                                border: rowBorder,
-                                borderRight:
+                                background: "#fff",
+                                borderRadius: 16,
+                                border: "1px solid rgba(15,23,42,0.07)",
+                                borderRight: `4px solid ${
                                   s.status === "done"
-                                    ? "4px solid #00ac47"
+                                    ? "#00ac47"
                                     : s.status === "canceled"
-                                      ? "4px solid #ef4444"
-                                      : "4px solid #0ea5e9",
+                                      ? "#ef4444"
+                                      : "#0ea5e9"
+                                }`,
+                                boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                                transition: "transform 0.18s, box-shadow 0.18s",
                               }}
                             >
                               <div className="sessionList__time">
-                                <div style={{ fontWeight: 700 }}>
+                                <div
+                                  style={{
+                                    fontWeight: 800,
+                                    fontSize: 14,
+                                    color: "#0f172a",
+                                  }}
+                                >
                                   {fmtDate(s.start_at)}
                                 </div>
-                                <div className="muted">
+                                <div
+                                  style={{
+                                    fontSize: 12,
+                                    color: "#94a3b8",
+                                    fontWeight: 600,
+                                    marginTop: 2,
+                                  }}
+                                >
                                   {fmtWeekday(s.start_at)}
                                 </div>
                               </div>
                               <div className="sessionList__main">
-                                <div style={{ fontWeight: 600 }}>
+                                <div
+                                  style={{
+                                    fontWeight: 700,
+                                    fontSize: 13,
+                                    color: "#475569",
+                                    direction: "ltr",
+                                    marginBottom: 4,
+                                  }}
+                                >
                                   <span dir="ltr">
                                     {fmtTimeHM(s.start_at)} →{" "}
                                     {fmtTimeHM(s.end_at)}
                                   </span>
                                 </div>
+                                <span
+                                  style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 4,
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    padding: "2px 9px",
+                                    borderRadius: 999,
+                                    background:
+                                      s.status === "done"
+                                        ? "rgba(0,172,71,0.1)"
+                                        : s.status === "canceled"
+                                          ? "rgba(239,68,68,0.1)"
+                                          : "rgba(14,165,233,0.1)",
+                                    color:
+                                      s.status === "done"
+                                        ? "#15803d"
+                                        : s.status === "canceled"
+                                          ? "#dc2626"
+                                          : "#0284c7",
+                                  }}
+                                >
+                                  {statusLabel}
+                                </span>
                               </div>
 
                               <div className="session-actions-desktop">
