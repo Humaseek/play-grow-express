@@ -550,7 +550,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
   <div class="info-cell"><div class="info-label">المعلمة</div><div class="info-value">${member.name}</div></div>
   ${member.role ? `<div class="info-cell"><div class="info-label">الدور</div><div class="info-value">${member.role}</div></div>` : ""}
   ${member.phone ? `<div class="info-cell"><div class="info-label">الهاتف</div><div class="info-value">${member.phone}</div></div>` : ""}
-  <div class="info-cell"><div class="info-label">الجلسات</div><div class="info-value">${rows.length} جلسة</div></div>
+  <div class="info-cell"><div class="info-label">الجلسات</div><div class="info-value">${rows.length}</div></div>
 </div>
 
 <div class="section-title">جلسات العمل — ${period}</div>
@@ -575,7 +575,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
 
 <div class="totals">
   <div class="totals-box">
-    <div class="total-row"><span>إجمالي الساعات</span><span>${totalHours.toFixed(2)} ساعة</span></div>
+    <div class="total-row"><span>إجمالي الساعات</span><span>${totalHours.toFixed(2)}</span></div>
     <div class="total-row main"><span>المبلغ الإجمالي</span><span>${fmtMoney(totalAmount)} ₪</span></div>
   </div>
 </div>
