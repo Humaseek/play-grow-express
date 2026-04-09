@@ -7,6 +7,7 @@ import {
   LogOut,
   CreditCard,
   Receipt,
+  Clock,
 } from "lucide-react";
 
 export default function Sidebar({ onSignOut }) {
@@ -45,6 +46,13 @@ export default function Sidebar({ onSignOut }) {
           className={({ isActive }) => (isActive ? "active" : "")}
         >
           <Receipt size={18} /> <span>مصاريف</span>
+        </NavLink>
+
+        <NavLink
+          to="/staff-hours"
+          className={({ isActive }) => (isActive ? "active" : "")}
+        >
+          <Clock size={18} /> <span>ساعات العمل</span>
         </NavLink>
 
         <NavLink

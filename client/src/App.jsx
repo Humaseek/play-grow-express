@@ -21,6 +21,7 @@ import Attendance from "./pages/Attendance";
 import NotAdmin from "./pages/NotAdmin";
 import Payments from "./pages/Payments";
 import Expenses from "./pages/Expenses";
+import StaffHours from "./pages/StaffHours";
 
 export default function App() {
   // If Supabase env vars are missing, render a friendly screen instead of a white page.
@@ -93,6 +94,7 @@ export default function App() {
 
               <Route path="payments" element={<Payments />} />
               <Route path="expenses" element={<Expenses />} />
+              <Route path="staff-hours" element={<StaffHours />} />
 
               <Route path="children" element={<Children />} />
               <Route path="children/:childId" element={<ChildDetails />} />
