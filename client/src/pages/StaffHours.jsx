@@ -30,6 +30,12 @@ function fmtMoney(n) {
   return Number(n || 0).toLocaleString("en", { maximumFractionDigits: 2 });
 }
 
+function fmtDate(d) {
+  if (!d) return "—";
+  const [y, m, day] = d.split("-");
+  return `${day}/${m}/${y}`;
+}
+
 function calcHours(start, end) {
   if (!start || !end) return 0;
   const [sh, sm] = start.split(":").map(Number);
