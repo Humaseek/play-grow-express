@@ -479,7 +479,6 @@ export default function StaffDetails() {
         <td class="num green">${h.toFixed(2)}</td>
         <td class="num">${fmtMoney(row.hourly_rate)} ₪</td>
         <td class="num bold">${fmtMoney(total)} ₪</td>
-        <td class="note">${row.notes || ""}</td>
       </tr>`;
     }).join("");
 
@@ -560,7 +559,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
   <thead>
     <tr>
       <th>#</th><th>التاريخ</th><th>من</th><th>إلى</th>
-      <th>الساعات</th><th>سعر/س</th><th>الإجمالي</th><th>ملاحظات</th>
+      <th>الساعات</th><th>سعر/س</th><th>الإجمالي</th>
     </tr>
   </thead>
   <tbody>${tableRows}</tbody>
@@ -570,7 +569,6 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
       <td class="num green">${totalHours.toFixed(2)} س</td>
       <td></td>
       <td class="num bold">${fmtMoney(totalAmount)} ₪</td>
-      <td></td>
     </tr>
   </tfoot>
 </table>
