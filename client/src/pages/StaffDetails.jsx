@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
@@ -295,15 +295,11 @@ export default function StaffDetails() {
   /* modals */
   const [logModal, setLogModal]     = useState(null); // { editRow? }
   const [deleteLog, setDeleteLog]   = useState(null);
-  const [showInvoice, setShowInvoice] = useState(false);
-  const [invoiceMonth, setInvoiceMonth] = useState(null); // { year, month }
 
   /* form */
   const [form, setForm]     = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [converting, setConverting] = useState(null);
-
-  const invoiceRef = useRef(null);
 
   /* ─── load ─── */
   async function load() {
@@ -460,31 +456,142 @@ export default function StaffDetails() {
   const hoursCalc = calcHours(form.start_time, form.end_time);
   const totalCalc = hoursCalc * Number(form.hourly_rate || 0);
 
-  /* ─── invoice data ─── */
-  const invoiceRows = useMemo(() => {
-    if (!invoiceMonth) return [];
-    return allHours.filter(r => {
-      const [y, m] = (r.work_date || "").split("-");
-      return Number(y) === invoiceMonth.year && Number(m) === invoiceMonth.month;
-    }).sort((a, b) => a.work_date.localeCompare(b.work_date));
-  }, [allHours, invoiceMonth]);
+  /* ─── build & print invoice in new window ─── */
+  function buildAndPrintInvoice(ms) {
+    const rows = allHours
+      .filter(r => {
+        const [y, m] = (r.work_date || "").split("-");
+        return Number(y) === ms.year && Number(m) === ms.month;
+      })
+      .sort((a, b) => a.work_date.localeCompare(b.work_date));
 
-  const invoiceTotals = useMemo(() => {
-    let hours = 0, amount = 0;
-    for (const r of invoiceRows) {
-      const h = calcHours(r.start_time, r.end_time);
-      hours += h; amount += h * Number(r.hourly_rate || 0);
-    }
-    return { hours, amount };
-  }, [invoiceRows]);
+    let totalHours = 0, totalAmount = 0;
+    const tableRows = rows.map((row, i) => {
+      const h = calcHours(row.start_time, row.end_time);
+      const total = h * Number(row.hourly_rate || 0);
+      totalHours += h;
+      totalAmount += total;
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${fmtDate(row.work_date)}</td>
+        <td>${row.start_time?.slice(0, 5) || "—"}</td>
+        <td>${row.end_time?.slice(0, 5) || "—"}</td>
+        <td class="num green">${h.toFixed(2)}</td>
+        <td class="num">${fmtMoney(row.hourly_rate)} ₪</td>
+        <td class="num bold">${fmtMoney(total)} ₪</td>
+        <td class="note">${row.notes || ""}</td>
+      </tr>`;
+    }).join("");
 
-  function openInvoice(ms) {
-    setInvoiceMonth({ year: ms.year, month: ms.month });
-    setShowInvoice(true);
-  }
+    const period = monthName(ms.year, ms.month);
 
-  function printInvoice() {
-    window.print();
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>كشف راتب — ${member.name} — ${period}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans Hebrew',Arial,sans-serif;direction:rtl;color:#1e293b;background:#fff;padding:36px 44px;font-size:14px;line-height:1.5}
+
+.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:20px;margin-bottom:26px;border-bottom:3px solid #00ac47}
+.brand{font-size:26px;font-weight:900;color:#00ac47;letter-spacing:-0.5px}
+.brand-sub{font-size:12px;color:#64748b;font-weight:700;margin-top:3px}
+.meta{text-align:left}
+.meta-row{font-size:13px;color:#64748b;margin-bottom:3px}
+.meta-row strong{color:#1e293b;font-weight:800}
+
+.info-grid{display:flex;gap:0;margin-bottom:26px;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+.info-cell{flex:1;padding:13px 18px;background:#f8fafc;border-left:1px solid #e2e8f0}
+.info-cell:last-child{border-left:none}
+.info-label{font-size:10px;color:#94a3b8;font-weight:800;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:4px}
+.info-value{font-size:15px;font-weight:900;color:#1e293b}
+
+.section-title{font-size:13px;font-weight:800;color:#475569;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:"";display:inline-block;width:4px;height:16px;background:#00ac47;border-radius:2px;flex-shrink:0}
+
+table{width:100%;border-collapse:collapse;margin-bottom:22px}
+thead th{background:#1e293b;color:#fff;font-weight:800;font-size:13px;padding:11px 14px;text-align:right;white-space:nowrap}
+thead th:first-child{border-radius:0 8px 0 0}
+thead th:last-child{border-radius:8px 0 0 0}
+tbody tr:nth-child(even){background:#f8fafc}
+tbody td{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155}
+tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;border-top:2px solid #e2e8f0}
+.num{text-align:left;font-variant-numeric:tabular-nums}
+.green{color:#00ac47;font-weight:900}
+.bold{font-weight:900}
+.note{color:#94a3b8;font-size:12px}
+
+.totals{display:flex;justify-content:flex-end;margin-bottom:30px}
+.totals-box{background:linear-gradient(135deg,rgba(0,172,71,.08),rgba(0,172,71,.03));border:1.5px solid rgba(0,172,71,.25);border-radius:14px;padding:18px 26px;min-width:270px}
+.total-row{display:flex;justify-content:space-between;gap:36px;font-size:14px;color:#475569;padding:5px 0}
+.total-row span:last-child{font-weight:800;color:#334155}
+.total-row.main{font-size:18px;font-weight:900;color:#1e293b;border-top:1.5px solid rgba(0,172,71,.2);margin-top:8px;padding-top:12px}
+.total-row.main span:last-child{color:#00ac47;font-size:20px}
+
+.footer{text-align:center;font-size:11px;color:#cbd5e1;border-top:1px solid #f1f5f9;padding-top:14px;font-weight:700;letter-spacing:.3px}
+
+@media print{body{padding:18px 22px}@page{margin:.8cm;size:A4}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div class="brand">Play &amp; Grow</div>
+    <div class="brand-sub">كشف راتب شهري</div>
+  </div>
+  <div class="meta">
+    <div class="meta-row">تاريخ الإصدار: <strong>${fmtDate(todayISO())}</strong></div>
+    <div class="meta-row">الفترة: <strong>${period}</strong></div>
+  </div>
+</div>
+
+<div class="info-grid">
+  <div class="info-cell"><div class="info-label">المعلمة</div><div class="info-value">${member.name}</div></div>
+  ${member.role ? `<div class="info-cell"><div class="info-label">الدور</div><div class="info-value">${member.role}</div></div>` : ""}
+  ${member.phone ? `<div class="info-cell"><div class="info-label">الهاتف</div><div class="info-value">${member.phone}</div></div>` : ""}
+  <div class="info-cell"><div class="info-label">الجلسات</div><div class="info-value">${rows.length} جلسة</div></div>
+</div>
+
+<div class="section-title">جلسات العمل — ${period}</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th><th>التاريخ</th><th>من</th><th>إلى</th>
+      <th>الساعات</th><th>سعر/س</th><th>الإجمالي</th><th>ملاحظات</th>
+    </tr>
+  </thead>
+  <tbody>${tableRows}</tbody>
+  <tfoot>
+    <tr>
+      <td colspan="4" style="color:#64748b">المجموع</td>
+      <td class="num green">${totalHours.toFixed(2)} س</td>
+      <td></td>
+      <td class="num bold">${fmtMoney(totalAmount)} ₪</td>
+      <td></td>
+    </tr>
+  </tfoot>
+</table>
+
+<div class="totals">
+  <div class="totals-box">
+    <div class="total-row"><span>إجمالي الساعات</span><span>${totalHours.toFixed(2)} ساعة</span></div>
+    <div class="total-row main"><span>المبلغ الإجمالي</span><span>${fmtMoney(totalAmount)} ₪</span></div>
+  </div>
+</div>
+
+<div class="footer">Play &amp; Grow &nbsp;•&nbsp; ${period} &nbsp;•&nbsp; ${fmtDate(todayISO())}</div>
+
+<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),500))</script>
+</body>
+</html>`;
+
+    const win = window.open("", "_blank");
+    if (!win) { alert("يرجى السماح بالنوافذ المنبثقة لهذا الموقع"); return; }
+    win.document.write(html);
+    win.document.close();
   }
 
   /* ══════════ RENDER ══════════ */
@@ -626,7 +733,7 @@ export default function StaffDetails() {
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          <button className="sd-convert-btn" style={{ background: "#f0fdf4", color: "#15803d", borderColor: "rgba(21,128,61,0.25)" }} onClick={() => openInvoice(ms)}>
+                          <button className="sd-convert-btn" style={{ background: "#f0fdf4", color: "#15803d", borderColor: "rgba(21,128,61,0.25)" }} onClick={() => buildAndPrintInvoice(ms)}>
                             <Printer size={14} /> فاتورة
                           </button>
                           {!payment && (
@@ -687,132 +794,6 @@ export default function StaffDetails() {
       </Modal>
 
       <ConfirmDialog open={!!deleteLog} title="حذف السجل" message="هل أنت متأكد من الحذف؟" confirmText="حذف" cancelText="إلغاء" danger onConfirm={confirmDeleteLog} onCancel={() => setDeleteLog(null)} />
-
-      {/* ════ Invoice Modal ════ */}
-      <Modal
-        open={showInvoice}
-        title=""
-        onClose={() => setShowInvoice(false)}
-        maxWidth={760}
-      >
-        <div>
-          {/* print / close buttons */}
-          <div className="sd-no-print" style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginBottom: 18, direction: "rtl" }}>
-            <button className="btn" onClick={printInvoice}>
-              <Printer size={16} /> طباعة
-            </button>
-          </div>
-
-          {/* invoice content */}
-          {invoiceMonth && (
-            <div className="sd-invoice" ref={invoiceRef}>
-              {/* header */}
-              <div className="sd-inv-header">
-                <div>
-                  <div className="sd-inv-brand">Play &amp; Grow</div>
-                  <div className="sd-inv-brand-sub">كشف حساب — رواتب</div>
-                </div>
-                <div className="sd-inv-meta">
-                  <div className="sd-inv-meta-row">تاريخ الإصدار: <strong>{fmtDate(todayISO())}</strong></div>
-                  <div className="sd-inv-meta-row">الفترة: <strong>{monthName(invoiceMonth.year, invoiceMonth.month)}</strong></div>
-                </div>
-              </div>
-
-              {/* teacher info */}
-              <div className="sd-inv-teacher">
-                <div className="sd-inv-teacher-field">
-                  الاسم<strong>{member.name}</strong>
-                </div>
-                {member.role && (
-                  <div className="sd-inv-teacher-field">
-                    الدور<strong>{member.role}</strong>
-                  </div>
-                )}
-                {member.phone && (
-                  <div className="sd-inv-teacher-field">
-                    الهاتف<strong>{member.phone}</strong>
-                  </div>
-                )}
-              </div>
-
-              <div className="sd-inv-period">
-                جلسات عمل — {monthName(invoiceMonth.year, invoiceMonth.month)} ({invoiceRows.length} جلسة)
-              </div>
-
-              {/* sessions table */}
-              <table className="sd-inv-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>التاريخ</th>
-                    <th>من</th>
-                    <th>إلى</th>
-                    <th>الساعات</th>
-                    <th>السعر/س</th>
-                    <th>الإجمالي</th>
-                    <th>ملاحظات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoiceRows.map((row, i) => {
-                    const h = calcHours(row.start_time, row.end_time);
-                    const total = h * Number(row.hourly_rate || 0);
-                    return (
-                      <tr key={row.id}>
-                        <td>{i + 1}</td>
-                        <td>{fmtDate(row.work_date)}</td>
-                        <td>{row.start_time?.slice(0, 5) || "—"}</td>
-                        <td>{row.end_time?.slice(0, 5) || "—"}</td>
-                        <td style={{ fontWeight: 800, color: "#00ac47" }}>{h.toFixed(2)}</td>
-                        <td>{fmtMoney(row.hourly_rate)} ₪</td>
-                        <td style={{ fontWeight: 800 }}>{fmtMoney(total)} ₪</td>
-                        <td style={{ color: "#64748b", fontSize: 12 }}>{row.notes || ""}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td colSpan={4} style={{ color: "#64748b" }}>المجموع</td>
-                    <td style={{ color: "#00ac47" }}>{invoiceTotals.hours.toFixed(2)} س</td>
-                    <td></td>
-                    <td>{fmtMoney(invoiceTotals.amount)} ₪</td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
-
-              {/* totals box */}
-              <div className="sd-inv-totals">
-                <div className="sd-inv-totals-box">
-                  <div className="sd-inv-total-row">
-                    <span>إجمالي الساعات</span>
-                    <span>{invoiceTotals.hours.toFixed(2)} ساعة</span>
-                  </div>
-                  <div className="sd-inv-total-row">
-                    <span>المبلغ الإجمالي</span>
-                    <span>{fmtMoney(invoiceTotals.amount)} ₪</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* signatures */}
-              <div className="sd-inv-signatures">
-                <div>
-                  <div className="sd-inv-sig-line"></div>
-                  <div className="sd-inv-sig-label">توقيع المعلمة</div>
-                </div>
-                <div>
-                  <div className="sd-inv-sig-line"></div>
-                  <div className="sd-inv-sig-label">توقيع الإدارة</div>
-                </div>
-              </div>
-
-              <div className="sd-inv-footer">Play &amp; Grow — تم إصداره بتاريخ {fmtDate(todayISO())}</div>
-            </div>
-          )}
-        </div>
-      </Modal>
     </div>
   );
 }
