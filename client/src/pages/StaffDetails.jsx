@@ -404,10 +404,11 @@ export default function StaffDetails() {
   }, [allHours, paidPayments, unpaidTotals]);
 
   /* ─── open convert modal ─── */
-  function openConvertModal(dateFrom, dateTo) {
+  function openConvertModal(dateFrom, dateTo, replacePaymentId = null) {
     setConvertModal({
       dateFrom: dateFrom || unpaidDateRange.min,
       dateTo:   dateTo   || unpaidDateRange.max,
+      replacePaymentId,
     });
   }
 
@@ -433,8 +434,14 @@ export default function StaffDetails() {
       total_amount: convertPreview.amount,
       expense_id: expData.id,
     }]);
+    if (payErr) { setErr(payErr.message); setConverting(false); return; }
+
+    // إذا كانت إعادة دفع، احذف السجل القديم (المصروف محذوف)
+    if (convertModal.replacePaymentId) {
+      await supabase.from("staff_salary_payments").delete().eq("id", convertModal.replacePaymentId);
+    }
+
     setConverting(false);
-    if (payErr) { setErr(payErr.message); return; }
     setConvertModal(null);
     load();
   }
@@ -785,7 +792,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
                             <Printer size={14} /> فاتورة
                           </button>
                           {isDeleted && (
-                            <button className="sd-convert-btn" onClick={() => openConvertModal(p.date_from, p.date_to)}>
+                            <button className="sd-convert-btn" onClick={() => openConvertModal(p.date_from, p.date_to, p.id)}>
                               <Receipt size={14} /> إعادة الدفع
                             </button>
                           )}
