@@ -448,6 +448,35 @@ export default function StaffDetails() {
     } : EMPTY_FORM);
   }
 
+  /* ─── sync expense amount after editing a session ─── */
+  async function syncPaymentExpense(datesToCheck) {
+    for (const date of datesToCheck) {
+      const covering = payments.filter(p => date >= p.date_from && date <= p.date_to);
+      for (const payment of covering) {
+        const { data: hrs } = await supabase
+          .from("staff_hours")
+          .select("start_time, end_time, hourly_rate")
+          .eq("staff_id", staffId)
+          .gte("work_date", payment.date_from)
+          .lte("work_date", payment.date_to);
+        let totalHours = 0, totalAmount = 0;
+        for (const r of (hrs || [])) {
+          const h = calcHours(r.start_time, r.end_time);
+          totalHours += h;
+          totalAmount += h * Number(r.hourly_rate || 0);
+        }
+        await supabase.from("staff_salary_payments")
+          .update({ total_hours: totalHours, total_amount: totalAmount })
+          .eq("id", payment.id);
+        if (payment.expense_id) {
+          await supabase.from("expenses")
+            .update({ amount: totalAmount })
+            .eq("id", payment.expense_id);
+        }
+      }
+    }
+  }
+
   async function saveLog() {
     if (!form.work_date || !form.start_time || !form.end_time || !form.hourly_rate) return;
     setSaving(true);
@@ -462,6 +491,12 @@ export default function StaffDetails() {
     let error;
     if (logModal?.editRow) {
       ({ error } = await supabase.from("staff_hours").update(payload).eq("id", logModal.editRow.id));
+      if (!error) {
+        // sync expense for affected date(s)
+        const datesToCheck = [form.work_date];
+        if (logModal.editRow.work_date !== form.work_date) datesToCheck.push(logModal.editRow.work_date);
+        await syncPaymentExpense(datesToCheck);
+      }
     } else {
       ({ error } = await supabase.from("staff_hours").insert([payload]));
     }
