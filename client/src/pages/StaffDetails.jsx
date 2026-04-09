@@ -517,7 +517,7 @@ thead th:last-child{border-radius:8px 0 0 0}
 tbody tr:nth-child(even){background:#f8fafc}
 tbody td{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155}
 tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;border-top:2px solid #e2e8f0}
-.num{text-align:left;font-variant-numeric:tabular-nums}
+.num{text-align:right;font-variant-numeric:tabular-nums}
 .green{color:#00ac47;font-weight:900}
 .bold{font-weight:900}
 .note{color:#94a3b8;font-size:12px}
