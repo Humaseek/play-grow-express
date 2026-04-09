@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 import PageHeader from "../components/PageHeader";
@@ -16,19 +17,17 @@ import {
   Plus,
   Trash2,
   Pencil,
-  History,
   TrendingUp,
+  BarChart2,
+  UserRound,
+  ChevronLeft,
+  CheckCircle2,
+  Receipt,
 } from "lucide-react";
 
 /* ─── helpers ─── */
 function fmtMoney(n) {
   return Number(n || 0).toLocaleString("en", { maximumFractionDigits: 2 });
-}
-
-function fmtDate(d) {
-  if (!d) return "—";
-  const [y, m, day] = d.split("-");
-  return `${day}/${m}/${y}`;
 }
 
 function calcHours(start, end) {
@@ -58,6 +57,19 @@ function monthRange() {
   };
 }
 
+function monthLabel(key) {
+  // key = "YYYY-MM"
+  const [y, m] = key.split("-");
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  return d.toLocaleString("ar", { month: "long", year: "numeric" });
+}
+
+function lastDayOfMonth(key) {
+  const [y, m] = key.split("-");
+  const last = new Date(Number(y), Number(m), 0);
+  return last.toISOString().slice(0, 10);
+}
+
 const EMPTY_FORM = {
   work_date: todayISO(),
   start_time: "",
@@ -66,7 +78,7 @@ const EMPTY_FORM = {
   notes: "",
 };
 
-/* ─── styles injected once ─── */
+/* ─── styles ─── */
 const CSS = `
 .sh-page { direction: rtl; }
 
@@ -107,16 +119,18 @@ const CSS = `
 .sh-avatar {
   width: 48px; height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(0,172,71,0.18), rgba(0,172,71,0.08));
+  background: linear-gradient(135deg, rgba(0,172,71,0.18), rgba(0,172,71,0.06));
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
   color: #00ac47;
-  font-weight: 900;
-  font-size: 18px;
   border: 2px solid rgba(0,172,71,0.15);
 }
 
-.sh-card-name { font-weight: 900; font-size: 16px; color: #1e293b; }
+.sh-card-name {
+  font-weight: 900; font-size: 16px; color: #1e293b;
+  cursor: pointer; transition: color 0.15s;
+}
+.sh-card-name:hover { color: #00ac47; }
 .sh-card-role { font-size: 13px; color: #64748b; margin-top: 2px; }
 
 .sh-card-stats {
@@ -146,24 +160,20 @@ const CSS = `
   flex: 1;
   display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 10px 14px;
-  background: #00ac47;
-  color: #fff;
+  background: #00ac47; color: #fff;
   border: none; border-radius: 12px;
   font-size: 14px; font-weight: 800;
-  cursor: pointer;
-  transition: background 0.15s;
+  cursor: pointer; transition: background 0.15s;
 }
 .sh-btn-primary:hover { background: #009940; }
 
 .sh-btn-secondary {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 10px 14px;
-  background: #f1f5f9;
-  color: #475569;
+  background: #f1f5f9; color: #475569;
   border: none; border-radius: 12px;
   font-size: 14px; font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s;
+  cursor: pointer; transition: background 0.15s;
 }
 .sh-btn-secondary:hover { background: #e2e8f0; }
 
@@ -171,12 +181,10 @@ const CSS = `
 .sh-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .sh-form-group { display: flex; flex-direction: column; gap: 6px; }
 .sh-form-group label { font-size: 13px; font-weight: 800; color: #475569; }
-.sh-form-group .input { text-align: right; }
 .sh-calc-box {
   background: linear-gradient(135deg, rgba(0,172,71,0.08), rgba(0,172,71,0.04));
   border: 1px solid rgba(0,172,71,0.18);
-  border-radius: 14px;
-  padding: 14px 18px;
+  border-radius: 14px; padding: 14px 18px;
   display: flex; justify-content: space-between; align-items: center;
 }
 .sh-calc-label { font-size: 14px; font-weight: 700; color: #475569; }
@@ -184,46 +192,53 @@ const CSS = `
 .sh-calc-hours { font-size: 16px; font-weight: 900; color: #00ac47; }
 .sh-calc-total { font-size: 13px; color: #64748b; font-weight: 700; margin-top: 2px; }
 
-/* history table */
-.sh-hist-table {
-  width: 100%; border-collapse: collapse; direction: rtl;
-}
-.sh-hist-table th {
+/* monthly table */
+.sh-month-table { width: 100%; border-collapse: collapse; direction: rtl; }
+.sh-month-table th {
   background: #f8fafc; color: #64748b; font-weight: 800; font-size: 13px;
   padding: 12px 16px; border-bottom: 2px solid #f1f5f9; text-align: right;
+  white-space: nowrap;
 }
-.sh-hist-table td {
+.sh-month-table td {
   padding: 12px 16px; border-bottom: 1px solid #f8fafc;
   color: #334155; font-size: 14px; text-align: right;
 }
-.sh-hist-table tr:hover td { background: #fafafa; }
+.sh-month-table tr:last-child td { border-bottom: none; }
+.sh-month-table tr:hover td { background: #fafafa; }
 
-.sh-fab {
-  position: fixed;
-  bottom: 28px; left: 28px;
-  width: 56px; height: 56px;
-  border-radius: 50%;
-  background: #00ac47;
-  color: #fff;
-  border: none;
-  box-shadow: 0 8px 24px rgba(0,172,71,0.35);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  font-size: 24px;
-  transition: background 0.15s, transform 0.15s;
-  z-index: 40;
-}
-.sh-fab:hover { background: #009940; transform: scale(1.07); }
-
-.sh-month-badge {
-  background: rgba(0,172,71,0.1);
-  color: #00ac47;
+.sh-paid-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(0,172,71,0.1); color: #00ac47;
   border: 1px solid rgba(0,172,71,0.2);
-  border-radius: 10px;
-  padding: 4px 10px;
-  font-size: 13px;
-  font-weight: 800;
+  border-radius: 10px; padding: 4px 10px;
+  font-size: 12px; font-weight: 800; white-space: nowrap;
 }
+.sh-unpaid-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(245,158,11,0.1); color: #d97706;
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 10px; padding: 4px 10px;
+  font-size: 12px; font-weight: 800; white-space: nowrap;
+}
+
+.sh-convert-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #fff7ed; color: #ea580c;
+  border: 1px solid rgba(234,88,12,0.25);
+  border-radius: 10px; padding: 6px 12px;
+  font-size: 13px; font-weight: 800;
+  cursor: pointer; transition: background 0.15s; white-space: nowrap;
+}
+.sh-convert-btn:hover { background: #ffedd5; }
+.sh-convert-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.sh-detail-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: #00ac47; font-size: 13px; font-weight: 800;
+  cursor: pointer; background: none; border: none; padding: 0;
+  text-decoration: none; transition: opacity 0.15s;
+}
+.sh-detail-link:hover { opacity: 0.7; }
 
 @media (max-width: 600px) {
   .sh-form-row { grid-template-columns: 1fr; }
@@ -240,11 +255,12 @@ function injectStyles() {
   styleInjected = true;
 }
 
-/* ════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════
    MAIN PAGE
-   ════════════════════════════════════════════════════════════ */
+   ══════════════════════════════════════════════════════════════ */
 export default function StaffHours() {
   injectStyles();
+  const navigate = useNavigate();
 
   const [staff, setStaff] = useState([]);
   const [hours, setHours] = useState([]);
@@ -252,33 +268,34 @@ export default function StaffHours() {
   const [err, setErr] = useState(null);
 
   /* modals */
-  const [logModal, setLogModal] = useState(null);   // { staffId, staffName, editRow? }
-  const [histModal, setHistModal] = useState(null); // { staffId, staffName }
-  const [staffModal, setStaffModal] = useState(null); // null | 'add' | { edit row }
-  const [deleteLog, setDeleteLog] = useState(null); // log row to delete
+  const [logModal, setLogModal]     = useState(null); // { staffId, staffName, editRow? }
+  const [monthsModal, setMonthsModal] = useState(null); // { staffId, staffName }
+  const [staffModal, setStaffModal] = useState(null);
+  const [deleteLog, setDeleteLog]   = useState(null);
   const [deleteStaff, setDeleteStaff] = useState(null);
 
-  /* form state */
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-
-  /* staff form */
+  /* form */
+  const [form, setForm]         = useState(EMPTY_FORM);
   const [staffForm, setStaffForm] = useState({ name: "", role: "", phone: "" });
+  const [saving, setSaving]     = useState(false);
+
+  /* monthly modal data */
+  const [monthsAllHours, setMonthsAllHours]   = useState([]);
+  const [monthsPayments, setMonthsPayments]   = useState([]);
+  const [monthsLoading, setMonthsLoading]     = useState(false);
+  const [converting, setConverting]           = useState(null); // key being converted
 
   const { from, to } = useMemo(() => monthRange(), []);
 
-  /* ─── load ─── */
+  /* ─── load current-month overview ─── */
   async function load() {
     setLoading(true);
     setErr(null);
     try {
       const [{ data: s, error: se }, { data: h, error: he }] = await Promise.all([
         supabase.from("staff").select("*").order("name"),
-        supabase
-          .from("staff_hours")
-          .select("*")
-          .gte("work_date", from)
-          .lte("work_date", to)
+        supabase.from("staff_hours").select("*")
+          .gte("work_date", from).lte("work_date", to)
           .order("work_date", { ascending: false }),
       ]);
       if (se) throw se;
@@ -286,23 +303,21 @@ export default function StaffHours() {
       setStaff(s || []);
       setHours(h || []);
     } catch (e) {
-      setErr(e.message || "حدث خطأ أثناء التحميل");
+      setErr(e.message || "حدث خطأ");
     } finally {
       setLoading(false);
     }
   }
-
   useEffect(() => { load(); }, []);
 
-  /* ─── per-staff stats ─── */
+  /* ─── per-staff stats (current month) ─── */
   const staffStats = useMemo(() => {
     const map = {};
     for (const row of hours) {
       if (!map[row.staff_id]) map[row.staff_id] = { totalHours: 0, totalAmount: 0, count: 0 };
       const h = calcHours(row.start_time, row.end_time);
-      const amt = h * Number(row.hourly_rate || 0);
       map[row.staff_id].totalHours += h;
-      map[row.staff_id].totalAmount += amt;
+      map[row.staff_id].totalAmount += h * Number(row.hourly_rate || 0);
       map[row.staff_id].count += 1;
     }
     return map;
@@ -318,39 +333,92 @@ export default function StaffHours() {
     return { totalHours, totalAmount, staffCount: staff.length };
   }, [staffStats, staff]);
 
-  /* ─── history for modal ─── */
-  const [histRows, setHistRows] = useState([]);
-  const [histLoading, setHistLoading] = useState(false);
-
-  async function loadHistory(staffId) {
-    setHistLoading(true);
-    const { data, error } = await supabase
-      .from("staff_hours")
-      .select("*")
-      .eq("staff_id", staffId)
-      .order("work_date", { ascending: false })
-      .limit(100);
-    setHistLoading(false);
-    if (!error) setHistRows(data || []);
+  /* ─── monthly modal data ─── */
+  async function loadMonthsData(staffId) {
+    setMonthsLoading(true);
+    const [{ data: hrs }, { data: pays }] = await Promise.all([
+      supabase.from("staff_hours").select("*").eq("staff_id", staffId).order("work_date"),
+      supabase.from("staff_salary_payments").select("*").eq("staff_id", staffId),
+    ]);
+    setMonthsAllHours(hrs || []);
+    setMonthsPayments(pays || []);
+    setMonthsLoading(false);
   }
 
-  /* ─── open log modal ─── */
+  const monthlyStats = useMemo(() => {
+    const map = {};
+    for (const row of monthsAllHours) {
+      const key = row.work_date?.slice(0, 7);
+      if (!key) continue;
+      if (!map[key]) map[key] = { hours: 0, amount: 0, count: 0 };
+      const h = calcHours(row.start_time, row.end_time);
+      map[key].hours += h;
+      map[key].amount += h * Number(row.hourly_rate || 0);
+      map[key].count += 1;
+    }
+    return Object.entries(map)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([key, s]) => ({ key, ...s }));
+  }, [monthsAllHours]);
+
+  const paidMap = useMemo(() => {
+    const m = {};
+    for (const p of monthsPayments) {
+      m[`${p.year}-${String(p.month).padStart(2, "0")}`] = p;
+    }
+    return m;
+  }, [monthsPayments]);
+
+  /* ─── convert month to expense ─── */
+  async function convertToExpense(monthKey) {
+    if (!monthsModal) return;
+    setConverting(monthKey);
+    const [y, mo] = monthKey.split("-");
+    const stats = monthlyStats.find(s => s.key === monthKey);
+    if (!stats) { setConverting(null); return; }
+
+    const description = `راتب ${monthsModal.staffName} — ${monthLabel(monthKey)}`;
+    const { data: expData, error: expErr } = await supabase
+      .from("expenses")
+      .insert([{
+        spent_on: lastDayOfMonth(monthKey),
+        amount: stats.amount,
+        category: "رواتب",
+        party: monthsModal.staffName,
+        description,
+      }])
+      .select("id")
+      .single();
+
+    if (expErr) { setErr(expErr.message); setConverting(null); return; }
+
+    const { error: payErr } = await supabase.from("staff_salary_payments").insert([{
+      staff_id: monthsModal.staffId,
+      year: Number(y),
+      month: Number(mo),
+      total_hours: stats.hours,
+      total_amount: stats.amount,
+      expense_id: expData.id,
+    }]);
+
+    setConverting(null);
+    if (payErr) { setErr(payErr.message); return; }
+    loadMonthsData(monthsModal.staffId);
+    load();
+  }
+
+  /* ─── log modal ─── */
   function openLog(member, editRow = null) {
     setLogModal({ staffId: member.id, staffName: member.name, editRow });
-    if (editRow) {
-      setForm({
-        work_date: editRow.work_date || todayISO(),
-        start_time: editRow.start_time || "",
-        end_time: editRow.end_time || "",
-        hourly_rate: String(editRow.hourly_rate || ""),
-        notes: editRow.notes || "",
-      });
-    } else {
-      setForm(EMPTY_FORM);
-    }
+    setForm(editRow ? {
+      work_date: editRow.work_date || todayISO(),
+      start_time: editRow.start_time || "",
+      end_time: editRow.end_time || "",
+      hourly_rate: String(editRow.hourly_rate || ""),
+      notes: editRow.notes || "",
+    } : EMPTY_FORM);
   }
 
-  /* ─── save log ─── */
   async function saveLog() {
     if (!form.work_date || !form.start_time || !form.end_time || !form.hourly_rate) return;
     setSaving(true);
@@ -372,28 +440,27 @@ export default function StaffHours() {
     if (error) { setErr(error.message); return; }
     setLogModal(null);
     load();
-    // refresh history if open
-    if (histModal?.staffId === logModal.staffId) loadHistory(logModal.staffId);
   }
 
-  /* ─── delete log ─── */
   async function confirmDeleteLog() {
     if (!deleteLog) return;
     await supabase.from("staff_hours").delete().eq("id", deleteLog.id);
     setDeleteLog(null);
     load();
-    if (histModal) loadHistory(histModal.staffId);
   }
 
-  /* ─── save staff ─── */
+  /* ─── staff modal ─── */
   async function saveStaff() {
     if (!staffForm.name.trim()) return;
     setSaving(true);
     let error;
-    if (staffModal && typeof staffModal === "object" && staffModal.id) {
-      ({ error } = await supabase.from("staff").update({ name: staffForm.name, role: staffForm.role, phone: staffForm.phone }).eq("id", staffModal.id));
+    if (staffModal?.id) {
+      ({ error } = await supabase.from("staff")
+        .update({ name: staffForm.name, role: staffForm.role, phone: staffForm.phone })
+        .eq("id", staffModal.id));
     } else {
-      ({ error } = await supabase.from("staff").insert([{ name: staffForm.name, role: staffForm.role, phone: staffForm.phone }]));
+      ({ error } = await supabase.from("staff")
+        .insert([{ name: staffForm.name, role: staffForm.role, phone: staffForm.phone }]));
     }
     setSaving(false);
     if (error) { setErr(error.message); return; }
@@ -401,7 +468,6 @@ export default function StaffHours() {
     load();
   }
 
-  /* ─── delete staff ─── */
   async function confirmDeleteStaff() {
     if (!deleteStaff) return;
     await supabase.from("staff").delete().eq("id", deleteStaff.id);
@@ -409,12 +475,9 @@ export default function StaffHours() {
     load();
   }
 
-  /* ─── computed for form ─── */
   const hoursCalc = calcHours(form.start_time, form.end_time);
   const totalCalc = hoursCalc * Number(form.hourly_rate || 0);
-
-  /* ─── current month label ─── */
-  const monthLabel = new Date().toLocaleString("ar", { month: "long", year: "numeric" });
+  const currentMonthLabel = new Date().toLocaleString("ar", { month: "long", year: "numeric" });
 
   /* ══════════ RENDER ══════════ */
   return (
@@ -423,10 +486,7 @@ export default function StaffHours() {
         title="ساعات العمل"
         subtitle="متابعة ساعات عمل المعلمات والمبالغ المستحقة"
         actions={
-          <button
-            className="btn"
-            onClick={() => { setStaffModal("add"); setStaffForm({ name: "", role: "", phone: "" }); }}
-          >
+          <button className="btn" onClick={() => { setStaffModal("add"); setStaffForm({ name: "", role: "", phone: "" }); }}>
             <Plus size={16} /> إضافة معلمة
           </button>
         }
@@ -436,114 +496,63 @@ export default function StaffHours() {
 
       {/* KPIs */}
       <div className="sh-kpi-grid">
-        <KpiCard
-          icon={Users}
-          label="عدد المعلمات"
-          value={kpi.staffCount}
-          hint="إجمالي المعلمات المسجلات"
-          variant="info"
-        />
-        <KpiCard
-          icon={Clock}
-          label="ساعات هذا الشهر"
-          value={`${kpi.totalHours.toFixed(1)} س`}
-          hint={monthLabel}
-          variant="ok"
-        />
-        <KpiCard
-          icon={Banknote}
-          label="إجمالي المستحقات"
-          value={`${fmtMoney(kpi.totalAmount)} ₪`}
-          hint={`${monthLabel}`}
-          variant="warn"
-        />
-        <KpiCard
-          icon={TrendingUp}
-          label="متوسط ساعات / معلمة"
-          value={kpi.staffCount > 0 ? `${(kpi.totalHours / kpi.staffCount).toFixed(1)} س` : "—"}
-          hint="هذا الشهر"
-          variant="neutral"
-        />
+        <KpiCard icon={Users}     label="عدد المعلمات"        value={kpi.staffCount}                                                         hint="إجمالي المعلمات" variant="info" />
+        <KpiCard icon={Clock}     label="ساعات هذا الشهر"     value={`${kpi.totalHours.toFixed(1)} س`}                                       hint={currentMonthLabel} variant="ok" />
+        <KpiCard icon={Banknote}  label="إجمالي المستحقات"    value={`${fmtMoney(kpi.totalAmount)} ₪`}                                       hint={currentMonthLabel} variant="warn" />
+        <KpiCard icon={TrendingUp} label="متوسط ساعات / معلمة" value={kpi.staffCount > 0 ? `${(kpi.totalHours / kpi.staffCount).toFixed(1)} س` : "—"} hint="هذا الشهر" variant="neutral" />
       </div>
 
-      {/* staff cards */}
+      {/* cards */}
       {loading ? (
         <div style={{ textAlign: "center", padding: "60px 0", color: "#94a3b8", fontWeight: 800 }}>جار التحميل...</div>
       ) : staff.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="لا يوجد معلمات"
-          description="أضف معلمة جديدة للبدء بتسجيل ساعات العمل"
-        />
+        <EmptyState icon={Users} title="لا يوجد معلمات" description="أضف معلمة جديدة للبدء" />
       ) : (
         <div className="sh-cards-grid">
           {staff.map((member) => {
             const stats = staffStats[member.id] || { totalHours: 0, totalAmount: 0, count: 0 };
-            const initials = member.name.trim().split(/\s+/).slice(0, 2).map(w => w[0]).join("");
             return (
               <div key={member.id} className="sh-teacher-card">
-                {/* header */}
                 <div className="sh-card-header">
-                  <div className="sh-avatar">{initials}</div>
-                  <div style={{ flex: 1 }}>
-                    <div className="sh-card-name">{member.name}</div>
+                  <div className="sh-avatar">
+                    <UserRound size={22} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="sh-card-name" onClick={() => navigate(`/staff-hours/${member.id}`)}>
+                      {member.name}
+                    </div>
                     {member.role && <div className="sh-card-role">{member.role}</div>}
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <IconButton
-                      icon={Pencil}
-                      size={15}
-                      title="تعديل"
-                      onClick={() => {
-                        setStaffModal(member);
-                        setStaffForm({ name: member.name, role: member.role || "", phone: member.phone || "" });
-                      }}
-                    />
-                    <IconButton
-                      icon={Trash2}
-                      size={15}
-                      title="حذف"
-                      variant="danger"
-                      onClick={() => setDeleteStaff(member)}
-                    />
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                    <IconButton icon={Pencil} size={15} title="تعديل" onClick={() => { setStaffModal(member); setStaffForm({ name: member.name, role: member.role || "", phone: member.phone || "" }); }} />
+                    <IconButton icon={Trash2} size={15} title="حذف" variant="danger" onClick={() => setDeleteStaff(member)} />
                   </div>
                 </div>
 
-                {/* stats */}
                 <div className="sh-card-stats">
                   <div className="sh-stat-box">
                     <div className="sh-stat-label">ساعات الشهر</div>
-                    <div className="sh-stat-value">
-                      {stats.totalHours.toFixed(1)}
-                      <span className="sh-stat-unit"> س</span>
-                    </div>
+                    <div className="sh-stat-value">{stats.totalHours.toFixed(1)}<span className="sh-stat-unit"> س</span></div>
                   </div>
                   <div className="sh-stat-box">
                     <div className="sh-stat-label">المستحق</div>
-                    <div className="sh-stat-value" style={{ fontSize: 15 }}>
-                      {fmtMoney(stats.totalAmount)}
-                      <span className="sh-stat-unit"> ₪</span>
-                    </div>
+                    <div className="sh-stat-value" style={{ fontSize: 15 }}>{fmtMoney(stats.totalAmount)}<span className="sh-stat-unit"> ₪</span></div>
                   </div>
                   <div className="sh-stat-box" style={{ gridColumn: "1 / -1" }}>
-                    <div className="sh-stat-label">عدد الجلسات المسجلة</div>
-                    <div className="sh-stat-value" style={{ fontSize: 16 }}>
-                      {stats.count}
-                      <span className="sh-stat-unit"> جلسة هذا الشهر</span>
-                    </div>
+                    <div className="sh-stat-label">جلسات مسجلة</div>
+                    <div className="sh-stat-value" style={{ fontSize: 15 }}>{stats.count}<span className="sh-stat-unit"> جلسة هذا الشهر</span></div>
                   </div>
                 </div>
 
-                {/* actions */}
                 <div className="sh-card-actions">
                   <button className="sh-btn-primary" onClick={() => openLog(member)}>
                     <Plus size={16} /> تسجيل ساعات
                   </button>
-                  <button
-                    className="sh-btn-secondary"
-                    onClick={() => { setHistModal({ staffId: member.id, staffName: member.name }); loadHistory(member.id); }}
-                  >
-                    <History size={16} /> السجل
+                  <button className="sh-btn-secondary" onClick={() => { setMonthsModal({ staffId: member.id, staffName: member.name }); loadMonthsData(member.id); }}>
+                    <BarChart2 size={16} /> الأشهر
+                  </button>
+                  <button className="sh-btn-secondary" style={{ padding: "10px 12px" }} title="صفحة التفاصيل" onClick={() => navigate(`/staff-hours/${member.id}`)}>
+                    <ChevronLeft size={16} />
                   </button>
                 </div>
               </div>
@@ -553,234 +562,135 @@ export default function StaffHours() {
       )}
 
       {/* ════ Log Hours Modal ════ */}
-      <Modal
-        open={!!logModal}
-        title={logModal ? `تسجيل ساعات — ${logModal.staffName}` : ""}
-        onClose={() => setLogModal(null)}
-        maxWidth={480}
-      >
+      <Modal open={!!logModal} title={logModal ? `تسجيل ساعات — ${logModal.staffName}` : ""} onClose={() => setLogModal(null)} maxWidth={480}>
         <div className="stack" style={{ direction: "rtl" }}>
-          {/* date */}
           <div className="sh-form-group">
             <label>التاريخ</label>
-            <input
-              type="date"
-              className="input"
-              value={form.work_date}
-              onChange={e => setForm(f => ({ ...f, work_date: e.target.value }))}
-            />
+            <input type="date" className="input" value={form.work_date} onChange={e => setForm(f => ({ ...f, work_date: e.target.value }))} />
           </div>
-
-          {/* times */}
           <div className="sh-form-row">
             <div className="sh-form-group">
               <label>ساعة البدء</label>
-              <input
-                type="time"
-                className="input"
-                value={form.start_time}
-                onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}
-              />
+              <input type="time" className="input" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))} />
             </div>
             <div className="sh-form-group">
               <label>ساعة الانتهاء</label>
-              <input
-                type="time"
-                className="input"
-                value={form.end_time}
-                onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))}
-              />
+              <input type="time" className="input" value={form.end_time} onChange={e => setForm(f => ({ ...f, end_time: e.target.value }))} />
             </div>
           </div>
-
-          {/* hourly rate */}
           <div className="sh-form-group">
             <label>المبلغ على الساعة (₪)</label>
-            <input
-              type="number"
-              min="0"
-              step="0.5"
-              className="input"
-              placeholder="مثال: 50"
-              value={form.hourly_rate}
-              onChange={e => setForm(f => ({ ...f, hourly_rate: e.target.value }))}
-              style={{ textAlign: "right" }}
-            />
+            <input type="number" min="0" step="0.5" className="input" placeholder="مثال: 50" value={form.hourly_rate} onChange={e => setForm(f => ({ ...f, hourly_rate: e.target.value }))} style={{ textAlign: "right" }} />
           </div>
-
-          {/* auto-calc */}
           {hoursCalc > 0 && (
             <div className="sh-calc-box">
               <div className="sh-calc-label">الحساب التلقائي</div>
               <div className="sh-calc-values">
                 <div className="sh-calc-hours">{hoursCalc.toFixed(2)} ساعة</div>
-                {totalCalc > 0 && (
-                  <div className="sh-calc-total">= {fmtMoney(totalCalc)} ₪</div>
-                )}
+                {totalCalc > 0 && <div className="sh-calc-total">= {fmtMoney(totalCalc)} ₪</div>}
               </div>
             </div>
           )}
-
-          {/* notes */}
           <div className="sh-form-group">
             <label>ملاحظات (اختياري)</label>
-            <input
-              type="text"
-              className="input"
-              placeholder="أي ملاحظة إضافية..."
-              value={form.notes}
-              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-            />
+            <input type="text" className="input" placeholder="أي ملاحظة..." value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
           </div>
-
-          <button
-            className="btn"
-            disabled={saving || !form.work_date || !form.start_time || !form.end_time || !form.hourly_rate}
-            onClick={saveLog}
-            style={{ width: "100%", justifyContent: "center" }}
-          >
+          <button className="btn" disabled={saving || !form.work_date || !form.start_time || !form.end_time || !form.hourly_rate} onClick={saveLog} style={{ width: "100%", justifyContent: "center" }}>
             {saving ? "جار الحفظ..." : logModal?.editRow ? "حفظ التعديلات" : "تسجيل"}
           </button>
         </div>
       </Modal>
 
-      {/* ════ History Modal ════ */}
-      <Modal
-        open={!!histModal}
-        title={histModal ? `سجل ساعات — ${histModal.staffName}` : ""}
-        onClose={() => setHistModal(null)}
-        maxWidth={700}
-      >
-        {histLoading ? (
+      {/* ════ Monthly Summary Modal ════ */}
+      <Modal open={!!monthsModal} title={monthsModal ? `سجل الأشهر — ${monthsModal.staffName}` : ""} onClose={() => setMonthsModal(null)} maxWidth={680}>
+        {monthsLoading ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontWeight: 800 }}>جار التحميل...</div>
-        ) : histRows.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontWeight: 800 }}>لا يوجد سجلات</div>
+        ) : monthlyStats.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontWeight: 800 }}>لا يوجد سجلات بعد</div>
         ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table className="sh-hist-table">
-              <thead>
-                <tr>
-                  <th>التاريخ</th>
-                  <th>البدء</th>
-                  <th>الانتهاء</th>
-                  <th>الساعات</th>
-                  <th>السعر/س</th>
-                  <th>الإجمالي</th>
-                  <th>ملاحظات</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {histRows.map((row) => {
-                  const h = calcHours(row.start_time, row.end_time);
-                  const total = h * Number(row.hourly_rate || 0);
-                  return (
-                    <tr key={row.id}>
-                      <td>{fmtDate(row.work_date)}</td>
-                      <td>{row.start_time?.slice(0, 5) || "—"}</td>
-                      <td>{row.end_time?.slice(0, 5) || "—"}</td>
-                      <td style={{ fontWeight: 800, color: "#00ac47" }}>{h.toFixed(2)}</td>
-                      <td>{fmtMoney(row.hourly_rate)} ₪</td>
-                      <td style={{ fontWeight: 800 }}>{fmtMoney(total)} ₪</td>
-                      <td style={{ color: "#94a3b8", fontSize: 13 }}>{row.notes || "—"}</td>
-                      <td>
-                        <div style={{ display: "flex", gap: 4 }}>
-                          <IconButton
-                            icon={Pencil}
-                            size={14}
-                            title="تعديل"
-                            onClick={() => {
-                              openLog({ id: histModal.staffId, name: histModal.staffName }, row);
-                            }}
-                          />
-                          <IconButton
-                            icon={Trash2}
-                            size={14}
-                            title="حذف"
-                            variant="danger"
-                            onClick={() => setDeleteLog(row)}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div>
+            <div style={{ marginBottom: 14, color: "#64748b", fontSize: 13, fontWeight: 700, direction: "rtl" }}>
+              إجمالي {monthlyStats.length} شهر مسجل — اضغط "تحويل لمصروف" لتسجيل الدفعة في سجل المصاريف
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table className="sh-month-table">
+                <thead>
+                  <tr>
+                    <th>الشهر</th>
+                    <th>جلسات</th>
+                    <th>ساعات</th>
+                    <th>المبلغ</th>
+                    <th>الحالة</th>
+                    <th>إجراء</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {monthlyStats.map(({ key, hours: h, amount, count }) => {
+                    const payment = paidMap[key];
+                    return (
+                      <tr key={key}>
+                        <td style={{ fontWeight: 800 }}>{monthLabel(key)}</td>
+                        <td>{count}</td>
+                        <td style={{ fontWeight: 800, color: "#00ac47" }}>{h.toFixed(2)} س</td>
+                        <td style={{ fontWeight: 800 }}>{fmtMoney(amount)} ₪</td>
+                        <td>
+                          {payment ? (
+                            <span className="sh-paid-badge"><CheckCircle2 size={13} /> تم الدفع</span>
+                          ) : (
+                            <span className="sh-unpaid-badge">غير مدفوع</span>
+                          )}
+                        </td>
+                        <td>
+                          {!payment && (
+                            <button
+                              className="sh-convert-btn"
+                              disabled={converting === key}
+                              onClick={() => convertToExpense(key)}
+                            >
+                              <Receipt size={14} />
+                              {converting === key ? "جار..." : "تحويل لمصروف"}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ marginTop: 16, textAlign: "center" }}>
+              <button className="sh-detail-link" onClick={() => { setMonthsModal(null); navigate(`/staff-hours/${monthsModal.staffId}`); }}>
+                عرض الصفحة الكاملة وطباعة الفاتورة <ChevronLeft size={15} />
+              </button>
+            </div>
           </div>
         )}
       </Modal>
 
-      {/* ════ Add/Edit Staff Modal ════ */}
-      <Modal
-        open={!!staffModal}
-        title={staffModal && typeof staffModal === "object" && staffModal.id ? "تعديل معلمة" : "إضافة معلمة جديدة"}
-        onClose={() => setStaffModal(null)}
-        maxWidth={420}
-      >
+      {/* ════ Staff Modal ════ */}
+      <Modal open={!!staffModal} title={staffModal?.id ? "تعديل معلمة" : "إضافة معلمة جديدة"} onClose={() => setStaffModal(null)} maxWidth={420}>
         <div className="stack" style={{ direction: "rtl" }}>
           <div className="sh-form-group">
             <label>الاسم *</label>
-            <input
-              type="text"
-              className="input"
-              placeholder="اسم المعلمة"
-              value={staffForm.name}
-              onChange={e => setStaffForm(f => ({ ...f, name: e.target.value }))}
-            />
+            <input type="text" className="input" placeholder="اسم المعلمة" value={staffForm.name} onChange={e => setStaffForm(f => ({ ...f, name: e.target.value }))} />
           </div>
           <div className="sh-form-group">
             <label>الدور / التخصص</label>
-            <input
-              type="text"
-              className="input"
-              placeholder="مثال: معلمة رياضيات"
-              value={staffForm.role}
-              onChange={e => setStaffForm(f => ({ ...f, role: e.target.value }))}
-            />
+            <input type="text" className="input" placeholder="مثال: معلمة رياضيات" value={staffForm.role} onChange={e => setStaffForm(f => ({ ...f, role: e.target.value }))} />
           </div>
           <div className="sh-form-group">
             <label>رقم الهاتف</label>
-            <input
-              type="tel"
-              className="input"
-              placeholder="05X-XXXXXXX"
-              value={staffForm.phone}
-              onChange={e => setStaffForm(f => ({ ...f, phone: e.target.value }))}
-            />
+            <input type="tel" className="input" placeholder="05X-XXXXXXX" value={staffForm.phone} onChange={e => setStaffForm(f => ({ ...f, phone: e.target.value }))} />
           </div>
-          <button
-            className="btn"
-            disabled={saving || !staffForm.name.trim()}
-            onClick={saveStaff}
-            style={{ width: "100%", justifyContent: "center" }}
-          >
+          <button className="btn" disabled={saving || !staffForm.name.trim()} onClick={saveStaff} style={{ width: "100%", justifyContent: "center" }}>
             {saving ? "جار الحفظ..." : "حفظ"}
           </button>
         </div>
       </Modal>
 
-      {/* ════ Confirm Dialogs ════ */}
-      <ConfirmDialog
-        open={!!deleteLog}
-        title="حذف السجل"
-        message="هل أنت متأكد من حذف هذا السجل؟ لا يمكن التراجع."
-        confirmText="حذف"
-        cancelText="إلغاء"
-        danger
-        onConfirm={confirmDeleteLog}
-        onCancel={() => setDeleteLog(null)}
-      />
-      <ConfirmDialog
-        open={!!deleteStaff}
-        title="حذف المعلمة"
-        message={`هل تريد حذف "${deleteStaff?.name}"؟ سيتم حذف جميع سجلات ساعات العمل المرتبطة بها.`}
-        confirmText="حذف"
-        cancelText="إلغاء"
-        danger
-        onConfirm={confirmDeleteStaff}
-        onCancel={() => setDeleteStaff(null)}
-      />
+      {/* ════ Confirms ════ */}
+      <ConfirmDialog open={!!deleteLog} title="حذف السجل" message="هل أنت متأكد من حذف هذا السجل؟" confirmText="حذف" cancelText="إلغاء" danger onConfirm={confirmDeleteLog} onCancel={() => setDeleteLog(null)} />
+      <ConfirmDialog open={!!deleteStaff} title="حذف المعلمة" message={`هل تريد حذف "${deleteStaff?.name}"؟`} confirmText="حذف" cancelText="إلغاء" danger onConfirm={confirmDeleteStaff} onCancel={() => setDeleteStaff(null)} />
     </div>
   );
 }
