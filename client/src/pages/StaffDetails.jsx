@@ -517,9 +517,13 @@ export default function StaffDetails() {
   const totalCalc = hoursCalc * Number(form.hourly_rate || 0);
 
   /* ─── build & print invoice in new window ─── */
-  function buildAndPrintInvoice(dateFrom, dateTo) {
+  function buildAndPrintInvoice(dateFrom, dateTo, unpaidOnly = false) {
     const rows = allHours
-      .filter(r => r.work_date >= dateFrom && r.work_date <= dateTo)
+      .filter(r => {
+        if (!r.work_date || r.work_date < dateFrom || r.work_date > dateTo) return false;
+        if (unpaidOnly && payments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)) return false;
+        return true;
+      })
       .sort((a, b) => a.work_date.localeCompare(b.work_date));
 
     let totalHours = 0, totalAmount = 0;
@@ -777,7 +781,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button className="sd-convert-btn" style={{ background: "#f0fdf4", color: "#15803d", borderColor: "rgba(21,128,61,0.25)" }}
-                  onClick={() => setInvoiceModal({ dateFrom: unpaidDateRange.min, dateTo: unpaidDateRange.max })}>
+                  onClick={() => setInvoiceModal({ dateFrom: unpaidDateRange.min, dateTo: unpaidDateRange.max, unpaidOnly: true })}>
                   <Printer size={14} /> فاتورة
                 </button>
                 <button className="sd-convert-btn" onClick={() => openConvertModal()}>
@@ -882,7 +886,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
             </div>
           </div>
           <button className="btn" disabled={!invoiceModal?.dateFrom || !invoiceModal?.dateTo}
-            onClick={() => { buildAndPrintInvoice(invoiceModal.dateFrom, invoiceModal.dateTo); setInvoiceModal(null); }}
+            onClick={() => { buildAndPrintInvoice(invoiceModal.dateFrom, invoiceModal.dateTo, invoiceModal.unpaidOnly); setInvoiceModal(null); }}
             style={{ width: "100%", justifyContent: "center" }}>
             <Printer size={16} /> إنشاء وطباعة
           </button>
