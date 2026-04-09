@@ -334,10 +334,7 @@ export default function StaffHours() {
     setMonthsLoading(false);
   }
 
-  // دفعات مؤكدة (المصروف لا يزال موجوداً)
-  const monthsPaidPayments = useMemo(() => monthsPayments.filter(p => p.expense_id !== null), [monthsPayments]);
-
-  // ساعات غير مدفوعة (خارج نطاق أي دفعة — مدفوعة أو محذوفة المصروف)
+  // ساعات غير مدفوعة (خارج نطاق أي دفعة)
   const monthsUnpaidHours = useMemo(() => monthsAllHours.filter(r =>
     r.work_date && !monthsPayments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
   ), [monthsAllHours, monthsPayments]);
@@ -608,13 +605,13 @@ export default function StaffHours() {
             )}
 
             {/* Paid records */}
-            {monthsPaidPayments.length > 0 && (
+            {monthsPayments.length > 0 && (
               <div>
                 <div style={{ fontSize: 13, fontWeight: 800, color: "#64748b", marginBottom: 8 }}>الدفعات المسجلة</div>
                 <table className="sh-month-table">
                   <thead><tr><th>الفترة</th><th>ساعات</th><th>المبلغ</th><th>الحالة</th></tr></thead>
                   <tbody>
-                    {monthsPaidPayments.sort((a, b) => b.date_from.localeCompare(a.date_from)).map(p => (
+                    {monthsPayments.sort((a, b) => b.date_from.localeCompare(a.date_from)).map(p => (
                       <tr key={p.id}>
                         <td style={{ fontWeight: 800, fontSize: 13 }}>{fmtDate(p.date_from)} — {fmtDate(p.date_to)}</td>
                         <td style={{ color: "#00ac47", fontWeight: 800 }}>{Number(p.total_hours || 0).toFixed(2)} س</td>

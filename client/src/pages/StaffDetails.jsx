@@ -295,7 +295,6 @@ export default function StaffDetails() {
   /* modals */
   const [logModal, setLogModal]     = useState(null); // { editRow? }
   const [deleteLog, setDeleteLog]   = useState(null);
-  const [deletePaymentConfirm, setDeletePaymentConfirm] = useState(null); // payment record to delete
 
   /* form */
   const [form, setForm]     = useState(EMPTY_FORM);
@@ -350,11 +349,7 @@ export default function StaffDetails() {
     return { hours, amount };
   }, [filteredHours]);
 
-  /* ─── paid payments = those whose expense still exists ─── */
-  const paidPayments = useMemo(() => payments.filter(p => p.expense_id !== null), [payments]);
-  const deletedPayments = useMemo(() => payments.filter(p => p.expense_id === null), [payments]);
-
-  /* ─── unpaid hours = not covered by ANY payment (paid or deleted-expense) ─── */
+  /* ─── unpaid hours = not covered by any payment ─── */
   const unpaidHours = useMemo(() => allHours.filter(r =>
     r.work_date && !payments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
   ), [allHours, payments]);
@@ -381,7 +376,7 @@ export default function StaffDetails() {
     const hrs = allHours.filter(r =>
       r.work_date >= convertModal.dateFrom &&
       r.work_date <= convertModal.dateTo &&
-      !paidPayments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
+      !payments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
     );
     let hours = 0, amount = 0;
     for (const r of hrs) {
@@ -390,7 +385,7 @@ export default function StaffDetails() {
       amount += h * Number(r.hourly_rate || 0);
     }
     return { hours, amount, count: hrs.length };
-  }, [convertModal, allHours, paidPayments]);
+  }, [convertModal, allHours, payments]);
 
   /* ─── all-time KPIs ─── */
   const allKpi = useMemo(() => {
@@ -400,16 +395,15 @@ export default function StaffDetails() {
       totalHours += h;
       totalAmount += h * Number(r.hourly_rate || 0);
     }
-    for (const p of paidPayments) { paidAmount += Number(p.total_amount || 0); }
+    for (const p of payments) { paidAmount += Number(p.total_amount || 0); }
     return { totalHours, totalAmount, paidAmount, pendingAmount: unpaidTotals.amount };
-  }, [allHours, paidPayments, unpaidTotals]);
+  }, [allHours, payments, unpaidTotals]);
 
   /* ─── open convert modal ─── */
-  function openConvertModal(dateFrom, dateTo, replacePaymentId = null) {
+  function openConvertModal(dateFrom, dateTo) {
     setConvertModal({
       dateFrom: dateFrom || unpaidDateRange.min,
       dateTo:   dateTo   || unpaidDateRange.max,
-      replacePaymentId,
     });
   }
 
@@ -436,11 +430,6 @@ export default function StaffDetails() {
       expense_id: expData.id,
     }]);
     if (payErr) { setErr(payErr.message); setConverting(false); return; }
-
-    // إذا كانت إعادة دفع، احذف السجل القديم (المصروف محذوف)
-    if (convertModal.replacePaymentId) {
-      await supabase.from("staff_salary_payments").delete().eq("id", convertModal.replacePaymentId);
-    }
 
     setConverting(false);
     setConvertModal(null);
@@ -486,13 +475,6 @@ export default function StaffDetails() {
     if (!deleteLog) return;
     await supabase.from("staff_hours").delete().eq("id", deleteLog.id);
     setDeleteLog(null);
-    load();
-  }
-
-  async function confirmDeletePayment() {
-    if (!deletePaymentConfirm) return;
-    await supabase.from("staff_salary_payments").delete().eq("id", deletePaymentConfirm.id);
-    setDeletePaymentConfirm(null);
     load();
   }
 
@@ -781,40 +763,20 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
                 </tr>
               </thead>
               <tbody>
-                {[...paidPayments, ...deletedPayments].sort((a, b) => b.date_from.localeCompare(a.date_from)).map(p => {
-                  const isDeleted = p.expense_id === null;
-                  return (
-                    <tr key={p.id} style={isDeleted ? { background: "#fff7ed" } : {}}>
-                      <td style={{ fontWeight: 800 }}>{fmtDate(p.date_from)} — {fmtDate(p.date_to)}</td>
-                      <td style={{ color: "#00ac47", fontWeight: 800 }}>{Number(p.total_hours || 0).toFixed(2)} س</td>
-                      <td style={{ fontWeight: 800 }}>{fmtMoney(p.total_amount)} ₪</td>
-                      <td>
-                        {isDeleted
-                          ? <span style={{ display:"inline-flex",alignItems:"center",gap:5,background:"#fff7ed",color:"#ea580c",border:"1px solid rgba(234,88,12,.2)",borderRadius:10,padding:"4px 10px",fontSize:12,fontWeight:800 }}>⚠️ المصروف محذوف</span>
-                          : <span className="sd-paid-badge"><CheckCircle2 size={13} /> تم الدفع</span>}
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          <button className="sd-convert-btn" style={{ background: "#f0fdf4", color: "#15803d", borderColor: "rgba(21,128,61,0.25)" }}
-                            onClick={() => setInvoiceModal({ dateFrom: p.date_from, dateTo: p.date_to })}>
-                            <Printer size={14} /> فاتورة
-                          </button>
-                          {isDeleted && (
-                            <button className="sd-convert-btn" onClick={() => openConvertModal(undefined, undefined, p.id)}>
-                              <Receipt size={14} /> إعادة الدفع
-                            </button>
-                          )}
-                          {isDeleted && (
-                            <button className="sd-convert-btn" style={{ background: "#fff1f2", color: "#dc2626", borderColor: "rgba(220,38,38,0.25)" }}
-                              onClick={() => setDeletePaymentConfirm(p)}>
-                              <Trash2 size={14} /> حذف
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {[...payments].sort((a, b) => b.date_from.localeCompare(a.date_from)).map(p => (
+                  <tr key={p.id}>
+                    <td style={{ fontWeight: 800 }}>{fmtDate(p.date_from)} — {fmtDate(p.date_to)}</td>
+                    <td style={{ color: "#00ac47", fontWeight: 800 }}>{Number(p.total_hours || 0).toFixed(2)} س</td>
+                    <td style={{ fontWeight: 800 }}>{fmtMoney(p.total_amount)} ₪</td>
+                    <td><span className="sd-paid-badge"><CheckCircle2 size={13} /> تم الدفع</span></td>
+                    <td>
+                      <button className="sd-convert-btn" style={{ background: "#f0fdf4", color: "#15803d", borderColor: "rgba(21,128,61,0.25)" }}
+                        onClick={() => setInvoiceModal({ dateFrom: p.date_from, dateTo: p.date_to })}>
+                        <Printer size={14} /> فاتورة
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -866,7 +828,6 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
       </Modal>
 
       <ConfirmDialog open={!!deleteLog} title="حذف السجل" message="هل أنت متأكد من الحذف؟" confirmText="حذف" cancelText="إلغاء" danger onConfirm={confirmDeleteLog} onCancel={() => setDeleteLog(null)} />
-      <ConfirmDialog open={!!deletePaymentConfirm} title="حذف سجل الدفعة" message="هل تريد حذف هذا السجل؟" confirmText="حذف" cancelText="إلغاء" danger onConfirm={confirmDeletePayment} onCancel={() => setDeletePaymentConfirm(null)} />
 
       {/* ════ Invoice date-range modal ════ */}
       <Modal open={!!invoiceModal} title="إنشاء فاتورة" onClose={() => setInvoiceModal(null)} maxWidth={380}>
@@ -910,37 +871,15 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
                 <div className="sd-calc-total">{convertPreview.count} جلسة — {fmtMoney(convertPreview.amount)} ₪</div>
               </div>
             </div>
-          ) : convertModal?.replacePaymentId ? (
-            <div style={{ background: "#fff7ed", border: "1px solid rgba(234,88,12,.2)", borderRadius: 12, padding: "12px 16px", fontSize: 14, color: "#92400e", fontWeight: 700, textAlign: "center" }}>
-              هذه الساعات مدفوعة بالفعل — يمكنك حذف السجل القديم فقط
-            </div>
           ) : (
             <div style={{ textAlign: "center", color: "#94a3b8", fontWeight: 700, fontSize: 14 }}>
               لا يوجد ساعات غير مدفوعة في هذا النطاق
             </div>
           )}
-          {convertPreview.count > 0 ? (
-            <button className="btn" disabled={converting} onClick={executeConvert}
-              style={{ width: "100%", justifyContent: "center" }}>
-              {converting ? "جار التسجيل..." : `تأكيد — ${fmtMoney(convertPreview.amount)} ₪`}
-            </button>
-          ) : convertModal?.replacePaymentId ? (
-            <button className="btn" style={{ width: "100%", justifyContent: "center", background: "#dc2626" }}
-              disabled={converting}
-              onClick={async () => {
-                setConverting(true);
-                await supabase.from("staff_salary_payments").delete().eq("id", convertModal.replacePaymentId);
-                setConverting(false);
-                setConvertModal(null);
-                load();
-              }}>
-              <Trash2 size={16} /> حذف السجل القديم
-            </button>
-          ) : (
-            <button className="btn" disabled style={{ width: "100%", justifyContent: "center", opacity: 0.4 }}>
-              تأكيد
-            </button>
-          )}
+          <button className="btn" disabled={converting || convertPreview.count === 0} onClick={executeConvert}
+            style={{ width: "100%", justifyContent: "center" }}>
+            {converting ? "جار التسجيل..." : `تأكيد — ${fmtMoney(convertPreview.amount)} ₪`}
+          </button>
         </div>
       </Modal>
     </div>
