@@ -17,7 +17,7 @@ import {
   Plus,
   Trash2,
   Pencil,
-  TrendingUp,
+
   BarChart2,
 
   ChevronLeft,
@@ -475,7 +475,6 @@ export default function StaffHours() {
         <KpiCard icon={Users}     label="عدد المعلمات"         value={kpi.staffCount}                         hint="إجمالي المعلمات" variant="info" />
         <KpiCard icon={Clock}     label="ساعات غير مدفوعة"    value={`${kpi.totalHours.toFixed(1)} س`}        hint="إجمالي متراكم" variant="ok" />
         <KpiCard icon={Banknote}  label="مستحقات غير مدفوعة"  value={`${fmtMoney(kpi.totalAmount)} ₪`}        hint="إجمالي متراكم" variant="warn" />
-        <KpiCard icon={TrendingUp} label="متوسط / معلمة"      value={kpi.staffCount > 0 ? `${(kpi.totalHours / kpi.staffCount).toFixed(1)} س` : "—"} hint="غير مدفوع" variant="neutral" />
       </div>
 
       {/* cards */}
