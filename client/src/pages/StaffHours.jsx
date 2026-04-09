@@ -492,19 +492,21 @@ export default function StaffHours() {
             return (
               <div key={member.id} className="sh-teacher-card" style={{ cursor: "pointer" }}
                 onClick={() => navigate(`/staff-hours/${member.id}`)}>
-                <div className="sh-card-header">
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="sh-card-header" style={{ justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", gap: 4, flexShrink: 0, opacity: 0.3, transition: "opacity 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+                    onMouseLeave={e => e.currentTarget.style.opacity = "0.3"}>
+                    <IconButton icon={Pencil} size={13} title="تعديل" onClick={e => { e.stopPropagation(); setStaffModal(member); setStaffForm({ name: member.name, role: member.role || "", phone: member.phone || "" }); }} />
+                    <IconButton icon={Trash2} size={13} title="حذف" variant="danger" onClick={e => { e.stopPropagation(); setDeleteStaff(member); }} />
+                  </div>
+                  <div style={{ textAlign: "right", minWidth: 0 }}>
                     <div style={{
-                      fontSize: 22, fontWeight: 900, color: "#1e293b",
+                      fontSize: 22, fontWeight: 900,
                       letterSpacing: "-0.5px", lineHeight: 1.2,
                       background: "linear-gradient(135deg, #1e293b 0%, #00ac47 100%)",
                       WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     }}>{member.name}</div>
                     {member.role && <div className="sh-card-role" style={{ marginTop: 3 }}>{member.role}</div>}
-                  </div>
-                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                    <IconButton icon={Pencil} size={15} title="تعديل" onClick={e => { e.stopPropagation(); setStaffModal(member); setStaffForm({ name: member.name, role: member.role || "", phone: member.phone || "" }); }} />
-                    <IconButton icon={Trash2} size={15} title="حذف" variant="danger" onClick={e => { e.stopPropagation(); setDeleteStaff(member); }} />
                   </div>
                 </div>
 
