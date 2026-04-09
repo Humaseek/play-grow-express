@@ -1387,7 +1387,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
               !form.hourly_rate
             }
             onClick={saveLog}
-            style={{ width: "100%", justifyContent: "center" }}
+            style={{ width: "100%", justifyContent: "center", background: "linear-gradient(135deg, #00ac47, #009940)", color: "#fff", border: "none" }}
           >
             {saving
               ? "جار الحفظ..."
@@ -1452,7 +1452,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
               );
               setInvoiceModal(null);
             }}
-            style={{ width: "100%", justifyContent: "center" }}
+            style={{ width: "100%", justifyContent: "center", background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", border: "none" }}
           >
             <Printer size={16} /> إنشاء وطباعة
           </button>

@@ -462,7 +462,8 @@ export default function StaffHours() {
         title="ساعات العمل"
         subtitle="متابعة ساعات عمل المعلمات والمبالغ المستحقة"
         actions={
-          <button className="btn" onClick={() => { setStaffModal("add"); setStaffForm({ name: "", role: "", phone: "" }); }}>
+          <button className="btn" onClick={() => { setStaffModal("add"); setStaffForm({ name: "", role: "", phone: "" }); }}
+            style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", border: "none" }}>
             <Plus size={16} /> إضافة معلمة
           </button>
         }
