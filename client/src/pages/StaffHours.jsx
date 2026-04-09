@@ -253,6 +253,8 @@ export default function StaffHours() {
 
   const [staff, setStaff] = useState([]);
   const [hours, setHours] = useState([]);
+  const [allHours, setAllHours] = useState([]);
+  const [allPayments, setAllPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
@@ -276,21 +278,25 @@ export default function StaffHours() {
 
   const { from, to } = useMemo(() => monthRange(), []);
 
-  /* ─── load current-month overview ─── */
+  /* ─── load ─── */
   async function load() {
     setLoading(true);
     setErr(null);
     try {
-      const [{ data: s, error: se }, { data: h, error: he }] = await Promise.all([
+      const [{ data: s, error: se }, { data: h, error: he }, { data: ah, error: ahe }, { data: ap, error: ape }] = await Promise.all([
         supabase.from("staff").select("*").order("name"),
         supabase.from("staff_hours").select("*")
           .gte("work_date", from).lte("work_date", to)
           .order("work_date", { ascending: false }),
+        supabase.from("staff_hours").select("staff_id, work_date, start_time, end_time, hourly_rate"),
+        supabase.from("staff_salary_payments").select("staff_id, date_from, date_to"),
       ]);
       if (se) throw se;
-      if (he) throw he;
+      if (he || ahe || ape) throw he || ahe || ape;
       setStaff(s || []);
       setHours(h || []);
+      setAllHours(ah || []);
+      setAllPayments(ap || []);
     } catch (e) {
       setErr(e.message || "حدث خطأ");
     } finally {
@@ -311,6 +317,24 @@ export default function StaffHours() {
     }
     return map;
   }, [hours]);
+
+  /* ─── per-staff unpaid amount (all time) ─── */
+  const staffUnpaid = useMemo(() => {
+    const map = {};
+    for (const row of allHours) {
+      const covered = allPayments.some(p =>
+        p.staff_id === row.staff_id &&
+        row.work_date >= p.date_from &&
+        row.work_date <= p.date_to
+      );
+      if (!covered) {
+        if (!map[row.staff_id]) map[row.staff_id] = 0;
+        const h = calcHours(row.start_time, row.end_time);
+        map[row.staff_id] += h * Number(row.hourly_rate || 0);
+      }
+    }
+    return map;
+  }, [allHours, allPayments]);
 
   /* ─── global KPIs ─── */
   const kpi = useMemo(() => {
@@ -484,49 +508,39 @@ export default function StaffHours() {
       ) : (
         <div className="sh-cards-grid">
           {staff.map((member) => {
-            const stats = staffStats[member.id] || { totalHours: 0, totalAmount: 0, count: 0 };
+            const unpaidAmount = staffUnpaid[member.id] || 0;
             return (
-              <div key={member.id} className="sh-teacher-card">
+              <div key={member.id} className="sh-teacher-card" style={{ cursor: "pointer" }}
+                onClick={() => navigate(`/staff-hours/${member.id}`)}>
                 <div className="sh-card-header">
                   <div className="sh-avatar">
                     <UserRound size={22} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="sh-card-name" onClick={() => navigate(`/staff-hours/${member.id}`)}>
-                      {member.name}
-                    </div>
+                    <div className="sh-card-name">{member.name}</div>
                     {member.role && <div className="sh-card-role">{member.role}</div>}
                   </div>
-                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                     <IconButton icon={Pencil} size={15} title="تعديل" onClick={() => { setStaffModal(member); setStaffForm({ name: member.name, role: member.role || "", phone: member.phone || "" }); }} />
                     <IconButton icon={Trash2} size={15} title="حذف" variant="danger" onClick={() => setDeleteStaff(member)} />
                   </div>
                 </div>
 
-                <div className="sh-card-stats">
-                  <div className="sh-stat-box">
-                    <div className="sh-stat-label">ساعات الشهر</div>
-                    <div className="sh-stat-value">{stats.totalHours.toFixed(1)}<span className="sh-stat-unit"> س</span></div>
-                  </div>
-                  <div className="sh-stat-box">
-                    <div className="sh-stat-label">المستحق</div>
-                    <div className="sh-stat-value" style={{ fontSize: 15 }}>{fmtMoney(stats.totalAmount)}<span className="sh-stat-unit"> ₪</span></div>
-                  </div>
+                <div className="sh-card-stats" onClick={e => e.stopPropagation()}>
                   <div className="sh-stat-box" style={{ gridColumn: "1 / -1" }}>
-                    <div className="sh-stat-label">جلسات مسجلة</div>
-                    <div className="sh-stat-value" style={{ fontSize: 15 }}>{stats.count}<span className="sh-stat-unit"> جلسة هذا الشهر</span></div>
+                    <div className="sh-stat-label">المستحق غير المدفوع</div>
+                    <div className="sh-stat-value" style={{ fontSize: 20, color: unpaidAmount > 0 ? "#d97706" : "#00ac47" }}>
+                      {fmtMoney(unpaidAmount)}<span className="sh-stat-unit"> ₪</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="sh-card-actions">
+                <div className="sh-card-actions" onClick={e => e.stopPropagation()}>
                   <button className="sh-btn-primary" onClick={() => openLog(member)}>
                     <Plus size={16} /> تسجيل ساعات
                   </button>
                   <button className="sh-btn-secondary" onClick={() => { setMonthsModal({ staffId: member.id, staffName: member.name }); loadMonthsData(member.id); }}>
                     <BarChart2 size={16} /> الأشهر
-                  </button>
-                  <button className="sh-btn-secondary" style={{ padding: "10px 12px" }} title="صفحة التفاصيل" onClick={() => navigate(`/staff-hours/${member.id}`)}>
-                    <ChevronLeft size={16} />
                   </button>
                 </div>
               </div>
