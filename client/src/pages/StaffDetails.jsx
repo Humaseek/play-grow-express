@@ -19,7 +19,7 @@ import {
   Pencil,
   Printer,
   Receipt,
-  UserRound,
+
   Phone,
   Briefcase,
 } from "lucide-react";
@@ -781,9 +781,12 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
 
       {/* header card */}
       <div className="sd-header-card">
-        <div className="sd-header-avatar"><UserRound size={28} /></div>
         <div style={{ flex: 1 }}>
-          <div className="sd-header-name">{member.name}</div>
+          <div style={{
+            fontSize: 26, fontWeight: 900, letterSpacing: "-0.5px", lineHeight: 1.2,
+            background: "linear-gradient(135deg, #1e293b 0%, #00ac47 100%)",
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          }}>{member.name}</div>
           <div className="sd-header-meta">
             {member.role && <span className="sd-meta-item"><Briefcase size={14} />{member.role}</span>}
             {member.phone && <span className="sd-meta-item"><Phone size={14} />{member.phone}</span>}
