@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
@@ -97,13 +97,44 @@ const CSS = `
 }
 .sd-toolbar-title { font-size: 16px; font-weight: 900; color: #1e293b; flex: 1; }
 
-.sd-select {
-  padding: 9px 14px; border-radius: 12px;
-  border: 1px solid #e2e8f0; background: #fff;
-  font-size: 14px; font-weight: 700; color: #334155;
-  cursor: pointer; outline: none;
+.sd-month-nav {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+  padding: 4px 6px;
 }
-.sd-select:focus { border-color: #00ac47; box-shadow: 0 0 0 3px rgba(0,172,71,0.12); }
+.sd-month-nav-arrow {
+  width: 32px; height: 32px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: none; cursor: pointer;
+  color: #64748b; font-size: 18px; transition: background 0.12s;
+}
+.sd-month-nav-arrow:hover { background: #f1f5f9; color: #1e293b; }
+.sd-month-nav-arrow:disabled { opacity: 0.3; cursor: default; }
+.sd-month-nav-label {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px;
+}
+.sd-month-nav-part {
+  font-size: 15px; font-weight: 900; color: #1e293b;
+  padding: 4px 8px; border-radius: 8px; cursor: pointer;
+  transition: background 0.12s; border: none; background: none;
+}
+.sd-month-nav-part:hover { background: #f1f5f9; }
+.sd-month-nav-part.active { background: rgba(0,172,71,0.1); color: #00ac47; }
+.sd-month-dropdown {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.1);
+  z-index: 200; min-width: 140px; padding: 6px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2px;
+}
+.sd-month-dropdown.years { grid-template-columns: 1fr; min-width: 100px; }
+.sd-month-opt {
+  padding: 8px 10px; border-radius: 10px; font-size: 14px; font-weight: 700;
+  color: #334155; cursor: pointer; text-align: center; transition: background 0.1s;
+}
+.sd-month-opt:hover { background: #f1f5f9; }
+.sd-month-opt.selected { background: rgba(0,172,71,0.12); color: #00ac47; }
+.sd-month-opt.all { grid-column: 1 / -1; border-bottom: 1px solid #f1f5f9; margin-bottom: 4px; }
 
 .sd-table-wrap {
   background: #fff; border: 1px solid rgba(15,23,42,0.07);
@@ -277,6 +308,88 @@ function injectStyles() {
 /* ══════════════════════════════════════════════════════════════
    PAGE
    ══════════════════════════════════════════════════════════════ */
+const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12].map(m => ({
+  value: String(m),
+  label: new Date(2000, m - 1, 1).toLocaleString("ar", { month: "long" }),
+}));
+
+function MonthYearPicker({ year, month, onYearChange, onMonthChange, availableYears }) {
+  const [showMonths, setShowMonths] = useState(false);
+  const [showYears, setShowYears]   = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setShowMonths(false);
+        setShowYears(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  function prevMonth() {
+    const m = Number(month); const y = Number(year);
+    if (month === "0") { onMonthChange("12"); onYearChange(String(y - 1)); return; }
+    if (m === 1) { onMonthChange("12"); onYearChange(String(y - 1)); }
+    else onMonthChange(String(m - 1));
+  }
+  function nextMonth() {
+    const m = Number(month); const y = Number(year);
+    if (month === "0") { onMonthChange("1"); return; }
+    if (m === 12) { onMonthChange("1"); onYearChange(String(y + 1)); }
+    else onMonthChange(String(m + 1));
+  }
+
+  const monthLabel = month === "0"
+    ? "كل الأشهر"
+    : MONTHS.find(x => x.value === month)?.label || "";
+
+  return (
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
+      <div className="sd-month-nav">
+        <button className="sd-month-nav-arrow" onClick={nextMonth}>‹</button>
+        <div className="sd-month-nav-label">
+          <button className={`sd-month-nav-part${showMonths ? " active" : ""}`}
+            onClick={() => { setShowMonths(v => !v); setShowYears(false); }}>
+            {monthLabel}
+          </button>
+          <button className={`sd-month-nav-part${showYears ? " active" : ""}`}
+            onClick={() => { setShowYears(v => !v); setShowMonths(false); }}>
+            {year}
+          </button>
+        </div>
+        <button className="sd-month-nav-arrow" onClick={prevMonth}>›</button>
+      </div>
+
+      {showMonths && (
+        <div className="sd-month-dropdown">
+          <div className={`sd-month-opt all${month === "0" ? " selected" : ""}`}
+            onClick={() => { onMonthChange("0"); setShowMonths(false); }}>كل الأشهر</div>
+          {MONTHS.map(m => (
+            <div key={m.value} className={`sd-month-opt${month === m.value ? " selected" : ""}`}
+              onClick={() => { onMonthChange(m.value); setShowMonths(false); }}>
+              {m.label}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showYears && (
+        <div className="sd-month-dropdown years">
+          {availableYears.map(y => (
+            <div key={y} className={`sd-month-opt${year === y ? " selected" : ""}`}
+              onClick={() => { onYearChange(y); setShowYears(false); }}>
+              {y}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StaffDetails() {
   injectStyles();
   const { staffId } = useParams();
@@ -692,17 +805,13 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
       {/* ─── hours table ─── */}
       <div className="sd-toolbar">
         <div className="sd-toolbar-title">سجل الساعات</div>
-        <select className="sd-select" value={filterYear} onChange={e => setFilterYear(e.target.value)}>
-          {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
-        <select className="sd-select" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
-          <option value="0">كل الأشهر</option>
-          {[1,2,3,4,5,6,7,8,9,10,11,12].map(m => (
-            <option key={m} value={String(m)}>
-              {new Date(2000, m - 1, 1).toLocaleString("ar", { month: "long" })}
-            </option>
-          ))}
-        </select>
+        <MonthYearPicker
+          year={filterYear}
+          month={filterMonth}
+          onYearChange={setFilterYear}
+          onMonthChange={setFilterMonth}
+          availableYears={availableYears}
+        />
       </div>
 
       <div className="sd-table-wrap">
