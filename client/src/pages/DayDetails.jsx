@@ -11,6 +11,7 @@ import {
   CreditCard,
   Layers,
   CalendarDays,
+  UserRound,
 } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import Badge from "../components/Badge";
@@ -331,6 +332,14 @@ function fmtMoney(n) {
   return Number(n || 0).toLocaleString("en-US");
 }
 
+function calcHours(start, end) {
+  if (!start || !end) return 0;
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  const diff = eh * 60 + em - (sh * 60 + sm);
+  return diff > 0 ? diff / 60 : 0;
+}
+
 function formatTime(dt) {
   if (!dt) return "—";
   const d = new Date(dt);
@@ -347,6 +356,7 @@ export default function DayDetails() {
     sessions: [],
     payments: [],
     expenses: [],
+    staffHours: [],
     attendanceCount: 0,
     totals: { income: 0, expense: 0 },
   });
@@ -392,12 +402,20 @@ export default function DayDetails() {
           .from("course_runs_summary_view")
           .select("run_id, title, label");
 
+        // 5. جلب ساعات العمل لهذا اليوم
+        const qStaffHours = supabase
+          .from("staff_hours")
+          .select("*, staff(name, role)")
+          .eq("work_date", date)
+          .order("start_time");
+
         const [
           { data: pays },
           { data: exps },
           { data: sess },
           { data: runsSummary },
-        ] = await Promise.all([qPays, qExps, qSess, qRuns]);
+          { data: staffHrs },
+        ] = await Promise.all([qPays, qExps, qSess, qRuns, qStaffHours]);
 
         // دمج أسماء الدورات مع الجلسات
         const enrichedSessions = (sess || []).map((s) => {
@@ -437,6 +455,7 @@ export default function DayDetails() {
           sessions: enrichedSessions,
           payments: pays || [],
           expenses: exps || [],
+          staffHours: staffHrs || [],
           attendanceCount: attCount,
           totals: { income: tIncome, expense: tExpense },
         });
@@ -887,6 +906,51 @@ export default function DayDetails() {
                 </div>
               )}
             </div>
+
+            {/* بطاقة ساعات العمل */}
+            {data.staffHours.length > 0 && (() => {
+              const totalHours = data.staffHours.reduce((s, r) => s + calcHours(r.start_time, r.end_time), 0);
+              const totalCost  = data.staffHours.reduce((s, r) => s + calcHours(r.start_time, r.end_time) * Number(r.hourly_rate || 0), 0);
+              return (
+                <div className="dd-card" style={{ padding: "28px" }}>
+                  <h2 className="dd-section-title" style={{ borderColor: "rgba(0,172,71,0.2)" }}>
+                    <div className="dd-section-icon-wrapper" style={{ background: "#f0fdf4" }}>
+                      <UserRound size={22} color="#00ac47" />
+                    </div>
+                    ساعات العمل
+                  </h2>
+                  <div className="dd-list">
+                    {data.staffHours.map(r => {
+                      const h = calcHours(r.start_time, r.end_time);
+                      const amount = h * Number(r.hourly_rate || 0);
+                      return (
+                        <div key={r.id} className="dd-list-item" style={{ borderLeft: "4px solid #00ac47" }}>
+                          <div className="dd-li-info">
+                            <div className="dd-li-avatar" style={{ background: "rgba(0,172,71,0.08)", color: "#00ac47" }}>
+                              <UserRound size={20} />
+                            </div>
+                            <div>
+                              <div className="dd-li-title">{r.staff?.name || "—"}</div>
+                              <div className="dd-li-sub" dir="ltr">
+                                {r.start_time?.slice(0,5)} – {r.end_time?.slice(0,5)}
+                                &nbsp;·&nbsp; {h.toFixed(1)} س
+                              </div>
+                            </div>
+                          </div>
+                          <div className="dd-li-val" style={{ color: "#00ac47" }}>
+                            {fmtMoney(amount)} ₪
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{ marginTop: 14, padding: "12px 16px", background: "rgba(0,172,71,0.06)", borderRadius: 14, display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 14, color: "#15803d" }}>
+                    <span>{totalHours.toFixed(1)} ساعة إجمالية</span>
+                    <span>{fmtMoney(totalCost)} ₪</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
