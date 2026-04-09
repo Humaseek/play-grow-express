@@ -395,9 +395,15 @@ export default function StaffDetails() {
   async function convertToExpense(ms) {
     setConverting(ms.key);
     const description = `راتب ${member.name} — ${monthName(ms.year, ms.month)}`;
+
+    // تأكد إن اسم المعلمة موجود بقائمة الأشخاص/المتاجر في المصاريف
+    await supabase.from("expense_parties")
+      .insert([{ name: member.name }])
+      .then(() => {}); // تجاهل خطأ التكرار
+
     const { data: expData, error: expErr } = await supabase
       .from("expenses")
-      .insert([{ spent_on: lastDayOfMonth(ms.year, ms.month), amount: ms.amount, category: "رواتب", party: member.name, description }])
+      .insert([{ spent_on: lastDayOfMonth(ms.year, ms.month), amount: ms.amount, category: "معاش", party: member.name, description }])
       .select("id").single();
     if (expErr) { setErr(expErr.message); setConverting(null); return; }
     const { error: payErr } = await supabase.from("staff_salary_payments").insert([{

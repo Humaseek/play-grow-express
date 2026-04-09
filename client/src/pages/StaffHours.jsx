@@ -378,12 +378,18 @@ export default function StaffHours() {
     if (!stats) { setConverting(null); return; }
 
     const description = `راتب ${monthsModal.staffName} — ${monthLabel(monthKey)}`;
+
+    // تأكد إن اسم المعلمة موجود بقائمة الأشخاص/المتاجر في المصاريف
+    await supabase.from("expense_parties")
+      .insert([{ name: monthsModal.staffName }])
+      .then(() => {}); // تجاهل خطأ التكرار
+
     const { data: expData, error: expErr } = await supabase
       .from("expenses")
       .insert([{
         spent_on: lastDayOfMonth(monthKey),
         amount: stats.amount,
-        category: "رواتب",
+        category: "معاش",
         party: monthsModal.staffName,
         description,
       }])
