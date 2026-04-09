@@ -585,7 +585,7 @@ export default function StaffHours() {
                   <div>
                     <span className="sh-unpaid-badge" style={{ marginLeft: 8 }}>غير مدفوع</span>
                     <span style={{ fontSize: 14, fontWeight: 800, color: "#334155" }}>
-                      {monthsUnpaidTotals.count} جلسة · {monthsUnpaidTotals.hours.toFixed(2)} س · {fmtMoney(monthsUnpaidTotals.amount)} ₪
+                      {monthsUnpaidTotals.count} يوم · {monthsUnpaidTotals.hours.toFixed(2)} س · {fmtMoney(monthsUnpaidTotals.amount)} ₪
                     </span>
                   </div>
                   <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>

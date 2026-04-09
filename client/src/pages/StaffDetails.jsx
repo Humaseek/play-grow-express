@@ -611,10 +611,10 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
   <div class="info-cell"><div class="info-label">المعلمة</div><div class="info-value">${member.name}</div></div>
   ${member.role ? `<div class="info-cell"><div class="info-label">الدور</div><div class="info-value">${member.role}</div></div>` : ""}
   ${member.phone ? `<div class="info-cell"><div class="info-label">الهاتف</div><div class="info-value">${member.phone}</div></div>` : ""}
-  <div class="info-cell"><div class="info-label">الجلسات</div><div class="info-value">${rows.length}</div></div>
+  <div class="info-cell"><div class="info-label">الأيام</div><div class="info-value">${rows.length}</div></div>
 </div>
 
-<div class="section-title">جلسات العمل — ${period}</div>
+<div class="section-title">أيام العمل — ${period}</div>
 
 <table>
   <thead>
@@ -773,7 +773,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
               <div>
                 <span className="sd-unpaid-badge" style={{ marginLeft: 10 }}>غير مدفوع</span>
                 <span style={{ fontSize: 14, fontWeight: 800, color: "#334155" }}>
-                  {unpaidTotals.count} جلسة &nbsp;·&nbsp; {unpaidTotals.hours.toFixed(2)} س &nbsp;·&nbsp; {fmtMoney(unpaidTotals.amount)} ₪
+                  {unpaidTotals.count} يوم &nbsp;·&nbsp; {unpaidTotals.hours.toFixed(2)} س &nbsp;·&nbsp; {fmtMoney(unpaidTotals.amount)} ₪
                 </span>
               </div>
               <div style={{ fontSize: 13, color: "#94a3b8", fontWeight: 700 }}>
@@ -911,7 +911,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
               <div className="sd-calc-label">سيتم تسجيل</div>
               <div>
                 <div className="sd-calc-hours">{convertPreview.hours.toFixed(2)} ساعة</div>
-                <div className="sd-calc-total">{convertPreview.count} جلسة — {fmtMoney(convertPreview.amount)} ₪</div>
+                <div className="sd-calc-total">{convertPreview.count} يوم — {fmtMoney(convertPreview.amount)} ₪</div>
               </div>
             </div>
           ) : (
