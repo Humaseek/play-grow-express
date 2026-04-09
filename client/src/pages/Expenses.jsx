@@ -601,6 +601,7 @@ const EXPENSES_STYLES = `
 
 export default function Expenses() {
   const { toast } = useOutletContext();
+  const navigate = useNavigate();
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -632,6 +633,8 @@ export default function Expenses() {
   const [expItem, setExpItem] = useState("");
   const [expParty, setExpParty] = useState("");
   const [expDesc, setExpDesc] = useState("");
+
+  const [linkedStaffId, setLinkedStaffId] = useState(null);
 
   const [confirm, setConfirm] = useState({ open: false, id: null });
 
@@ -858,6 +861,7 @@ export default function Expenses() {
     setExpParty("");
     setExpDesc("");
     setEditId(null);
+    setLinkedStaffId(null);
   }
 
   function openCreate() {
@@ -865,7 +869,7 @@ export default function Expenses() {
     setOpenAdd(true);
   }
 
-  function openEdit(row) {
+  async function openEdit(row) {
     setEditId(row.id);
     setExpDate(row.spent_on ? String(row.spent_on) : isoDate(new Date()));
     setExpAmount(String(row.amount ?? ""));
@@ -873,6 +877,16 @@ export default function Expenses() {
     setExpItem(String(row.item ?? ""));
     setExpParty(String(row.party ?? ""));
     setExpDesc(String(row.description ?? ""));
+    setLinkedStaffId(null);
+    // Check if this expense is linked to a salary payment
+    if (row.category === "معاش") {
+      const { data } = await supabase
+        .from("staff_salary_payments")
+        .select("staff_id")
+        .eq("expense_id", row.id)
+        .maybeSingle();
+      if (data?.staff_id) setLinkedStaffId(data.staff_id);
+    }
     setOpenAdd(true);
   }
 
@@ -1450,7 +1464,23 @@ export default function Expenses() {
                   value={expAmount}
                   onChange={(e) => setExpAmount(e.target.value)}
                   placeholder="مثال: 150"
+                  disabled={!!linkedStaffId}
+                  style={linkedStaffId ? { opacity: 0.6, cursor: "not-allowed" } : {}}
                 />
+                {linkedStaffId && (
+                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, background: "#fff7ed", border: "1px solid rgba(234,88,12,.2)", borderRadius: 10, padding: "8px 12px" }}>
+                    <span style={{ fontSize: 13, color: "#92400e", fontWeight: 700, flex: 1 }}>
+                      يُحسب تلقائياً من ساعات العمل
+                    </span>
+                    <button
+                      type="button"
+                      style={{ fontSize: 13, color: "#ea580c", fontWeight: 800, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
+                      onClick={() => { setOpenAdd(false); navigate(`/staff-hours/${linkedStaffId}`); }}
+                    >
+                      عدّل من هنا ←
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="form-col">
