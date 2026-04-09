@@ -526,7 +526,7 @@ export default function StaffHours() {
                     <Plus size={16} /> تسجيل ساعات
                   </button>
                   <button className="sh-btn-secondary" onClick={e => { e.stopPropagation(); setMonthsModal({ staffId: member.id, staffName: member.name }); loadMonthsData(member.id); }}>
-                    <BarChart2 size={16} /> الأشهر
+                    <BarChart2 size={16} /> فواتير
                   </button>
                 </div>
               </div>
@@ -576,7 +576,7 @@ export default function StaffHours() {
       </Modal>
 
       {/* ════ Monthly Summary Modal ════ */}
-      <Modal open={!!monthsModal} title={monthsModal ? `المستحقات — ${monthsModal.staffName}` : ""} onClose={() => setMonthsModal(null)} maxWidth={560}>
+      <Modal open={!!monthsModal} title={monthsModal ? `فواتير — ${monthsModal.staffName}` : ""} onClose={() => setMonthsModal(null)} maxWidth={560}>
         {monthsLoading ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontWeight: 800 }}>جار التحميل...</div>
         ) : monthsAllHours.length === 0 ? (
