@@ -337,10 +337,10 @@ export default function StaffHours() {
   // دفعات مؤكدة (المصروف لا يزال موجوداً)
   const monthsPaidPayments = useMemo(() => monthsPayments.filter(p => p.expense_id !== null), [monthsPayments]);
 
-  // ساعات غير مدفوعة (خارج نطاق أي دفعة مؤكدة)
+  // ساعات غير مدفوعة (خارج نطاق أي دفعة — مدفوعة أو محذوفة المصروف)
   const monthsUnpaidHours = useMemo(() => monthsAllHours.filter(r =>
-    r.work_date && !monthsPaidPayments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
-  ), [monthsAllHours, monthsPaidPayments]);
+    r.work_date && !monthsPayments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
+  ), [monthsAllHours, monthsPayments]);
 
   const monthsUnpaidTotals = useMemo(() => {
     let hours = 0, amount = 0;

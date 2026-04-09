@@ -353,10 +353,10 @@ export default function StaffDetails() {
   const paidPayments = useMemo(() => payments.filter(p => p.expense_id !== null), [payments]);
   const deletedPayments = useMemo(() => payments.filter(p => p.expense_id === null), [payments]);
 
-  /* ─── unpaid hours = not covered by any paid payment ─── */
+  /* ─── unpaid hours = not covered by ANY payment (paid or deleted-expense) ─── */
   const unpaidHours = useMemo(() => allHours.filter(r =>
-    r.work_date && !paidPayments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
-  ), [allHours, paidPayments]);
+    r.work_date && !payments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
+  ), [allHours, payments]);
 
   const unpaidTotals = useMemo(() => {
     let hours = 0, amount = 0;
