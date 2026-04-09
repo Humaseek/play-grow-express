@@ -447,7 +447,7 @@ export default function StaffHours() {
 
   const hoursCalc = calcHours(form.start_time, form.end_time);
   const totalCalc = hoursCalc * Number(form.hourly_rate || 0);
-  const currentMonthLabel = new Date().toLocaleString("ar", { month: "long", year: "numeric" });
+
 
   /* ══════════ RENDER ══════════ */
   return (
@@ -466,10 +466,10 @@ export default function StaffHours() {
 
       {/* KPIs */}
       <div className="sh-kpi-grid">
-        <KpiCard icon={Users}     label="عدد المعلمات"        value={kpi.staffCount}                                                         hint="إجمالي المعلمات" variant="info" />
-        <KpiCard icon={Clock}     label="ساعات هذا الشهر"     value={`${kpi.totalHours.toFixed(1)} س`}                                       hint={currentMonthLabel} variant="ok" />
-        <KpiCard icon={Banknote}  label="إجمالي المستحقات"    value={`${fmtMoney(kpi.totalAmount)} ₪`}                                       hint={currentMonthLabel} variant="warn" />
-        <KpiCard icon={TrendingUp} label="متوسط ساعات / معلمة" value={kpi.staffCount > 0 ? `${(kpi.totalHours / kpi.staffCount).toFixed(1)} س` : "—"} hint="هذا الشهر" variant="neutral" />
+        <KpiCard icon={Users}     label="عدد المعلمات"         value={kpi.staffCount}                         hint="إجمالي المعلمات" variant="info" />
+        <KpiCard icon={Clock}     label="ساعات غير مدفوعة"    value={`${kpi.totalHours.toFixed(1)} س`}        hint="إجمالي متراكم" variant="ok" />
+        <KpiCard icon={Banknote}  label="مستحقات غير مدفوعة"  value={`${fmtMoney(kpi.totalAmount)} ₪`}        hint="إجمالي متراكم" variant="warn" />
+        <KpiCard icon={TrendingUp} label="متوسط / معلمة"      value={kpi.staffCount > 0 ? `${(kpi.totalHours / kpi.staffCount).toFixed(1)} س` : "—"} hint="غير مدفوع" variant="neutral" />
       </div>
 
       {/* cards */}
@@ -480,7 +480,9 @@ export default function StaffHours() {
       ) : (
         <div className="sh-cards-grid">
           {staff.map((member) => {
-            const unpaidAmount = staffUnpaid[member.id] || 0;
+            const unpaidData = staffUnpaid[member.id] || { amount: 0, hours: 0 };
+            const unpaidAmount = unpaidData.amount;
+            const unpaidHours = unpaidData.hours;
             return (
               <div key={member.id} className="sh-teacher-card" style={{ cursor: "pointer" }}
                 onClick={() => navigate(`/staff-hours/${member.id}`)}>
@@ -499,10 +501,16 @@ export default function StaffHours() {
                 </div>
 
                 <div className="sh-card-stats" onClick={e => e.stopPropagation()}>
-                  <div className="sh-stat-box" style={{ gridColumn: "1 / -1" }}>
+                  <div className="sh-stat-box">
                     <div className="sh-stat-label">المستحق غير المدفوع</div>
-                    <div className="sh-stat-value" style={{ fontSize: 20, color: unpaidAmount > 0 ? "#d97706" : "#00ac47" }}>
+                    <div className="sh-stat-value" style={{ fontSize: 16, color: unpaidAmount > 0 ? "#d97706" : "#00ac47" }}>
                       {fmtMoney(unpaidAmount)}<span className="sh-stat-unit"> ₪</span>
+                    </div>
+                  </div>
+                  <div className="sh-stat-box">
+                    <div className="sh-stat-label">ساعات غير مدفوعة</div>
+                    <div className="sh-stat-value" style={{ fontSize: 16, color: unpaidHours > 0 ? "#d97706" : "#00ac47" }}>
+                      {unpaidHours.toFixed(1)}<span className="sh-stat-unit"> س</span>
                     </div>
                   </div>
                 </div>
