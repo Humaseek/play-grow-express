@@ -57,18 +57,7 @@ function monthRange() {
   };
 }
 
-function monthLabel(key) {
-  // key = "YYYY-MM"
-  const [y, m] = key.split("-");
-  const d = new Date(Number(y), Number(m) - 1, 1);
-  return d.toLocaleString("ar", { month: "long", year: "numeric" });
-}
 
-function lastDayOfMonth(key) {
-  const [y, m] = key.split("-");
-  const last = new Date(Number(y), Number(m), 0);
-  return last.toISOString().slice(0, 10);
-}
 
 const EMPTY_FORM = {
   work_date: todayISO(),
@@ -345,69 +334,51 @@ export default function StaffHours() {
     setMonthsLoading(false);
   }
 
-  const monthlyStats = useMemo(() => {
-    const map = {};
-    for (const row of monthsAllHours) {
-      const key = row.work_date?.slice(0, 7);
-      if (!key) continue;
-      if (!map[key]) map[key] = { hours: 0, amount: 0, count: 0 };
-      const h = calcHours(row.start_time, row.end_time);
-      map[key].hours += h;
-      map[key].amount += h * Number(row.hourly_rate || 0);
-      map[key].count += 1;
+  // دفعات مؤكدة (المصروف لا يزال موجوداً)
+  const monthsPaidPayments = useMemo(() => monthsPayments.filter(p => p.expense_id !== null), [monthsPayments]);
+
+  // ساعات غير مدفوعة (خارج نطاق أي دفعة مؤكدة)
+  const monthsUnpaidHours = useMemo(() => monthsAllHours.filter(r =>
+    r.work_date && !monthsPaidPayments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
+  ), [monthsAllHours, monthsPaidPayments]);
+
+  const monthsUnpaidTotals = useMemo(() => {
+    let hours = 0, amount = 0;
+    for (const r of monthsUnpaidHours) {
+      const h = calcHours(r.start_time, r.end_time);
+      hours += h;
+      amount += h * Number(r.hourly_rate || 0);
     }
-    return Object.entries(map)
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([key, s]) => ({ key, ...s }));
-  }, [monthsAllHours]);
+    const dates = monthsUnpaidHours.map(r => r.work_date).filter(Boolean).sort();
+    return { hours, amount, count: monthsUnpaidHours.length, minDate: dates[0], maxDate: dates[dates.length - 1] };
+  }, [monthsUnpaidHours]);
 
-  const paidMap = useMemo(() => {
-    const m = {};
-    for (const p of monthsPayments) {
-      m[`${p.year}-${String(p.month).padStart(2, "0")}`] = p;
-    }
-    return m;
-  }, [monthsPayments]);
+  /* ─── convert unpaid to expense ─── */
+  async function convertToExpense() {
+    if (!monthsModal || monthsUnpaidTotals.count === 0) return;
+    setConverting(true);
+    const { minDate, maxDate, hours, amount } = monthsUnpaidTotals;
+    const description = `راتب ${monthsModal.staffName} — ${fmtDate(minDate)} إلى ${fmtDate(maxDate)}`;
 
-  /* ─── convert month to expense ─── */
-  async function convertToExpense(monthKey) {
-    if (!monthsModal) return;
-    setConverting(monthKey);
-    const [y, mo] = monthKey.split("-");
-    const stats = monthlyStats.find(s => s.key === monthKey);
-    if (!stats) { setConverting(null); return; }
-
-    const description = `راتب ${monthsModal.staffName} — ${monthLabel(monthKey)}`;
-
-    // تأكد إن اسم المعلمة موجود بقائمة الأشخاص/المتاجر في المصاريف
-    await supabase.from("expense_parties")
-      .insert([{ name: monthsModal.staffName }])
-      .then(() => {}); // تجاهل خطأ التكرار
+    await supabase.from("expense_parties").insert([{ name: monthsModal.staffName }]).then(() => {});
 
     const { data: expData, error: expErr } = await supabase
       .from("expenses")
-      .insert([{
-        spent_on: lastDayOfMonth(monthKey),
-        amount: stats.amount,
-        category: "معاش",
-        party: monthsModal.staffName,
-        description,
-      }])
-      .select("id")
-      .single();
+      .insert([{ spent_on: maxDate, amount, category: "معاش", party: monthsModal.staffName, description }])
+      .select("id").single();
 
-    if (expErr) { setErr(expErr.message); setConverting(null); return; }
+    if (expErr) { setErr(expErr.message); setConverting(false); return; }
 
     const { error: payErr } = await supabase.from("staff_salary_payments").insert([{
       staff_id: monthsModal.staffId,
-      year: Number(y),
-      month: Number(mo),
-      total_hours: stats.hours,
-      total_amount: stats.amount,
+      date_from: minDate,
+      date_to: maxDate,
+      total_hours: hours,
+      total_amount: amount,
       expense_id: expData.id,
     }]);
 
-    setConverting(null);
+    setConverting(false);
     if (payErr) { setErr(payErr.message); return; }
     loadMonthsData(monthsModal.staffId);
     load();
@@ -608,65 +579,57 @@ export default function StaffHours() {
       </Modal>
 
       {/* ════ Monthly Summary Modal ════ */}
-      <Modal open={!!monthsModal} title={monthsModal ? `سجل الأشهر — ${monthsModal.staffName}` : ""} onClose={() => setMonthsModal(null)} maxWidth={680}>
+      <Modal open={!!monthsModal} title={monthsModal ? `المستحقات — ${monthsModal.staffName}` : ""} onClose={() => setMonthsModal(null)} maxWidth={560}>
         {monthsLoading ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontWeight: 800 }}>جار التحميل...</div>
-        ) : monthlyStats.length === 0 ? (
+        ) : monthsAllHours.length === 0 ? (
           <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontWeight: 800 }}>لا يوجد سجلات بعد</div>
         ) : (
-          <div>
-            <div style={{ marginBottom: 14, color: "#64748b", fontSize: 13, fontWeight: 700, direction: "rtl" }}>
-              إجمالي {monthlyStats.length} شهر مسجل — اضغط "تحويل لمصروف" لتسجيل الدفعة في سجل المصاريف
-            </div>
-            <div style={{ overflowX: "auto" }}>
-              <table className="sh-month-table">
-                <thead>
-                  <tr>
-                    <th>الشهر</th>
-                    <th>جلسات</th>
-                    <th>ساعات</th>
-                    <th>المبلغ</th>
-                    <th>الحالة</th>
-                    <th>إجراء</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthlyStats.map(({ key, hours: h, amount, count }) => {
-                    const payment = paidMap[key];
-                    return (
-                      <tr key={key}>
-                        <td style={{ fontWeight: 800 }}>{monthLabel(key)}</td>
-                        <td>{count}</td>
-                        <td style={{ fontWeight: 800, color: "#00ac47" }}>{h.toFixed(2)} س</td>
-                        <td style={{ fontWeight: 800 }}>{fmtMoney(amount)} ₪</td>
-                        <td>
-                          {payment ? (
-                            <span className="sh-paid-badge"><CheckCircle2 size={13} /> تم الدفع</span>
-                          ) : (
-                            <span className="sh-unpaid-badge">غير مدفوع</span>
-                          )}
-                        </td>
-                        <td>
-                          {!payment && (
-                            <button
-                              className="sh-convert-btn"
-                              disabled={converting === key}
-                              onClick={() => convertToExpense(key)}
-                            >
-                              <Receipt size={14} />
-                              {converting === key ? "جار..." : "تحويل لمصروف"}
-                            </button>
-                          )}
-                        </td>
+          <div className="stack" style={{ direction: "rtl", gap: 14 }}>
+
+            {/* Unpaid block */}
+            {monthsUnpaidTotals.count > 0 && (
+              <div style={{ background: "#fffbeb", border: "1.5px solid rgba(245,158,11,0.25)", borderRadius: 14, padding: "14px 18px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: 10 }}>
+                  <div>
+                    <span className="sh-unpaid-badge" style={{ marginLeft: 8 }}>غير مدفوع</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#334155" }}>
+                      {monthsUnpaidTotals.count} جلسة · {monthsUnpaidTotals.hours.toFixed(2)} س · {fmtMoney(monthsUnpaidTotals.amount)} ₪
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 700 }}>
+                    {fmtDate(monthsUnpaidTotals.minDate)} — {fmtDate(monthsUnpaidTotals.maxDate)}
+                  </span>
+                </div>
+                <button className="sh-convert-btn" disabled={converting} onClick={convertToExpense} style={{ width: "100%", justifyContent: "center" }}>
+                  <Receipt size={14} /> {converting ? "جار التسجيل..." : `تحويل لمصروف — ${fmtMoney(monthsUnpaidTotals.amount)} ₪`}
+                </button>
+              </div>
+            )}
+
+            {/* Paid records */}
+            {monthsPaidPayments.length > 0 && (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "#64748b", marginBottom: 8 }}>الدفعات المسجلة</div>
+                <table className="sh-month-table">
+                  <thead><tr><th>الفترة</th><th>ساعات</th><th>المبلغ</th><th>الحالة</th></tr></thead>
+                  <tbody>
+                    {monthsPaidPayments.sort((a, b) => b.date_from.localeCompare(a.date_from)).map(p => (
+                      <tr key={p.id}>
+                        <td style={{ fontWeight: 800, fontSize: 13 }}>{fmtDate(p.date_from)} — {fmtDate(p.date_to)}</td>
+                        <td style={{ color: "#00ac47", fontWeight: 800 }}>{Number(p.total_hours || 0).toFixed(2)} س</td>
+                        <td style={{ fontWeight: 800 }}>{fmtMoney(p.total_amount)} ₪</td>
+                        <td><span className="sh-paid-badge"><CheckCircle2 size={13} /> تم الدفع</span></td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div style={{ marginTop: 16, textAlign: "center" }}>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div style={{ textAlign: "center", borderTop: "1px solid #f1f5f9", paddingTop: 12 }}>
               <button className="sh-detail-link" onClick={() => { setMonthsModal(null); navigate(`/staff-hours/${monthsModal.staffId}`); }}>
-                عرض الصفحة الكاملة وطباعة الفاتورة <ChevronLeft size={15} />
+                عرض التفاصيل الكاملة وطباعة الفاتورة <ChevronLeft size={15} />
               </button>
             </div>
           </div>

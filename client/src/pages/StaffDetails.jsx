@@ -298,8 +298,10 @@ export default function StaffDetails() {
 
   /* form */
   const [form, setForm]     = useState(EMPTY_FORM);
-  const [saving, setSaving] = useState(false);
-  const [converting, setConverting] = useState(null);
+  const [saving, setSaving]           = useState(false);
+  const [converting, setConverting]   = useState(false);
+  const [convertModal, setConvertModal] = useState(null); // { dateFrom, dateTo }
+  const [invoiceModal, setInvoiceModal] = useState(null); // { dateFrom, dateTo }
 
   /* ─── load ─── */
   async function load() {
@@ -347,6 +349,48 @@ export default function StaffDetails() {
     return { hours, amount };
   }, [filteredHours]);
 
+  /* ─── paid payments = those whose expense still exists ─── */
+  const paidPayments = useMemo(() => payments.filter(p => p.expense_id !== null), [payments]);
+  const deletedPayments = useMemo(() => payments.filter(p => p.expense_id === null), [payments]);
+
+  /* ─── unpaid hours = not covered by any paid payment ─── */
+  const unpaidHours = useMemo(() => allHours.filter(r =>
+    r.work_date && !paidPayments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
+  ), [allHours, paidPayments]);
+
+  const unpaidTotals = useMemo(() => {
+    let hours = 0, amount = 0;
+    for (const r of unpaidHours) {
+      const h = calcHours(r.start_time, r.end_time);
+      hours += h;
+      amount += h * Number(r.hourly_rate || 0);
+    }
+    return { hours, amount, count: unpaidHours.length };
+  }, [unpaidHours]);
+
+  const unpaidDateRange = useMemo(() => {
+    const dates = unpaidHours.map(r => r.work_date).filter(Boolean).sort();
+    if (!dates.length) return { min: todayISO(), max: todayISO() };
+    return { min: dates[0], max: dates[dates.length - 1] };
+  }, [unpaidHours]);
+
+  /* ─── preview for convert modal ─── */
+  const convertPreview = useMemo(() => {
+    if (!convertModal?.dateFrom || !convertModal?.dateTo) return { hours: 0, amount: 0, count: 0 };
+    const hrs = allHours.filter(r =>
+      r.work_date >= convertModal.dateFrom &&
+      r.work_date <= convertModal.dateTo &&
+      !paidPayments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
+    );
+    let hours = 0, amount = 0;
+    for (const r of hrs) {
+      const h = calcHours(r.start_time, r.end_time);
+      hours += h;
+      amount += h * Number(r.hourly_rate || 0);
+    }
+    return { hours, amount, count: hrs.length };
+  }, [convertModal, allHours, paidPayments]);
+
   /* ─── all-time KPIs ─── */
   const allKpi = useMemo(() => {
     let totalHours = 0, totalAmount = 0, paidAmount = 0;
@@ -355,59 +399,43 @@ export default function StaffDetails() {
       totalHours += h;
       totalAmount += h * Number(r.hourly_rate || 0);
     }
-    for (const p of payments) { paidAmount += Number(p.total_amount || 0); }
-    return { totalHours, totalAmount, paidAmount, pendingAmount: totalAmount - paidAmount };
-  }, [allHours, payments]);
+    for (const p of paidPayments) { paidAmount += Number(p.total_amount || 0); }
+    return { totalHours, totalAmount, paidAmount, pendingAmount: unpaidTotals.amount };
+  }, [allHours, paidPayments, unpaidTotals]);
 
-  /* ─── monthly breakdown ─── */
-  const monthlyStats = useMemo(() => {
-    const map = {};
-    for (const r of allHours) {
-      const key = r.work_date?.slice(0, 7);
-      if (!key) continue;
-      if (!map[key]) map[key] = { hours: 0, amount: 0, count: 0 };
-      const h = calcHours(r.start_time, r.end_time);
-      map[key].hours += h;
-      map[key].amount += h * Number(r.hourly_rate || 0);
-      map[key].count += 1;
-    }
-    return Object.entries(map)
-      .sort(([a], [b]) => b.localeCompare(a))
-      .map(([key, s]) => {
-        const [y, m] = key.split("-");
-        return { key, year: Number(y), month: Number(m), ...s };
-      });
-  }, [allHours]);
+  /* ─── open convert modal ─── */
+  function openConvertModal(dateFrom, dateTo) {
+    setConvertModal({
+      dateFrom: dateFrom || unpaidDateRange.min,
+      dateTo:   dateTo   || unpaidDateRange.max,
+    });
+  }
 
-  const paidMap = useMemo(() => {
-    const m = {};
-    for (const p of payments) {
-      m[`${p.year}-${String(p.month).padStart(2, "0")}`] = p;
-    }
-    return m;
-  }, [payments]);
+  /* ─── execute convert ─── */
+  async function executeConvert() {
+    if (!convertModal || !member || convertPreview.count === 0) return;
+    setConverting(true);
+    const desc = `راتب ${member.name} — ${fmtDate(convertModal.dateFrom)} إلى ${fmtDate(convertModal.dateTo)}`;
 
-  /* ─── convert to expense ─── */
-  async function convertToExpense(ms) {
-    setConverting(ms.key);
-    const description = `راتب ${member.name} — ${monthName(ms.year, ms.month)}`;
-
-    // تأكد إن اسم المعلمة موجود بقائمة الأشخاص/المتاجر في المصاريف
-    await supabase.from("expense_parties")
-      .insert([{ name: member.name }])
-      .then(() => {}); // تجاهل خطأ التكرار
+    await supabase.from("expense_parties").insert([{ name: member.name }]).then(() => {});
 
     const { data: expData, error: expErr } = await supabase
       .from("expenses")
-      .insert([{ spent_on: lastDayOfMonth(ms.year, ms.month), amount: ms.amount, category: "معاش", party: member.name, description }])
+      .insert([{ spent_on: convertModal.dateTo, amount: convertPreview.amount, category: "معاش", party: member.name, description: desc }])
       .select("id").single();
-    if (expErr) { setErr(expErr.message); setConverting(null); return; }
+    if (expErr) { setErr(expErr.message); setConverting(false); return; }
+
     const { error: payErr } = await supabase.from("staff_salary_payments").insert([{
-      staff_id: staffId, year: ms.year, month: ms.month,
-      total_hours: ms.hours, total_amount: ms.amount, expense_id: expData.id,
+      staff_id: staffId,
+      date_from: convertModal.dateFrom,
+      date_to:   convertModal.dateTo,
+      total_hours: convertPreview.hours,
+      total_amount: convertPreview.amount,
+      expense_id: expData.id,
     }]);
-    setConverting(null);
+    setConverting(false);
     if (payErr) { setErr(payErr.message); return; }
+    setConvertModal(null);
     load();
   }
 
@@ -457,12 +485,9 @@ export default function StaffDetails() {
   const totalCalc = hoursCalc * Number(form.hourly_rate || 0);
 
   /* ─── build & print invoice in new window ─── */
-  function buildAndPrintInvoice(ms) {
+  function buildAndPrintInvoice(dateFrom, dateTo) {
     const rows = allHours
-      .filter(r => {
-        const [y, m] = (r.work_date || "").split("-");
-        return Number(y) === ms.year && Number(m) === ms.month;
-      })
+      .filter(r => r.work_date >= dateFrom && r.work_date <= dateTo)
       .sort((a, b) => a.work_date.localeCompare(b.work_date));
 
     let totalHours = 0, totalAmount = 0;
@@ -482,7 +507,7 @@ export default function StaffDetails() {
       </tr>`;
     }).join("");
 
-    const period = monthName(ms.year, ms.month);
+    const period = dateFrom === dateTo ? fmtDate(dateFrom) : `${fmtDate(dateFrom)} — ${fmtDate(dateTo)}`;
 
     const html = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -697,18 +722,43 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
         )}
       </div>
 
-      {/* ─── monthly summary ─── */}
+      {/* ─── payments & pending ─── */}
       <div className="sd-monthly-section">
-        <div className="sd-section-title">ملخص الأشهر</div>
-        <div className="sd-month-table-wrap">
-          {monthlyStats.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontWeight: 800 }}>لا يوجد بيانات</div>
-          ) : (
+        <div className="sd-section-title">المستحقات والدفعات</div>
+
+        {/* Unpaid block */}
+        {unpaidHours.length > 0 && (
+          <div style={{ background: "#fffbeb", border: "1.5px solid rgba(245,158,11,0.25)", borderRadius: 16, padding: "16px 20px", marginBottom: 14, direction: "rtl" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+              <div>
+                <span className="sd-unpaid-badge" style={{ marginLeft: 10 }}>غير مدفوع</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color: "#334155" }}>
+                  {unpaidTotals.count} جلسة &nbsp;·&nbsp; {unpaidTotals.hours.toFixed(2)} س &nbsp;·&nbsp; {fmtMoney(unpaidTotals.amount)} ₪
+                </span>
+              </div>
+              <div style={{ fontSize: 13, color: "#94a3b8", fontWeight: 700 }}>
+                {fmtDate(unpaidDateRange.min)} — {fmtDate(unpaidDateRange.max)}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="sd-convert-btn" style={{ background: "#f0fdf4", color: "#15803d", borderColor: "rgba(21,128,61,0.25)" }}
+                  onClick={() => setInvoiceModal({ dateFrom: unpaidDateRange.min, dateTo: unpaidDateRange.max })}>
+                  <Printer size={14} /> فاتورة
+                </button>
+                <button className="sd-convert-btn" onClick={() => openConvertModal()}>
+                  <Receipt size={14} /> تحويل لمصروف
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Paid & deleted records */}
+        {payments.length > 0 && (
+          <div className="sd-month-table-wrap">
             <table className="sd-month-table">
               <thead>
                 <tr>
-                  <th>الشهر</th>
-                  <th>جلسات</th>
+                  <th>الفترة</th>
                   <th>ساعات</th>
                   <th>المبلغ</th>
                   <th>الحالة</th>
@@ -716,28 +766,27 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
                 </tr>
               </thead>
               <tbody>
-                {monthlyStats.map(ms => {
-                  const payment = paidMap[ms.key];
+                {[...paidPayments, ...deletedPayments].sort((a, b) => b.date_from.localeCompare(a.date_from)).map(p => {
+                  const isDeleted = p.expense_id === null;
                   return (
-                    <tr key={ms.key}>
-                      <td style={{ fontWeight: 800 }}>{monthName(ms.year, ms.month)}</td>
-                      <td>{ms.count}</td>
-                      <td style={{ fontWeight: 800, color: "#00ac47" }}>{ms.hours.toFixed(2)} س</td>
-                      <td style={{ fontWeight: 800 }}>{fmtMoney(ms.amount)} ₪</td>
+                    <tr key={p.id} style={isDeleted ? { background: "#fff7ed" } : {}}>
+                      <td style={{ fontWeight: 800 }}>{fmtDate(p.date_from)} — {fmtDate(p.date_to)}</td>
+                      <td style={{ color: "#00ac47", fontWeight: 800 }}>{Number(p.total_hours || 0).toFixed(2)} س</td>
+                      <td style={{ fontWeight: 800 }}>{fmtMoney(p.total_amount)} ₪</td>
                       <td>
-                        {payment
-                          ? <span className="sd-paid-badge"><CheckCircle2 size={13} /> تم الدفع</span>
-                          : <span className="sd-unpaid-badge">غير مدفوع</span>}
+                        {isDeleted
+                          ? <span style={{ display:"inline-flex",alignItems:"center",gap:5,background:"#fff7ed",color:"#ea580c",border:"1px solid rgba(234,88,12,.2)",borderRadius:10,padding:"4px 10px",fontSize:12,fontWeight:800 }}>⚠️ المصروف محذوف</span>
+                          : <span className="sd-paid-badge"><CheckCircle2 size={13} /> تم الدفع</span>}
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                          <button className="sd-convert-btn" style={{ background: "#f0fdf4", color: "#15803d", borderColor: "rgba(21,128,61,0.25)" }} onClick={() => buildAndPrintInvoice(ms)}>
+                          <button className="sd-convert-btn" style={{ background: "#f0fdf4", color: "#15803d", borderColor: "rgba(21,128,61,0.25)" }}
+                            onClick={() => setInvoiceModal({ dateFrom: p.date_from, dateTo: p.date_to })}>
                             <Printer size={14} /> فاتورة
                           </button>
-                          {!payment && (
-                            <button className="sd-convert-btn" disabled={converting === ms.key} onClick={() => convertToExpense(ms)}>
-                              <Receipt size={14} />
-                              {converting === ms.key ? "جار..." : "تحويل لمصروف"}
+                          {isDeleted && (
+                            <button className="sd-convert-btn" onClick={() => openConvertModal(p.date_from, p.date_to)}>
+                              <Receipt size={14} /> إعادة الدفع
                             </button>
                           )}
                         </div>
@@ -747,8 +796,12 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
                 })}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+        )}
+
+        {allHours.length === 0 && (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontWeight: 800 }}>لا يوجد سجلات بعد</div>
+        )}
       </div>
 
       {/* ════ Log Modal ════ */}
@@ -792,6 +845,60 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
       </Modal>
 
       <ConfirmDialog open={!!deleteLog} title="حذف السجل" message="هل أنت متأكد من الحذف؟" confirmText="حذف" cancelText="إلغاء" danger onConfirm={confirmDeleteLog} onCancel={() => setDeleteLog(null)} />
+
+      {/* ════ Invoice date-range modal ════ */}
+      <Modal open={!!invoiceModal} title="إنشاء فاتورة" onClose={() => setInvoiceModal(null)} maxWidth={380}>
+        <div className="stack" style={{ direction: "rtl" }}>
+          <div className="sd-form-row">
+            <div className="sd-form-group">
+              <label>من تاريخ</label>
+              <input type="date" className="input" value={invoiceModal?.dateFrom || ""} onChange={e => setInvoiceModal(c => ({ ...c, dateFrom: e.target.value }))} />
+            </div>
+            <div className="sd-form-group">
+              <label>إلى تاريخ</label>
+              <input type="date" className="input" value={invoiceModal?.dateTo || ""} onChange={e => setInvoiceModal(c => ({ ...c, dateTo: e.target.value }))} />
+            </div>
+          </div>
+          <button className="btn" disabled={!invoiceModal?.dateFrom || !invoiceModal?.dateTo}
+            onClick={() => { buildAndPrintInvoice(invoiceModal.dateFrom, invoiceModal.dateTo); setInvoiceModal(null); }}
+            style={{ width: "100%", justifyContent: "center" }}>
+            <Printer size={16} /> إنشاء وطباعة
+          </button>
+        </div>
+      </Modal>
+
+      {/* ════ Convert modal ════ */}
+      <Modal open={!!convertModal} title="تحويل لمصروف" onClose={() => setConvertModal(null)} maxWidth={420}>
+        <div className="stack" style={{ direction: "rtl" }}>
+          <div className="sd-form-row">
+            <div className="sd-form-group">
+              <label>من تاريخ</label>
+              <input type="date" className="input" value={convertModal?.dateFrom || ""} onChange={e => setConvertModal(c => ({ ...c, dateFrom: e.target.value }))} />
+            </div>
+            <div className="sd-form-group">
+              <label>إلى تاريخ</label>
+              <input type="date" className="input" value={convertModal?.dateTo || ""} onChange={e => setConvertModal(c => ({ ...c, dateTo: e.target.value }))} />
+            </div>
+          </div>
+          {convertPreview.count > 0 ? (
+            <div className="sd-calc-box">
+              <div className="sd-calc-label">سيتم تسجيل</div>
+              <div>
+                <div className="sd-calc-hours">{convertPreview.hours.toFixed(2)} ساعة</div>
+                <div className="sd-calc-total">{convertPreview.count} جلسة — {fmtMoney(convertPreview.amount)} ₪</div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", color: "#94a3b8", fontWeight: 700, fontSize: 14 }}>
+              لا يوجد ساعات غير مدفوعة في هذا النطاق
+            </div>
+          )}
+          <button className="btn" disabled={converting || convertPreview.count === 0} onClick={executeConvert}
+            style={{ width: "100%", justifyContent: "center" }}>
+            {converting ? "جار التسجيل..." : `تأكيد — ${fmtMoney(convertPreview.amount)} ₪`}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }
