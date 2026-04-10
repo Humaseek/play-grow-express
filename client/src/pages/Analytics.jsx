@@ -987,7 +987,7 @@ function VBarChart({ data, accentColor = "#00ac47" }) {
               x={cx} y={pad.top + cH + 20}
               textAnchor="middle"
               dominantBaseline="hanging"
-              fontSize={9.5}
+              fontSize={12}
               fontWeight={isHov ? 800 : 600}
               fill={isHov ? accentColor : "#64748b"}
               style={{ transition:"fill .1s" }}
