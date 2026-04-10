@@ -923,7 +923,7 @@ export default function Analytics() {
         { data: courses },
       ] = await Promise.all([
         supabase.from("payments_details_view")
-          .select("amount, paid_at, child_id, course_id, course_title, run_id"),
+          .select("amount, created_at, child_id, course_id, course_title, run_id"),
         supabase.from("expenses")
           .select("id, spent_on, amount, category, party, item, run_id"),
         supabase.from("staff_salary_payments")
@@ -987,7 +987,7 @@ export default function Analytics() {
 
   const fPays = useMemo(() => {
     let d = payments;
-    if (from && to)            d = d.filter(p => { const x = p.paid_at?.slice(0,10); return x && x >= from && x <= to; });
+    if (from && to)            d = d.filter(p => { const x = p.created_at?.slice(0,10); return x && x >= from && x <= to; });
     if (selCourses.length > 0) d = d.filter(p => selCourses.includes(String(p.course_id)));
     if (selKinds.length > 0)   d = d.filter(p => isKindMatch(p.course_id, selKinds));
     return d;
@@ -1045,7 +1045,7 @@ export default function Analytics() {
   /* ── monthly trend (uses already-filtered fPays / fExps) ── */
   const monthlyTrend = useMemo(() => {
     const inc = {}, exp = {};
-    for (const p of fPays) { const mo = p.paid_at?.slice(0,7); if (mo) inc[mo] = (inc[mo]||0) + Number(p.amount||0); }
+    for (const p of fPays) { const mo = p.created_at?.slice(0,7); if (mo) inc[mo] = (inc[mo]||0) + Number(p.amount||0); }
     for (const e of fExps) { const mo = e.spent_on?.slice(0,7); if (mo) exp[mo] = (exp[mo]||0) + Number(e.amount||0); }
     const months = Array.from(new Set([...Object.keys(inc), ...Object.keys(exp)])).sort();
     return months.map(mo => ({ month:mo, income: inc[mo]||0, expense: exp[mo]||0 }));
