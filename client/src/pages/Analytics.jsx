@@ -131,20 +131,30 @@ const CSS = `
               inset 0 0 0 1px rgba(255,255,255,0.5);
 }
 
-/* ── Filter panel ── */
-.an-filter-bar { display: none; } /* legacy, unused */
-.an-filter-panel {
-  position: sticky; top: 0; z-index: 50;
-  background: rgba(255,255,255,0.96);
+/* ── Sidebar layout ── */
+.an-layout { display: flex; flex-direction: row; gap: 24px; align-items: flex-start; direction: rtl; }
+.an-main   { flex: 1; min-width: 0; }
+.an-sidebar {
+  width: 210px; flex-shrink: 0;
+  position: sticky; top: 16px; z-index: 50;
+  display: flex; flex-direction: column; gap: 18px;
+  background: rgba(255,255,255,0.97);
   backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.95);
-  box-shadow: 0 2px 16px rgba(15,23,42,0.06), inset 0 0 0 1px rgba(255,255,255,0.4);
-  padding: 18px 22px;
-  margin-bottom: 28px;
-  display: flex; flex-direction: column; gap: 14px;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 2px 20px rgba(15,23,42,0.07);
+  padding: 20px 16px;
   direction: rtl;
 }
+.an-sidebar-lbl {
+  font-size: 11px; font-weight: 900; color: #94a3b8;
+  letter-spacing: 0.05em; margin-bottom: 6px;
+}
+.an-sidebar-hr { height: 1px; background: #f1f5f9; border: none; margin: 0; }
+
+/* ── Filter panel (legacy horizontal — keep for fallback) ── */
+.an-filter-bar { display: none; }
+.an-filter-panel { display: none; } /* replaced by sidebar */
 .an-filter-row {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
@@ -152,7 +162,7 @@ const CSS = `
   font-size: 11px; font-weight: 900; color: #94a3b8;
   letter-spacing: 0.05em; min-width: 46px; flex-shrink: 0;
 }
-.an-filter-divider { width: 1px; height: 18px; background: #e2e8f0; flex-shrink:0; margin: 0 4px; }
+.an-filter-divider { display: none; }
 
 /* ── Pills ── */
 .an-preset {
@@ -1383,8 +1393,13 @@ export default function Analytics() {
 
       {err && <ErrorBanner message={err} onClose={() => setErr(null)} />}
 
-      {/* ══ FILTER PANEL ══ */}
-      <div className="an-filter-panel" style={{ flexDirection:"row", alignItems:"flex-start", gap:16, flexWrap:"wrap" }}>
+      {/* ══ SIDEBAR + MAIN LAYOUT ══ */}
+      <div className="an-layout">
+
+      {/* ══ FILTER SIDEBAR — right side in RTL ══ */}
+      <div className="an-sidebar">
+        <div style={{ fontSize:13, fontWeight:900, color:"#334155", marginBottom:2 }}>الفلاتر</div>
+        <hr className="an-sidebar-hr" />
 
         {/* Date dropdown */}
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -1566,7 +1581,10 @@ export default function Analytics() {
             </div>
           </>
         )}
-      </div>
+      </div>{/* /an-sidebar */}
+
+      {/* ── MAIN CONTENT ── */}
+      <div className="an-main">
 
       {/* ══ LOADING SKELETON ══ */}
       {loading && (
@@ -1699,8 +1717,8 @@ export default function Analytics() {
                 <VBarChart data={incomeByCourse} accentColor="#00ac47" />
               </Card>
               <Card>
-                <CardTitle action={incomeByCountry.length > 0 ? `${incomeByCountry.length} دولة` : undefined}>
-                  الدخل حسب الدولة
+                <CardTitle action={incomeByCountry.length > 0 ? `${incomeByCountry.length} بلد` : undefined}>
+                  الدخل حسب البلد
                 </CardTitle>
                 <HBar data={incomeByCountry} accentColor="#3b82f6" />
               </Card>
@@ -1853,6 +1871,8 @@ export default function Analytics() {
           </div>
         </>
       )}
+      </div>{/* /an-main */}
+      </div>{/* /an-layout */}
     </div>
   );
 }
