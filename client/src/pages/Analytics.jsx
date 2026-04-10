@@ -561,14 +561,15 @@ function ExpenseCategoryCard({ data }) {
 
 /* ── Area / Line chart (SVG) — smooth bezier + crosshair ── */
 function TrendChart({ data }) {
-  const svgRef     = useRef(null);
+  const svgRef       = useRef(null);
   const [hoverIdx,   setHoverIdx]   = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x:0, y:0 });
+  const [isHovering, setIsHovering] = useState(false);
 
   if (!data.length) return <Empty />;
 
-  const W = 620, H = 210;
-  const pad = { top:24, right:24, bottom:38, left:62 };
+  const W = 700, H = 310;
+  const pad = { top:32, right:32, bottom:52, left:72 };
   const cW  = W - pad.left - pad.right;
   const cH  = H - pad.top  - pad.bottom;
   const n   = data.length;
@@ -596,16 +597,18 @@ function TrendChart({ data }) {
     setTooltipPos({ x: e.clientX, y: e.clientY });
   }
 
-  const hov = hoverIdx !== null ? data[hoverIdx] : null;
+  const showHover = isHovering && hoverIdx !== null;
+  const hov = showHover ? data[hoverIdx] : null;
 
   return (
     <>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        style={{ width:"100%", height:"auto", maxHeight:210, display:"block", cursor:"crosshair" }}
+        style={{ width:"100%", height:"auto", maxHeight:310, display:"block", cursor:"crosshair" }}
+        onMouseEnter={() => setIsHovering(true)}
         onMouseMove={handleMouseMove}
-        onMouseLeave={() => setHoverIdx(null)}
+        onMouseLeave={() => { setIsHovering(false); setHoverIdx(null); }}
       >
         <defs>
           <linearGradient id="an-g-inc" x1="0" y1="0" x2="0" y2="1">
@@ -642,8 +645,8 @@ function TrendChart({ data }) {
         {hasExp && n > 1 && <path d={expLine} fill="none" stroke="#ef4444" strokeWidth={2}
           strokeLinejoin="round" strokeLinecap="round" strokeDasharray="5 3" />}
 
-        {/* Vertical crosshair */}
-        {hoverIdx !== null && (
+        {/* Vertical crosshair — only on hover */}
+        {showHover && (
           <line
             x1={xAt(hoverIdx)} y1={pad.top}
             x2={xAt(hoverIdx)} y2={pad.top + cH}
@@ -651,8 +654,8 @@ function TrendChart({ data }) {
           />
         )}
 
-        {/* Horizontal dotted line to y-axis at hovered income */}
-        {hov && (
+        {/* Horizontal dotted line to y-axis at hovered income — only on hover */}
+        {showHover && hov && (
           <line
             x1={pad.left} y1={yAt(hov.income)}
             x2={xAt(hoverIdx)} y2={yAt(hov.income)}
@@ -662,15 +665,15 @@ function TrendChart({ data }) {
 
         {/* Dots */}
         {data.map((d, i) => {
-          const isHov = hoverIdx === i;
+          const isHov = showHover && hoverIdx === i;
           return (
             <g key={i}>
-              {isHov && <circle cx={xAt(i)} cy={yAt(d.income)} r={10} fill="rgba(0,172,71,0.1)" />}
-              <circle cx={xAt(i)} cy={yAt(d.income)} r={isHov ? 5.5 : 4}
-                fill="#fff" stroke="#00ac47" strokeWidth={2} />
+              {isHov && <circle cx={xAt(i)} cy={yAt(d.income)} r={12} fill="rgba(0,172,71,0.1)" />}
+              <circle cx={xAt(i)} cy={yAt(d.income)} r={isHov ? 6 : 4.5}
+                fill="#fff" stroke="#00ac47" strokeWidth={2.5} />
               {d.expense > 0 && <>
-                {isHov && <circle cx={xAt(i)} cy={yAt(d.expense)} r={9} fill="rgba(239,68,68,0.08)" />}
-                <circle cx={xAt(i)} cy={yAt(d.expense)} r={isHov ? 5 : 3.5}
+                {isHov && <circle cx={xAt(i)} cy={yAt(d.expense)} r={10} fill="rgba(239,68,68,0.08)" />}
+                <circle cx={xAt(i)} cy={yAt(d.expense)} r={isHov ? 5.5 : 4}
                   fill="#fff" stroke="#ef4444" strokeWidth={2} />
               </>}
             </g>
@@ -679,10 +682,10 @@ function TrendChart({ data }) {
 
         {/* X-axis labels */}
         {data.map((d, i) => (
-          <text key={i} x={xAt(i)} y={H - 6} textAnchor="middle"
-            fontSize={9}
-            fill={hoverIdx === i ? "#334155" : "#94a3b8"}
-            fontWeight={hoverIdx === i ? 800 : 400}>
+          <text key={i} x={xAt(i)} y={H - 10} textAnchor="middle"
+            fontSize={10}
+            fill={showHover && hoverIdx === i ? "#334155" : "#94a3b8"}
+            fontWeight={showHover && hoverIdx === i ? 800 : 400}>
             {monthLabel(d.month)}
           </text>
         ))}
@@ -696,7 +699,7 @@ function TrendChart({ data }) {
         </g>
       </svg>
 
-      <Tooltip visible={hoverIdx !== null} x={tooltipPos.x} y={tooltipPos.y}>
+      <Tooltip visible={showHover} x={tooltipPos.x} y={tooltipPos.y}>
         {hov && (
           <>
             <div className="an-tooltip-title">{monthLabel(hov.month)}</div>
@@ -1057,7 +1060,7 @@ export default function Analytics() {
 
           {/* 2 · Monthly Trend */}
           <div className="an-section">
-            <Card>
+            <Card style={{ padding: "32px 36px" }}>
               <CardTitle action={monthlyTrend.length > 0 ? `${monthlyTrend.length} شهر` : undefined}>
                 التطور الشهري — الدخل مقابل المصاريف
               </CardTitle>
