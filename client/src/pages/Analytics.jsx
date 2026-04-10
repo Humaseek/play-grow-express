@@ -365,8 +365,8 @@ function Tooltip({ visible, x, y, children }) {
   if (typeof document === "undefined") return null;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const dx = x > vw - 240 ? -196 : 16;
-  const dy = y > vh - 180 ? -155 : -10;
+  const dx = x > vw - 240 ? -216 : 20;
+  const dy = y > vh - 220 ? -195 : -75;
   return ReactDOM.createPortal(
     <div
       className="an-tooltip"
