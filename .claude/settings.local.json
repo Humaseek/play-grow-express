@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -rh \"from\\(\\\\\"\" /c/Users/Socrates/Desktop/play-grow-express/client/src/pages/*.jsx)",
+      "Bash(grep -n \"create table\" /c/Users/Socrates/Desktop/play-grow-express/supabase/migrations/*.sql)",
+      "Bash(grep -n \"staff\" /c/Users/Socrates/Desktop/play-grow-express/supabase/migrations/*.sql)"
+    ]
+  }
+}

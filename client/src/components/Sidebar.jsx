@@ -8,6 +8,7 @@ import {
   CreditCard,
   Receipt,
   Clock,
+  BarChart2,
 } from "lucide-react";
 
 export default function Sidebar({ onSignOut }) {
@@ -60,6 +61,13 @@ export default function Sidebar({ onSignOut }) {
           className={({ isActive }) => (isActive ? "active" : "")}
         >
           <UsersRound size={18} /> <span>الاطفال</span>
+        </NavLink>
+
+        <NavLink
+          to="/analytics"
+          className={({ isActive }) => (isActive ? "active" : "")}
+        >
+          <BarChart2 size={18} /> <span>التحليل المالي</span>
         </NavLink>
       </nav>
 

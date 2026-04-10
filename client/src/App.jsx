@@ -23,6 +23,7 @@ import Payments from "./pages/Payments";
 import Expenses from "./pages/Expenses";
 import StaffHours from "./pages/StaffHours";
 import StaffDetails from "./pages/StaffDetails";
+import Analytics from "./pages/Analytics";
 
 export default function App() {
   // If Supabase env vars are missing, render a friendly screen instead of a white page.
@@ -97,6 +98,8 @@ export default function App() {
               <Route path="expenses" element={<Expenses />} />
               <Route path="staff-hours" element={<StaffHours />} />
               <Route path="staff-hours/:staffId" element={<StaffDetails />} />
+
+              <Route path="analytics" element={<Analytics />} />
 
               <Route path="children" element={<Children />} />
               <Route path="children/:childId" element={<ChildDetails />} />
