@@ -5,7 +5,7 @@ import PageHeader from "../components/PageHeader";
 import ErrorBanner from "../components/ErrorBanner";
 import KpiCard from "../components/KpiCard";
 import {
-  TrendingUp, TrendingDown, Banknote, Users, BarChart2,
+  TrendingUp, TrendingDown, Banknote, BarChart2,
   ShoppingCart, Briefcase, BookOpen, RefreshCw,
   ArrowUpRight, ArrowDownRight, ChevronDown, Check, X,
 } from "lucide-react";
@@ -1388,15 +1388,17 @@ export default function Analytics() {
 
       <PageHeader
         title={
-          <span style={{ display:"inline-flex", alignItems:"center", gap:10 }}>
-            التحليل المالي
+          <>
+            التحليل المالي{" "}
             <span style={{
+              display:"inline-block", verticalAlign:"middle",
               fontSize:10, fontWeight:800, color:"#00ac47",
-              background:"rgba(0,172,71,0.1)", padding:"3px 9px",
+              background:"rgba(0,172,71,0.1)", padding:"2px 8px",
               borderRadius:999, letterSpacing:"0.06em",
-              border:"1px solid rgba(0,172,71,0.2)", lineHeight:1.5,
+              border:"1px solid rgba(0,172,71,0.2)",
+              whiteSpace:"nowrap", lineHeight:1.6,
             }}>● مباشر</span>
-          </span>
+          </>
         }
         subtitle="نظرة شاملة على الدخل والمصاريف والأداء المالي"
         actions={
@@ -1653,10 +1655,6 @@ export default function Analytics() {
                     }
                     variant={kpi.netProfit >= 0 ? "ok" : "danger"}
                   />
-                </div>
-                {/* Row 2 — children */}
-                <div style={{ marginBottom:32 }}>
-                  <KpiCard icon={Users} label="أطفال نشطون" value={kpi.activeStudents} hint="دفعوا خلال الفترة" variant="info" />
                 </div>
               </>
             );
