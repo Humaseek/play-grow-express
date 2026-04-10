@@ -868,7 +868,7 @@ export default function Analytics() {
   const [childMap,      setChildMap]      = useState({});
 
   /* Global filters */
-  const [globalCourse,   setGlobalCourse]   = useState("all");
+  const [selCourses,     setSelCourses]     = useState([]); // [] = all
   const [courseDropOpen, setCourseDropOpen] = useState(false);
   const [dateDropOpen,   setDateDropOpen]   = useState(false);
   const courseDropRef = useRef(null);
@@ -937,37 +937,46 @@ export default function Analytics() {
   /* ── run → course mapping ── */
   const runCourseMap = useMemo(() => {
     const map = {};
-    for (const p of payments) { if (p.run_id && p.course_id) map[p.run_id] = p.course_id; }
+    for (const p of payments) { if (p.run_id && p.course_id) map[p.run_id] = String(p.course_id); }
     return map;
   }, [payments]);
 
   /* ── course list for dropdown ── */
   const courseOptions = useMemo(() => {
     const map = {};
-    for (const p of payments) { if (p.course_id && p.course_title) map[p.course_id] = p.course_title; }
+    // Stringify IDs to avoid number/string mismatch in comparisons
+    for (const p of payments) { if (p.course_id && p.course_title) map[String(p.course_id)] = p.course_title; }
     return Object.entries(map).map(([id, title]) => ({ id, title }));
   }, [payments]);
 
-  const selectedCourseLabel = globalCourse === "all"
+  function toggleCourse(id) {
+    setSelCourses(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  }
+
+  const courseFilterLabel = selCourses.length === 0
     ? "كل الدورات"
-    : courseOptions.find(c => c.id === globalCourse)?.title ?? "دورة";
+    : selCourses.length === 1
+      ? courseOptions.find(c => c.id === selCourses[0])?.title ?? "دورة"
+      : `${selCourses.length} دورات`;
 
   const selectedPresetLabel = PRESETS.find(p => p.key === preset)?.label ?? "الفترة";
 
-  /* ── filtered slices (date + course — affects ALL charts/KPIs) ── */
+  /* ── filtered slices (date + courses — affects ALL charts/KPIs) ── */
   const fPays = useMemo(() => {
     let d = payments;
-    if (from && to)            d = d.filter(p => { const x = p.paid_at?.slice(0,10); return x && x >= from && x <= to; });
-    if (globalCourse !== "all") d = d.filter(p => p.course_id === globalCourse);
+    if (from && to)          d = d.filter(p => { const x = p.paid_at?.slice(0,10); return x && x >= from && x <= to; });
+    if (selCourses.length > 0) d = d.filter(p => selCourses.includes(String(p.course_id)));
     return d;
-  }, [payments, from, to, globalCourse]);
+  }, [payments, from, to, selCourses]);
 
   const fExps = useMemo(() => {
     let d = expenses;
-    if (from && to)            d = d.filter(e => e.spent_on && e.spent_on >= from && e.spent_on <= to);
-    if (globalCourse !== "all") d = d.filter(e => e.run_id && runCourseMap[e.run_id] === globalCourse);
+    if (from && to)          d = d.filter(e => e.spent_on && e.spent_on >= from && e.spent_on <= to);
+    if (selCourses.length > 0) d = d.filter(e => e.run_id && selCourses.includes(String(runCourseMap[e.run_id])));
     return d;
-  }, [expenses, from, to, globalCourse, runCourseMap]);
+  }, [expenses, from, to, selCourses, runCourseMap]);
 
   const fStaff = useMemo(() => {
     if (!from || !to) return staffPayments;
@@ -1157,49 +1166,63 @@ export default function Analytics() {
 
         <div className="an-filter-divider" style={{ height:"auto", alignSelf:"stretch", margin:"0 4px" }} />
 
-        {/* Course dropdown */}
+        {/* Course dropdown — multi-select */}
         {courseOptions.length > 0 && (
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
             <span className="an-filter-label">الدورة</span>
             <div className="an-dropdown" ref={courseDropRef}>
               <button
-                className={`an-dropdown-trigger${courseDropOpen || globalCourse !== "all" ? " an-open" : ""}`}
+                className={`an-dropdown-trigger${courseDropOpen || selCourses.length > 0 ? " an-open" : ""}`}
                 onClick={() => { setCourseDropOpen(o => !o); setDateDropOpen(false); }}
               >
-                {selectedCourseLabel}
+                {courseFilterLabel}
                 <ChevronDown size={14} style={{ transition:"transform .2s", transform: courseDropOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
               </button>
 
               {courseDropOpen && (
                 <div className="an-dropdown-menu">
+                  {/* Clear all */}
                   <div
-                    className={`an-dropdown-item${globalCourse === "all" ? " an-sel" : ""}`}
-                    onClick={() => { setGlobalCourse("all"); setCourseDropOpen(false); }}
+                    className={`an-dropdown-item${selCourses.length === 0 ? " an-sel" : ""}`}
+                    onClick={() => setSelCourses([])}
                   >
                     <span>كل الدورات</span>
-                    {globalCourse === "all" && <Check size={14} />}
+                    {selCourses.length === 0 && <Check size={14} />}
                   </div>
-                  {courseOptions.map(c => (
-                    <div
-                      key={c.id}
-                      className={`an-dropdown-item${globalCourse === c.id ? " an-sel" : ""}`}
-                      onClick={() => { setGlobalCourse(c.id); setCourseDropOpen(false); }}
-                    >
-                      <span>{c.title}</span>
-                      {globalCourse === c.id && <Check size={14} />}
-                    </div>
-                  ))}
+                  <div style={{ height:1, background:"#f1f5f9", margin:"4px 8px" }} />
+                  {courseOptions.map(c => {
+                    const checked = selCourses.includes(c.id);
+                    return (
+                      <div
+                        key={c.id}
+                        className={`an-dropdown-item${checked ? " an-sel" : ""}`}
+                        onClick={() => toggleCourse(c.id)}
+                      >
+                        <span>{c.title}</span>
+                        {checked && <Check size={14} />}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            {globalCourse !== "all" && (
-              <span className="an-chip">
-                {selectedCourseLabel}
-                <button className="an-chip-clear" onClick={() => setGlobalCourse("all")}>
-                  <X size={12} />
+            {/* Active chips — one per selected course */}
+            {selCourses.length > 0 && (
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                {selCourses.map(id => (
+                  <span key={id} className="an-chip" style={{ fontSize:12 }}>
+                    {courseOptions.find(c => c.id === id)?.title ?? id}
+                    <button className="an-chip-clear" onClick={() => toggleCourse(id)}>
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+                <button className="an-chip-clear" style={{ fontSize:12, color:"#64748b", padding:"4px 6px" }}
+                  onClick={() => setSelCourses([])}>
+                  مسح الكل
                 </button>
-              </span>
+              </div>
             )}
           </div>
         )}
