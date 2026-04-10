@@ -557,7 +557,6 @@ function DonutChart({ data, size = 190, onSliceHover, setTooltipPos: setExtTPos 
             onSliceHover && onSliceHover(null);
           }}
         >
-          <title>{s.label}: {fmtMoney(s.value)} ₪ ({s.pct}%)</title>
         </path>
       ))}
       <circle cx={cx} cy={cy} r={r - 2} fill="white" />
