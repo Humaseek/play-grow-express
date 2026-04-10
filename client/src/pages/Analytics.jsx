@@ -862,22 +862,27 @@ export default function Analytics() {
   const [loading,    setLoading]    = useState(true);
   const [err,        setErr]        = useState(null);
 
-  const [payments,      setPayments]      = useState([]);
-  const [expenses,      setExpenses]      = useState([]);
-  const [staffPayments, setStaffPayments] = useState([]);
-  const [childMap,      setChildMap]      = useState({});
+  const [payments,       setPayments]       = useState([]);
+  const [expenses,       setExpenses]       = useState([]);
+  const [staffPayments,  setStaffPayments]  = useState([]);
+  const [childMap,       setChildMap]       = useState({});
+  const [courseKindMap,  setCourseKindMap]  = useState({});
 
   /* Global filters */
   const [selCourses,     setSelCourses]     = useState([]); // [] = all
+  const [selKinds,       setSelKinds]       = useState([]); // [] = all, "workshop" | "course"
   const [courseDropOpen, setCourseDropOpen] = useState(false);
+  const [kindDropOpen,   setKindDropOpen]   = useState(false);
   const [dateDropOpen,   setDateDropOpen]   = useState(false);
   const courseDropRef = useRef(null);
+  const kindDropRef   = useRef(null);
   const dateDropRef   = useRef(null);
 
   // Close dropdowns on outside click
   useEffect(() => {
     function handler(e) {
       if (courseDropRef.current && !courseDropRef.current.contains(e.target)) setCourseDropOpen(false);
+      if (kindDropRef.current   && !kindDropRef.current.contains(e.target))   setKindDropOpen(false);
       if (dateDropRef.current   && !dateDropRef.current.contains(e.target))   setDateDropOpen(false);
     }
     document.addEventListener("mousedown", handler);
@@ -906,10 +911,11 @@ export default function Analytics() {
     setLoading(true); setErr(null);
     try {
       const [
-        { data: pays,  error: e1 },
-        { data: exps,  error: e2 },
-        { data: staff, error: e3 },
+        { data: pays,    error: e1 },
+        { data: exps,    error: e2 },
+        { data: staff,   error: e3 },
         { data: kids },
+        { data: courses },
       ] = await Promise.all([
         supabase.from("payments_details_view")
           .select("amount, paid_at, child_id, course_id, course_title, run_id"),
@@ -918,6 +924,7 @@ export default function Analytics() {
         supabase.from("staff_salary_payments")
           .select("total_amount, date_to, expense_id"),
         supabase.from("children_view").select("id, country"),
+        supabase.from("courses").select("id, kind"),
       ]);
       if (e1 || e2 || e3) throw e1 || e2 || e3;
       setPayments(pays  || []);
@@ -926,6 +933,9 @@ export default function Analytics() {
       const cmap = {};
       for (const c of kids || []) { if (c.id) cmap[c.id] = c.country || "غير محدد"; }
       setChildMap(cmap);
+      const kmap = {};
+      for (const c of courses || []) { if (c.id) kmap[String(c.id)] = c.kind || "course"; }
+      setCourseKindMap(kmap);
     } catch (e) {
       setErr(e?.message || "حدث خطأ أثناء تحميل البيانات");
     } finally {
@@ -964,19 +974,51 @@ export default function Analytics() {
   const selectedPresetLabel = PRESETS.find(p => p.key === preset)?.label ?? "الفترة";
 
   /* ── filtered slices (date + courses — affects ALL charts/KPIs) ── */
+  const isKindMatch = (courseId, kinds) => {
+    if (!kinds.length) return true;
+    const k = courseKindMap[String(courseId)] || "course";
+    return kinds.some(sk => sk === "workshop" ? k === "workshop" : k !== "workshop");
+  };
+
   const fPays = useMemo(() => {
     let d = payments;
-    if (from && to)          d = d.filter(p => { const x = p.paid_at?.slice(0,10); return x && x >= from && x <= to; });
+    if (from && to)            d = d.filter(p => { const x = p.paid_at?.slice(0,10); return x && x >= from && x <= to; });
     if (selCourses.length > 0) d = d.filter(p => selCourses.includes(String(p.course_id)));
+    if (selKinds.length > 0)   d = d.filter(p => isKindMatch(p.course_id, selKinds));
     return d;
-  }, [payments, from, to, selCourses]);
+  }, [payments, from, to, selCourses, selKinds, courseKindMap]);
 
   const fExps = useMemo(() => {
     let d = expenses;
-    if (from && to)          d = d.filter(e => e.spent_on && e.spent_on >= from && e.spent_on <= to);
+    if (from && to)            d = d.filter(e => e.spent_on && e.spent_on >= from && e.spent_on <= to);
     if (selCourses.length > 0) d = d.filter(e => e.run_id && selCourses.includes(String(runCourseMap[e.run_id])));
+    if (selKinds.length > 0)   d = d.filter(e => {
+      const cid = runCourseMap[e.run_id];
+      return cid ? isKindMatch(cid, selKinds) : false;
+    });
     return d;
-  }, [expenses, from, to, selCourses, runCourseMap]);
+  }, [expenses, from, to, selCourses, selKinds, runCourseMap, courseKindMap]);
+
+  /* ── kind comparison (always off unfiltered fPays/fExps by date only) ── */
+  const kindComparison = useMemo(() => {
+    const calc = (kindCheck) => {
+      const pays = fPays.filter(p => kindCheck(courseKindMap[String(p.course_id)] || "course"));
+      const exps = fExps.filter(e => {
+        const cid = runCourseMap[e.run_id]; if (!cid) return false;
+        return kindCheck(courseKindMap[cid] || "course");
+      });
+      const income  = pays.reduce((s, p) => s + Number(p.amount || 0), 0);
+      const expense = exps.reduce((s, e) => s + Number(e.amount || 0), 0);
+      const net     = income - expense;
+      const margin  = income > 0 ? (net / income) * 100 : 0;
+      const students = new Set(pays.map(p => p.child_id).filter(Boolean)).size;
+      return { income, expense, net, margin, students };
+    };
+    return {
+      courses:   calc(k => k !== "workshop"),
+      workshops: calc(k => k === "workshop"),
+    };
+  }, [fPays, fExps, courseKindMap, runCourseMap]);
 
   const fStaff = useMemo(() => {
     if (!from || !to) return staffPayments;
@@ -1166,6 +1208,47 @@ export default function Analytics() {
 
         <div className="an-filter-divider" style={{ height:"auto", alignSelf:"stretch", margin:"0 4px" }} />
 
+        {/* Kind dropdown */}
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <span className="an-filter-label">النوع</span>
+          <div className="an-dropdown" ref={kindDropRef}>
+            <button
+              className={`an-dropdown-trigger${kindDropOpen || selKinds.length > 0 ? " an-open" : ""}`}
+              onClick={() => { setKindDropOpen(o => !o); setCourseDropOpen(false); setDateDropOpen(false); }}
+            >
+              {selKinds.length === 0 ? "الكل" : selKinds.length === 2 ? "الكل" : selKinds[0] === "workshop" ? "ورشات" : "دورات"}
+              <ChevronDown size={14} style={{ transition:"transform .2s", transform: kindDropOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
+            </button>
+            {kindDropOpen && (
+              <div className="an-dropdown-menu">
+                {[{ id:"course", label:"دورات" }, { id:"workshop", label:"ورشات" }].map(opt => {
+                  const checked = selKinds.includes(opt.id);
+                  return (
+                    <div
+                      key={opt.id}
+                      className={`an-dropdown-item${checked ? " an-sel" : ""}`}
+                      onClick={() => setSelKinds(prev => checked ? prev.filter(x => x !== opt.id) : [...prev, opt.id])}
+                    >
+                      <span>{opt.label}</span>
+                      {checked && <Check size={14} />}
+                    </div>
+                  );
+                })}
+                {selKinds.length > 0 && (
+                  <>
+                    <div style={{ height:1, background:"#f1f5f9", margin:"4px 8px" }} />
+                    <div className="an-dropdown-item" onClick={() => { setSelKinds([]); setKindDropOpen(false); }}>
+                      <span style={{ color:"#64748b" }}>مسح</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="an-filter-divider" style={{ height:"auto", alignSelf:"stretch", margin:"0 4px" }} />
+
         {/* Course dropdown — multi-select */}
         {courseOptions.length > 0 && (
           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -1272,6 +1355,71 @@ export default function Analytics() {
             />
             <KpiCard icon={Users} label="طلاب نشطون" value={kpi.activeStudents} hint="دفعوا خلال الفترة" variant="info" />
           </div>
+
+          {/* 1b · Kind comparison */}
+          {(kindComparison.courses.income > 0 || kindComparison.workshops.income > 0) && (
+            <div className="an-section">
+              <Card>
+                <CardTitle>مقارنة: دورات مقابل ورشات</CardTitle>
+                <div className="an-2col" style={{ gap:24 }}>
+                  {[
+                    { label:"دورات", color:"#3b82f6", data: kindComparison.courses },
+                    { label:"ورشات", color:"#8b5cf6", data: kindComparison.workshops },
+                  ].map(({ label, color, data }) => {
+                    const totalIncome = kindComparison.courses.income + kindComparison.workshops.income || 1;
+                    const sharePct = ((data.income / totalIncome) * 100).toFixed(1);
+                    return (
+                      <div key={label} style={{ borderRadius:16, border:`1.5px solid ${color}22`, padding:"18px 20px", background:`${color}07` }}>
+                        {/* Header */}
+                        <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:18, direction:"rtl" }}>
+                          <div style={{ width:10, height:10, borderRadius:"50%", background:color, flexShrink:0 }} />
+                          <span style={{ fontSize:17, fontWeight:900, color:"#1e293b" }}>{label}</span>
+                          <span style={{ marginRight:"auto", fontSize:12, fontWeight:700, color, background:`${color}15`, padding:"3px 10px", borderRadius:999 }}>
+                            {sharePct}% من الدخل
+                          </span>
+                        </div>
+
+                        {/* Metrics */}
+                        {[
+                          { label:"الدخل",       val: data.income,  color:"#00ac47" },
+                          { label:"المصاريف",    val: data.expense, color:"#ef4444" },
+                          { label:"صافي الربح",  val: data.net,     color: data.net >= 0 ? "#00ac47" : "#ef4444" },
+                        ].map(row => (
+                          <div key={row.label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, direction:"rtl" }}>
+                            <span style={{ fontSize:13, color:"#64748b", fontWeight:700 }}>{row.label}</span>
+                            <span style={{ fontSize:14, fontWeight:900, color: row.color }}>{fmtMoney(row.val)} ₪</span>
+                          </div>
+                        ))}
+
+                        {/* Margin bar */}
+                        <div style={{ marginTop:14, direction:"rtl" }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                            <span style={{ fontSize:12, color:"#94a3b8", fontWeight:700 }}>هامش الربح</span>
+                            <span style={{ fontSize:13, fontWeight:900, color: data.margin >= 0 ? color : "#ef4444" }}>
+                              {data.margin.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div style={{ background:"#e2e8f0", borderRadius:6, height:8, overflow:"hidden" }}>
+                            <div style={{
+                              width:`${Math.max(0, Math.min(100, Math.abs(data.margin)))}%`,
+                              height:"100%", borderRadius:6,
+                              background: data.margin >= 0 ? color : "#ef4444",
+                              transition:"width .7s cubic-bezier(.4,0,.2,1)",
+                            }} />
+                          </div>
+                        </div>
+
+                        {/* Student count */}
+                        <div style={{ marginTop:12, fontSize:12, color:"#94a3b8", fontWeight:700, textAlign:"right" }}>
+                          {data.students} طالب نشط
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            </div>
+          )}
 
           {/* 2 · Monthly Trend */}
           <div className="an-section">
