@@ -38,10 +38,11 @@ function fmtDT(dt) {
 }
 
 function methodLabel(m) {
-  if (m === "cash") return "كاش";
-  if (m === "card") return "بطاقة";
+  if (m === "cash")     return "كاش";
+  if (m === "card")     return "بطاقة";
   if (m === "transfer") return "تحويل بنكي";
-  if (m === "other") return "أخرى";
+  if (m === "bit")      return "بييت";
+  if (m === "other")    return "أخرى";
   return "—";
 }
 
