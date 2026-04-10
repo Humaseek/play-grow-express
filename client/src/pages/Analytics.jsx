@@ -1401,7 +1401,7 @@ export default function Analytics() {
               }
               variant={kpi.netProfit >= 0 ? "ok" : "danger"}
             />
-            <KpiCard icon={Users} label="طلاب نشطون" value={kpi.activeStudents} hint="دفعوا خلال الفترة" variant="info" />
+            <KpiCard icon={Users} label="أطفال نشطون" value={kpi.activeStudents} hint="دفعوا خلال الفترة" variant="info" />
           </div>
 
           {/* 1b · Kind comparison */}
@@ -1459,7 +1459,7 @@ export default function Analytics() {
 
                         {/* Student count */}
                         <div style={{ marginTop:12, fontSize:12, color:"#94a3b8", fontWeight:700, textAlign:"right" }}>
-                          {data.students} طالب نشط
+                          {data.students} طفل نشط
                         </div>
                       </div>
                     );
