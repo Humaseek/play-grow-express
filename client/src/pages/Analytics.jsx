@@ -860,10 +860,11 @@ function RankedList({ data }) {
 export default function Analytics() {
   injectStyles();
 
-  /* ── state ── */
-  const [preset,     setPreset]     = useState("this_month");
-  const [customFrom, setCustomFrom] = useState("");
-  const [customTo,   setCustomTo]   = useState("");
+  /* ── state (restored from localStorage) ── */
+  const _s = (() => { try { return JSON.parse(localStorage.getItem("pgx_analytics_v1")) || {}; } catch { return {}; } })();
+  const [preset,     setPreset]     = useState(_s.preset     ?? "this_month");
+  const [customFrom, setCustomFrom] = useState(_s.customFrom ?? "");
+  const [customTo,   setCustomTo]   = useState(_s.customTo   ?? "");
   const [loading,    setLoading]    = useState(true);
   const [err,        setErr]        = useState(null);
 
@@ -873,9 +874,9 @@ export default function Analytics() {
   const [childMap,       setChildMap]       = useState({});
   const [courseKindMap,  setCourseKindMap]  = useState({});
 
-  /* Global filters */
-  const [selCourses,     setSelCourses]     = useState([]); // [] = all
-  const [selKinds,       setSelKinds]       = useState([]); // [] = all, "workshop" | "course"
+  /* Global filters (restored from localStorage) */
+  const [selCourses,     setSelCourses]     = useState(_s.selCourses ?? []); // [] = all
+  const [selKinds,       setSelKinds]       = useState(_s.selKinds   ?? []); // [] = all, "workshop" | "course"
   const [courseDropOpen, setCourseDropOpen] = useState(false);
   const [kindDropOpen,   setKindDropOpen]   = useState(false);
   const [dateDropOpen,   setDateDropOpen]   = useState(false);
@@ -893,6 +894,23 @@ export default function Analytics() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Persist filters to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("pgx_analytics_v1", JSON.stringify({ preset, customFrom, customTo, selCourses, selKinds }));
+    } catch {}
+  }, [preset, customFrom, customTo, selCourses, selKinds]);
+
+  // Clear all filters back to defaults
+  const hasActiveFilters = preset !== "this_month" || customFrom || customTo || selCourses.length > 0 || selKinds.length > 0;
+  function clearAllFilters() {
+    setPreset("this_month");
+    setCustomFrom("");
+    setCustomTo("");
+    setSelCourses([]);
+    setSelKinds([]);
+  }
 
   /* P&L sort */
   const [plSort, setPlSort] = useState({ col:"income", dir:"desc" });
@@ -1313,6 +1331,31 @@ export default function Analytics() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Clear all button — only when something is active */}
+        {hasActiveFilters && (
+          <>
+            <div className="an-filter-divider" style={{ height:"auto", alignSelf:"stretch", margin:"0 4px" }} />
+            <div style={{ display:"flex", flexDirection:"column", justifyContent:"center" }}>
+              <button
+                onClick={clearAllFilters}
+                style={{
+                  display:"flex", alignItems:"center", gap:6,
+                  padding:"7px 14px", borderRadius:999,
+                  border:"1.5px solid rgba(239,68,68,0.25)",
+                  background:"rgba(239,68,68,0.06)", color:"#ef4444",
+                  fontSize:13, fontWeight:800, cursor:"pointer",
+                  whiteSpace:"nowrap", transition:"background .15s, border-color .15s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background="rgba(239,68,68,0.12)"}
+                onMouseLeave={e => e.currentTarget.style.background="rgba(239,68,68,0.06)"}
+              >
+                <X size={14} />
+                مسح الفلاتر
+              </button>
+            </div>
+          </>
         )}
       </div>
 
