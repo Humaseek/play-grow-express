@@ -145,12 +145,12 @@ const CSS = `
   flex: 1;
   display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 10px 14px;
-  background: #00ac47; color: #fff;
+  background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff;
   border: none; border-radius: 12px;
   font-size: 14px; font-weight: 800;
-  cursor: pointer; transition: background 0.15s;
+  cursor: pointer; transition: opacity 0.15s;
 }
-.sh-btn-primary:hover { background: #009940; }
+.sh-btn-primary:hover { opacity: 0.88; }
 
 .sh-btn-secondary {
   display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -463,7 +463,7 @@ export default function StaffHours() {
         subtitle="متابعة ساعات عمل المعلمات والمبالغ المستحقة"
         actions={
           <button className="btn" onClick={() => { setStaffModal("add"); setStaffForm({ name: "", role: "", phone: "" }); }}
-            style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", border: "none" }}>
+            style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#fff", border: "none" }}>
             <Plus size={16} /> إضافة معلمة
           </button>
         }
