@@ -100,6 +100,35 @@ const RED_PALETTE = [
 const CSS = `
 .an-page { direction: rtl; }
 
+/* ── Analytics page — header overrides ── */
+.an-page .pageHeader {
+  align-items: center;
+  margin-bottom: 28px;
+}
+.an-page .pageHeader__dot {
+  display: none;
+}
+.an-page .pageHeader__titleBlock {
+  align-items: center;
+  gap: 0;
+}
+.an-page .pageHeader__titleBlock > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.an-page .pageHeader .h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+.an-page .pageHeader .muted {
+  color: #64748b;
+  font-size: 13px;
+}
+
 /* ── Shimmer skeleton ── */
 @keyframes an-shimmer {
   0%   { background-position: -200% 0; }
@@ -1389,14 +1418,13 @@ export default function Analytics() {
       <PageHeader
         title={
           <>
-            التحليل المالي{" "}
+            التحليل المالي
             <span style={{
-              display:"inline-block", verticalAlign:"middle",
-              fontSize:10, fontWeight:800, color:"#00ac47",
-              background:"rgba(0,172,71,0.1)", padding:"2px 8px",
-              borderRadius:999, letterSpacing:"0.06em",
-              border:"1px solid rgba(0,172,71,0.2)",
-              whiteSpace:"nowrap", lineHeight:1.6,
+              fontSize:10, fontWeight:900, color:"#00ac47",
+              background:"rgba(0,172,71,0.1)", padding:"3px 9px",
+              borderRadius:999, letterSpacing:"0.05em",
+              border:"1px solid rgba(0,172,71,0.22)",
+              whiteSpace:"nowrap", lineHeight:1.5,
             }}>● مباشر</span>
           </>
         }
