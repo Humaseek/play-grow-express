@@ -2025,6 +2025,13 @@ textarea {
   --page-accent-ink: #071521;
 }
 
+/* Analytics */
+.page--analytics {
+  --page-accent: #00ac47;
+  --page-accent-weak: rgba(0, 172, 71, 0.12);
+  --page-accent-ink: #071a0d;
+}
+
 /* Page header accent dot */
 .pageHeader__titleBlock {
   display: flex;
