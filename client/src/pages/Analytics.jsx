@@ -718,11 +718,10 @@ function TrendChart({ data }) {
 
   return (
     <>
-      <div style={{ padding:"0 20px" }}>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
-        style={{ width:"100%", height:"auto", maxHeight:310, display:"block", cursor:"crosshair" }}
+        style={{ width:"100%", height:"auto", display:"block", cursor:"crosshair" }}
         onMouseEnter={() => setIsHovering(true)}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => { setIsHovering(false); setHoverIdx(null); }}
@@ -808,7 +807,6 @@ function TrendChart({ data }) {
         ))}
 
       </svg>
-      </div>{/* end horizontal padding wrapper */}
 
       {/* Legend — outside SVG so it has proper space and isn't clipped */}
       <div style={{ display:"flex", justifyContent:"center", gap:28, marginTop:14, direction:"ltr" }}>
