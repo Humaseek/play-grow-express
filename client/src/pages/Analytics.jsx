@@ -346,11 +346,10 @@ function SectionHeader({ icon: Icon, children }) {
   );
 }
 
-/* ── Horizontal bar chart ── */
+/* ── Horizontal bar chart (no tooltip — just highlight on hover) ── */
 function HBar({ data, accentColor = "#00ac47", maxItems = 10 }) {
-  const [hoverIdx,   setHoverIdx]   = useState(null);
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
-  const [barsReady,  setBarsReady]  = useState(false);
+  const [hoverIdx, setHoverIdx] = useState(null);
+  const [barsReady, setBarsReady] = useState(false);
 
   useEffect(() => {
     setBarsReady(false);
@@ -365,65 +364,46 @@ function HBar({ data, accentColor = "#00ac47", maxItems = 10 }) {
   const max   = Math.max(...items.map(d => d.value), 1);
 
   return (
-    <>
-      <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
-        {items.map((item, i) => (
-          <div
-            key={i}
-            className="an-hbar-row"
-            onMouseMove={e => { setHoverIdx(i); setTooltipPos({ x: e.clientX, y: e.clientY }); }}
-            onMouseLeave={() => setHoverIdx(null)}
-          >
-            <div style={{
-              width:130, fontSize:13, fontWeight:700, color:"#334155",
-              textAlign:"right", flexShrink:0,
-              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-              borderRight: hoverIdx === i ? `3px solid ${accentColor}` : "3px solid transparent",
-              paddingRight:6, transition:"border-color .15s",
-            }}>
-              {item.label || "غير محدد"}
-            </div>
-            <div style={{ flex:1, background:"#f1f5f9", borderRadius:7, height:26, overflow:"hidden" }}>
-              <div style={{
-                width: barsReady
-                  ? `${Math.max((item.value / max) * 100, item.value > 0 ? 2 : 0)}%`
-                  : "0%",
-                background:`linear-gradient(90deg, ${accentColor}aa, ${accentColor})`,
-                height:"100%", borderRadius:7,
-                opacity: hoverIdx === null || hoverIdx === i ? 1 : 0.6,
-                transition:"width .7s cubic-bezier(.4,0,.2,1), opacity .15s",
-              }} />
-            </div>
-            <div style={{ width:80, fontSize:13, fontWeight:800, color:"#1e293b", textAlign:"left", flexShrink:0 }}>
-              {fmtMoney(item.value)} ₪
-            </div>
-            {item.pct != null && (
-              <div style={{ width:38, fontSize:12, color:"#94a3b8", fontWeight:700, textAlign:"left", flexShrink:0 }}>
-                {item.pct}%
-              </div>
-            )}
+    <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+      {items.map((item, i) => (
+        <div
+          key={i}
+          className="an-hbar-row"
+          onMouseEnter={() => setHoverIdx(i)}
+          onMouseLeave={() => setHoverIdx(null)}
+        >
+          <div style={{
+            width:130, fontSize:13, fontWeight:700,
+            color: hoverIdx === i ? "#1e293b" : "#475569",
+            textAlign:"right", flexShrink:0,
+            overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+            borderRight: hoverIdx === i ? `3px solid ${accentColor}` : "3px solid transparent",
+            paddingRight:6, transition:"color .15s, border-color .15s",
+          }}>
+            {item.label || "غير محدد"}
           </div>
-        ))}
-      </div>
-
-      <Tooltip visible={hoverIdx !== null} x={tooltipPos.x} y={tooltipPos.y}>
-        {hoverIdx !== null && items[hoverIdx] && (
-          <>
-            <div className="an-tooltip-title">{items[hoverIdx].label || "غير محدد"}</div>
-            <div className="an-tooltip-row">
-              <span className="an-tooltip-label">المبلغ</span>
-              <span className="an-tooltip-val">{fmtMoney(items[hoverIdx].value)} ₪</span>
+          <div style={{ flex:1, background:"#f1f5f9", borderRadius:7, height:26, overflow:"hidden" }}>
+            <div style={{
+              width: barsReady
+                ? `${Math.max((item.value / max) * 100, item.value > 0 ? 2 : 0)}%`
+                : "0%",
+              background:`linear-gradient(90deg, ${accentColor}aa, ${accentColor})`,
+              height:"100%", borderRadius:7,
+              opacity: hoverIdx === null || hoverIdx === i ? 1 : 0.55,
+              transition:"width .7s cubic-bezier(.4,0,.2,1), opacity .15s",
+            }} />
+          </div>
+          <div style={{ width:88, fontSize:13, fontWeight:800, color:"#1e293b", textAlign:"left", flexShrink:0 }}>
+            {fmtMoney(item.value)} ₪
+          </div>
+          {item.pct != null && (
+            <div style={{ width:40, fontSize:12, color:"#94a3b8", fontWeight:700, textAlign:"left", flexShrink:0 }}>
+              {item.pct}%
             </div>
-            {items[hoverIdx].pct != null && (
-              <div className="an-tooltip-row">
-                <span className="an-tooltip-label">النسبة</span>
-                <span className="an-tooltip-val">{items[hoverIdx].pct}%</span>
-              </div>
-            )}
-          </>
-        )}
-      </Tooltip>
-    </>
+          )}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -562,7 +542,7 @@ function ExpenseCategoryCard({ data }) {
 }
 
 /* ── Area / Line chart (SVG) — smooth bezier + crosshair ── */
-function TrendChart({ data }) {
+function TrendChart({ data, courses, selectedCourse, onSelectCourse }) {
   const svgRef       = useRef(null);
   const [hoverIdx,   setHoverIdx]   = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x:0, y:0 });
@@ -592,11 +572,19 @@ function TrendChart({ data }) {
 
   function handleMouseMove(e) {
     if (!svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const svgX  = (e.clientX - rect.left) * (W / rect.width);
+    const rect   = svgRef.current.getBoundingClientRect();
+    const scaleX = rect.width / W;
+    const svgX   = (e.clientX - rect.left) / scaleX;
     const rawIdx = (svgX - pad.left) / (cW / Math.max(n - 1, 1));
-    setHoverIdx(Math.max(0, Math.min(n - 1, Math.round(rawIdx))));
-    setTooltipPos({ x: e.clientX, y: e.clientY });
+    const idx    = Math.max(0, Math.min(n - 1, Math.round(rawIdx)));
+    // Only activate when cursor is within 36px of the nearest point column
+    const distPx = Math.abs(svgX - xAt(idx)) * scaleX;
+    if (distPx > 36) {
+      setHoverIdx(null);
+    } else {
+      setHoverIdx(idx);
+      setTooltipPos({ x: e.clientX, y: e.clientY });
+    }
   }
 
   const showHover = isHovering && hoverIdx !== null;
@@ -604,6 +592,29 @@ function TrendChart({ data }) {
 
   return (
     <>
+      {/* Course filter pills */}
+      {courses && courses.length > 0 && (
+        <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginBottom:16, direction:"rtl" }}>
+          <button
+            className={`an-preset${selectedCourse === "all" ? " an-active" : ""}`}
+            style={{ fontSize:12, padding:"5px 14px" }}
+            onClick={() => onSelectCourse("all")}
+          >
+            الكل
+          </button>
+          {courses.map(c => (
+            <button
+              key={c.id}
+              className={`an-preset${selectedCourse === c.id ? " an-active" : ""}`}
+              style={{ fontSize:12, padding:"5px 14px" }}
+              onClick={() => onSelectCourse(c.id)}
+            >
+              {c.title}
+            </button>
+          ))}
+        </div>
+      )}
+
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
@@ -811,6 +822,9 @@ export default function Analytics() {
   const [staffPayments, setStaffPayments] = useState([]);
   const [childMap,      setChildMap]      = useState({});
 
+  /* Trend course filter */
+  const [trendCourse, setTrendCourse] = useState("all");
+
   /* P&L sort */
   const [plSort, setPlSort] = useState({ col:"income", dir:"desc" });
   function toggleSort(col) {
@@ -889,14 +903,34 @@ export default function Analytics() {
     return { totalIncome, totalExpenses, nonStaffExp, staffCost, netProfit, activeStudents };
   }, [fPays, fExps, fStaff, staffPayments]);
 
-  /* ── monthly trend ── */
+  /* ── run → course mapping (for expense filtering by course) ── */
+  const runCourseMap = useMemo(() => {
+    const map = {};
+    for (const p of payments) { if (p.run_id && p.course_id) map[p.run_id] = p.course_id; }
+    return map;
+  }, [payments]);
+
+  /* ── available courses for trend filter ── */
+  const trendCourseOptions = useMemo(() => {
+    const map = {};
+    for (const p of payments) { if (p.course_id && p.course_title) map[p.course_id] = p.course_title; }
+    return Object.entries(map).map(([id, title]) => ({ id, title }));
+  }, [payments]);
+
+  /* ── monthly trend (filterable by course) ── */
   const monthlyTrend = useMemo(() => {
+    const paySource = trendCourse === "all"
+      ? fPays
+      : fPays.filter(p => p.course_id === trendCourse);
+    const expSource = trendCourse === "all"
+      ? fExps
+      : fExps.filter(e => e.run_id && runCourseMap[e.run_id] === trendCourse);
     const inc = {}, exp = {};
-    for (const p of fPays) { const mo = p.paid_at?.slice(0,7); if (mo) inc[mo] = (inc[mo]||0) + Number(p.amount||0); }
-    for (const e of fExps) { const mo = e.spent_on?.slice(0,7); if (mo) exp[mo] = (exp[mo]||0) + Number(e.amount||0); }
+    for (const p of paySource) { const mo = p.paid_at?.slice(0,7); if (mo) inc[mo] = (inc[mo]||0) + Number(p.amount||0); }
+    for (const e of expSource) { const mo = e.spent_on?.slice(0,7); if (mo) exp[mo] = (exp[mo]||0) + Number(e.amount||0); }
     const months = Array.from(new Set([...Object.keys(inc), ...Object.keys(exp)])).sort();
     return months.map(mo => ({ month:mo, income: inc[mo]||0, expense: exp[mo]||0 }));
-  }, [fPays, fExps]);
+  }, [fPays, fExps, trendCourse, runCourseMap]);
 
   /* ── income by course ── */
   const incomeByCourse = useMemo(() => {
@@ -1079,7 +1113,12 @@ export default function Analytics() {
               <CardTitle action={monthlyTrend.length > 0 ? `${monthlyTrend.length} شهر` : undefined}>
                 التطور الشهري — الدخل مقابل المصاريف
               </CardTitle>
-              <TrendChart data={monthlyTrend} />
+              <TrendChart
+                data={monthlyTrend}
+                courses={trendCourseOptions}
+                selectedCourse={trendCourse}
+                onSelectCourse={setTrendCourse}
+              />
             </Card>
           </div>
 
