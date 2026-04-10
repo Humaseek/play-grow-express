@@ -974,20 +974,20 @@ function VBarChart({ data, accentColor = "#00ac47" }) {
         <line x1={pad.left} y1={pad.top + cH} x2={W - pad.right} y2={pad.top + cH}
           stroke="#e2e8f0" strokeWidth={1.5} />
 
-        {/* X-axis labels — rotated */}
+        {/* X-axis labels — centered below each bar */}
         {visible.map((item, i) => {
           const cx    = barX(i) + barW / 2;
           const isHov = hoverIdx === i;
-          const maxLabelLen = n > 6 ? 9 : 14;
+          const maxLabelLen = n > 8 ? 6 : n > 5 ? 9 : 13;
           const label = item.label.length > maxLabelLen
             ? item.label.slice(0, maxLabelLen - 1) + "…"
             : item.label;
           return (
             <text
               key={i}
-              x={cx} y={pad.top + cH + 10}
-              textAnchor="end"
-              transform={`rotate(-42, ${cx}, ${pad.top + cH + 10})`}
+              x={cx} y={pad.top + cH + 20}
+              textAnchor="middle"
+              dominantBaseline="hanging"
               fontSize={9.5}
               fontWeight={isHov ? 800 : 600}
               fill={isHov ? accentColor : "#64748b"}
