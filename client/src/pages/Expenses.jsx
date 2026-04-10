@@ -637,6 +637,7 @@ export default function Expenses() {
   const [linkedStaffId, setLinkedStaffId] = useState(null);
   const [linkedDateFrom, setLinkedDateFrom] = useState(null);
   const [linkedDateTo, setLinkedDateTo] = useState(null);
+  const [linkedPaymentId, setLinkedPaymentId] = useState(null);
 
   const [confirm, setConfirm] = useState({ open: false, id: null });
 
@@ -882,17 +883,19 @@ export default function Expenses() {
     setLinkedStaffId(null);
     setLinkedDateFrom(null);
     setLinkedDateTo(null);
+    setLinkedPaymentId(null);
     // Check if this expense is linked to a salary payment
     if (row.category === "معاش") {
       const { data } = await supabase
         .from("staff_salary_payments")
-        .select("staff_id, date_from, date_to")
+        .select("id, staff_id, date_from, date_to")
         .eq("expense_id", row.id)
         .maybeSingle();
       if (data?.staff_id) {
         setLinkedStaffId(data.staff_id);
         setLinkedDateFrom(data.date_from || null);
         setLinkedDateTo(data.date_to || null);
+        setLinkedPaymentId(data.id || null);
       }
     }
     setOpenAdd(true);
@@ -1483,7 +1486,7 @@ export default function Expenses() {
                     <button
                       type="button"
                       style={{ fontSize: 13, color: "#ea580c", fontWeight: 800, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
-                      onClick={() => { setOpenAdd(false); navigate(`/staff-hours/${linkedStaffId}?from=${linkedDateFrom}&to=${linkedDateTo}`); }}
+                      onClick={() => { setOpenAdd(false); navigate(`/staff-hours/${linkedStaffId}?from=${linkedDateFrom}&to=${linkedDateTo}&paymentId=${linkedPaymentId}`); }}
                     >
                       عدّل من هنا ←
                     </button>

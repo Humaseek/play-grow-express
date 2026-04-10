@@ -456,8 +456,9 @@ export default function StaffDetails() {
   const { staffId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const rangeFrom = searchParams.get("from"); // e.g. "2026-01-01"
-  const rangeTo   = searchParams.get("to");   // e.g. "2026-04-30"
+  const rangeFrom   = searchParams.get("from");       // e.g. "2026-01-01"
+  const rangeTo     = searchParams.get("to");         // e.g. "2026-04-30"
+  const rangePayId  = searchParams.get("paymentId");  // filter to exact payment
 
   const [member, setMember] = useState(null);
   const [allHours, setAllHours] = useState([]);
@@ -530,7 +531,9 @@ export default function StaffDetails() {
   const filteredHours = useMemo(() => {
     return allHours.filter((r) => {
       if (!r.work_date) return false;
-      // If navigated from Expenses with a date range, show only that range
+      // If navigated from Expenses with a specific payment, show only that payment's hours
+      if (rangePayId) return r.payment_id === rangePayId;
+      // Fallback: date range only (no paymentId)
       if (rangeFrom && rangeTo) {
         return r.work_date >= rangeFrom && r.work_date <= rangeTo;
       }
@@ -540,7 +543,7 @@ export default function StaffDetails() {
         return false;
       return true;
     });
-  }, [allHours, filterYear, filterMonth, rangeFrom, rangeTo]);
+  }, [allHours, filterYear, filterMonth, rangeFrom, rangeTo, rangePayId]);
 
   /* ─── filtered totals ─── */
   const filteredTotals = useMemo(() => {
