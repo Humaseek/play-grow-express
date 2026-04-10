@@ -88,9 +88,10 @@ function getPresetRange(key) {
   }
 }
 
-const PALETTE = [
-  "#00ac47","#3b82f6","#f59e0b","#ef4444","#8b5cf6",
-  "#06b6d4","#ec4899","#14b8a6","#f97316","#84cc16","#64748b","#a855f7",
+/* Red shades — used for expense donut */
+const RED_PALETTE = [
+  "#ef4444","#b91c1c","#f87171","#7f1d1d",
+  "#fca5a5","#dc2626","#991b1b","#c2410c",
 ];
 
 /* ─────────────────────────────────────────────────
@@ -574,34 +575,70 @@ function DonutChart({ data, size = 190, onSliceHover, setTooltipPos: setExtTPos 
 
 /* ── Expense category card (owns donut hover state) ── */
 function ExpenseCategoryCard({ data }) {
-  const [donutHoverIdx,    setDonutHoverIdx]    = useState(null);
-  const [donutTooltipPos,  setDonutTooltipPos]  = useState({ x:0, y:0 });
+  const [donutHoverIdx,   setDonutHoverIdx]   = useState(null);
+  const [donutTooltipPos, setDonutTooltipPos] = useState({ x:0, y:0 });
 
   return (
     <Card>
       <CardTitle>المصاريف حسب الفئة</CardTitle>
-      <div className="an-donut-row">
-        <DonutChart
-          data={data}
-          size={180}
-          onSliceHover={setDonutHoverIdx}
-          setTooltipPos={setDonutTooltipPos}
-        />
-        <div className="an-legend">
-          {data.map((item, i) => (
-            <div
-              key={i}
-              className="an-legend-item"
-              style={{ background: donutHoverIdx === i ? `${item.color}20` : undefined }}
-            >
-              <div className="an-legend-dot" style={{ background: item.color }} />
-              <span style={{ flex:1 }}>{item.label}</span>
-              <span className="an-legend-pct">{item.pct}%</span>
-            </div>
-          ))}
-          {!data.length && <Empty />}
+
+      {!data.length ? <Empty /> : (
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:20 }}>
+          {/* Donut — centered */}
+          <DonutChart
+            data={data}
+            size={200}
+            onSliceHover={setDonutHoverIdx}
+            setTooltipPos={setDonutTooltipPos}
+          />
+
+          {/* Legend rows */}
+          <div style={{ width:"100%", display:"flex", flexDirection:"column", gap:4, direction:"rtl" }}>
+            {data.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display:"flex", alignItems:"center", gap:10, padding:"8px 10px",
+                  borderRadius:10, transition:"background .15s", cursor:"default",
+                  background: donutHoverIdx === i ? `${item.color}18` : "transparent",
+                }}
+              >
+                {/* Colored dot */}
+                <div style={{
+                  width:11, height:11, borderRadius:"50%",
+                  background: item.color, flexShrink:0,
+                  boxShadow: `0 0 0 3px ${item.color}28`,
+                }} />
+                {/* Label */}
+                <span style={{ flex:1, fontSize:13, fontWeight:700, color:"#334155" }}>
+                  {item.label}
+                </span>
+                {/* Mini progress bar */}
+                <div style={{ width:72, height:5, borderRadius:4, background:"#f1f5f9", overflow:"hidden", flexShrink:0 }}>
+                  <div style={{
+                    width:`${item.pct}%`, height:"100%",
+                    background: item.color, borderRadius:4,
+                  }} />
+                </div>
+                {/* Amount */}
+                <span style={{
+                  fontSize:12.5, fontWeight:800, color:"#475569",
+                  minWidth:68, textAlign:"left", direction:"ltr", flexShrink:0,
+                }}>
+                  {fmtMoney(item.value)} ₪
+                </span>
+                {/* Percentage */}
+                <span style={{
+                  fontSize:11.5, fontWeight:700, color: item.color,
+                  minWidth:38, textAlign:"center", flexShrink:0,
+                }}>
+                  {item.pct}%
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <Tooltip visible={donutHoverIdx !== null} x={donutTooltipPos.x} y={donutTooltipPos.y}>
         {donutHoverIdx !== null && data[donutHoverIdx] && (
@@ -1114,7 +1151,7 @@ export default function Analytics() {
     const total = Object.values(map).reduce((s,v)=>s+v,0);
     return Object.entries(map)
       .map(([label, value], i) => ({
-        label, value, color: PALETTE[i % PALETTE.length],
+        label, value, color: RED_PALETTE[i % RED_PALETTE.length],
         pct: total ? ((value/total)*100).toFixed(1) : 0,
       }))
       .sort((a,b) => b.value - a.value);
