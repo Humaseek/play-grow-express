@@ -7,7 +7,7 @@ import KpiCard from "../components/KpiCard";
 import {
   TrendingUp, TrendingDown, Banknote, Users, BarChart2,
   ShoppingCart, Briefcase, BookOpen, RefreshCw,
-  ArrowUpRight, ArrowDownRight,
+  ArrowUpRight, ArrowDownRight, ChevronDown, Check, X,
 } from "lucide-react";
 
 /* ─────────────────────────────────────────────────
@@ -130,14 +130,31 @@ const CSS = `
               inset 0 0 0 1px rgba(255,255,255,0.5);
 }
 
-/* ── Filter bar ── */
-.an-filter-bar {
-  display: flex; flex-wrap: wrap;
-  align-items: center; gap: 8px;
-  padding: 4px 0 28px;
+/* ── Filter panel ── */
+.an-filter-bar { display: none; } /* legacy, unused */
+.an-filter-panel {
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.95);
+  box-shadow: 0 2px 16px rgba(15,23,42,0.04), inset 0 0 0 1px rgba(255,255,255,0.4);
+  padding: 18px 22px;
+  margin-bottom: 28px;
+  display: flex; flex-direction: column; gap: 14px;
+  direction: rtl;
 }
+.an-filter-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.an-filter-label {
+  font-size: 11px; font-weight: 900; color: #94a3b8;
+  letter-spacing: 0.05em; min-width: 46px; flex-shrink: 0;
+}
+.an-filter-divider { width: 1px; height: 18px; background: #e2e8f0; flex-shrink:0; margin: 0 4px; }
+
+/* ── Pills ── */
 .an-preset {
-  padding: 8px 18px; border-radius: 999px;
+  padding: 7px 16px; border-radius: 999px;
   border: 1.5px solid rgba(0,0,0,0.1);
   background: rgba(255,255,255,0.82);
   font-size: 13px; font-weight: 700; color: #475569;
@@ -151,7 +168,7 @@ const CSS = `
 }
 .an-custom-dates {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 16px;
+  padding: 7px 16px;
   background: rgba(255,255,255,0.82);
   border: 1.5px solid rgba(0,0,0,0.1); border-radius: 999px;
 }
@@ -159,6 +176,56 @@ const CSS = `
   border: none; outline: none; background: transparent;
   font-size: 13px; color: #334155; font-weight: 700; cursor: pointer;
 }
+
+/* ── Dropdown ── */
+.an-dropdown { position: relative; display: inline-block; }
+.an-dropdown-trigger {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 16px; border-radius: 999px;
+  border: 1.5px solid rgba(0,0,0,0.1);
+  background: rgba(255,255,255,0.82);
+  font-size: 13px; font-weight: 700; color: #475569;
+  cursor: pointer; white-space: nowrap;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.an-dropdown-trigger:hover  { border-color: #00ac47; color: #00ac47; background: rgba(0,172,71,0.04); }
+.an-dropdown-trigger.an-open { border-color: #00ac47; color: #00ac47; background: rgba(0,172,71,0.06); }
+.an-dropdown-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 300;
+  background: #fff; border-radius: 16px; padding: 6px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.06);
+  min-width: 210px; max-height: 300px; overflow-y: auto;
+  direction: rtl;
+  animation: an-drop-in .14s cubic-bezier(.4,0,.2,1);
+}
+@keyframes an-drop-in {
+  from { opacity:0; transform: translateY(-8px) scale(0.97); }
+  to   { opacity:1; transform: translateY(0)    scale(1); }
+}
+.an-dropdown-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px; border-radius: 10px; cursor: pointer;
+  font-size: 13px; font-weight: 700; color: #334155;
+  transition: background .1s;
+}
+.an-dropdown-item:hover { background: #f1f5f9; }
+.an-dropdown-item.an-sel { background: rgba(0,172,71,0.09); color: #00ac47; }
+
+/* Active filter chip */
+.an-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 999px;
+  background: rgba(0,172,71,0.1); color: #00ac47;
+  font-size: 12.5px; font-weight: 800;
+  border: 1.5px solid rgba(0,172,71,0.22);
+}
+.an-chip-clear {
+  background: none; border: none; cursor: pointer; color: inherit;
+  display: flex; align-items: center; padding: 0; opacity: 0.7;
+  transition: opacity .12s;
+}
+.an-chip-clear:hover { opacity: 1; }
 
 /* ── Section ── */
 .an-section { margin-bottom: 36px; }
@@ -542,7 +609,7 @@ function ExpenseCategoryCard({ data }) {
 }
 
 /* ── Area / Line chart (SVG) — smooth bezier + crosshair ── */
-function TrendChart({ data, courses, selectedCourse, onSelectCourse }) {
+function TrendChart({ data }) {
   const svgRef       = useRef(null);
   const [hoverIdx,   setHoverIdx]   = useState(null);
   const [tooltipPos, setTooltipPos] = useState({ x:0, y:0 });
@@ -592,29 +659,6 @@ function TrendChart({ data, courses, selectedCourse, onSelectCourse }) {
 
   return (
     <>
-      {/* Course filter pills */}
-      {courses && courses.length > 0 && (
-        <div style={{ display:"flex", flexWrap:"wrap", gap:7, marginBottom:16, direction:"rtl" }}>
-          <button
-            className={`an-preset${selectedCourse === "all" ? " an-active" : ""}`}
-            style={{ fontSize:12, padding:"5px 14px" }}
-            onClick={() => onSelectCourse("all")}
-          >
-            الكل
-          </button>
-          {courses.map(c => (
-            <button
-              key={c.id}
-              className={`an-preset${selectedCourse === c.id ? " an-active" : ""}`}
-              style={{ fontSize:12, padding:"5px 14px" }}
-              onClick={() => onSelectCourse(c.id)}
-            >
-              {c.title}
-            </button>
-          ))}
-        </div>
-      )}
-
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
@@ -822,8 +866,20 @@ export default function Analytics() {
   const [staffPayments, setStaffPayments] = useState([]);
   const [childMap,      setChildMap]      = useState({});
 
-  /* Trend course filter */
-  const [trendCourse, setTrendCourse] = useState("all");
+  /* Global course filter */
+  const [globalCourse,      setGlobalCourse]      = useState("all");
+  const [courseDropOpen,    setCourseDropOpen]     = useState(false);
+  const courseDropRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handler(e) {
+      if (courseDropRef.current && !courseDropRef.current.contains(e.target))
+        setCourseDropOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   /* P&L sort */
   const [plSort, setPlSort] = useState({ col:"income", dir:"desc" });
@@ -875,16 +931,38 @@ export default function Analytics() {
   }
   useEffect(() => { load(); }, []);
 
-  /* ── filtered slices ── */
+  /* ── run → course mapping ── */
+  const runCourseMap = useMemo(() => {
+    const map = {};
+    for (const p of payments) { if (p.run_id && p.course_id) map[p.run_id] = p.course_id; }
+    return map;
+  }, [payments]);
+
+  /* ── course list for dropdown ── */
+  const courseOptions = useMemo(() => {
+    const map = {};
+    for (const p of payments) { if (p.course_id && p.course_title) map[p.course_id] = p.course_title; }
+    return Object.entries(map).map(([id, title]) => ({ id, title }));
+  }, [payments]);
+
+  const selectedCourseLabel = globalCourse === "all"
+    ? "كل الدورات"
+    : courseOptions.find(c => c.id === globalCourse)?.title ?? "دورة";
+
+  /* ── filtered slices (date + course — affects ALL charts/KPIs) ── */
   const fPays = useMemo(() => {
-    if (!from || !to) return payments;
-    return payments.filter(p => { const d = p.paid_at?.slice(0,10); return d && d >= from && d <= to; });
-  }, [payments, from, to]);
+    let d = payments;
+    if (from && to)            d = d.filter(p => { const x = p.paid_at?.slice(0,10); return x && x >= from && x <= to; });
+    if (globalCourse !== "all") d = d.filter(p => p.course_id === globalCourse);
+    return d;
+  }, [payments, from, to, globalCourse]);
 
   const fExps = useMemo(() => {
-    if (!from || !to) return expenses;
-    return expenses.filter(e => e.spent_on && e.spent_on >= from && e.spent_on <= to);
-  }, [expenses, from, to]);
+    let d = expenses;
+    if (from && to)            d = d.filter(e => e.spent_on && e.spent_on >= from && e.spent_on <= to);
+    if (globalCourse !== "all") d = d.filter(e => e.run_id && runCourseMap[e.run_id] === globalCourse);
+    return d;
+  }, [expenses, from, to, globalCourse, runCourseMap]);
 
   const fStaff = useMemo(() => {
     if (!from || !to) return staffPayments;
@@ -903,34 +981,14 @@ export default function Analytics() {
     return { totalIncome, totalExpenses, nonStaffExp, staffCost, netProfit, activeStudents };
   }, [fPays, fExps, fStaff, staffPayments]);
 
-  /* ── run → course mapping (for expense filtering by course) ── */
-  const runCourseMap = useMemo(() => {
-    const map = {};
-    for (const p of payments) { if (p.run_id && p.course_id) map[p.run_id] = p.course_id; }
-    return map;
-  }, [payments]);
-
-  /* ── available courses for trend filter ── */
-  const trendCourseOptions = useMemo(() => {
-    const map = {};
-    for (const p of payments) { if (p.course_id && p.course_title) map[p.course_id] = p.course_title; }
-    return Object.entries(map).map(([id, title]) => ({ id, title }));
-  }, [payments]);
-
-  /* ── monthly trend (filterable by course) ── */
+  /* ── monthly trend (uses already-filtered fPays / fExps) ── */
   const monthlyTrend = useMemo(() => {
-    const paySource = trendCourse === "all"
-      ? fPays
-      : fPays.filter(p => p.course_id === trendCourse);
-    const expSource = trendCourse === "all"
-      ? fExps
-      : fExps.filter(e => e.run_id && runCourseMap[e.run_id] === trendCourse);
     const inc = {}, exp = {};
-    for (const p of paySource) { const mo = p.paid_at?.slice(0,7); if (mo) inc[mo] = (inc[mo]||0) + Number(p.amount||0); }
-    for (const e of expSource) { const mo = e.spent_on?.slice(0,7); if (mo) exp[mo] = (exp[mo]||0) + Number(e.amount||0); }
+    for (const p of fPays) { const mo = p.paid_at?.slice(0,7); if (mo) inc[mo] = (inc[mo]||0) + Number(p.amount||0); }
+    for (const e of fExps) { const mo = e.spent_on?.slice(0,7); if (mo) exp[mo] = (exp[mo]||0) + Number(e.amount||0); }
     const months = Array.from(new Set([...Object.keys(inc), ...Object.keys(exp)])).sort();
     return months.map(mo => ({ month:mo, income: inc[mo]||0, expense: exp[mo]||0 }));
-  }, [fPays, fExps, trendCourse, runCourseMap]);
+  }, [fPays, fExps]);
 
   /* ── income by course ── */
   const incomeByCourse = useMemo(() => {
@@ -1037,28 +1095,83 @@ export default function Analytics() {
 
       {err && <ErrorBanner message={err} onClose={() => setErr(null)} />}
 
-      {/* ══ FILTER BAR ══ */}
-      <div className="an-filter-bar">
-        {PRESETS.map(p => (
-          <button
-            key={p.key}
-            className={`an-preset${preset === p.key ? " an-active" : ""}`}
-            onClick={() => setPreset(p.key)}
-          >
-            {p.label}
-          </button>
-        ))}
-        {preset === "custom" && (
-          <div className="an-custom-dates">
-            <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} />
-            <span style={{ color:"#cbd5e1", fontWeight:700 }}>—</span>
-            <input type="date" value={customTo}   onChange={e => setCustomTo(e.target.value)} />
+      {/* ══ FILTER PANEL ══ */}
+      <div className="an-filter-panel">
+
+        {/* Row 1 — Date range */}
+        <div className="an-filter-row">
+          <span className="an-filter-label">الفترة</span>
+          <div className="an-filter-divider" />
+          {PRESETS.map(p => (
+            <button
+              key={p.key}
+              className={`an-preset${preset === p.key ? " an-active" : ""}`}
+              onClick={() => setPreset(p.key)}
+            >
+              {p.label}
+            </button>
+          ))}
+          {preset === "custom" && (
+            <div className="an-custom-dates">
+              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} />
+              <span style={{ color:"#cbd5e1", fontWeight:700 }}>—</span>
+              <input type="date" value={customTo}   onChange={e => setCustomTo(e.target.value)} />
+            </div>
+          )}
+          {from && to && preset !== "all" && preset !== "custom" && (
+            <span style={{ fontSize:12, color:"#94a3b8", fontWeight:700, marginRight:"auto" }}>
+              {fmtDate(from)} — {fmtDate(to)}
+            </span>
+          )}
+        </div>
+
+        {/* Row 2 — Course filter */}
+        {courseOptions.length > 0 && (
+          <div className="an-filter-row">
+            <span className="an-filter-label">الدورة</span>
+            <div className="an-filter-divider" />
+
+            <div className="an-dropdown" ref={courseDropRef}>
+              <button
+                className={`an-dropdown-trigger${courseDropOpen ? " an-open" : ""}${globalCourse !== "all" ? " an-open" : ""}`}
+                onClick={() => setCourseDropOpen(o => !o)}
+              >
+                {selectedCourseLabel}
+                <ChevronDown size={14} style={{ transition:"transform .2s", transform: courseDropOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
+              </button>
+
+              {courseDropOpen && (
+                <div className="an-dropdown-menu">
+                  <div
+                    className={`an-dropdown-item${globalCourse === "all" ? " an-sel" : ""}`}
+                    onClick={() => { setGlobalCourse("all"); setCourseDropOpen(false); }}
+                  >
+                    <span>كل الدورات</span>
+                    {globalCourse === "all" && <Check size={14} />}
+                  </div>
+                  {courseOptions.map(c => (
+                    <div
+                      key={c.id}
+                      className={`an-dropdown-item${globalCourse === c.id ? " an-sel" : ""}`}
+                      onClick={() => { setGlobalCourse(c.id); setCourseDropOpen(false); }}
+                    >
+                      <span>{c.title}</span>
+                      {globalCourse === c.id && <Check size={14} />}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {globalCourse !== "all" && (
+              <span className="an-chip">
+                {selectedCourseLabel}
+                <button className="an-chip-clear" onClick={() => setGlobalCourse("all")}>
+                  <X size={12} />
+                </button>
+              </span>
+            )}
           </div>
-        )}
-        {from && to && preset !== "all" && preset !== "custom" && (
-          <span style={{ fontSize:12, color:"#94a3b8", fontWeight:700, marginRight:"auto" }}>
-            {fmtDate(from)} — {fmtDate(to)}
-          </span>
         )}
       </div>
 
@@ -1113,12 +1226,7 @@ export default function Analytics() {
               <CardTitle action={monthlyTrend.length > 0 ? `${monthlyTrend.length} شهر` : undefined}>
                 التطور الشهري — الدخل مقابل المصاريف
               </CardTitle>
-              <TrendChart
-                data={monthlyTrend}
-                courses={trendCourseOptions}
-                selectedCourse={trendCourse}
-                onSelectCourse={setTrendCourse}
-              />
+              <TrendChart data={monthlyTrend} />
             </Card>
           </div>
 
