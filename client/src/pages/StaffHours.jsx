@@ -249,7 +249,6 @@ export default function StaffHours() {
 
   const [staff, setStaff] = useState([]);
   const [allHours, setAllHours] = useState([]);
-  const [allPayments, setAllPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);
 
@@ -276,16 +275,14 @@ export default function StaffHours() {
     setLoading(true);
     setErr(null);
     try {
-      const [{ data: s, error: se }, { data: ah, error: ahe }, { data: ap, error: ape }] = await Promise.all([
+      const [{ data: s, error: se }, { data: ah, error: ahe }] = await Promise.all([
         supabase.from("staff").select("*").order("name"),
-        supabase.from("staff_hours").select("staff_id, work_date, start_time, end_time, hourly_rate"),
-        supabase.from("staff_salary_payments").select("staff_id, date_from, date_to"),
+        supabase.from("staff_hours").select("id, staff_id, work_date, start_time, end_time, hourly_rate, payment_id"),
       ]);
       if (se) throw se;
-      if (ahe || ape) throw ahe || ape;
+      if (ahe) throw ahe;
       setStaff(s || []);
       setAllHours(ah || []);
-      setAllPayments(ap || []);
     } catch (e) {
       setErr(e.message || "حدث خطأ");
     } finally {
@@ -299,12 +296,7 @@ export default function StaffHours() {
   const staffUnpaid = useMemo(() => {
     const map = {};
     for (const row of allHours) {
-      const covered = allPayments.some(p =>
-        p.staff_id === row.staff_id &&
-        row.work_date >= p.date_from &&
-        row.work_date <= p.date_to
-      );
-      if (!covered) {
+      if (!row.payment_id) {
         if (!map[row.staff_id]) map[row.staff_id] = { amount: 0, hours: 0 };
         const h = calcHours(row.start_time, row.end_time);
         map[row.staff_id].amount += h * Number(row.hourly_rate || 0);
@@ -312,7 +304,7 @@ export default function StaffHours() {
       }
     }
     return map;
-  }, [allHours, allPayments]);
+  }, [allHours]);
 
   /* ─── global KPIs (unpaid totals) ─── */
   const kpi = useMemo(() => {
@@ -336,10 +328,10 @@ export default function StaffHours() {
     setMonthsLoading(false);
   }
 
-  // ساعات غير مدفوعة (خارج نطاق أي دفعة)
+  // ساعات غير مدفوعة (بدون payment_id)
   const monthsUnpaidHours = useMemo(() => monthsAllHours.filter(r =>
-    r.work_date && !monthsPayments.some(p => r.work_date >= p.date_from && r.work_date <= p.date_to)
-  ), [monthsAllHours, monthsPayments]);
+    r.work_date && !r.payment_id
+  ), [monthsAllHours]);
 
   const monthsUnpaidTotals = useMemo(() => {
     let hours = 0, amount = 0;
@@ -368,17 +360,26 @@ export default function StaffHours() {
 
     if (expErr) { setErr(expErr.message); setConverting(false); return; }
 
-    const { error: payErr } = await supabase.from("staff_salary_payments").insert([{
+    const { data: payData, error: payErr } = await supabase.from("staff_salary_payments").insert([{
       staff_id: monthsModal.staffId,
       date_from: minDate,
       date_to: maxDate,
       total_hours: hours,
       total_amount: amount,
       expense_id: expData.id,
-    }]);
+    }]).select("id").single();
+
+    if (payErr) { setErr(payErr.message); setConverting(false); return; }
+
+    // Mark converted hours as paid
+    const hourIds = allHours
+      .filter(r => r.staff_id === monthsModal.staffId && !r.payment_id)
+      .map(r => r.id);
+    if (hourIds.length > 0) {
+      await supabase.from("staff_hours").update({ payment_id: payData.id }).in("id", hourIds);
+    }
 
     setConverting(false);
-    if (payErr) { setErr(payErr.message); return; }
     loadMonthsData(monthsModal.staffId);
     load();
   }

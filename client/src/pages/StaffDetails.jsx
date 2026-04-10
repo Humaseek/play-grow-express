@@ -554,17 +554,10 @@ export default function StaffDetails() {
     return { hours, amount };
   }, [filteredHours]);
 
-  /* ─── unpaid hours = not covered by any payment ─── */
+  /* ─── unpaid hours = not linked to any payment ─── */
   const unpaidHours = useMemo(
-    () =>
-      allHours.filter(
-        (r) =>
-          r.work_date &&
-          !payments.some(
-            (p) => r.work_date >= p.date_from && r.work_date <= p.date_to,
-          ),
-      ),
-    [allHours, payments],
+    () => allHours.filter((r) => r.work_date && !r.payment_id),
+    [allHours],
   );
 
   const unpaidTotals = useMemo(() => {
@@ -595,9 +588,7 @@ export default function StaffDetails() {
       (r) =>
         r.work_date >= convertModal.dateFrom &&
         r.work_date <= convertModal.dateTo &&
-        !payments.some(
-          (p) => r.work_date >= p.date_from && r.work_date <= p.date_to,
-        ),
+        !r.payment_id,
     );
     let hours = 0,
       amount = 0;
@@ -668,7 +659,7 @@ export default function StaffDetails() {
       return;
     }
 
-    const { error: payErr } = await supabase
+    const { data: payData, error: payErr } = await supabase
       .from("staff_salary_payments")
       .insert([
         {
@@ -679,11 +670,29 @@ export default function StaffDetails() {
           total_amount: convertPreview.amount,
           expense_id: expData.id,
         },
-      ]);
+      ])
+      .select("id")
+      .single();
     if (payErr) {
       setErr(payErr.message);
       setConverting(false);
       return;
+    }
+
+    // Mark the converted hours as paid
+    const hourIds = allHours
+      .filter(
+        (r) =>
+          r.work_date >= convertModal.dateFrom &&
+          r.work_date <= convertModal.dateTo &&
+          !r.payment_id,
+      )
+      .map((r) => r.id);
+    if (hourIds.length > 0) {
+      await supabase
+        .from("staff_hours")
+        .update({ payment_id: payData.id })
+        .in("id", hourIds);
     }
 
     setConverting(false);
@@ -708,36 +717,32 @@ export default function StaffDetails() {
   }
 
   /* ─── sync expense amount after editing a session ─── */
-  async function syncPaymentExpense(datesToCheck) {
-    for (const date of datesToCheck) {
-      const covering = payments.filter(
-        (p) => date >= p.date_from && date <= p.date_to,
-      );
-      for (const payment of covering) {
-        const { data: hrs } = await supabase
-          .from("staff_hours")
-          .select("start_time, end_time, hourly_rate")
-          .eq("staff_id", staffId)
-          .gte("work_date", payment.date_from)
-          .lte("work_date", payment.date_to);
-        let totalHours = 0,
-          totalAmount = 0;
-        for (const r of hrs || []) {
-          const h = calcHours(r.start_time, r.end_time);
-          totalHours += h;
-          totalAmount += h * Number(r.hourly_rate || 0);
-        }
-        await supabase
-          .from("staff_salary_payments")
-          .update({ total_hours: totalHours, total_amount: totalAmount })
-          .eq("id", payment.id);
-        if (payment.expense_id) {
-          await supabase
-            .from("expenses")
-            .update({ amount: totalAmount })
-            .eq("id", payment.expense_id);
-        }
-      }
+  async function syncPaymentExpense(editedHourId) {
+    // Find which payment owns this hour
+    const hour = allHours.find((r) => r.id === editedHourId);
+    if (!hour?.payment_id) return;
+    const payment = payments.find((p) => p.id === hour.payment_id);
+    if (!payment) return;
+
+    const { data: hrs } = await supabase
+      .from("staff_hours")
+      .select("start_time, end_time, hourly_rate")
+      .eq("payment_id", payment.id);
+    let totalHours = 0, totalAmount = 0;
+    for (const r of hrs || []) {
+      const h = calcHours(r.start_time, r.end_time);
+      totalHours += h;
+      totalAmount += h * Number(r.hourly_rate || 0);
+    }
+    await supabase
+      .from("staff_salary_payments")
+      .update({ total_hours: totalHours, total_amount: totalAmount })
+      .eq("id", payment.id);
+    if (payment.expense_id) {
+      await supabase
+        .from("expenses")
+        .update({ amount: totalAmount })
+        .eq("id", payment.expense_id);
     }
   }
 
@@ -765,11 +770,7 @@ export default function StaffDetails() {
         .update(payload)
         .eq("id", logModal.editRow.id));
       if (!error) {
-        // sync expense for affected date(s)
-        const datesToCheck = [form.work_date];
-        if (logModal.editRow.work_date !== form.work_date)
-          datesToCheck.push(logModal.editRow.work_date);
-        await syncPaymentExpense(datesToCheck);
+        await syncPaymentExpense(logModal.editRow.id);
       }
     } else {
       ({ error } = await supabase.from("staff_hours").insert([payload]));
@@ -1107,7 +1108,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
               {filteredHours.map((row) => {
                 const h = calcHours(row.start_time, row.end_time);
                 const total = h * Number(row.hourly_rate || 0);
-                const isUnpaid = unpaidHours.some((u) => u.id === row.id);
+                const isUnpaid = !row.payment_id;
                 return (
                   <tr key={row.id}>
                     <td>{fmtDate(row.work_date)}</td>
