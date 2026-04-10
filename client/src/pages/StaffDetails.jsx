@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../supabaseClient";
 
 import ErrorBanner from "../components/ErrorBanner";
@@ -455,6 +455,9 @@ export default function StaffDetails() {
   injectStyles();
   const { staffId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const rangeFrom = searchParams.get("from"); // e.g. "2026-01-01"
+  const rangeTo   = searchParams.get("to");   // e.g. "2026-04-30"
 
   const [member, setMember] = useState(null);
   const [allHours, setAllHours] = useState([]);
@@ -527,13 +530,17 @@ export default function StaffDetails() {
   const filteredHours = useMemo(() => {
     return allHours.filter((r) => {
       if (!r.work_date) return false;
+      // If navigated from Expenses with a date range, show only that range
+      if (rangeFrom && rangeTo) {
+        return r.work_date >= rangeFrom && r.work_date <= rangeTo;
+      }
       const [y, m] = r.work_date.split("-");
       if (y !== filterYear) return false;
       if (filterMonth !== "0" && m !== filterMonth.padStart(2, "0"))
         return false;
       return true;
     });
-  }, [allHours, filterYear, filterMonth]);
+  }, [allHours, filterYear, filterMonth, rangeFrom, rangeTo]);
 
   /* ─── filtered totals ─── */
   const filteredTotals = useMemo(() => {
@@ -972,6 +979,18 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
   return (
     <div className="container sd-page sd-no-print">
       {err && <ErrorBanner message={err} onClose={() => setErr(null)} />}
+
+      {rangeFrom && rangeTo && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff7ed", border: "1px solid rgba(234,88,12,.25)", borderRadius: 12, padding: "10px 16px", marginBottom: 14, direction: "rtl" }}>
+          <span style={{ fontSize: 14, fontWeight: 800, color: "#92400e", flex: 1 }}>
+            عرض أيام الفاتورة فقط: {fmtDate(rangeFrom)} — {fmtDate(rangeTo)}
+          </span>
+          <button onClick={() => navigate(`/staff-hours/${staffId}`, { replace: true })}
+            style={{ fontSize: 13, color: "#ea580c", fontWeight: 800, background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
+            × إلغاء الفلتر
+          </button>
+        </div>
+      )}
 
       {/* back */}
       <button className="sd-back" onClick={() => navigate("/staff-hours")}>

@@ -635,6 +635,8 @@ export default function Expenses() {
   const [expDesc, setExpDesc] = useState("");
 
   const [linkedStaffId, setLinkedStaffId] = useState(null);
+  const [linkedDateFrom, setLinkedDateFrom] = useState(null);
+  const [linkedDateTo, setLinkedDateTo] = useState(null);
 
   const [confirm, setConfirm] = useState({ open: false, id: null });
 
@@ -878,14 +880,20 @@ export default function Expenses() {
     setExpParty(String(row.party ?? ""));
     setExpDesc(String(row.description ?? ""));
     setLinkedStaffId(null);
+    setLinkedDateFrom(null);
+    setLinkedDateTo(null);
     // Check if this expense is linked to a salary payment
     if (row.category === "معاش") {
       const { data } = await supabase
         .from("staff_salary_payments")
-        .select("staff_id")
+        .select("staff_id, date_from, date_to")
         .eq("expense_id", row.id)
         .maybeSingle();
-      if (data?.staff_id) setLinkedStaffId(data.staff_id);
+      if (data?.staff_id) {
+        setLinkedStaffId(data.staff_id);
+        setLinkedDateFrom(data.date_from || null);
+        setLinkedDateTo(data.date_to || null);
+      }
     }
     setOpenAdd(true);
   }
@@ -1475,7 +1483,7 @@ export default function Expenses() {
                     <button
                       type="button"
                       style={{ fontSize: 13, color: "#ea580c", fontWeight: 800, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}
-                      onClick={() => { setOpenAdd(false); navigate(`/staff-hours/${linkedStaffId}`); }}
+                      onClick={() => { setOpenAdd(false); navigate(`/staff-hours/${linkedStaffId}?from=${linkedDateFrom}&to=${linkedDateTo}`); }}
                     >
                       عدّل من هنا ←
                     </button>
