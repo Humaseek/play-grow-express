@@ -291,18 +291,20 @@ function injectStyles() {
    SUB-COMPONENTS
 ───────────────────────────────────────────────── */
 
-/* ── Tooltip (portal → renders at document.body to escape backdrop-filter stacking context) ── */
+/* ── Tooltip — uses transform:translate so RTL direction never affects physical position ── */
 function Tooltip({ visible, x, y, children }) {
   if (typeof document === "undefined") return null;
-  const flip  = x > window.innerWidth  - 220;
-  const flipY = y > window.innerHeight - 170;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const dx = x > vw - 240 ? -196 : 16;
+  const dy = y > vh - 180 ? -155 : -10;
   return ReactDOM.createPortal(
     <div
       className="an-tooltip"
       style={{
+        top: 0, left: 0,
+        transform: `translate(${x + dx}px, ${y + dy}px)`,
         opacity: visible ? 1 : 0,
-        left:    flip  ? x - 176 : x + 14,
-        top:     flipY ? y - 155 : y - 10,
       }}
     >
       {children}
@@ -690,14 +692,27 @@ function TrendChart({ data }) {
           </text>
         ))}
 
-        {/* Legend */}
-        <g transform={`translate(${W - pad.right - 110}, ${pad.top - 6})`}>
-          <circle cx={7} cy={7} r={4} fill="#00ac47" />
-          <text x={15} y={11} fontSize={10} fill="#334155">دخل</text>
-          <circle cx={58} cy={7} r={4} fill="#ef4444" />
-          <text x={66} y={11} fontSize={10} fill="#334155">مصاريف</text>
-        </g>
       </svg>
+
+      {/* Legend — outside SVG so it has proper space and isn't clipped */}
+      <div style={{ display:"flex", justifyContent:"center", gap:28, marginTop:14, direction:"ltr" }}>
+        {[
+          { color:"#00ac47", label:"دخل" },
+          { color:"#ef4444", label:"مصاريف", dashed:true },
+        ].map(item => (
+          <div key={item.label} style={{ display:"flex", alignItems:"center", gap:7 }}>
+            {item.dashed
+              ? <svg width={20} height={10} style={{ flexShrink:0 }}>
+                  <line x1={0} y1={5} x2={20} y2={5} stroke={item.color} strokeWidth={2} strokeDasharray="5 3" />
+                </svg>
+              : <svg width={20} height={10} style={{ flexShrink:0 }}>
+                  <line x1={0} y1={5} x2={20} y2={5} stroke={item.color} strokeWidth={2.5} />
+                </svg>
+            }
+            <span style={{ fontSize:12.5, fontWeight:700, color:"#475569" }}>{item.label}</span>
+          </div>
+        ))}
+      </div>
 
       <Tooltip visible={showHover} x={tooltipPos.x} y={tooltipPos.y}>
         {hov && (
