@@ -866,16 +866,18 @@ export default function Analytics() {
   const [staffPayments, setStaffPayments] = useState([]);
   const [childMap,      setChildMap]      = useState({});
 
-  /* Global course filter */
-  const [globalCourse,      setGlobalCourse]      = useState("all");
-  const [courseDropOpen,    setCourseDropOpen]     = useState(false);
+  /* Global filters */
+  const [globalCourse,   setGlobalCourse]   = useState("all");
+  const [courseDropOpen, setCourseDropOpen] = useState(false);
+  const [dateDropOpen,   setDateDropOpen]   = useState(false);
   const courseDropRef = useRef(null);
+  const dateDropRef   = useRef(null);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handler(e) {
-      if (courseDropRef.current && !courseDropRef.current.contains(e.target))
-        setCourseDropOpen(false);
+      if (courseDropRef.current && !courseDropRef.current.contains(e.target)) setCourseDropOpen(false);
+      if (dateDropRef.current   && !dateDropRef.current.contains(e.target))   setDateDropOpen(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -948,6 +950,8 @@ export default function Analytics() {
   const selectedCourseLabel = globalCourse === "all"
     ? "كل الدورات"
     : courseOptions.find(c => c.id === globalCourse)?.title ?? "دورة";
+
+  const selectedPresetLabel = PRESETS.find(p => p.key === preset)?.label ?? "الفترة";
 
   /* ── filtered slices (date + course — affects ALL charts/KPIs) ── */
   const fPays = useMemo(() => {
@@ -1096,45 +1100,70 @@ export default function Analytics() {
       {err && <ErrorBanner message={err} onClose={() => setErr(null)} />}
 
       {/* ══ FILTER PANEL ══ */}
-      <div className="an-filter-panel">
+      <div className="an-filter-panel" style={{ flexDirection:"row", alignItems:"flex-start", gap:16, flexWrap:"wrap" }}>
 
-        {/* Row 1 — Date range */}
-        <div className="an-filter-row">
-          <span className="an-filter-label">الفترة</span>
-          <div className="an-filter-divider" />
-          {PRESETS.map(p => (
+        {/* Date dropdown */}
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          <span className="an-filter-label">الفترة الزمنية</span>
+          <div className="an-dropdown" ref={dateDropRef}>
             <button
-              key={p.key}
-              className={`an-preset${preset === p.key ? " an-active" : ""}`}
-              onClick={() => setPreset(p.key)}
+              className={`an-dropdown-trigger${dateDropOpen ? " an-open" : ""}`}
+              onClick={() => { setDateDropOpen(o => !o); setCourseDropOpen(false); }}
             >
-              {p.label}
+              {selectedPresetLabel}
+              <ChevronDown size={14} style={{ transition:"transform .2s", transform: dateDropOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
             </button>
-          ))}
+
+            {dateDropOpen && (
+              <div className="an-dropdown-menu">
+                {PRESETS.filter(p => p.key !== "custom").map(p => (
+                  <div
+                    key={p.key}
+                    className={`an-dropdown-item${preset === p.key ? " an-sel" : ""}`}
+                    onClick={() => { setPreset(p.key); setDateDropOpen(false); }}
+                  >
+                    <span>{p.label}</span>
+                    {preset === p.key && <Check size={14} />}
+                  </div>
+                ))}
+                <div
+                  className={`an-dropdown-item${preset === "custom" ? " an-sel" : ""}`}
+                  onClick={() => setPreset("custom")}
+                >
+                  <span>مخصص</span>
+                  {preset === "custom" && <Check size={14} />}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Custom date inputs — shown below trigger when custom is selected */}
           {preset === "custom" && (
-            <div className="an-custom-dates">
+            <div className="an-custom-dates" style={{ borderRadius:14 }}>
               <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)} />
               <span style={{ color:"#cbd5e1", fontWeight:700 }}>—</span>
-              <input type="date" value={customTo}   onChange={e => setCustomTo(e.target.value)} />
+              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)} />
             </div>
           )}
+
+          {/* Date range label */}
           {from && to && preset !== "all" && preset !== "custom" && (
-            <span style={{ fontSize:12, color:"#94a3b8", fontWeight:700, marginRight:"auto" }}>
+            <span style={{ fontSize:11.5, color:"#94a3b8", fontWeight:700 }}>
               {fmtDate(from)} — {fmtDate(to)}
             </span>
           )}
         </div>
 
-        {/* Row 2 — Course filter */}
-        {courseOptions.length > 0 && (
-          <div className="an-filter-row">
-            <span className="an-filter-label">الدورة</span>
-            <div className="an-filter-divider" />
+        <div className="an-filter-divider" style={{ height:"auto", alignSelf:"stretch", margin:"0 4px" }} />
 
+        {/* Course dropdown */}
+        {courseOptions.length > 0 && (
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            <span className="an-filter-label">الدورة</span>
             <div className="an-dropdown" ref={courseDropRef}>
               <button
-                className={`an-dropdown-trigger${courseDropOpen ? " an-open" : ""}${globalCourse !== "all" ? " an-open" : ""}`}
-                onClick={() => setCourseDropOpen(o => !o)}
+                className={`an-dropdown-trigger${courseDropOpen || globalCourse !== "all" ? " an-open" : ""}`}
+                onClick={() => { setCourseDropOpen(o => !o); setDateDropOpen(false); }}
               >
                 {selectedCourseLabel}
                 <ChevronDown size={14} style={{ transition:"transform .2s", transform: courseDropOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
