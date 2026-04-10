@@ -864,6 +864,163 @@ function TrendChart({ data }) {
   );
 }
 
+/* ── Vertical bar chart ── */
+function VBarChart({ data, accentColor = "#00ac47" }) {
+  const svgRef = useRef(null);
+  const [hoverIdx,   setHoverIdx]   = useState(null);
+  const [tooltipPos, setTooltipPos] = useState({ x:0, y:0 });
+  const [barsReady,  setBarsReady]  = useState(false);
+
+  useEffect(() => {
+    setBarsReady(false);
+    const id1 = requestAnimationFrame(() => {
+      const id2 = requestAnimationFrame(() => setBarsReady(true));
+      return () => cancelAnimationFrame(id2);
+    });
+    return () => cancelAnimationFrame(id1);
+  }, [data]);
+
+  if (!data.length) return <Empty />;
+
+  const W   = 600, H = 300;
+  const pad = { top:28, right:20, bottom:72, left:58 };
+  const cW  = W - pad.left - pad.right;
+  const cH  = H - pad.top  - pad.bottom;
+  const visible = data.slice(0, 12);
+  const n   = visible.length;
+  const maxV = Math.max(...visible.map(d => d.value), 1);
+
+  const slotW = cW / n;
+  const barW  = Math.max(slotW * 0.62, 14);
+  const barX  = i => pad.left + i * slotW + (slotW - barW) / 2;
+  const barH  = v => (v / maxV) * cH;
+  const barTop = v => pad.top + cH - barH(v);
+
+  function handleMouseMove(e) {
+    if (!svgRef.current) return;
+    const ctm = svgRef.current.getScreenCTM();
+    if (!ctm) return;
+    const pt = svgRef.current.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    const svgX = pt.matrixTransform(ctm.inverse()).x;
+    const i = Math.floor((svgX - pad.left) / slotW);
+    if (i >= 0 && i < n) { setHoverIdx(i); setTooltipPos({ x:e.clientX, y:e.clientY }); }
+    else setHoverIdx(null);
+  }
+
+  return (
+    <>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        style={{ width:"100%", height:"auto", display:"block", cursor:"default", overflow:"visible" }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHoverIdx(null)}
+      >
+        {/* Horizontal grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((f, gi) => {
+          const gy = barTop(maxV * f);
+          return (
+            <g key={gi}>
+              <line x1={pad.left} y1={gy} x2={W - pad.right} y2={gy}
+                stroke={gi === 4 ? "#e2e8f0" : "#f8fafc"} strokeWidth={gi === 4 ? 1.5 : 1} />
+              <text x={pad.left - 6} y={gy} textAnchor="end" dominantBaseline="middle"
+                fontSize={9} fill="#94a3b8">{fmtMoneyShort(maxV * f)}</text>
+            </g>
+          );
+        })}
+
+        {/* Bars */}
+        {visible.map((item, i) => {
+          const bx  = barX(i);
+          const bh  = barsReady ? barH(item.value) : 0;
+          const by  = barsReady ? barTop(item.value) : pad.top + cH;
+          const isHov = hoverIdx === i;
+          const dim   = hoverIdx !== null && !isHov;
+          return (
+            <g key={i}>
+              {/* Bar shadow / glow on hover */}
+              {isHov && (
+                <rect
+                  x={bx - 3} y={by - 3} width={barW + 6} height={bh + 3}
+                  rx={7} fill={accentColor} opacity={0.15}
+                />
+              )}
+              <rect
+                x={bx} width={barW} rx={5}
+                fill={accentColor}
+                style={{
+                  y: by,
+                  height: bh,
+                  opacity: dim ? 0.3 : isHov ? 1 : 0.82,
+                  transition: "height .55s cubic-bezier(.4,0,.2,1), y .55s cubic-bezier(.4,0,.2,1), opacity .15s",
+                  filter: isHov ? `drop-shadow(0 4px 10px ${accentColor}66)` : "none",
+                }}
+              />
+              {/* Value label above bar when hovered */}
+              {isHov && bh > 12 && (
+                <text
+                  x={bx + barW / 2} y={by - 7}
+                  textAnchor="middle" fontSize={10} fontWeight={800} fill={accentColor}
+                >
+                  {fmtMoneyShort(item.value)}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* X-axis baseline */}
+        <line x1={pad.left} y1={pad.top + cH} x2={W - pad.right} y2={pad.top + cH}
+          stroke="#e2e8f0" strokeWidth={1.5} />
+
+        {/* X-axis labels — rotated */}
+        {visible.map((item, i) => {
+          const cx    = barX(i) + barW / 2;
+          const isHov = hoverIdx === i;
+          const maxLabelLen = n > 6 ? 9 : 14;
+          const label = item.label.length > maxLabelLen
+            ? item.label.slice(0, maxLabelLen - 1) + "…"
+            : item.label;
+          return (
+            <text
+              key={i}
+              x={cx} y={pad.top + cH + 10}
+              textAnchor="end"
+              transform={`rotate(-42, ${cx}, ${pad.top + cH + 10})`}
+              fontSize={9.5}
+              fontWeight={isHov ? 800 : 600}
+              fill={isHov ? accentColor : "#64748b"}
+              style={{ transition:"fill .1s" }}
+            >
+              {label}
+            </text>
+          );
+        })}
+      </svg>
+
+      <Tooltip visible={hoverIdx !== null} x={tooltipPos.x} y={tooltipPos.y}>
+        {hoverIdx !== null && visible[hoverIdx] && (
+          <>
+            <div className="an-tooltip-title">{visible[hoverIdx].label}</div>
+            <div className="an-tooltip-row">
+              <span className="an-tooltip-left">
+                <span className="an-tooltip-dot" style={{ background: accentColor }} />
+                <span className="an-tooltip-label">الدخل</span>
+              </span>
+              <span className="an-tooltip-val">{fmtMoney(visible[hoverIdx].value)} ₪</span>
+            </div>
+            <div className="an-tooltip-row">
+              <span className="an-tooltip-label">النسبة</span>
+              <span className="an-tooltip-val">{visible[hoverIdx].pct}%</span>
+            </div>
+          </>
+        )}
+      </Tooltip>
+    </>
+  );
+}
+
 /* ── Ranked list ── */
 function RankedList({ data }) {
   const [hoverIdx, setHoverIdx] = useState(null);
@@ -1540,7 +1697,7 @@ export default function Analytics() {
                 <CardTitle action={incomeByCourse.length > 0 ? `${incomeByCourse.length} دورة` : undefined}>
                   الدخل حسب الدورة
                 </CardTitle>
-                <HBar data={incomeByCourse} accentColor="#00ac47" />
+                <VBarChart data={incomeByCourse} accentColor="#00ac47" />
               </Card>
               <Card>
                 <CardTitle action={incomeByCountry.length > 0 ? `${incomeByCountry.length} دولة` : undefined}>
