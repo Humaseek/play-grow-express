@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ReactDOM from "react-dom";
 import { supabase } from "../supabaseClient";
 import PageHeader from "../components/PageHeader";
 import ErrorBanner from "../components/ErrorBanner";
@@ -290,20 +291,23 @@ function injectStyles() {
    SUB-COMPONENTS
 ───────────────────────────────────────────────── */
 
-/* ── Tooltip (fixed, follows cursor) ── */
+/* ── Tooltip (portal → renders at document.body to escape backdrop-filter stacking context) ── */
 function Tooltip({ visible, x, y, children }) {
-  const flip = typeof window !== "undefined" && x > window.innerWidth - 220;
-  return (
+  if (typeof document === "undefined") return null;
+  const flip  = x > window.innerWidth  - 220;
+  const flipY = y > window.innerHeight - 170;
+  return ReactDOM.createPortal(
     <div
       className="an-tooltip"
       style={{
         opacity: visible ? 1 : 0,
-        left: flip ? x - 170 : x + 14,
-        top: y - 10,
+        left:    flip  ? x - 176 : x + 14,
+        top:     flipY ? y - 155 : y - 10,
       }}
     >
       {children}
-    </div>
+    </div>,
+    document.body
   );
 }
 
