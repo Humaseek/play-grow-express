@@ -344,12 +344,19 @@ const CSS = `
   font-size: 12px; font-weight: 800;
 }
 
+/* ── Refresh spin ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ── Responsive ── */
+@media (max-width: 900px) {
+  .an-layout  { flex-direction: column; }
+  .an-sidebar { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; gap: 12px; }
+}
 @media (max-width: 720px) {
   .an-2col, .an-3col { grid-template-columns: 1fr; }
   .an-donut-row      { flex-direction: column; align-items: center; }
 }
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .an-kpi-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 360px) {
@@ -1380,12 +1387,29 @@ export default function Analytics() {
     <div className="container an-page page page--analytics" style={{ direction:"rtl" }}>
 
       <PageHeader
-        title="التحليل المالي"
+        title={
+          <span style={{ display:"inline-flex", alignItems:"center", gap:10 }}>
+            التحليل المالي
+            <span style={{
+              fontSize:10, fontWeight:800, color:"#00ac47",
+              background:"rgba(0,172,71,0.1)", padding:"3px 9px",
+              borderRadius:999, letterSpacing:"0.06em",
+              border:"1px solid rgba(0,172,71,0.2)", lineHeight:1.5,
+            }}>● مباشر</span>
+          </span>
+        }
         subtitle="نظرة شاملة على الدخل والمصاريف والأداء المالي"
         actions={
-          <button className="btn" onClick={load} disabled={loading}
-            style={{ display:"flex", alignItems:"center", gap:6 }}>
-            <RefreshCw size={15} />
+          <button onClick={load} disabled={loading} style={{
+            display:"flex", alignItems:"center", gap:6,
+            padding:"8px 16px", borderRadius:12, border:"none",
+            background:"rgba(0,172,71,0.08)", color:"#00ac47",
+            fontSize:13, fontWeight:800, cursor:"pointer",
+            boxShadow:"0 2px 8px rgba(0,172,71,0.12)",
+            transition:"background .15s, box-shadow .15s",
+            opacity: loading ? 0.6 : 1,
+          }}>
+            <RefreshCw size={15} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
             {loading ? "جار التحميل..." : "تحديث"}
           </button>
         }
@@ -1557,28 +1581,24 @@ export default function Analytics() {
           </div>
         )}
 
-        {/* Clear all button — only when something is active */}
+        {/* Clear all button — subtle text-only */}
         {hasActiveFilters && (
           <>
-            <div className="an-filter-divider" style={{ height:"auto", alignSelf:"stretch", margin:"0 4px" }} />
-            <div style={{ display:"flex", flexDirection:"column", justifyContent:"center" }}>
-              <button
-                onClick={clearAllFilters}
-                style={{
-                  display:"flex", alignItems:"center", gap:6,
-                  padding:"7px 14px", borderRadius:999,
-                  border:"1.5px solid rgba(239,68,68,0.25)",
-                  background:"rgba(239,68,68,0.06)", color:"#ef4444",
-                  fontSize:13, fontWeight:800, cursor:"pointer",
-                  whiteSpace:"nowrap", transition:"background .15s, border-color .15s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.background="rgba(239,68,68,0.12)"}
-                onMouseLeave={e => e.currentTarget.style.background="rgba(239,68,68,0.06)"}
-              >
-                <X size={14} />
-                مسح الفلاتر
-              </button>
-            </div>
+            <hr className="an-sidebar-hr" />
+            <button
+              onClick={clearAllFilters}
+              style={{
+                display:"flex", alignItems:"center", gap:5,
+                padding:"6px 0", border:"none", background:"transparent",
+                color:"#94a3b8", fontSize:12, fontWeight:700, cursor:"pointer",
+                transition:"color .15s",
+              }}
+              onMouseEnter={e => e.currentTarget.style.color="#ef4444"}
+              onMouseLeave={e => e.currentTarget.style.color="#94a3b8"}
+            >
+              <X size={13} />
+              مسح الفلاتر
+            </button>
           </>
         )}
       </div>{/* /an-sidebar */}
@@ -1609,27 +1629,38 @@ export default function Analytics() {
       {!loading && (
         <>
           {/* 1 · KPIs */}
-          <div className="an-kpi-grid">
-            <KpiCard icon={TrendingUp}   label="إجمالي الدخل"       value={`${fmtMoney(kpi.totalIncome)} ₪`}  hint="المبالغ المدفوعة"       variant="ok" />
-            <KpiCard icon={TrendingDown} label="المصاريف التشغيلية" value={`${fmtMoney(kpi.nonStaffExp)} ₪`}  hint="بدون رواتب الموظفين"    variant="warn" />
-            <KpiCard icon={Briefcase}    label="تكاليف الموظفين"    value={`${fmtMoney(kpi.staffCost)} ₪`}    hint="رواتب مدفوعة"           variant="info" />
-            <KpiCard
-              icon={Banknote}
-              label="صافي الربح"
-              value={`${fmtMoney(kpi.netProfit)} ₪`}
-              hint={
-                <span style={{ display:"flex", alignItems:"center", gap:4,
-                  color: kpi.netProfit >= 0 ? "#00ac47" : "#ef4444" }}>
-                  {kpi.netProfit >= 0
-                    ? <ArrowUpRight size={13} />
-                    : <ArrowDownRight size={13} />}
-                  {kpi.netProfit >= 0 ? "ربح" : "خسارة"}
-                </span>
-              }
-              variant={kpi.netProfit >= 0 ? "ok" : "danger"}
-            />
-            <KpiCard icon={Users} label="أطفال نشطون" value={kpi.activeStudents} hint="دفعوا خلال الفترة" variant="info" />
-          </div>
+          {(() => {
+            const Shekel = ({ n }) => (
+              <>{fmtMoney(n)}<span style={{ fontSize:12, fontWeight:600, color:"#94a3b8", marginRight:4 }}> ₪</span></>
+            );
+            return (
+              <>
+                {/* Row 1 — 4 financial metrics */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:16, marginBottom:16 }}>
+                  <KpiCard icon={TrendingUp}   label="إجمالي الدخل"       value={<Shekel n={kpi.totalIncome} />}   hint="المبالغ المدفوعة"       variant="ok" />
+                  <KpiCard icon={TrendingDown} label="المصاريف التشغيلية" value={<Shekel n={kpi.nonStaffExp} />}   hint="بدون رواتب الموظفين"    variant="danger" />
+                  <KpiCard icon={Briefcase}    label="تكاليف الموظفين"    value={<Shekel n={kpi.staffCost} />}     hint="رواتب مدفوعة"           variant="info" />
+                  <KpiCard
+                    icon={Banknote}
+                    label="صافي الربح"
+                    value={<Shekel n={kpi.netProfit} />}
+                    hint={
+                      <span style={{ display:"flex", alignItems:"center", gap:4,
+                        color: kpi.netProfit >= 0 ? "#00ac47" : "#ef4444" }}>
+                        {kpi.netProfit >= 0 ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+                        {kpi.netProfit >= 0 ? "ربح" : "خسارة"}
+                      </span>
+                    }
+                    variant={kpi.netProfit >= 0 ? "ok" : "danger"}
+                  />
+                </div>
+                {/* Row 2 — children */}
+                <div style={{ marginBottom:32 }}>
+                  <KpiCard icon={Users} label="أطفال نشطون" value={kpi.activeStudents} hint="دفعوا خلال الفترة" variant="info" />
+                </div>
+              </>
+            );
+          })()}
 
           {/* 1b · Kind comparison */}
           {(kindComparison.courses.income > 0 || kindComparison.workshops.income > 0) && (
@@ -1644,7 +1675,7 @@ export default function Analytics() {
                     const totalIncome = kindComparison.courses.income + kindComparison.workshops.income || 1;
                     const sharePct = ((data.income / totalIncome) * 100).toFixed(1);
                     return (
-                      <div key={label} style={{ borderRadius:16, border:`1.5px solid ${color}22`, padding:"18px 20px", background:`${color}07` }}>
+                      <div key={label} style={{ borderRadius:16, border:`1.5px solid ${color}22`, padding:"22px 28px", background:`${color}07` }}>
                         {/* Header */}
                         <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:18, direction:"rtl" }}>
                           <div style={{ width:10, height:10, borderRadius:"50%", background:color, flexShrink:0 }} />
@@ -1654,7 +1685,10 @@ export default function Analytics() {
                           </span>
                         </div>
 
-                        {/* Metrics */}
+                        {/* Metrics — ₪ shown once as column header */}
+                        <div style={{ display:"flex", justifyContent:"flex-start", marginBottom:8, direction:"rtl" }}>
+                          <span style={{ fontSize:11, color:"#94a3b8", fontWeight:700, marginRight:"auto" }}>بالشيكل ₪</span>
+                        </div>
                         {[
                           { label:"الدخل",       val: data.income,  color:"#00ac47" },
                           { label:"المصاريف",    val: data.expense, color:"#ef4444" },
@@ -1662,7 +1696,7 @@ export default function Analytics() {
                         ].map(row => (
                           <div key={row.label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, direction:"rtl" }}>
                             <span style={{ fontSize:13, color:"#64748b", fontWeight:700 }}>{row.label}</span>
-                            <span style={{ fontSize:14, fontWeight:900, color: row.color }}>{fmtMoney(row.val)} ₪</span>
+                            <span style={{ fontSize:14, fontWeight:900, color: row.color }}>{fmtMoney(row.val)}</span>
                           </div>
                         ))}
 
