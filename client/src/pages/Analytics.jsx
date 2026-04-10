@@ -133,12 +133,12 @@ const CSS = `
 /* ── Filter panel ── */
 .an-filter-bar { display: none; } /* legacy, unused */
 .an-filter-panel {
-  position: relative; z-index: 50;
-  background: rgba(255,255,255,0.9);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.95);
-  box-shadow: 0 2px 16px rgba(15,23,42,0.04), inset 0 0 0 1px rgba(255,255,255,0.4);
+  box-shadow: 0 2px 16px rgba(15,23,42,0.06), inset 0 0 0 1px rgba(255,255,255,0.4);
   padding: 18px 22px;
   margin-bottom: 28px;
   display: flex; flex-direction: column; gap: 14px;
