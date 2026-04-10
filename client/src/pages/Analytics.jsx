@@ -681,6 +681,7 @@ function TrendChart({ data }) {
 
   return (
     <>
+      <div style={{ padding:"0 20px" }}>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
@@ -770,6 +771,7 @@ function TrendChart({ data }) {
         ))}
 
       </svg>
+      </div>{/* end horizontal padding wrapper */}
 
       {/* Legend — outside SVG so it has proper space and isn't clipped */}
       <div style={{ display:"flex", justifyContent:"center", gap:28, marginTop:14, direction:"ltr" }}>
