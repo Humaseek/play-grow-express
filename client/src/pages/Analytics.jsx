@@ -406,9 +406,9 @@ function CardTitle({ children, action }) {
 }
 
 /* ── Section header ── */
-function SectionHeader({ icon: Icon, children }) {
+function SectionHeader({ icon: Icon, children, color }) {
   return (
-    <div className="an-section-header">
+    <div className="an-section-header" style={color ? { borderImage: `linear-gradient(180deg, ${color}, ${color}33) 1` } : undefined}>
       <h2>{children}</h2>
     </div>
   );
@@ -500,21 +500,37 @@ function DonutChart({ data, size = 190, onSliceHover, setTooltipPos: setExtTPos 
   const GAP = data.length > 1 ? 0.025 : 0;
   let angle = -Math.PI / 2;
 
-  const slices = data.map((d, i) => {
-    const frac  = d.value / total;
-    const sweep = frac * 2 * Math.PI - GAP;
-    if (sweep <= 0) return null;
-    const sA = angle + GAP / 2, eA = sA + sweep;
-    angle += frac * 2 * Math.PI;
-    const hov = hoverSlice === i;
-    const ro  = hov ? R + 6 : R;
-    const ri  = hov ? r + 2 : r;
+  // Build arc path — handles the full-circle case (single slice = 100%)
+  function buildArc(ro, ri, sA, sweep) {
+    if (sweep >= 2 * Math.PI - 0.001) {
+      // Full circle: split into two semicircles (SVG can't draw a 360° arc in one command)
+      const midA = sA + Math.PI;
+      const x1o = cx + ro*Math.cos(sA),  y1o = cy + ro*Math.sin(sA);
+      const x2o = cx + ro*Math.cos(midA), y2o = cy + ro*Math.sin(midA);
+      const x1i = cx + ri*Math.cos(sA),  y1i = cy + ri*Math.sin(sA);
+      const x2i = cx + ri*Math.cos(midA), y2i = cy + ri*Math.sin(midA);
+      return `M${x1o} ${y1o} A${ro} ${ro} 0 1 1 ${x2o} ${y2o} A${ro} ${ro} 0 1 1 ${x1o} ${y1o} ` +
+             `M${x1i} ${y1i} A${ri} ${ri} 0 1 0 ${x2i} ${y2i} A${ri} ${ri} 0 1 0 ${x1i} ${y1i}Z`;
+    }
+    const eA  = sA + sweep;
+    const lg  = sweep > Math.PI ? 1 : 0;
     const x1  = cx + ro*Math.cos(sA), y1 = cy + ro*Math.sin(sA);
     const x2  = cx + ro*Math.cos(eA), y2 = cy + ro*Math.sin(eA);
     const ix1 = cx + ri*Math.cos(sA), iy1= cy + ri*Math.sin(sA);
     const ix2 = cx + ri*Math.cos(eA), iy2= cy + ri*Math.sin(eA);
-    const lg  = sweep > Math.PI ? 1 : 0;
-    const path= `M${x1} ${y1} A${ro} ${ro} 0 ${lg} 1 ${x2} ${y2} L${ix2} ${iy2} A${ri} ${ri} 0 ${lg} 0 ${ix1} ${iy1}Z`;
+    return `M${x1} ${y1} A${ro} ${ro} 0 ${lg} 1 ${x2} ${y2} L${ix2} ${iy2} A${ri} ${ri} 0 ${lg} 0 ${ix1} ${iy1}Z`;
+  }
+
+  const slices = data.map((d, i) => {
+    const frac  = d.value / total;
+    const sweep = frac * 2 * Math.PI - GAP;
+    if (sweep <= 0) return null;
+    const sA  = angle + GAP / 2;
+    angle += frac * 2 * Math.PI;
+    const hov = hoverSlice === i;
+    const ro  = hov ? R + 6 : R;
+    const ri  = hov ? r + 2 : r;
+    const path = buildArc(ro, ri, sA, sweep);
     return { path, color: d.color, label: d.label, value: d.value, pct: (frac*100).toFixed(1) };
   }).filter(Boolean);
 
@@ -1500,7 +1516,7 @@ export default function Analytics() {
 
           {/* 4 · Expense breakdown */}
           <div className="an-section">
-            <SectionHeader icon={ShoppingCart}>تحليل المصاريف</SectionHeader>
+            <SectionHeader icon={ShoppingCart} color="#ef4444">تحليل المصاريف</SectionHeader>
             <div className="an-2col" style={{ marginBottom:20 }}>
               <ExpenseCategoryCard data={expByCategory} />
               <Card>
