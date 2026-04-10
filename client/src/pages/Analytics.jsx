@@ -640,14 +640,19 @@ function TrendChart({ data }) {
 
   function handleMouseMove(e) {
     if (!svgRef.current) return;
-    const rect   = svgRef.current.getBoundingClientRect();
-    const scaleX = rect.width / W;
-    const svgX   = (e.clientX - rect.left) / scaleX;
+    // Use getScreenCTM — browser-native SVG→screen matrix, exact in any layout direction
+    const ctm = svgRef.current.getScreenCTM();
+    if (!ctm) return;
+    const pt  = svgRef.current.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgX   = pt.matrixTransform(ctm.inverse()).x;
     const rawIdx = (svgX - pad.left) / (cW / Math.max(n - 1, 1));
     const idx    = Math.max(0, Math.min(n - 1, Math.round(rawIdx)));
-    // Only activate when cursor is within 36px of the nearest point column
-    const distPx = Math.abs(svgX - xAt(idx)) * scaleX;
-    if (distPx > 36) {
+    // Distance in SVG units → screen pixels using CTM scale factor
+    const pxPerUnit = Math.sqrt(ctm.a * ctm.a + ctm.b * ctm.b);
+    const distPx    = Math.abs(svgX - xAt(idx)) * pxPerUnit;
+    if (distPx > 40) {
       setHoverIdx(null);
     } else {
       setHoverIdx(idx);
