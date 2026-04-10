@@ -133,6 +133,7 @@ const CSS = `
 /* ── Filter panel ── */
 .an-filter-bar { display: none; } /* legacy, unused */
 .an-filter-panel {
+  position: relative; z-index: 50;
   background: rgba(255,255,255,0.9);
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-radius: 20px;
