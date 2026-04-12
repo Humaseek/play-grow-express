@@ -228,9 +228,30 @@ const CSS = `
 @media (max-width: 980px) {
   .sh-cards-grid { grid-template-columns: 1fr; }
   .sh-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .sh-teacher-card { border-radius: 16px; }
+  .sh-card-header { padding: 14px 16px 12px; gap: 12px; }
+  .sh-card-stats { padding: 12px 16px; }
+  .sh-card-actions { padding: 12px 16px; flex-wrap: wrap; }
+  .sh-month-table th, .sh-month-table td { padding: 10px 10px; font-size: 13px; }
+  .sh-calc-box { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+
+  /* --- Modal overrides --- */
+  div.modalOverlay { align-items: center !important; padding: 12px !important; }
+  div.modalOverlay > div.modalCard {
+    border-radius: 22px !important; width: 96% !important; max-height: 88vh !important;
+    display: flex !important; flex-direction: column !important; overflow: hidden !important;
+  }
+  div.modalOverlay > div.modalCard > .modalBody {
+    flex: 1 !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch !important;
+  }
+  .sh-btn-primary, .sh-convert-btn { width: 100%; justify-content: center; }
 }
 @media (max-width: 600px) {
   .sh-form-row { grid-template-columns: 1fr; }
+  .sh-kpi-grid { grid-template-columns: 1fr; }
+  .sh-stat-value { font-size: 16px; }
+  .sh-avatar { width: 40px; height: 40px; }
+  .sh-card-name { font-size: 15px; }
 }
 `;
 

@@ -296,11 +296,30 @@ const CSS = `
   .sd-invoice { max-width: 100%; }
 }
 
+@media (max-width: 980px) {
+  .sd-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .sd-table th, .sd-table td { padding: 10px 10px; font-size: 13px; }
+  .sd-calc-box { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+  .sd-header-card { padding: 16px; gap: 12px; }
+
+  /* --- Modal overrides --- */
+  div.modalOverlay { align-items: center !important; padding: 12px !important; }
+  div.modalOverlay > div.modalCard {
+    border-radius: 22px !important; width: 96% !important; max-height: 88vh !important;
+    display: flex !important; flex-direction: column !important; overflow: hidden !important;
+  }
+  div.modalOverlay > div.modalCard > .modalBody {
+    flex: 1 !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch !important;
+  }
+}
 @media (max-width: 600px) {
   .sd-form-row { grid-template-columns: 1fr; }
   .sd-header-card { flex-direction: column; align-items: flex-start; }
   .sd-inv-header { flex-direction: column; gap: 12px; }
   .sd-inv-signatures { grid-template-columns: 1fr; }
+  .sd-kpi-grid { grid-template-columns: 1fr; }
+  .sd-inv-teacher { padding: 12px 14px; gap: 14px; }
+  .sd-inv-totals-box { min-width: 0; width: 100%; }
 }
 `;
 

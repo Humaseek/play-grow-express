@@ -619,9 +619,18 @@ const EXPENSES_STYLES = `
 
   .kpiGrid4 {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* إحصائيات الموبايل عمودين */
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
   }
+}
+
+@media (max-width: 520px) {
+  .responsive-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .form-col-full,
+  .form-col { grid-column: span 1 !important; }
+  .kpiGrid4 { grid-template-columns: 1fr !important; }
 }
 
 @media (min-width: 981px) {

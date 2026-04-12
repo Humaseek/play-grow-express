@@ -188,11 +188,18 @@ const COURSE_DETAILS_STYLES = `
   .form-section-title { margin: 10px 0 10px 0; font-size: 14px; }
   .input { padding: 10px 14px; font-size: 13px; }
 
-  /* 👇 تعديل الـ justify-content في الموبايل لتقريب الأزرار 👇 */
-  .pageHeader__actions { 
-    width: 100%; 
-    justify-content: flex-end; /* عشن تصف عالشمال في العربي */
+  .pageHeader__actions {
+    width: 100%;
+    justify-content: flex-end;
   }
+}
+
+@media (max-width: 520px) {
+  .responsive-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .form-col-full,
+  .form-col { grid-column: span 1 !important; }
 }
 
 @media (min-width: 981px) {

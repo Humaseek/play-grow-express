@@ -564,6 +564,14 @@ const CHILDREN_STYLES = `
   }
 }
 
+@media (max-width: 520px) {
+  .responsive-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .form-col-full,
+  .form-col { grid-column: span 1 !important; }
+}
+
 @media (min-width: 981px) {
   .mobile-list { display: none; }
   .fab-button { display: none !important; }
