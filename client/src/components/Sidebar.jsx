@@ -25,56 +25,68 @@ export default function Sidebar({ onSignOut }) {
           end
           className={({ isActive }) => (isActive ? "active" : "")}
         >
-          <CalendarDays size={18} /> <span>لوحة التحكم</span>
+          <CalendarDays size={18} />
+          <span className="navFull">لوحة التحكم</span>
+          <span className="navShort">اليوم</span>
         </NavLink>
 
         <NavLink
           to="/courses"
           className={({ isActive }) => (isActive ? "active" : "")}
         >
-          <GraduationCap size={18} /> <span>دورات</span>
+          <GraduationCap size={18} />
+          <span className="navFull">دورات</span>
+          <span className="navShort">دورات</span>
         </NavLink>
 
         <NavLink
           to="/payments"
           className={({ isActive }) => (isActive ? "active" : "")}
         >
-          <CreditCard size={18} /> <span>دخل</span>
+          <CreditCard size={18} />
+          <span className="navFull">دخل</span>
+          <span className="navShort">دخل</span>
         </NavLink>
 
         <NavLink
           to="/expenses"
           className={({ isActive }) => (isActive ? "active" : "")}
         >
-          <Receipt size={18} /> <span>مصاريف</span>
+          <Receipt size={18} />
+          <span className="navFull">مصاريف</span>
+          <span className="navShort">مصاريف</span>
         </NavLink>
 
         <NavLink
           to="/staff-hours"
           className={({ isActive }) => (isActive ? "active" : "")}
         >
-          <Clock size={18} /> <span>ساعات العمل</span>
+          <Clock size={18} />
+          <span className="navFull">ساعات العمل</span>
+          <span className="navShort">ساعات</span>
         </NavLink>
 
         <NavLink
           to="/children"
           className={({ isActive }) => (isActive ? "active" : "")}
         >
-          <UsersRound size={18} /> <span>الاطفال</span>
+          <UsersRound size={18} />
+          <span className="navFull">الاطفال</span>
+          <span className="navShort">أطفال</span>
         </NavLink>
 
         <NavLink
           to="/analytics"
           className={({ isActive }) => (isActive ? "active" : "")}
         >
-          <BarChart2 size={18} /> <span>التحليل المالي</span>
+          <BarChart2 size={18} />
+          <span className="navFull">التحليل المالي</span>
+          <span className="navShort">تحليل</span>
         </NavLink>
       </nav>
 
-      {/* تمت إضافة كلاس desktop-only لإخفاء الخط في الموبايل */}
       <hr className="sep desktop-only" />
 
-      {/* تمت إضافة كلاس logout-btn و logout-text للتحكم بظهورهم في الموبايل */}
       <button
         className="btn danger logout-btn"
         onClick={onSignOut}
