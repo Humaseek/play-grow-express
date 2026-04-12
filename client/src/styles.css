@@ -909,7 +909,7 @@ textarea {
   display: grid;
   place-items: center;
   padding: 16px;
-  z-index: 50;
+  z-index: 99999;
   backdrop-filter: blur(3px);
 }
 .modalCard {
@@ -983,7 +983,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  z-index: 60;
+  z-index: 100000;
 }
 .toast {
   display: flex;
@@ -2671,16 +2671,47 @@ textarea {
   .modalCard {
     width: 100% !important;
     border-radius: 22px 22px 0 0 !important;
-    max-height: 88vh !important;
+    max-height: 90vh !important;
     margin-bottom: 0 !important;
     display: flex !important;
     flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .modalHeader {
+    flex: 0 0 auto !important;
+    padding: 18px 44px 10px !important;
+  }
+
+  .modalTitle {
+    font-size: 18px !important;
   }
 
   .modalBody {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
-    padding: 8px 16px 24px !important;
+    padding: 6px 16px max(20px, env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Save / submit buttons inside modal body → full-width */
+  .modalBody .btn,
+  .modalBody .sh-btn-primary,
+  .modalBody .sh-convert-btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* ConfirmDialog action row → stack full-width on mobile */
+  .modalBody .row {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .modalBody .row .btn {
+    width: 100% !important;
+    justify-content: center !important;
   }
 
   /* ── Container ──────────────────────────────────────────── */

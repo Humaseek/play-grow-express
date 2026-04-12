@@ -181,22 +181,52 @@ const PROFILE_STYLES = `
 
   /* --- التحكم في المودال (النافذة المنبثقة) للموبايل --- */
   div.modalOverlay {
-    align-items: center !important; 
+    align-items: center !important;
     padding: 16px !important;
     z-index: 99999 !important;
   }
-  
+
   div.modalOverlay > div.modalCard {
-      border-radius: 24px !important; 
-      margin: auto !important; 
-      width: 92% !important;        /* 👈 هان عرض الموبايل فقط صار صح */
-      max-height: 85vh !important;  
-      transform: translateY(-5vh) !important; 
+    border-radius: 24px !important;
+    margin: auto !important;
+    width: 95% !important;
+    max-height: 88vh !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  div.modalOverlay > div.modalCard > .modalBody {
+    overflow: hidden !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
   }
 
   .modal-form-scroll-container {
-      max-height: calc(70vh - 130px) !important; 
-      padding: 0 5px;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-height: none !important;
+    padding: 10px 16px 4px !important;
+  }
+
+  .modal-fixed-footer {
+    flex-shrink: 0 !important;
+    padding: 10px 16px max(14px, env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid rgba(0,0,0,0.07) !important;
+    background: #fff !important;
+    display: flex !important;
+    gap: 8px !important;
+  }
+
+  .modal-fixed-footer .btn {
+    flex: 1 !important;
+    justify-content: center !important;
   }
 }
 

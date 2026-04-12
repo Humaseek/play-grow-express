@@ -171,12 +171,23 @@ const PAST_SESSIONS_STYLES = `
   div.modalOverlay {
     align-items: center !important;
     padding: 16px !important;
+    z-index: 99999 !important;
   }
   div.modalOverlay > div.modalCard {
     border-radius: 24px !important;
     margin: auto !important;
     width: 95% !important;
     max-height: 88vh !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  div.modalOverlay > div.modalCard > .modalBody {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 }
 `;

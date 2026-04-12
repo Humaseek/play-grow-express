@@ -492,17 +492,34 @@ const CHILDREN_STYLES = `
   }
   
   div.modalOverlay > div.modalCard {
-    border-radius: 24px !important; 
-    margin: auto !important; 
-    width: 92% !important; 
-    max-height: 75vh !important; 
-    margin-bottom: auto !important; 
-    transform: translateY(-5vh) !important;
+    border-radius: 24px !important;
+    margin: auto !important;
+    width: 95% !important;
+    max-height: 88vh !important;
+    margin-bottom: auto !important;
+    transform: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  /* modalBody becomes flex column so scroll container + footer stack cleanly */
+  div.modalOverlay > div.modalCard > .modalBody {
+    overflow: hidden !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
   }
 
   .modal-form-scroll-container {
-    max-height: calc(85vh - 250px) !important; 
-    padding: 0 5px;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    max-height: none !important;
+    padding: 10px 16px 4px !important;
   }
 
   .desktop-table-container { display: none; }
@@ -533,8 +550,17 @@ const CHILDREN_STYLES = `
   }
   
   .modal-fixed-footer {
-    padding-bottom: 10px;
-    margin-top: 5px;
+    flex-shrink: 0 !important;
+    padding: 10px 16px max(14px, env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid rgba(0,0,0,0.07) !important;
+    background: #fff !important;
+    display: flex !important;
+    gap: 8px !important;
+  }
+
+  .modal-fixed-footer .btn {
+    flex: 1 !important;
+    justify-content: center !important;
   }
 }
 

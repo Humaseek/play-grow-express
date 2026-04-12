@@ -225,9 +225,12 @@ const CSS = `
 }
 .sh-detail-link:hover { opacity: 0.7; }
 
+@media (max-width: 980px) {
+  .sh-cards-grid { grid-template-columns: 1fr; }
+  .sh-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 600px) {
   .sh-form-row { grid-template-columns: 1fr; }
-  .sh-cards-grid { grid-template-columns: 1fr; }
 }
 `;
 
