@@ -178,6 +178,17 @@ const PROFILE_STYLES = `
 
 @media (max-width: 980px) {
   .col-8, .col-4 { grid-column: span 12; }
+  .bento-grid { gap: 16px; }
+  .bento-card { padding: 20px; }
+  .financial-grid { grid-template-columns: 1fr !important; gap: 16px; }
+  .info-matrix { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+  .info-cell { padding: 14px; }
+  .cell-value { font-size: 16px; }
+  .section-head { font-size: 17px; margin-bottom: 20px; padding-bottom: 12px; }
+  .data-table th { padding: 12px 14px; font-size: 12px; }
+  .data-table td { padding: 14px; font-size: 14px; }
+  .table-responsive { -webkit-overflow-scrolling: touch; }
+  .parent-block { padding: 16px; }
 
   /* --- التحكم في المودال (النافذة المنبثقة) للموبايل --- */
   div.modalOverlay {
@@ -228,6 +239,20 @@ const PROFILE_STYLES = `
     flex: 1 !important;
     justify-content: center !important;
   }
+}
+
+@media (max-width: 520px) {
+  .bento-grid { gap: 12px; }
+  .bento-card { padding: 16px; border-radius: 20px; }
+  .info-matrix { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .info-cell { padding: 12px; border-radius: 12px; }
+  .cell-label { font-size: 12px; margin-bottom: 4px; }
+  .cell-value { font-size: 15px; }
+  .section-head { font-size: 16px; gap: 8px; }
+  .contact-btn { padding: 8px 12px; font-size: 13px; }
+  .notes-alert { padding: 14px; font-size: 14px; }
+  .course-link-info-box { padding: 12px; font-size: 14px; }
+  .modal-input { padding: 12px; font-size: 14px; }
 }
 
 .section-head {

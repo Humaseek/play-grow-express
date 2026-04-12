@@ -770,14 +770,35 @@ const RUN_DETAILS_SOFT_UI_STYLES = `
   }
 
   /* جدول التاريخ داخل المودال */
-  .modal-compact-table th { 
-    font-size: 13px !important; 
-    padding: 12px 8px !important; 
+  .modal-compact-table th {
+    font-size: 13px !important;
+    padding: 12px 8px !important;
   }
-  .modal-compact-table td { 
-    font-size: 13px !important; 
-    padding: 12px 8px !important; 
+  .modal-compact-table td {
+    font-size: 13px !important;
+    padding: 12px 8px !important;
   }
+
+  /* --- Summary Grid on phones --- */
+  .summaryGridSoft .summaryCardSoft {
+    border-radius: 16px !important;
+  }
+
+  /* --- Manage modal gap reduction --- */
+  .modalBody > div > div {
+    gap: 20px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .summaryGridSoft {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  .summaryValue { font-size: 18px !important; }
+  .heroMiniChip { min-width: 80px !important; padding: 5px 10px !important; }
+  .runHeroTitle { font-size: 18px !important; padding: 10px 12px !important; }
+  .actionSquare { min-height: 60px !important; }
 }
 `;
 

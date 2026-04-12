@@ -184,12 +184,20 @@ const COURSES_STYLES = `
     gap: 12px;
     padding-bottom: 12px;
   }
-  
+
   .form-col-full { grid-column: span 2 !important; }
   .form-col { grid-column: span 1 !important; }
 
   .form-section-title { margin: 10px 0 10px 0; font-size: 14px; }
   .input { padding: 10px 14px; font-size: 13px; }
+}
+
+@media (max-width: 520px) {
+  .responsive-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .form-col-full,
+  .form-col { grid-column: span 1 !important; }
 }
 
 @media (min-width: 981px) {
