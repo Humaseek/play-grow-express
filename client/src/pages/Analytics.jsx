@@ -415,13 +415,22 @@ const CSS = `
 @media (max-width: 900px) {
   .an-layout  { flex-direction: column; }
   .an-sidebar { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; gap: 12px; }
+  .an-sidebar .an-filter-row { width: 100%; }
+  .an-pl-table th, .an-pl-table td { padding: 10px 10px; font-size: 12px; }
 }
 @media (max-width: 720px) {
   .an-2col, .an-3col { grid-template-columns: 1fr; }
   .an-donut-row      { flex-direction: column; align-items: center; }
+  .an-section { margin-bottom: 24px; }
+  .an-section-header h2 { font-size: 16px; }
+  .an-hbar-row > div:first-child { width: 80px !important; font-size: 11px !important; }
 }
 @media (max-width: 600px) {
   .an-kpi-grid { grid-template-columns: 1fr 1fr; }
+  .an-sidebar { padding: 14px 12px; gap: 10px; }
+  .an-preset { padding: 6px 12px; font-size: 12px; }
+  .an-custom-dates { padding: 6px 10px; }
+  .an-custom-dates input { font-size: 12px; }
 }
 @media (max-width: 360px) {
   .an-kpi-grid { grid-template-columns: 1fr; }
@@ -2399,10 +2408,8 @@ export default function Analytics() {
                   <>
                     {/* Row 1 — 4 financial metrics */}
                     <div
+                      className="an-kpi-grid"
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(4,1fr)",
-                        gap: 16,
                         marginBottom: 16,
                       }}
                     >

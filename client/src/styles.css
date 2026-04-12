@@ -2770,3 +2770,100 @@ textarea {
     font-size: 12px !important;
   }
 }
+
+/* ==========================================================================
+   ADDITIONAL MOBILE RESPONSIVE OVERRIDES
+   Override inline styles that break on small screens.
+   ========================================================================== */
+
+@media (max-width: 980px) {
+
+  /* ── Generic form 2-col grids inside modals → 1 col ────────── */
+  .responsive-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .responsive-form-grid .form-col-full,
+  .responsive-form-grid .form-col {
+    grid-column: span 1 !important;
+  }
+
+  /* ── Modal compact tables: enable horizontal scroll ────────── */
+  .modal-compact-table {
+    display: block !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .modal-compact-table thead,
+  .modal-compact-table tbody,
+  .modal-compact-table tr {
+    display: table;
+    width: 100%;
+    table-layout: auto;
+  }
+
+  /* ── HBar chart label width in Analytics ────────────────────── */
+  .an-hbar-row > div:first-child {
+    width: 90px !important;
+    font-size: 12px !important;
+  }
+
+  /* ── Generic row overflow fix ──────────────────────────────── */
+  .row {
+    flex-wrap: wrap !important;
+  }
+
+  /* ── Actions row: wrap on mobile ───────────────────────────── */
+  .actionsRow {
+    flex-wrap: wrap !important;
+  }
+
+  /* ── MetaRow chips: allow wrapping ─────────────────────────── */
+  .metaRow {
+    flex-wrap: wrap !important;
+  }
+
+  /* ── Enrollment picker ─────────────────────────────────────── */
+  .enrollment-picker-list {
+    max-height: 180px !important;
+  }
+}
+
+/* ── Phone breakpoint (≤ 680px) ──────────────────────────────── */
+@media (max-width: 680px) {
+
+  /* ── Filters: minWidth overrides ───────────────────────────── */
+  .filtersBar > * {
+    min-width: 0 !important;
+  }
+  .filtersBar__search {
+    flex: 1 1 100% !important;
+    min-width: 0 !important;
+  }
+  .filtersBar__select {
+    flex: 1 1 calc(50% - 5px) !important;
+    min-width: 0 !important;
+  }
+
+  /* ── Modal body forms: full-width buttons ──────────────────── */
+  .modal-fixed-footer {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .modal-fixed-footer .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* ── Pill & badge overflow ─────────────────────────────────── */
+  .pill {
+    flex-wrap: wrap !important;
+    padding: 6px 8px !important;
+  }
+
+  /* ── Section row ───────────────────────────────────────────── */
+  .sectionRow {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+}

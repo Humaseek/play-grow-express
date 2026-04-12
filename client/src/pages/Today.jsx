@@ -840,6 +840,26 @@ const DASHBOARD_STYLES = `
 }
 @media (max-width: 768px) {
   .span-3, .span-4, .span-6, .span-8, .span-12 { grid-column: span 12; }
+  .bento-grid { gap: 14px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .bento-item { padding: 16px; border-radius: 20px; }
+  .quick-actions-grid { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+  .qa-btn { padding: 14px 10px; border-radius: 18px; font-size: 12px; }
+  .qa-icon-wrap { width: 44px; height: 44px; border-radius: 14px; }
+  .list-item { padding: 12px; border-radius: 16px; }
+  .li-avatar { width: 38px; height: 38px; border-radius: 12px; }
+  .li-info { gap: 10px; }
+  .li-title { font-size: 14px; }
+  .li-value { font-size: 14px; }
+  .kpi-value { font-size: 28px; }
+  .tl-card { padding: 14px; margin-bottom: 14px; }
+  .chart-col-group { min-width: 30px; }
+}
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+  .kpi-value { font-size: 24px; }
+  .dash-greeting { font-size: 20px; }
+  .section-title { font-size: 16px; }
 }
 
 .kpi-title {
