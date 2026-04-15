@@ -411,29 +411,79 @@ const CSS = `
 /* ── Refresh spin ── */
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Sidebar toggle (mobile only) ── */
+.an-sidebar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 900;
+  color: #334155;
+}
+.an-sidebar-desktop-title { display: block; }
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
-  .an-layout  { flex-direction: column; }
-  .an-sidebar { width: 100%; position: static; flex-direction: row; flex-wrap: wrap; gap: 12px; }
-  .an-sidebar .an-filter-row { width: 100%; }
+  .an-layout { flex-direction: column; }
+  .an-sidebar {
+    width: 100%; position: static;
+    flex-direction: column; gap: 14px;
+    padding: 14px 16px;
+  }
+  .an-sidebar-toggle { display: flex; }
+  .an-sidebar-desktop-title { display: none; }
+  .an-sidebar--collapsed .an-sidebar-body { display: none; }
   .an-pl-table th, .an-pl-table td { padding: 10px 10px; font-size: 12px; }
 }
 @media (max-width: 720px) {
-  .an-2col, .an-3col { grid-template-columns: 1fr; }
-  .an-donut-row      { flex-direction: column; align-items: center; }
-  .an-section { margin-bottom: 24px; }
+  .an-2col, .an-3col { grid-template-columns: 1fr; gap: 14px; }
+  .an-donut-row { flex-direction: column; align-items: center; }
+  .an-section { margin-bottom: 22px; }
   .an-section-header h2 { font-size: 16px; }
-  .an-hbar-row > div:first-child { width: 80px !important; font-size: 11px !important; }
+  .an-card { padding: 20px 22px; }
+  .an-hbar-row > div:nth-child(1) { width: 100px !important; font-size: 12px !important; }
+  .an-hbar-row > div:nth-child(3) { width: 74px !important; font-size: 12px !important; }
 }
 @media (max-width: 600px) {
-  .an-kpi-grid { grid-template-columns: 1fr 1fr; }
-  .an-sidebar { padding: 14px 12px; gap: 10px; }
-  .an-preset { padding: 6px 12px; font-size: 12px; }
+  .an-kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .an-card { padding: 14px 16px; border-radius: 18px; }
+  .an-card:hover { transform: none; }
+  .an-sidebar { padding: 12px 14px; gap: 10px; border-radius: 16px; }
+  .an-section { margin-bottom: 18px; }
+  .an-section-header h2 { font-size: 14px; }
+  .an-section-header { padding-right: 10px; border-right-width: 3px; margin-bottom: 12px; }
+  .an-card-title { margin-bottom: 12px; }
+  .an-card-title-text { font-size: 13px; }
+  .an-preset { padding: 6px 10px; font-size: 12px; }
+  .an-dropdown-trigger { padding: 6px 12px; font-size: 12px; }
+  .an-dropdown-menu { min-width: 170px; }
   .an-custom-dates { padding: 6px 10px; }
-  .an-custom-dates input { font-size: 12px; }
+  .an-custom-dates input { font-size: 11.5px; }
+  .an-hbar-row > div:nth-child(1) { width: 80px !important; font-size: 11.5px !important; }
+  .an-hbar-row > div:nth-child(3) { width: 60px !important; font-size: 11.5px !important; }
+  .an-hbar-row > div:nth-child(4) { display: none !important; }
+  .an-hbar-row { padding: 3px 4px; }
+  .an-trend-card { padding: 16px 14px !important; }
+  .an-pl-table th:nth-child(3), .an-pl-table td:nth-child(3),
+  .an-pl-table th:nth-child(5), .an-pl-table td:nth-child(5) { display: none; }
+  .an-pl-table th, .an-pl-table td { padding: 9px 7px; font-size: 11px; }
+  .an-chip { font-size: 11.5px; padding: 4px 10px; }
+}
+@media (max-width: 480px) {
+  .an-card { padding: 12px 14px; border-radius: 16px; }
+  .an-card-title { margin-bottom: 10px; }
+  .an-kpi-grid { gap: 8px; }
+  .an-hbar-row > div:nth-child(1) { width: 70px !important; font-size: 11px !important; }
+  .an-hbar-row > div:nth-child(3) { width: 56px !important; font-size: 11px !important; }
 }
 @media (max-width: 360px) {
   .an-kpi-grid { grid-template-columns: 1fr; }
+  .an-card { padding: 12px 12px; }
 }
 `;
 
@@ -491,9 +541,9 @@ function Empty() {
 }
 
 /* ── Card shell ── */
-function Card({ children, style }) {
+function Card({ children, style, className }) {
   return (
-    <div className="an-card" style={style}>
+    <div className={`an-card${className ? " " + className : ""}`} style={style}>
       {children}
     </div>
   );
@@ -1595,6 +1645,9 @@ export default function Analytics() {
   /* Global filters (restored from localStorage) */
   const [selCourses, setSelCourses] = useState(_s.selCourses ?? []); // [] = all
   const [selKinds, setSelKinds] = useState(_s.selKinds ?? []); // [] = all, "workshop" | "course"
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth > 900 : true,
+  );
   const [courseDropOpen, setCourseDropOpen] = useState(false);
   const [kindDropOpen, setKindDropOpen] = useState(false);
   const [dateDropOpen, setDateDropOpen] = useState(false);
@@ -2056,8 +2109,26 @@ export default function Analytics() {
       {/* ══ SIDEBAR + MAIN LAYOUT ══ */}
       <div className="an-layout">
         {/* ══ FILTER SIDEBAR — right side in RTL ══ */}
-        <div className="an-sidebar">
+        <div className={`an-sidebar${sidebarOpen ? "" : " an-sidebar--collapsed"}`}>
+          {/* Mobile toggle — hidden on desktop via CSS */}
+          <button
+            className="an-sidebar-toggle"
+            onClick={() => setSidebarOpen((o) => !o)}
+          >
+            <span>الفلاتر</span>
+            <ChevronDown
+              size={16}
+              style={{
+                transition: "transform .22s",
+                transform: sidebarOpen ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            />
+          </button>
+
+          {/* Collapsible body */}
+          <div className="an-sidebar-body">
           <div
+            className="an-sidebar-desktop-title"
             style={{
               fontSize: 13,
               fontWeight: 900,
@@ -2344,6 +2415,8 @@ export default function Analytics() {
               </button>
             </>
           )}
+          </div>
+          {/* /an-sidebar-body */}
         </div>
         {/* /an-sidebar */}
 
@@ -2681,7 +2754,7 @@ export default function Analytics() {
 
               {/* 2 · Monthly Trend */}
               <div className="an-section">
-                <Card style={{ padding: "32px 36px" }}>
+                <Card style={{ padding: "32px 36px" }} className="an-trend-card">
                   <CardTitle
                     action={
                       monthlyTrend.length > 0
