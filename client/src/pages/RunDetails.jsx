@@ -4418,7 +4418,11 @@ export default function RunDetails() {
                           <td style={{ fontWeight: 800 }}>
                             <span
                               onClick={() => { if (att.session_id) navigate(`/sessions/${att.session_id}/attendance`); }}
-                              style={{ cursor: att.session_id ? "pointer" : "default", color: att.session_id ? "#00ac47" : "inherit", fontWeight: 900 }}
+                              style={{
+                                cursor: att.session_id ? "pointer" : "default",
+                                fontWeight: 900,
+                                color: att.status === "present" ? "#00ac47" : att.status === "absent" ? "#ef4444" : "#d97706",
+                              }}
                             >
                               {att.start_at ? String(att.start_at).slice(0,10).split("-").reverse().join("/") : "—"}
                             </span>
