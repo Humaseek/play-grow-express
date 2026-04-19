@@ -780,6 +780,11 @@ export default function Attendance() {
     }
   }
 
+  // هل الجلسة الحالية تاريخية (قبل اليوم)؟
+  const isHistoricalSession = session
+    ? new Date(session.start_at).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
+    : false;
+
   // دالة مخصصة لعرض سطر الطالب (الأيقونات فقط)
   const renderChildRow = (r) => {
     const v = att[r.enrollment_id] ?? "none";
@@ -798,9 +803,24 @@ export default function Attendance() {
             <Badge
               variant={hasBalance ? "ok" : "danger"}
               style={{ whiteSpace: "nowrap" }}
+              title={isHistoricalSession ? "الرصيد كما كان وقت هذه الجلسة" : undefined}
             >
               {hasBalance ? `متبقي: ${remaining}` : "منتهي"}
             </Badge>
+            {isHistoricalSession && (
+              <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#94a3b8",
+                background: "#f1f5f9",
+                border: "1px solid #e2e8f0",
+                borderRadius: 6,
+                padding: "2px 6px",
+                whiteSpace: "nowrap",
+              }}>
+                وقت الجلسة
+              </span>
+            )}
           </div>
         </td>
         <td style={{ textAlign: "center" }}>
