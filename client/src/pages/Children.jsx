@@ -651,7 +651,6 @@ export default function Children() {
     const q = searchQuery.toLowerCase();
     return children.filter(
       (c) =>
-        (c.id && String(c.id).includes(q)) ||
         (c.name || "").toLowerCase().includes(q) ||
         (c.mother_phone || "").includes(q) ||
         (c.father_phone || "").includes(q),
@@ -809,7 +808,7 @@ export default function Children() {
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="ابحث بالاسم، المعرف أو رقم الهاتف..."
+                  placeholder="ابحث بالاسم أو رقم الهاتف..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -843,7 +842,6 @@ export default function Children() {
                   <table className="modern-table">
                     <thead>
                       <tr>
-                        <th style={{ width: 60, textAlign: "center" }}>معرف</th>
                         <th>الاسم</th>
                         <th>العمر</th>
                         <th>الصف</th>
@@ -863,12 +861,6 @@ export default function Children() {
                           className="clickable-row"
                           onClick={() => navigate(`/children/${child.id}`)}
                         >
-                          <td
-                            className="child-id"
-                            style={{ textAlign: "center" }}
-                          >
-                            {child.id}
-                          </td>
                           <td className="child-name">{child.name}</td>
                           <td>{child.age ?? "-"}</td>
                           <td className="muted">{child.class || "-"}</td>
