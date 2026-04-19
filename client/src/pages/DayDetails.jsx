@@ -920,21 +920,23 @@ export default function DayDetails() {
                   {/* Header strip */}
                   <div style={{
                     padding: "18px 22px 14px",
-                    background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                    background: "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(217,119,6,0.07))",
+                    borderBottom: "1px solid rgba(245,158,11,0.14)",
                     display: "flex",
                     alignItems: "center",
                     gap: 10,
                   }}>
                     <div style={{
                       width: 38, height: 38,
-                      background: "rgba(255,255,255,0.2)",
+                      background: "rgba(245,158,11,0.12)",
+                      border: "1.5px solid rgba(245,158,11,0.22)",
                       borderRadius: 12,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "#fff", flexShrink: 0,
+                      color: "#b45309", flexShrink: 0,
                     }}>
                       <UserRound size={20} />
                     </div>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: "#fff" }}>ساعات العمل</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: "#92400e" }}>ساعات العمل</span>
                   </div>
 
                   {/* Items */}
@@ -948,19 +950,19 @@ export default function DayDetails() {
                           justifyContent: "space-between",
                           alignItems: "center",
                           background: "#fff",
-                          border: "1px solid rgba(245,158,11,0.18)",
+                          border: "1px solid rgba(245,158,11,0.13)",
                           borderRadius: 14,
                           padding: "11px 14px",
-                          boxShadow: "0 2px 8px rgba(245,158,11,0.06)",
+                          boxShadow: "0 2px 6px rgba(245,158,11,0.04)",
                         }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{
                               width: 42, height: 42,
-                              background: "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06))",
-                              border: "2px solid rgba(245,158,11,0.2)",
+                              background: "rgba(245,158,11,0.09)",
+                              border: "1.5px solid rgba(245,158,11,0.16)",
                               borderRadius: "50%",
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              color: "#d97706", flexShrink: 0,
+                              color: "#b45309", flexShrink: 0,
                             }}>
                               <UserRound size={18} />
                             </div>
@@ -969,7 +971,7 @@ export default function DayDetails() {
                               <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700 }} dir="ltr">
                                 {r.start_time?.slice(0,5)} – {r.end_time?.slice(0,5)}
                                 &nbsp;·&nbsp;
-                                <span style={{ color: "#d97706", fontWeight: 900 }}>{h.toFixed(1)} س</span>
+                                <span style={{ color: "#b45309", fontWeight: 900 }}>{h.toFixed(1)} س</span>
                               </div>
                             </div>
                           </div>
@@ -985,15 +987,15 @@ export default function DayDetails() {
                   <div style={{
                     margin: "0 18px 16px",
                     padding: "10px 16px",
-                    background: "linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.04))",
+                    background: "rgba(245,158,11,0.06)",
                     borderRadius: 12,
-                    border: "1px solid rgba(245,158,11,0.2)",
+                    border: "1px solid rgba(245,158,11,0.13)",
                     display: "flex",
                     justifyContent: "space-between",
                     fontWeight: 800,
                     fontSize: 14,
                   }}>
-                    <span style={{ color: "#d97706", fontWeight: 900 }}>{totalHours.toFixed(1)} ساعة إجمالية</span>
+                    <span style={{ color: "#b45309", fontWeight: 900 }}>{totalHours.toFixed(1)} ساعة إجمالية</span>
                     <span style={{ color: "#1e293b", fontWeight: 900 }}>{fmtMoney(totalCost)} ₪</span>
                   </div>
                 </div>
