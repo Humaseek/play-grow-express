@@ -924,29 +924,54 @@ export default function DayDetails() {
                       const h = calcHours(r.start_time, r.end_time);
                       const amount = h * Number(r.hourly_rate || 0);
                       return (
-                        <div key={r.id} className="dd-list-item" style={{ borderLeft: "4px solid #00ac47" }}>
+                        <div key={r.id} className="dd-list-item" style={{
+                          border: "1px solid rgba(15,23,42,0.07)",
+                          borderRadius: 16,
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                          padding: "12px 14px",
+                          marginBottom: 8,
+                        }}>
                           <div className="dd-li-info">
-                            <div className="dd-li-avatar" style={{ background: "rgba(0,172,71,0.08)", color: "#00ac47" }}>
+                            <div className="dd-li-avatar" style={{
+                              width: 42, height: 42,
+                              background: "linear-gradient(135deg, rgba(0,172,71,0.18), rgba(0,172,71,0.06))",
+                              color: "#00ac47",
+                              border: "2px solid rgba(0,172,71,0.15)",
+                              borderRadius: "50%",
+                              flexShrink: 0,
+                            }}>
                               <UserRound size={20} />
                             </div>
                             <div>
-                              <div className="dd-li-title">{r.staff?.name || "—"}</div>
+                              <div className="dd-li-title" style={{ color: "#1e293b" }}>{r.staff?.name || "—"}</div>
                               <div className="dd-li-sub" dir="ltr">
                                 {r.start_time?.slice(0,5)} – {r.end_time?.slice(0,5)}
-                                &nbsp;·&nbsp; {h.toFixed(1)} س
+                                &nbsp;·&nbsp;
+                                <span style={{ color: "#00ac47", fontWeight: 800 }}>{h.toFixed(1)} س</span>
                               </div>
                             </div>
                           </div>
-                          <div className="dd-li-val" style={{ color: "#00ac47" }}>
+                          <div className="dd-li-val" style={{ fontWeight: 900, color: "#1e293b" }}>
                             {fmtMoney(amount)} ₪
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div style={{ marginTop: 14, padding: "12px 16px", background: "rgba(0,172,71,0.06)", borderRadius: 14, display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: 14, color: "#15803d" }}>
-                    <span>{totalHours.toFixed(1)} ساعة إجمالية</span>
-                    <span>{fmtMoney(totalCost)} ₪</span>
+                  <div style={{
+                    marginTop: 10,
+                    padding: "10px 16px",
+                    background: "#f8fafc",
+                    borderRadius: 12,
+                    border: "1px solid #f1f5f9",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontWeight: 800,
+                    fontSize: 14,
+                    color: "#475569",
+                  }}>
+                    <span style={{ color: "#00ac47" }}>{totalHours.toFixed(1)} ساعة إجمالية</span>
+                    <span style={{ color: "#1e293b" }}>{fmtMoney(totalCost)} ₪</span>
                   </div>
                 </div>
               );
