@@ -915,11 +915,14 @@ textarea {
 .modalCard {
   position: relative;
   width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
   background: var(--surface);
   border-radius: 30px;
   border: 1px solid rgba(78, 53, 110, 0.12);
   box-shadow: 0 22px 60px rgba(29, 19, 43, 0.18);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .modalClose {
   position: absolute;
@@ -948,6 +951,7 @@ textarea {
   align-items: center;
   justify-content: center;
   text-align: center;
+  flex: 0 0 auto;
 }
 .modalTitle {
   font-size: 22px;
@@ -958,6 +962,9 @@ textarea {
 }
 .modalBody {
   padding: 8px 24px 24px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 @media (max-width: 560px) {
   .modalOverlay {
@@ -2865,5 +2872,49 @@ textarea {
   .sectionRow {
     flex-direction: column !important;
     align-items: stretch !important;
+  }
+}
+
+/* ==========================================================================
+   LAPTOP SHORT VIEWPORT  (height ≤ 820 px, width > 980 px)
+   ========================================================================== */
+@media (max-height: 820px) and (min-width: 981px) {
+
+  /* Sidebar: shrink padding + allow scroll if content overflows */
+  .sidebar {
+    padding: 10px 10px !important;
+    overflow-y: auto !important;
+  }
+
+  .brand {
+    padding: 8px 10px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .nav {
+    gap: 2px !important;
+  }
+
+  .nav a {
+    padding: 8px 10px !important;
+  }
+
+  /* Container: tighten vertical padding */
+  .container {
+    padding-top: 14px !important;
+    padding-bottom: 24px !important;
+  }
+
+  /* Modal: tighter header on small height */
+  .modalHeader {
+    padding: 16px 44px 6px !important;
+  }
+
+  .modalTitle {
+    font-size: 19px !important;
+  }
+
+  .modalBody {
+    padding: 6px 22px 18px !important;
   }
 }
