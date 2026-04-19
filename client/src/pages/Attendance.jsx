@@ -618,6 +618,10 @@ export default function Attendance() {
     });
 
     const validParticipants = participantsData.filter((row) => {
+      // لو الطفل حضر جلسات سابقة في هذا الفوج → يظهر دائماً
+      if (Number(row.sessions_attended_in_run || 0) > 0) return true;
+
+      // وإلا نتحقق إن تسجيله/باقته كانت قبل تاريخ الجلسة
       const joinDate =
         row.package_id && pkgDates[row.package_id]
           ? pkgDates[row.package_id]
