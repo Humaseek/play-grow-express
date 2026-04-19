@@ -583,8 +583,50 @@ export default function Attendance() {
       return;
     }
 
-    // كل طفل مسجل في هذا الفوج يظهر — التسجيل نفسه هو الدليل الكافي
-    setRows(p.data || []);
+    const participantsData = p.data || [];
+
+    // فلترة بالتاريخ: يظهر فقط من اشترى باقة أو سُجّل قبل تاريخ الجلسة
+    const sessionDate = new Date(s.data.start_at);
+    sessionDate.setHours(23, 59, 59, 999);
+
+    const pkgIds = participantsData.map((x) => x.package_id).filter(Boolean);
+    const { data: pkgs } =
+      pkgIds.length > 0
+        ? await supabase
+            .from("course_packages")
+            .select("id, created_at")
+            .in("id", pkgIds)
+        : { data: [] };
+
+    const pkgDates = {};
+    (pkgs || []).forEach((pkg) => {
+      pkgDates[pkg.id] = new Date(pkg.created_at);
+    });
+
+    const enrollIds = participantsData.map((x) => x.enrollment_id).filter(Boolean);
+    const { data: enrolls } =
+      enrollIds.length > 0
+        ? await supabase
+            .from("enrollments")
+            .select("id, created_at")
+            .in("id", enrollIds)
+        : { data: [] };
+
+    const enrollDates = {};
+    (enrolls || []).forEach((e) => {
+      enrollDates[e.id] = new Date(e.created_at);
+    });
+
+    const validParticipants = participantsData.filter((row) => {
+      const joinDate =
+        row.package_id && pkgDates[row.package_id]
+          ? pkgDates[row.package_id]
+          : enrollDates[row.enrollment_id];
+      if (joinDate) return joinDate <= sessionDate;
+      return true;
+    });
+
+    setRows(validParticipants);
 
     // 4. جلب الحضور المسجل سابقاً
     const a = await supabase
@@ -604,7 +646,7 @@ export default function Attendance() {
     });
 
     const final = {};
-    (p.data || []).forEach((r) => {
+    validParticipants.forEach((r) => {
       final[r.enrollment_id] = map[r.enrollment_id] ?? "none";
     });
 
