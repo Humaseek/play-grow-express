@@ -912,66 +912,91 @@ export default function DayDetails() {
               const totalHours = data.staffHours.reduce((s, r) => s + calcHours(r.start_time, r.end_time), 0);
               const totalCost  = data.staffHours.reduce((s, r) => s + calcHours(r.start_time, r.end_time) * Number(r.hourly_rate || 0), 0);
               return (
-                <div className="dd-card" style={{ padding: "28px" }}>
-                  <h2 className="dd-section-title" style={{ borderColor: "rgba(0,172,71,0.2)" }}>
-                    <div className="dd-section-icon-wrapper" style={{ background: "#f0fdf4" }}>
-                      <UserRound size={22} color="#00ac47" />
+                <div className="dd-card" style={{
+                  padding: 0,
+                  overflow: "hidden",
+                  border: "1.5px solid rgba(0,172,71,0.18)",
+                }}>
+                  {/* Header strip */}
+                  <div style={{
+                    padding: "18px 22px 14px",
+                    background: "linear-gradient(135deg, rgba(0,172,71,0.08) 0%, rgba(0,172,71,0.02) 100%)",
+                    borderBottom: "1px solid rgba(0,172,71,0.12)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}>
+                    <div style={{
+                      width: 38, height: 38,
+                      background: "linear-gradient(135deg, rgba(0,172,71,0.22), rgba(0,172,71,0.08))",
+                      border: "2px solid rgba(0,172,71,0.2)",
+                      borderRadius: 12,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#00ac47", flexShrink: 0,
+                    }}>
+                      <UserRound size={20} />
                     </div>
-                    ساعات العمل
-                  </h2>
-                  <div className="dd-list">
+                    <span style={{ fontSize: 17, fontWeight: 900, color: "#0f172a" }}>ساعات العمل</span>
+                  </div>
+
+                  {/* Items */}
+                  <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
                     {data.staffHours.map(r => {
                       const h = calcHours(r.start_time, r.end_time);
                       const amount = h * Number(r.hourly_rate || 0);
                       return (
-                        <div key={r.id} className="dd-list-item" style={{
-                          border: "1px solid rgba(15,23,42,0.07)",
-                          borderRadius: 16,
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
-                          padding: "12px 14px",
-                          marginBottom: 8,
+                        <div key={r.id} style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          background: "#fff",
+                          border: "1px solid rgba(0,172,71,0.12)",
+                          borderRadius: 14,
+                          padding: "11px 14px",
+                          boxShadow: "0 2px 8px rgba(0,172,71,0.04)",
                         }}>
-                          <div className="dd-li-info">
-                            <div className="dd-li-avatar" style={{
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{
                               width: 42, height: 42,
                               background: "linear-gradient(135deg, rgba(0,172,71,0.18), rgba(0,172,71,0.06))",
-                              color: "#00ac47",
                               border: "2px solid rgba(0,172,71,0.15)",
                               borderRadius: "50%",
-                              flexShrink: 0,
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              color: "#00ac47", flexShrink: 0,
                             }}>
-                              <UserRound size={20} />
+                              <UserRound size={18} />
                             </div>
                             <div>
-                              <div className="dd-li-title" style={{ color: "#1e293b" }}>{r.staff?.name || "—"}</div>
-                              <div className="dd-li-sub" dir="ltr">
+                              <div style={{ fontWeight: 900, color: "#1e293b", fontSize: 15, marginBottom: 3 }}>{r.staff?.name || "—"}</div>
+                              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700 }} dir="ltr">
                                 {r.start_time?.slice(0,5)} – {r.end_time?.slice(0,5)}
                                 &nbsp;·&nbsp;
-                                <span style={{ color: "#00ac47", fontWeight: 800 }}>{h.toFixed(1)} س</span>
+                                <span style={{ color: "#00ac47", fontWeight: 900 }}>{h.toFixed(1)} س</span>
                               </div>
                             </div>
                           </div>
-                          <div className="dd-li-val" style={{ fontWeight: 900, color: "#1e293b" }}>
+                          <div style={{ fontWeight: 900, fontSize: 17, color: "#1e293b", direction: "ltr" }}>
                             {fmtMoney(amount)} ₪
                           </div>
                         </div>
                       );
                     })}
                   </div>
+
+                  {/* Total footer */}
                   <div style={{
-                    marginTop: 10,
+                    margin: "0 18px 16px",
                     padding: "10px 16px",
-                    background: "#f8fafc",
+                    background: "linear-gradient(135deg, rgba(0,172,71,0.08), rgba(0,172,71,0.03))",
                     borderRadius: 12,
-                    border: "1px solid #f1f5f9",
+                    border: "1px solid rgba(0,172,71,0.15)",
                     display: "flex",
                     justifyContent: "space-between",
                     fontWeight: 800,
                     fontSize: 14,
-                    color: "#475569",
                   }}>
-                    <span style={{ color: "#00ac47" }}>{totalHours.toFixed(1)} ساعة إجمالية</span>
-                    <span style={{ color: "#1e293b" }}>{fmtMoney(totalCost)} ₪</span>
+                    <span style={{ color: "#00ac47", fontWeight: 900 }}>{totalHours.toFixed(1)} ساعة إجمالية</span>
+                    <span style={{ color: "#1e293b", fontWeight: 900 }}>{fmtMoney(totalCost)} ₪</span>
                   </div>
                 </div>
               );
