@@ -915,28 +915,26 @@ export default function DayDetails() {
                 <div className="dd-card" style={{
                   padding: 0,
                   overflow: "hidden",
-                  border: "1.5px solid rgba(0,172,71,0.18)",
+                  border: "1.5px solid rgba(245,158,11,0.25)",
                 }}>
                   {/* Header strip */}
                   <div style={{
                     padding: "18px 22px 14px",
-                    background: "linear-gradient(135deg, rgba(0,172,71,0.08) 0%, rgba(0,172,71,0.02) 100%)",
-                    borderBottom: "1px solid rgba(0,172,71,0.12)",
+                    background: "linear-gradient(135deg, #f59e0b, #d97706)",
                     display: "flex",
                     alignItems: "center",
                     gap: 10,
                   }}>
                     <div style={{
                       width: 38, height: 38,
-                      background: "linear-gradient(135deg, rgba(0,172,71,0.22), rgba(0,172,71,0.08))",
-                      border: "2px solid rgba(0,172,71,0.2)",
+                      background: "rgba(255,255,255,0.2)",
                       borderRadius: 12,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "#00ac47", flexShrink: 0,
+                      color: "#fff", flexShrink: 0,
                     }}>
                       <UserRound size={20} />
                     </div>
-                    <span style={{ fontSize: 17, fontWeight: 900, color: "#0f172a" }}>ساعات العمل</span>
+                    <span style={{ fontSize: 17, fontWeight: 900, color: "#fff" }}>ساعات العمل</span>
                   </div>
 
                   {/* Items */}
@@ -950,19 +948,19 @@ export default function DayDetails() {
                           justifyContent: "space-between",
                           alignItems: "center",
                           background: "#fff",
-                          border: "1px solid rgba(0,172,71,0.12)",
+                          border: "1px solid rgba(245,158,11,0.18)",
                           borderRadius: 14,
                           padding: "11px 14px",
-                          boxShadow: "0 2px 8px rgba(0,172,71,0.04)",
+                          boxShadow: "0 2px 8px rgba(245,158,11,0.06)",
                         }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                             <div style={{
                               width: 42, height: 42,
-                              background: "linear-gradient(135deg, rgba(0,172,71,0.18), rgba(0,172,71,0.06))",
-                              border: "2px solid rgba(0,172,71,0.15)",
+                              background: "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06))",
+                              border: "2px solid rgba(245,158,11,0.2)",
                               borderRadius: "50%",
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              color: "#00ac47", flexShrink: 0,
+                              color: "#d97706", flexShrink: 0,
                             }}>
                               <UserRound size={18} />
                             </div>
@@ -971,7 +969,7 @@ export default function DayDetails() {
                               <div style={{ fontSize: 13, color: "#64748b", fontWeight: 700 }} dir="ltr">
                                 {r.start_time?.slice(0,5)} – {r.end_time?.slice(0,5)}
                                 &nbsp;·&nbsp;
-                                <span style={{ color: "#00ac47", fontWeight: 900 }}>{h.toFixed(1)} س</span>
+                                <span style={{ color: "#d97706", fontWeight: 900 }}>{h.toFixed(1)} س</span>
                               </div>
                             </div>
                           </div>
@@ -987,15 +985,15 @@ export default function DayDetails() {
                   <div style={{
                     margin: "0 18px 16px",
                     padding: "10px 16px",
-                    background: "linear-gradient(135deg, rgba(0,172,71,0.08), rgba(0,172,71,0.03))",
+                    background: "linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.04))",
                     borderRadius: 12,
-                    border: "1px solid rgba(0,172,71,0.15)",
+                    border: "1px solid rgba(245,158,11,0.2)",
                     display: "flex",
                     justifyContent: "space-between",
                     fontWeight: 800,
                     fontSize: 14,
                   }}>
-                    <span style={{ color: "#00ac47", fontWeight: 900 }}>{totalHours.toFixed(1)} ساعة إجمالية</span>
+                    <span style={{ color: "#d97706", fontWeight: 900 }}>{totalHours.toFixed(1)} ساعة إجمالية</span>
                     <span style={{ color: "#1e293b", fontWeight: 900 }}>{fmtMoney(totalCost)} ₪</span>
                   </div>
                 </div>
