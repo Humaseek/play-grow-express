@@ -12,6 +12,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import IconButton from "../components/IconButton";
 import ModernSelect from "../components/ModernSelect";
 import { fmtDateTime24 } from "../utils/datetime";
+import DateLink from "../components/DateLink";
 
 import {
   CreditCard,
@@ -1026,7 +1027,7 @@ export default function Payments() {
                     {filtered.map((r) => (
                       <tr key={r.id}>
                         <td style={{ color: "#64748b", fontWeight: 600 }}>
-                          <span dir="ltr">{fmtDT(r.created_at)}</span>
+                          <DateLink date={r.created_at} />
                         </td>
 
                         <td style={{ fontWeight: 900 }}>
@@ -1138,7 +1139,7 @@ export default function Payments() {
                         <span className="ac-date-icon">
                           <CalendarDays size={14} strokeWidth={2.5} />
                         </span>
-                        <span dir="ltr">{fmtDT(r.created_at)}</span>
+                        <DateLink date={r.created_at} />
                       </div>
                       <div className="ac-actions">
                         <button

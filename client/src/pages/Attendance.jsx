@@ -5,6 +5,7 @@ import ErrorBanner from "../components/ErrorBanner";
 import Badge from "../components/Badge";
 import PageHeader from "../components/PageHeader";
 import EmptyState from "../components/EmptyState";
+import DateLink from "../components/DateLink";
 import {
   Users,
   RefreshCw,
@@ -832,7 +833,7 @@ export default function Attendance() {
           }}
         >
           <CalendarDays size={16} />
-          <span style={{ fontWeight: 700 }}>{fmtDate(session.start_at)}</span>
+          <DateLink date={session.start_at} />
         </span>
         <span className="att-subtitle-sep">|</span>
         <span

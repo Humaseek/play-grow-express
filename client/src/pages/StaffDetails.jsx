@@ -7,6 +7,7 @@ import KpiCard from "../components/KpiCard";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import IconButton from "../components/IconButton";
+import DateLink from "../components/DateLink";
 
 import {
   ArrowRight,
@@ -1133,7 +1134,7 @@ tfoot td{padding:11px 14px;font-weight:900;font-size:14px;background:#f1f5f9;bor
                 const isUnpaid = !row.payment_id;
                 return (
                   <tr key={row.id}>
-                    <td>{fmtDate(row.work_date)}</td>
+                    <td><DateLink date={row.work_date} /></td>
                     <td>{row.start_time?.slice(0, 5) || "—"}</td>
                     <td>{row.end_time?.slice(0, 5) || "—"}</td>
                     <td style={{ fontWeight: 800, color: "#00ac47" }}>

@@ -5,6 +5,7 @@ import PageHeader from "../components/PageHeader";
 import ErrorBanner from "../components/ErrorBanner";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Modal from "../components/Modal";
+import DateLink from "../components/DateLink";
 import {
   Clock,
   History,
@@ -421,8 +422,7 @@ export default function PastSessions() {
                   >
                     {/* التاريخ واليوم */}
                     <div className="sessionList__time">
-                      <div className="ps-date">{fmtDate(s.start_at)}</div>
-                      <div className="ps-weekday">{fmtWeekday(s.start_at)}</div>
+                      <DateLink date={s.start_at} />
                     </div>
 
                     {/* الوقت والمدة */}

@@ -11,6 +11,7 @@ import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import IconButton from "../components/IconButton";
 import ModernSelect from "../components/ModernSelect";
+import DateLink from "../components/DateLink";
 
 import {
   Receipt,
@@ -1333,7 +1334,7 @@ export default function Expenses() {
                         {filtered.map((r) => (
                           <tr key={r.id}>
                             <td style={{ color: "#64748b", fontWeight: 600 }}>
-                              {fmtDate(r.spent_on)}
+                              <DateLink date={r.spent_on} />
                             </td>
                             <td style={{ fontWeight: 700 }}>
                               {r.category || <span className="muted">—</span>}
@@ -1435,7 +1436,7 @@ export default function Expenses() {
                             <span className="ac-date-icon">
                               <CalendarDays size={14} strokeWidth={2.5} />
                             </span>
-                            {fmtDate(r.spent_on)}
+                            <DateLink date={r.spent_on} />
                           </div>
                           <div className="ac-actions">
                             <button

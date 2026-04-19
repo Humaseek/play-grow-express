@@ -7,6 +7,7 @@ import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import IconButton from "../components/IconButton";
 import ModernSelect from "../components/ModernSelect";
+import DateLink from "../components/DateLink";
 import {
   Calendar,
   Clock,
@@ -3202,12 +3203,7 @@ export default function RunDetails() {
                               }}
                             >
                               <div className="sessionList__time">
-                                <div style={{ fontWeight: 700 }}>
-                                  {fmtDate(s.start_at)}
-                                </div>
-                                <div className="muted">
-                                  {fmtWeekday(s.start_at)}
-                                </div>
+                                <DateLink date={s.start_at} />
                               </div>
                               <div className="sessionList__main">
                                 <div style={{ fontWeight: 600 }}>
@@ -3330,7 +3326,7 @@ export default function RunDetails() {
                                 {paymentMethodLabel(p.method)}
                               </Badge>
                             </td>
-                            <td className="muted">{fmtDate(p.created_at)}</td>
+                            <td className="muted"><DateLink date={p.created_at} /></td>
                             <td className="muted">{p.note ?? "-"}</td>
                             <td style={{ textAlign: "center" }}>
                               <div
@@ -3411,7 +3407,7 @@ export default function RunDetails() {
                               {paymentMethodLabel(p.method)}
                             </Badge>
                           </span>
-                          <span>{fmtDate(p.created_at)}</span>
+                          <DateLink date={p.created_at} />
                         </div>
                         {p.note && (
                           <div style={{ fontSize: 13, color: "#64748b" }}>
@@ -3580,9 +3576,7 @@ export default function RunDetails() {
                           {expensesFiltered.map((r) => (
                             <tr key={r.id}>
                               <td className="muted">
-                                <span className="ltrIso">
-                                  {fmtDate(r.spent_on)}
-                                </span>
+                                <DateLink date={r.spent_on} />
                               </td>
                               <td style={{ fontWeight: 800 }}>
                                 {r.category || "—"}
@@ -3669,9 +3663,7 @@ export default function RunDetails() {
                             }}
                           >
                             <span>{r.party || "—"}</span>
-                            <span className="ltrIso">
-                              {fmtDate(r.spent_on)}
-                            </span>
+                            <DateLink date={r.spent_on} />
                           </div>
                           {r.description && (
                             <div style={{ fontSize: 13, color: "#64748b" }}>
@@ -4209,7 +4201,7 @@ export default function RunDetails() {
                           pkg.sessions_total - sessionsUsed;
                         return (
                           <tr key={pkg.package_id}>
-                            <td className="muted">{fmtDate(pkg.created_at)}</td>
+                            <td className="muted"><DateLink date={pkg.created_at} /></td>
                             <td style={{ fontWeight: 800 }}>
                               {pkg.sessions_total}
                             </td>
@@ -4484,7 +4476,7 @@ export default function RunDetails() {
                             {paymentMethodLabel(x.method)}
                           </Badge>
                         </td>
-                        <td className="muted">{fmtDate(x.created_at)}</td>
+                        <td className="muted"><DateLink date={x.created_at} /></td>
                         <td className="muted">{x.note ?? "-"}</td>
                         <td>
                           <div
