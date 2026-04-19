@@ -380,8 +380,8 @@ export default function DayDetails() {
         const qPays = supabase
           .from("payments_details_view")
           .select("*")
-          .gte("paid_at", startIso)
-          .lte("paid_at", endIso);
+          .gte("created_at", startIso)
+          .lte("created_at", endIso);
 
         // 2. جلب المصاريف
         const qExps = supabase
