@@ -585,24 +585,59 @@ export default function Attendance() {
 
     const participantsData = p.data || [];
 
-    // فلترة بالتاريخ: يظهر فقط من اشترى باقة أو سُجّل قبل تاريخ الجلسة
     const sessionDate = new Date(s.data.start_at);
     sessionDate.setHours(23, 59, 59, 999);
 
+    // هل هذه الجلسة هي الأقرب لليوم؟ (نستخدم الرصيد الحالي فقط في هذه الحالة)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sessionDay = new Date(s.data.start_at);
+    sessionDay.setHours(0, 0, 0, 0);
+    const isHistoricalSession = sessionDay < today;
+
+    // جلب جلسات هذا الفوج التي سبقت هذه الجلسة
+    const { data: prevSessions } = await supabase
+      .from("course_sessions")
+      .select("id")
+      .eq("run_id", s.data.run_id)
+      .lt("start_at", s.data.start_at);
+
+    const prevSessionIds = (prevSessions || []).map((x) => x.id);
+
+    // جلب سجلات الحضور في الجلسات السابقة (حاضر + غائب كلاهما يستهلك جلسة)
+    const { data: prevAttData } =
+      prevSessionIds.length > 0
+        ? await supabase
+            .from("attendance")
+            .select("enrollment_id, status")
+            .in("session_id", prevSessionIds)
+            .in("status", ["present", "absent"])
+        : { data: [] };
+
+    const usedBefore = {};
+    (prevAttData || []).forEach((a) => {
+      usedBefore[a.enrollment_id] = (usedBefore[a.enrollment_id] || 0) + 1;
+    });
+
+    // جلب بيانات الباقات (مع sessions_total وتاريخ الإنشاء)
     const pkgIds = participantsData.map((x) => x.package_id).filter(Boolean);
     const { data: pkgs } =
       pkgIds.length > 0
         ? await supabase
             .from("course_packages")
-            .select("id, created_at")
+            .select("id, created_at, sessions_total")
             .in("id", pkgIds)
         : { data: [] };
 
-    const pkgDates = {};
+    const pkgMap = {};
     (pkgs || []).forEach((pkg) => {
-      pkgDates[pkg.id] = new Date(pkg.created_at);
+      pkgMap[pkg.id] = {
+        date: new Date(pkg.created_at),
+        total: pkg.sessions_total,
+      };
     });
 
+    // جلب تواريخ التسجيل كاحتياط
     const enrollIds = participantsData.map((x) => x.enrollment_id).filter(Boolean);
     const { data: enrolls } =
       enrollIds.length > 0
@@ -617,18 +652,29 @@ export default function Attendance() {
       enrollDates[e.id] = new Date(e.created_at);
     });
 
-    const validParticipants = participantsData.filter((row) => {
-      // لو الطفل حضر جلسات سابقة في هذا الفوج → يظهر دائماً
-      if (Number(row.sessions_attended_in_run || 0) > 0) return true;
+    const validParticipants = participantsData
+      .filter((row) => {
+        // يظهر لو عنده حضور في جلسة سابقة من هذا الفوج
+        if (usedBefore[row.enrollment_id] > 0) return true;
 
-      // وإلا نتحقق إن تسجيله/باقته كانت قبل تاريخ الجلسة
-      const joinDate =
-        row.package_id && pkgDates[row.package_id]
-          ? pkgDates[row.package_id]
-          : enrollDates[row.enrollment_id];
-      if (joinDate) return joinDate <= sessionDate;
-      return true;
-    });
+        // أو لو باقته/تسجيله كان قبل تاريخ الجلسة
+        const joinDate =
+          row.package_id && pkgMap[row.package_id]
+            ? pkgMap[row.package_id].date
+            : enrollDates[row.enrollment_id];
+        if (joinDate) return joinDate <= sessionDate;
+        return true;
+      })
+      .map((row) => {
+        // في الجلسات التاريخية: احسب الرصيد وقت الجلسة
+        if (!isHistoricalSession) return row;
+        const pkgTotal =
+          row.package_id && pkgMap[row.package_id]
+            ? pkgMap[row.package_id].total
+            : Number(row.package_sessions_total || 0);
+        const consumed = usedBefore[row.enrollment_id] || 0;
+        return { ...row, package_sessions_remaining: pkgTotal - consumed };
+      });
 
     setRows(validParticipants);
 
