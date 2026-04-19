@@ -604,19 +604,24 @@ export default function Attendance() {
 
     const prevSessionIds = (prevSessions || []).map((x) => x.id);
 
-    // جلب سجلات الحضور في الجلسات السابقة (حاضر + غائب كلاهما يستهلك جلسة)
-    const { data: prevAttData } =
-      prevSessionIds.length > 0
+    // جلب سجلات الحضور في الجلسات السابقة + الجلسة الحالية
+    const allRelevantIds = [...prevSessionIds, Number(sessionId)];
+    const { data: prevAndCurrentAttData } =
+      allRelevantIds.length > 0
         ? await supabase
             .from("attendance")
-            .select("enrollment_id, status")
-            .in("session_id", prevSessionIds)
+            .select("enrollment_id, session_id, status")
+            .in("session_id", allRelevantIds)
             .in("status", ["present", "absent"])
         : { data: [] };
 
     const usedBefore = {};
-    (prevAttData || []).forEach((a) => {
-      usedBefore[a.enrollment_id] = (usedBefore[a.enrollment_id] || 0) + 1;
+    const hasAttInThisOrPrev = new Set();
+    (prevAndCurrentAttData || []).forEach((a) => {
+      hasAttInThisOrPrev.add(a.enrollment_id);
+      if (prevSessionIds.includes(a.session_id)) {
+        usedBefore[a.enrollment_id] = (usedBefore[a.enrollment_id] || 0) + 1;
+      }
     });
 
     // جلب بيانات الباقات (مع sessions_total وتاريخ الإنشاء)
@@ -654,8 +659,8 @@ export default function Attendance() {
 
     const validParticipants = participantsData
       .filter((row) => {
-        // يظهر لو عنده حضور في جلسة سابقة من هذا الفوج
-        if (usedBefore[row.enrollment_id] > 0) return true;
+        // يظهر لو عنده حضور في الجلسة الحالية أو سابقة
+        if (hasAttInThisOrPrev.has(row.enrollment_id)) return true;
 
         // أو لو باقته/تسجيله كان قبل تاريخ الجلسة
         const joinDate =
