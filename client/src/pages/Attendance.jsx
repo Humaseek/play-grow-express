@@ -568,12 +568,13 @@ export default function Attendance() {
     }
     setSummary(sum.data);
 
-    // 3. جلب جميع الاطفال المسجلين (نشط)
+    // 3. جلب جميع الاطفال المسجلين (بغض النظر عن الحالة الحالية)
+    // لا نفلتر على enrollment_status هنا لأن الفلترة بالتاريخ أسفل تضمن
+    // إظهار من كان مسجلاً وقت الجلسة فقط
     const p = await supabase
       .from("run_participants_view")
       .select("*")
       .eq("run_id", s.data.run_id)
-      .eq("enrollment_status", "active")
       .order("child_name", { ascending: true });
 
     if (p.error) {
