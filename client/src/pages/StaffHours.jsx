@@ -155,12 +155,13 @@ const CSS = `
 .sh-btn-secondary {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 10px 14px;
-  background: #f1f5f9; color: #475569;
-  border: none; border-radius: 12px;
+  background: #fff7ed; color: #d97706;
+  border: 1.5px solid #fed7aa;
+  border-radius: 12px;
   font-size: 14px; font-weight: 700;
   cursor: pointer; transition: background 0.15s;
 }
-.sh-btn-secondary:hover { background: #e2e8f0; }
+.sh-btn-secondary:hover { background: #ffedd5; }
 
 /* form */
 .sh-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
