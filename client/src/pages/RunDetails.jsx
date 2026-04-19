@@ -2231,12 +2231,13 @@ export default function RunDetails() {
     try {
       const { data, error } = await supabase
         .from("attendance")
-        .select("id, status, note, created_at, course_sessions(start_at)")
+        .select("id, session_id, status, note, created_at, course_sessions(id, start_at)")
         .eq("enrollment_id", pRow.enrollment_id);
       if (error) throw error;
       const formatted = (data || [])
         .map((r) => ({
           id: r.id,
+          session_id: r.session_id || r.course_sessions?.id,
           status: r.status,
           note: r.note,
           start_at: r.course_sessions?.start_at,
@@ -4415,7 +4416,12 @@ export default function RunDetails() {
                       return (
                         <tr key={att.id}>
                           <td style={{ fontWeight: 800 }}>
-                            {fmtDT(att.start_at)}
+                            <span
+                              onClick={() => { if (att.session_id) navigate(`/sessions/${att.session_id}/attendance`); }}
+                              style={{ cursor: att.session_id ? "pointer" : "default", color: att.session_id ? "#00ac47" : "inherit", fontWeight: 900 }}
+                            >
+                              {att.start_at ? String(att.start_at).slice(0,10).split("-").reverse().join("/") : "—"}
+                            </span>
                           </td>
                           <td>
                             <Badge variant={badgeVar}>{statusAr}</Badge>
