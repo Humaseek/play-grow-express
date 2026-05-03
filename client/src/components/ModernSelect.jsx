@@ -83,7 +83,7 @@ export default function ModernSelect({
  const menuStyle = {
  position: "fixed",
  top: pos.top,
- zIndex: 2000,
+ zIndex: 100001,
  ...(isRTL ? { right: pos.right } : { left: pos.left }),
  width: menuWidth === "trigger" ? pos.width : "max-content",
  minWidth: menuWidth === "trigger" ? pos.width : minMenuWidth,
